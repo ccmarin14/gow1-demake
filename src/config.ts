@@ -29,6 +29,12 @@ export const CONFIG = {
       anchorX: 0.5,
       anchorY: 1,
     },
+    run: {
+      frames: 4,
+      frameRate: 10,
+      maxFrameRate: 14,
+      idleSpeedThreshold: 1,
+    },
   },
   presentation: {
     background: '#111827',
