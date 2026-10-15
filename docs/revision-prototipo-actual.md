@@ -1,0 +1,43 @@
+# Revisión del prototipo actual
+
+Fecha: 2026-10-07. Esta revisión fija la base para adaptar el prototipo al formato de acción lateral de *God of War: Betrayal* y a la historia del primer *God of War* de PlayStation 2. Es un diagnóstico, no una reescritura ni un cambio de balance aplicado.
+
+## Alcance y evidencia
+
+- Se inspeccionaron `src/game/config.ts`, `CombatSystem.ts`, `InputManager.ts`, `GameScene.ts`, `textureFactory.ts`, `main.ts` y `Hud.ts`.
+- Se ejecutó `http://localhost:5173/` en Chrome mediante Chrome DevTools MCP. El juego usa una resolución interna de 320 × 180 y el canvas observado se mostraba a 3×, con píxeles nítidos.
+- Para medir movimiento se enviaron eventos de teclado sintéticos al `window`; estos recorren los listeners de entrada del juego, pero no equivalen a una prueba con teclado físico. Desde x=70, mantener `D` 350 ms llevó a x=118; tras soltarla durante 300 ms, la posición siguió en x=118.
+- Al mantener `D` y `→` a la vez y soltar solo `D`, el estado de movimiento quedó en falso aunque `→` seguía mantenida. Es un defecto reproducible del mapeo de alias.
+- Se inició la primera oleada con movimiento normal: al cruzar x=170 aparecieron tres enemigos y una barrera en x=520. Para revisar la presentación del jefe se usó el acceso de depuración `__GOW8B.warp(2170)`; por tanto, no se considera una partida normal ni una prueba completa de la Hidra.
+- La consola no mostró errores en las sesiones observadas. Las capturas asociadas a esta revisión fueron retiradas por solicitud del usuario y ya no están disponibles; los resultados quedan como registro escrito.
+
+## Conservar
+
+- **Base técnica:** Phaser, TypeScript, Vite, renderizado Canvas con `pixelArt`, `roundPixels` y escalado entero. Mantener la resolución lógica de 320 × 180.
+- **Límites entre sistemas:** `CombatSystem` es dueño del estado de juego y las reglas; `InputManager` traduce teclas; `GameScene` presenta la simulación; `Hud` y `SoundManager` se conectan por eventos. Mantener estos límites y extraer módulos de forma gradual.
+- **Acciones ya presentes:** carrera, salto con tolerancia al borde y buffer, esquiva, combo ligero de tres pasos, pesado, daño, invulnerabilidad, dos arquetipos de enemigo, checkpoint y tres patrones de jefe. Son una base útil para la adaptación.
+- **Identidad de Kratos:** conservar piel pálida, marca roja, faldón rojo, detalles de bronce y dos hojas encadenadas. El registro escrito de la captura del primer encuentro describe esos rasgos reconocibles a tamaño de juego; la imagen fue retirada por solicitud del usuario y ya no está disponible.
+- **Recursos propios y claves estables:** el arte de personajes se genera en `textureFactory.ts`, y los fondos están dentro del proyecto. El análisis de recursos en navegador confirmó transparencia en los sprites y cuadros de tamaño uniforme: héroe 48 × 48, enemigos 32 × 40 e Hidra 144 × 112.
+- **Feedback:** conservar las señales visuales de preparación, el hitstop actual de 55 ms y los sonidos cortos. Primero alinear las áreas peligrosas y las señales; luego se ajusta la intensidad.
+
+## Ajustes recomendados antes de ampliar niveles
+
+| Prioridad | Hallazgo y tipo | Referencia | Cambio concreto recomendado |
+| --- | --- | --- | --- |
+| **P1** | **Defecto reproducible:** el movimiento cambia x directamente a velocidad constante; al soltar dirección el personaje se detiene en el mismo frame. | `CombatSystem.ts`, movimiento en `updatePlayer`; `config.ts`, `GAME.player.speed` (136). | Añadir velocidad horizontal y aceleración/frenado configurables. Empezar con aceleración de 900–1200 px/s² y frenado de 1500–1800 px/s² para un desplazamiento ágil, con recorrido de frenado corto. Mantener 136–150 px/s como velocidad máxima inicial; revisar en navegador antes de fijar valores. |
+| **P1** | **Defecto reproducible:** los alias de dirección comparten un `Set<InputAction>`. El `keyup` de una tecla borra la acción aunque la otra tecla equivalente siga pulsada. **Defecto confirmado en código:** J/K/Espacio se consumen cada frame; el sistema solo inicia ataques en estados permitidos y en tierra. La luz tiene cola de combo, pero el pesado y las pulsaciones de ataque en el aire no tienen buffer de acción. | `InputManager.ts` (estado `held` y `onKeyUp`); `GameScene.ts` (consumo de pulsaciones); `CombatSystem.ts` (inicio de ataques). | Guardar teclas físicas mantenidas por acción y derivar la acción activa de ese conjunto. Añadir un buffer de 100–150 ms para `J`/`K` que sobreviva a la recuperación y al aterrizaje. Conservar la cola existente del combo ligero. |
+| **P1** | **Desajuste objetivo entre aviso y daño de la Hidra:** el aliento puede dañar hasta 225 px, pero el triángulo de aviso llega aproximadamente a 190 px. En el barrido, el aviso dibuja 265 px y el daño admite distancias de 35–285 px. | `config.ts`, `GAME.boss.attacks`; `GameScene.ts`, dibujo de avisos; `CombatSystem.ts`, `resolveBossAttack`. | Definir una sola geometría por ataque y usarla tanto para el aviso como para el daño. Hacer que forma, alcance, altura y duración coincidan; así la respuesta correcta se aprende por lectura visual. |
+| **P2** | **Encuadre reproducible en la inspección del jefe:** al entrar por depuración en x=2170, la Hidra aparecía recortada por el borde derecho; solo se veía parte de la cabeza durante el aviso inicial. Es un hallazgo de esa posición forzada, no una afirmación sobre una introducción jugada normalmente. | `GameScene.ts`, `startFollow`, zona muerta 88 × 22 y origen del sprite del jefe; `config.ts`, `bossX` y `activationOffset`. | Crear una entrada del jefe con unos instantes de encuadre/paneo que muestre su cabeza y el área de amenaza antes de habilitar el intercambio; después devolver la cámara al seguimiento con espacio para ver a Kratos y el ataque. |
+| **P2** | **Preferencia visual:** el pixelado es nítido y la silueta de Kratos se identifica, pero el arte combina contornos geométricos, muchos detalles de 1 px y tablas repetidas. Puede leerse más como bloques dibujados que como grupos de píxeles diseñados como un solo lenguaje. El héroe usa 21–24 colores medidos por pose; los fondos 16 y la Hidra 13–19. No existe un número de colores universal que defina “8 bits”. | `textureFactory.ts`; auditoría `__GOW8B.auditAssets()`; captura del primer encuentro. | Redibujar por grupos de píxeles con masas y sombras más claras, reducir detalles aislados y unificar grosor de contorno, escala de clústeres y contraste entre héroe, enemigos, cubierta y fondo. Como punto de partida artístico, probar 12–16 colores para Kratos y menos tonos por enemigo; validar en 320 × 180, no solo ampliado. Mantener sus rasgos y anclajes reconocibles. |
+
+## Recomendaciones de balance para validar en juego
+
+- El ligero se mueve al 40 % de la velocidad normal (unos 54 px/s) y el pesado al 16 % (unos 22 px/s). El lento avance del pesado puede comunicar fuerza, pero ahora corre el riesgo de sentirse detenido. Probar 28–35 % para el pesado y conservar el ligero cerca de 35–45 % antes de retocar duración o daño.
+- Los ataques tienen fases definidas y la selección de pose usa los mismos tiempos de impacto y actividad que la simulación; conviene conservar esa sincronía. El golpe ligero impacta a los 130–170 ms y el pesado a 320 ms. No hay evidencia suficiente todavía para alargar o acortar esas duraciones.
+- El salto tiene impulso -244, gravedad 490, coyote time de 100 ms y jump buffer de 120 ms. Mantener estos valores como base hasta probar rutas con plataformas y frenado; no resolver una sensación rígida cambiando el salto sin medirlo.
+- `ENEMY_WAVES` contiene cinco oleadas con 19 enemigos y puertas que exigen despejar cada grupo. Mantener por ahora la variedad de combatiente y arquero, pero medir una partida completa antes de decidir si cinco bloqueos sostienen el objetivo de cinco minutos o interrumpen demasiado el avance. La duración de cinco minutos aún no está verificada.
+- Cuando se implementen más zonas, mover plataformas, encuentros y composición del tramo a datos por nivel; dejar en `config.ts` los parámetros comunes. Así se conserva el prototipo y se evita convertir el archivo global de balance en el mapa de toda la campaña.
+
+## Pendiente de verificación
+
+No se completó una partida de principio a fin. En esta revisión no se validaron de forma sistemática los tres golpes del combo, el pesado conectado, todas las esquivas, el daño y muerte en una sesión controlada, la activación/reintento del checkpoint, la pausa/reinicio ni la victoria contra la Hidra. Tampoco se midió una partida de cinco minutos con teclado físico. Esas comprobaciones pertenecen a la etapa de pruebas de jugabilidad y deben repetirse después de implementar los ajustes.
