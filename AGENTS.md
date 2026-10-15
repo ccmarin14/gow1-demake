@@ -9,7 +9,7 @@ Este repositorio contiene un juego de acción lateral 2D hecho con Phaser, TypeS
 - Inspecciona la implementación actual y conserva los cambios del usuario. No reemplaces archivos o sistemas completos sin una razón comprobada.
 - Trabaja en pasos pequeños y coherentes. Mantén el juego ejecutable al finalizar cada paso.
 - Antes de implementar una etapa, define su alcance y criterios de aceptación. Al terminarla, evalúala con `docs/verificacion.md`; corrige y vuelve a probar cualquier fallo antes de pasar a la etapa siguiente.
-- Sigue las etapas documentadas en `docs/verificacion.md` (plan vigente de 29 etapas), con una sola etapa activa cada vez. No repitas la lista aquí: `verificacion.md` es la fuente de verdad y puede cambiar (p. ej. al añadir etapas nuevas). Cada etapa debe dejar una versión ejecutable y evidencia de su evaluación.
+- Sigue las etapas documentadas en `docs/verificacion.md` (plan vigente de 30 etapas), con una sola etapa activa cada vez. No repitas la lista aquí: `verificacion.md` es la fuente de verdad y puede cambiar (p. ej. al añadir etapas nuevas). Cada etapa debe dejar una versión ejecutable y evidencia de su evaluación.
 - Centraliza parámetros ajustables en la configuración del juego; evita dispersar números de balance entre escenas y entidades.
 - Mantén separadas, en lo posible, las reglas de simulación, entradas, combate, entidades, escenas, interfaz, audio y recursos.
 - Prioriza controles responsivos, combate legible y siluetas claras a la resolución interna. Los efectos no deben ocultar anticipaciones, personajes ni áreas peligrosas.

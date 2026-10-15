@@ -1,8 +1,11 @@
 import { CONFIG } from '../config';
 import { checksumOf } from './checksum';
+import { stepHorizontal } from './movement';
 import { cloneEntities, DEFAULT_SCENARIO, getScenario } from './scenarios';
 import type { EntityState, GameAction, SimulationSnapshot } from './types';
-import { sortActions } from './types';
+import { PLAYER_ID, sortActions } from './types';
+
+const TICK_DT = 1 / CONFIG.sim.tickRate;
 
 export class World {
   private tick = 0;
@@ -26,6 +29,11 @@ export class World {
     return this.entities.length;
   }
 
+  getEntity(id: string): EntityState | undefined {
+    const entity = this.entities.find((candidate) => candidate.id === id);
+    return entity ? { ...entity } : undefined;
+  }
+
   loadScenario(name: string): void {
     const scenario = getScenario(name);
     this.scenarioName = name;
@@ -40,6 +48,16 @@ export class World {
 
   step(actions: readonly GameAction[] = []): void {
     this.input = sortActions(actions);
+    const player = this.entities.find((entity) => entity.id === PLAYER_ID);
+    if (player) {
+      stepHorizontal(
+        player,
+        this.input.includes('move-left'),
+        this.input.includes('move-right'),
+        TICK_DT,
+        CONFIG.player,
+      );
+    }
     this.tick += 1;
   }
 

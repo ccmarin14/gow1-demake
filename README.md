@@ -1,6 +1,6 @@
 # Kratos · Tormenta del Egeo
 
-> **Estado vigente (2026-10-15):** el código ejecutable es un shell de Phaser, TypeScript y Vite con un canvas lógico de 320×180. Incluye una simulación determinista mínima y un **harness DEV** (etapa 5, `GOW8B-DEV-01`); todavía no contiene gameplay, controles de juego activos, arte ni audio.
+> **Estado vigente (2026-10-15):** el código ejecutable es un shell de Phaser, TypeScript y Vite con un canvas lógico de **480×270**. Incluye una simulación determinista con un **jugador controlable con movimiento horizontal** (etapa 6, `GOW8B-MOVE-01`), un **harness DEV** (etapa 5, `GOW8B-DEV-01`) y la **integración de assets provisionales** —fondo del Egeo y pose neutral de Kratos— mediante un manifest (etapa 6.5, `GOW8B-RES-01`). Todavía no hay salto, combate, enemigos, animación de carrera ni audio.
 
 ## Visión futura
 
@@ -30,15 +30,15 @@ No hay un script automatizado `test` configurado. El plan y el método de compro
 
 ## Controles
 
-El shell actual no implementa controles de juego. El mapa de teclado objetivo, aún propuesto, está en [`docs/direccion-y-controles.md`](docs/direccion-y-controles.md).
+El shell ya implementa movimiento horizontal del jugador: pulsa `A` o `←` para ir a la izquierda y `D` o `→` para ir a la derecha. El resto de teclas del mapa objetivo (`ESPACIO`, `J`, `K`, `SHIFT`, `E`, `ESC`) están mapeadas pero todavía no producen efectos. El mapa de teclado completo, aún propuesto, está en [`docs/direccion-y-controles.md`](docs/direccion-y-controles.md). El jugador se dibuja con la pose neutral de Kratos (asset provisional de la etapa 2), anclada por la base, no con un rectángulo.
 
 ## Harness DEV
 
 En desarrollo (`pnpm dev`), el juego expone `window.__GOW8B` para inspección y reproducción controlada. No está disponible en el bundle de producción. Con la consola del navegador abierta:
 
 ```js
-__GOW8B.scenarios()                 // ["empty", "test"]
-__GOW8B.loadScenario('test')        // carga un escenario conocido
+__GOW8B.scenarios()                 // ["empty", "test", "movement"]
+__GOW8B.loadScenario('movement')    // carga un escenario conocido (el jugador está en 'movement')
 __GOW8B.snapshot()                  // { frame, timeMs, entities, input, checksum }
 __GOW8B.step(30, ['move-right'])    // avanza 30 pasos fijos con acciones de dominio
 __GOW8B.advance(16.67, [])          // avanza el tiempo con paso fijo (desacoplado del render)
@@ -48,6 +48,56 @@ __GOW8B.replay(traza)               // reproduce una traza (mismos checksums)
 ```
 
 La simulación avanza en pasos fijos con un acumulador de microsegundos enteros, de modo que la misma traza produce el mismo estado por tick con independencia de la tasa de render.
+
+## Movimiento horizontal (etapa 6)
+
+El escenario `movement` (predeterminado) contiene al jugador (`id: "player"`) con `x`, `vx` y `facing`. Cada tick fijo aplica una función pura de movimiento con aceleración, frenado y límites del mundo; todos los parámetros viven en `CONFIG.player`:
+
+| Parámetro | Valor | Unidad |
+| --- | --- | --- |
+| `maxSpeed` | 140 | px/s |
+| `accel` | 1050 | px/s² |
+| `brake` | 1650 | px/s² |
+| `minX` | 48.5 | px |
+| `maxX` | 431.5 | px |
+
+Valores provisionales: la velocidad arranca en 140 px/s (rango recomendado 136–150), la aceleración en 1050 px/s² (rango 900–1200) y el frenado en 1650 px/s² (rango 1500–1800, siempre mayor que la aceleración). Se revisarán al integrar arte y niveles.
+
+Los límites `minX`/`maxX` se derivan del ancho del sprite de Kratos (97 px, mitad 48.5): en ambos extremos el sprite queda **totalmente visible** dentro del canvas de 480 px. En el escenario `movement` el jugador aparece con centro `x = 240` y apoyo de pies `y = 262`, sobre la cubierta.
+
+## Assets integrados (etapa 6.5)
+
+Los assets aprobados de etapas 2 y 3 se sirven bajo `public/assets/` y se precargan a través del manifest [`src/assets/manifest.ts`](src/assets/manifest.ts), que agrupa **claves estables por dominio** (`characters`, `environment`, `ui`, `fx`, `audio`, `data`). La escena no usa rutas de archivo dispersas: recorre el manifest y carga cada entrada.
+
+| Dominio | Clave | Archivo | Dimensiones |
+| --- | --- | --- | --- |
+| `environment` | `egeo-fondo` | `public/assets/environment/egeo-fondo.png` | 480×270 |
+| `characters` | `kratos-neutral` | `public/assets/characters/kratos-neutral.png` | 97×59 |
+
+El fondo se dibuja en `(0,0)` a escala 1, con origen `(0,0)`, nearest-neighbor (por `pixelArt: true`) y **sin tinte**. El jugador se ancla con origen `(0.5, 1)` (base-centro) y se voltea horizontalmente cuando `facing = -1`.
+
+### Procedimiento de copia y recorte (reproducible)
+
+El fondo es una **copia byte a byte** del asset aprobado:
+
+```sh
+cp docs/referencias/egeo-fondo-480x270.png public/assets/environment/egeo-fondo.png
+```
+
+La pose neutral se obtiene **recortando** los bounds alfa `(192,204)–(288,262)` (97×59) con Pillow 10.2.0, preservando el modo indexado `P` y su tabla de transparencia:
+
+```sh
+python3 -c "from PIL import Image; Image.open('docs/referencias/kratos-neutral-480x270.png').crop((192,204,289,263)).save('public/assets/characters/kratos-neutral.png')"
+```
+
+Los PNG fuente en `docs/referencias/` quedan intactos (verificado por SHA-256). No se copian recursos de terceros.
+
+### Limitaciones de esta etapa
+
+- Sin salto, combate, enemigos, colisiones, gravedad ni animación de carrera; solo la pose neutral estática.
+- `jump` y los ataques están mapeados pero no tienen efecto.
+- El movimiento es solo horizontal dentro de los límites del mundo; no hay suelos ni plataformas reales (la cubierta es visual).
+- Los assets son provisionales y no están etiquetados como finales.
 
 ## Documentación
 

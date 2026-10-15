@@ -31,10 +31,14 @@ export function sortActions(actions: readonly GameAction[]): GameAction[] {
   return [...new Set(actions)].sort((a, b) => ACTION_ORDER[a] - ACTION_ORDER[b]);
 }
 
+export const PLAYER_ID = 'player';
+
 export interface EntityState {
   id: string;
   x: number;
   y: number;
+  vx: number;
+  facing: -1 | 1;
 }
 
 export interface SimulationSnapshot {
