@@ -38,7 +38,11 @@ export interface EntityState {
   x: number;
   y: number;
   vx: number;
+  vy: number;
   facing: -1 | 1;
+  grounded: boolean;
+  coyoteTicks: number;
+  jumpBufferTicks: number;
 }
 
 export interface SimulationSnapshot {

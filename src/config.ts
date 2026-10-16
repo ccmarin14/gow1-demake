@@ -35,11 +35,22 @@ export const CONFIG = {
       maxFrameRate: 14,
       idleSpeedThreshold: 1,
     },
+    vertical: {
+      gravity: 1000,
+      jumpSpeed: 380,
+      maxFallSpeed: 560,
+      coyoteMs: 80,
+      jumpBufferMs: 100,
+      topY: PLAYER_SPRITE_HEIGHT,
+    },
   },
   presentation: {
     background: '#111827',
     debugText: '#d1d5db',
     metricsWindowFrames: 60,
+    platformColor: 0x6b4f2a,
+    platformEdgeColor: 0x3f2e18,
+    platformThickness: 4,
   },
 } as const;
 

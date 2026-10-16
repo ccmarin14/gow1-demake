@@ -23,6 +23,8 @@ class ShellScene extends Phaser.Scene {
   private inputManager!: InputManager;
   private debugText: Phaser.GameObjects.Text | null = null;
   private player: Phaser.GameObjects.Sprite | null = null;
+  private platformRects: Phaser.GameObjects.Rectangle[] = [];
+  private renderedScenario = '';
 
   constructor() {
     super('shell');
@@ -47,20 +49,23 @@ class ShellScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor(CONFIG.presentation.background);
     this.inputManager = new InputManager(this);
 
-    this.add.image(0, 0, BACKGROUND_KEY).setOrigin(0, 0);
+    this.add.image(0, 0, BACKGROUND_KEY).setOrigin(0, 0).setDepth(-3);
+
+    this.redrawPlatforms();
 
     this.add
       .text(
         CONFIG.internal.width / 2,
         20,
-        PROVISIONAL_ART ? 'Carrera · placeholder provisional' : 'Movimiento horizontal',
+        PROVISIONAL_ART ? 'Salto y plataformas · provisional' : 'Salto y plataformas',
         {
           color: CONFIG.presentation.debugText,
           fontFamily: 'monospace',
           fontSize: '10px',
         },
       )
-      .setOrigin(0.5);
+      .setOrigin(0.5)
+      .setDepth(-1);
 
     if (!this.anims.exists(RUN_KEY)) {
       this.anims.create({
@@ -90,26 +95,75 @@ class ShellScene extends Phaser.Scene {
         fontFamily: 'monospace',
         fontSize: '8px',
       });
+      this.debugText.setDepth(10);
     }
   }
 
   update(_time: number, delta: number): void {
     metrics.record(delta);
+    if (simulation.world.scenarioName !== this.renderedScenario) {
+      this.redrawPlatforms();
+    }
     const actions = this.inputManager.poll();
     simulation.advance(delta, actions);
     const player = simulation.world.getEntity(PLAYER_ID);
     if (player && this.player) {
       this.player.setPosition(player.x, player.y);
       this.player.setFlipX(player.facing === -1);
-      this.updateRunAnimation(Math.abs(player.vx));
+      this.updateRunAnimation(Math.abs(player.vx), player.grounded);
     }
     this.debugText?.setText(
       `tick ${simulation.world.frame} x=${player ? player.x.toFixed(1) : '-'}`,
     );
   }
 
-  private updateRunAnimation(speed: number): void {
+  private redrawPlatforms(): void {
+    for (const rect of this.platformRects) {
+      rect.destroy();
+    }
+    this.platformRects = [];
+    const { platformColor, platformEdgeColor, platformThickness } = CONFIG.presentation;
+    for (const platform of simulation.world.surfacePlatforms) {
+      this.platformRects.push(
+        this.add
+          .rectangle(
+            platform.x1,
+            platform.yTop,
+            platform.x2 - platform.x1,
+            platformThickness,
+            platformColor,
+          )
+          .setOrigin(0, 0)
+          .setDepth(-2),
+      );
+      this.platformRects.push(
+        this.add
+          .rectangle(
+            platform.x1,
+            platform.yTop,
+            platform.x2 - platform.x1,
+            1,
+            platformEdgeColor,
+          )
+          .setOrigin(0, 0)
+          .setDepth(-2),
+      );
+    }
+    this.renderedScenario = simulation.world.scenarioName;
+  }
+
+  private updateRunAnimation(speed: number, grounded: boolean): void {
     if (!this.player) {
+      return;
+    }
+    if (!grounded) {
+      if (this.player.anims.isPlaying) {
+        this.player.anims.stop();
+      }
+      if (this.player.texture.key !== PLAYER_KEY) {
+        this.player.setTexture(PLAYER_KEY);
+      }
+      this.player.anims.timeScale = 1;
       return;
     }
     const { frameRate, maxFrameRate, idleSpeedThreshold } = CONFIG.player.run;

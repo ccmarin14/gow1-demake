@@ -1,6 +1,6 @@
 # Kratos · Tormenta del Egeo
 
-> **Estado vigente (2026-10-15):** el código ejecutable es un shell de Phaser, TypeScript y Vite con un canvas lógico de **480×270**. Incluye una simulación determinista con un **jugador controlable con movimiento horizontal** (etapa 6, `GOW8B-MOVE-01`), un **harness DEV** (etapa 5, `GOW8B-DEV-01`), la **integración de assets provisionales** (fondo del Egeo y pose neutral de Kratos) mediante un manifest (etapa 6.5, `GOW8B-RES-01`) y una **animación de carrera provisional** (etapa 7, `GOW8B-ANIM-01`, placeholder procedural derivado de la pose neutral). Todavía no hay salto, combate, enemigos ni audio.
+> **Estado vigente (2026-10-15):** el código ejecutable es un shell de Phaser, TypeScript y Vite con un canvas lógico de **480×270**. Incluye una simulación determinista con un **jugador controlable con movimiento horizontal** (etapa 6, `GOW8B-MOVE-01`), un **harness DEV** (etapa 5, `GOW8B-DEV-01`), la **integración de assets provisionales** (fondo del Egeo y pose neutral de Kratos) mediante un manifest (etapa 6.5, `GOW8B-RES-01`), una **animación de carrera provisional** (etapa 7, `GOW8B-ANIM-01`, placeholder procedural) y **salto y plataformas deterministas** (etapa 8, `GOW8B-JUMP-01`, arte de plataformas y pose aérea provisionales). Todavía no hay combate, enemigos ni audio.
 
 ## Visión futura
 
@@ -30,15 +30,16 @@ No hay un script automatizado `test` configurado. El plan y el método de compro
 
 ## Controles
 
-El shell ya implementa movimiento horizontal del jugador: pulsa `A` o `←` para ir a la izquierda y `D` o `→` para ir a la derecha. En reposo se muestra la pose neutral de Kratos; al moverse (`|vx|` > 1 px/s) se reproduce un **ciclo de carrera provisional** derivado de la pose neutral, sincronizado con la velocidad y volteado con `facing`. El resto de teclas del mapa objetivo (`ESPACIO`, `J`, `K`, `SHIFT`, `E`, `ESC`) están mapeadas pero todavía no producen efectos. El mapa de teclado completo, aún propuesto, está en [`docs/direccion-y-controles.md`](docs/direccion-y-controles.md). El jugador se dibuja con el sprite correspondiente (neutral o ciclo de carrera), anclado por la base, en concordancia con el anclaje de pies establecido.
+El shell ya implementa movimiento horizontal del jugador y salto: pulsa `A` o `←` para ir a la izquierda y `D` o `→` para ir a la derecha. Pulsa `ESPACIO` para saltar. En reposo se muestra la pose neutral de Kratos; al moverse en el suelo (`|vx|` > 1 px/s) se reproduce un **ciclo de carrera provisional** derivado de la pose neutral, sincronizado con la velocidad y volteado con `facing`. **En el aire no se reproduce la carrera**: se muestra la pose neutral provisional y el sprite sigue la trayectoria del salto. El resto de teclas del mapa objetivo (`J`, `K`, `SHIFT`, `E`, `ESC`) están mapeadas pero todavía no producen efectos. El mapa de teclado completo, aún propuesto, está en [`docs/direccion-y-controles.md`](docs/direccion-y-controles.md). El jugador se dibuja con el sprite correspondiente (neutral o ciclo de carrera), anclado por la base, en concordancia con el anclaje de pies establecido.
 
 ## Harness DEV
 
 En desarrollo (`pnpm dev`), el juego expone `window.__GOW8B` para inspección y reproducción controlada. No está disponible en el bundle de producción. Con la consola del navegador abierta:
 
 ```js
-__GOW8B.scenarios()                 // ["empty", "test", "movement"]
+__GOW8B.scenarios()                 // ["empty", "test", "movement", "platforms"]
 __GOW8B.loadScenario('movement')    // carga un escenario conocido (el jugador está en 'movement')
+__GOW8B.loadScenario('platforms')   // suelo + dos plataformas a alturas distintas
 __GOW8B.snapshot()                  // { frame, timeMs, entities, input, checksum }
 __GOW8B.step(30, ['move-right'])    // avanza 30 pasos fijos con acciones de dominio
 __GOW8B.advance(16.67, [])          // avanza el tiempo con paso fijo (desacoplado del render)
@@ -51,7 +52,7 @@ La simulación avanza en pasos fijos con un acumulador de microsegundos enteros,
 
 ## Movimiento horizontal (etapa 6)
 
-El escenario `movement` (predeterminado) contiene al jugador (`id: "player"`) con `x`, `vx` y `facing`. Cada tick fijo aplica una función pura de movimiento con aceleración, frenado y límites del mundo; todos los parámetros viven en `CONFIG.player`:
+El escenario `movement` contiene al jugador (`id: "player"`) con `x`, `vx` y `facing`. Cada tick fijo aplica una función pura de movimiento con aceleración, frenado y límites del mundo; todos los parámetros viven en `CONFIG.player`:
 
 | Parámetro | Valor | Unidad |
 | --- | --- | --- |
@@ -95,9 +96,9 @@ Los PNG fuente en `docs/referencias/` quedan intactos (verificado por SHA-256). 
 
 ### Limitaciones de esta etapa
 
-- Sin salto, combate, enemigos, colisiones ni gravedad; el movimiento es horizontal y la carrera usa un ciclo provisional (ver abajo).
-- `jump` y los ataques están mapeados pero no tienen efecto.
-- El movimiento es solo horizontal dentro de los límites del mundo; no hay suelos ni plataformas reales (la cubierta es visual).
+- Sin combate, enemigos, daño, esquiva ni audio.
+- `light-attack`, `heavy-attack`, `dodge` y `context-action` están mapeados pero no tienen efecto.
+- Las plataformas se dibujan de forma provisional (rectángulos sólidos, ver etapa 8); no hay arte definitivo de entorno transitable.
 - Los assets son provisionales y no están etiquetados como finales.
 
 ## Animación de carrera provisional (etapa 7)
@@ -124,6 +125,53 @@ Capturas nativas 480×270 recortadas del canvas lógico:
 - [`docs/referencias/captura-carrera-idle-480x270.png`](docs/referencias/captura-carrera-idle-480x270.png): reposo (`kratos-neutral`, sin animación).
 - [`docs/referencias/captura-carrera-derecha-480x270.png`](docs/referencias/captura-carrera-derecha-480x270.png): carrera hacia la derecha (`kratos-run`, `flipX=false`).
 - [`docs/referencias/captura-carrera-izquierda-480x270.png`](docs/referencias/captura-carrera-izquierda-480x270.png): carrera hacia la izquierda (`kratos-run`, `flipX=true`).
+
+
+## Salto y plataformas (etapa 8)
+
+La simulación incluye física vertical determinista: gravedad, salto, caída, aterrizaje y colisión de un solo sentido contra plataformas. El estado del jugador gana `vy`, `grounded`, `coyoteTicks` y `jumpBufferTicks`; todo es serializable y determinista (sin `Math.random` ni reloj de render). Los parámetros viven en `CONFIG.player.vertical`:
+
+| Parámetro | Valor | Unidad |
+| --- | --- | --- |
+| `gravity` | 1000 | px/s² |
+| `jumpSpeed` | 380 | px/s |
+| `maxFallSpeed` | 560 | px/s |
+| `coyoteMs` | 80 | ms |
+| `jumpBufferMs` | 100 | ms |
+| `topY` | 59 | px |
+
+El apex del salto es de ~69 px, dentro del objetivo de 60–70 px. La ventana de **coyote time** (80 ms) permite saltar poco después de caminar fuera de un borde; el **jump buffer** (100 ms) ejecuta el salto al tocar suelo si `ESPACIO` se pulsó poco antes de aterrizar. El salto es **edge-trigger**: mantener `ESPACIO` pulsado no vuelve a saltar al aterrizar (sin bunny-hop).
+
+Las superficies de apoyo se definen por escenario como `Platform = { x1, x2, yTop }`. El escenario `platforms` (nuevo y **predeterminado** para mostrar la etapa con controles normales) añade un suelo a `y = 262` de lado a lado y **dos plataformas a alturas distintas**:
+
+| Superficie | Tramo `x` | `yTop` |
+| --- | --- | --- |
+| Suelo | `0`–`480` | `262` |
+| Nivel 1 | `280`–`370` | `210` |
+| Nivel 2 | `140`–`250` | `158` |
+
+El escenario `movement` conserva su comportamiento con un suelo a `y = 262`; `empty` y `test` no tienen plataformas. La colisión es de **un solo sentido**: el jugador aterriza sobre una plataforma solo al caer (`vy ≥ 0`) y dentro de `[x1, x2]`; puede atravesarla de abajo hacia arriba y cae al caminar más allá de un borde. Los límites laterales (`minX`/`maxX`) y el techo se aplican por *clamp*.
+
+### Presentación de plataformas (provisional)
+
+Los rectángulos de las plataformas se dibujan en la escena con `this.add.rectangle(...)`, color y grosor en `CONFIG.presentation` (`platformColor`, `platformEdgeColor`, `platformThickness`), **sin copiar recursos de terceros**. Es arte provisional y reemplazable.
+
+### Verticalidad encadenada (D-20)
+
+Por simulación determinista se alcanza la plataforma del nivel 1 desde el suelo y, desde ella, la del nivel 2: la secuencia `['move-right','jump']` seguida de `'move-right'` aterriza en el nivel 1 (`y = 210`); tras frenar y saltar con `['move-left','jump']`, aterriza en el nivel 2 (`y = 158`).
+
+### Evidencia visual (salto y apoyo en plataforma)
+
+Capturas nativas 480×270 recortadas del canvas lógico:
+
+- [`docs/referencias/captura-salto-480x270.png`](docs/referencias/captura-salto-480x270.png): en el aire ascendiendo, sin ciclo de carrera.
+- [`docs/referencias/captura-plataforma-480x270.png`](docs/referencias/captura-plataforma-480x270.png): apoyado sobre la plataforma del nivel 1.
+
+### Limitaciones de esta etapa
+
+- El arte de las plataformas y la pose aérea es **provisional**; una etapa de arte posterior lo reemplazará.
+- La colisión usa el centro `x` del jugador para decidir si está sobre la plataforma (el sprite puede sobresalir visualmente medio cuerpo del borde).
+- Sin combate, enemigos, daño, esquiva, efectos ni audio.
 
 
 ## Documentación
