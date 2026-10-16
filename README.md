@@ -1,6 +1,6 @@
 # Kratos · Tormenta del Egeo
 
-> **Estado vigente (2026-10-15):** el código ejecutable es un shell de Phaser, TypeScript y Vite con un canvas lógico de **480×270**. Incluye una simulación determinista con un **jugador controlable con movimiento horizontal** (etapa 6, `GOW8B-MOVE-01`), un **harness DEV** (etapa 5, `GOW8B-DEV-01`), la **integración de assets provisionales** (fondo del Egeo y pose neutral de Kratos) mediante un manifest (etapa 6.5, `GOW8B-RES-01`), una **animación de carrera provisional** (etapa 7, `GOW8B-ANIM-01`, placeholder procedural) y **salto y plataformas deterministas** (etapa 8, `GOW8B-JUMP-01`, arte de plataformas y pose aérea provisionales). Todavía no hay combate, enemigos ni audio.
+> **Estado vigente (2026-10-15):** el código ejecutable es un shell de Phaser, TypeScript y Vite con un canvas lógico de **480×270**. Incluye una simulación determinista con un **jugador controlable con movimiento horizontal** (etapa 6, `GOW8B-MOVE-01`), un **harness DEV** (etapa 5, `GOW8B-DEV-01`), la **integración de assets provisionales** (fondo del Egeo y pose neutral de Kratos) mediante un manifest (etapa 6.5, `GOW8B-RES-01`), una **animación de carrera provisional** (etapa 7, `GOW8B-ANIM-01`, placeholder procedural), **salto y plataformas deterministas** (etapa 8, `GOW8B-JUMP-01`, arte de plataformas y pose aérea provisionales) y un **ataque ligero inicial** (etapa 9, `GOW8B-LIGHT-01`, con estado, hitbox, contacto y recuperación, arte provisional). Todavía no hay enemigos con IA, daño, muerte ni audio.
 
 ## Visión futura
 
@@ -30,16 +30,17 @@ No hay un script automatizado `test` configurado. El plan y el método de compro
 
 ## Controles
 
-El shell ya implementa movimiento horizontal del jugador y salto: pulsa `A` o `←` para ir a la izquierda y `D` o `→` para ir a la derecha. Pulsa `ESPACIO` para saltar. En reposo se muestra la pose neutral de Kratos; al moverse en el suelo (`|vx|` > 1 px/s) se reproduce un **ciclo de carrera provisional** derivado de la pose neutral, sincronizado con la velocidad y volteado con `facing`. **En el aire no se reproduce la carrera**: se muestra la pose neutral provisional y el sprite sigue la trayectoria del salto. El resto de teclas del mapa objetivo (`J`, `K`, `SHIFT`, `E`, `ESC`) están mapeadas pero todavía no producen efectos. El mapa de teclado completo, aún propuesto, está en [`docs/direccion-y-controles.md`](docs/direccion-y-controles.md). El jugador se dibuja con el sprite correspondiente (neutral o ciclo de carrera), anclado por la base, en concordancia con el anclaje de pies establecido.
+El shell implementa movimiento horizontal, salto y **ataque ligero provisional** con `J`. Pulsa `A` o `←` para ir a la izquierda y `D` o `→` para ir a la derecha. Pulsa `ESPACIO` para saltar; pulsa `J` para atacar. El ataque solo se inicia **en el suelo**; mantener `J` **no** repite el golpe ni lo reinicia, y mientras dura el ataque `ESPACIO` no inicia un salto. En reposo se muestra la pose neutral de Kratos; al moverse en el suelo (`|vx|` > 1 px/s) se reproduce un **ciclo de carrera provisional** derivado de la pose neutral, sincronizado con la velocidad y volteado con `facing`. **En el aire no se reproduce la carrera**: se muestra la pose neutral provisional y el sprite sigue la trayectoria del salto. El resto de teclas del mapa objetivo (`K`, `SHIFT`, `E`, `ESC`) están mapeadas pero todavía no producen efectos. El mapa de teclado completo, aún propuesto, está en [`docs/direccion-y-controles.md`](docs/direccion-y-controles.md). El jugador se dibuja con el sprite correspondiente (neutral o ciclo de carrera), anclado por la base, en concordancia con el anclaje de pies establecido.
 
 ## Harness DEV
 
 En desarrollo (`pnpm dev`), el juego expone `window.__GOW8B` para inspección y reproducción controlada. No está disponible en el bundle de producción. Con la consola del navegador abierta:
 
 ```js
-__GOW8B.scenarios()                 // ["empty", "test", "movement", "platforms"]
+__GOW8B.scenarios()                 // ["empty","test","movement","platforms","combat"]
 __GOW8B.loadScenario('movement')    // carga un escenario conocido (el jugador está en 'movement')
 __GOW8B.loadScenario('platforms')   // suelo + dos plataformas a alturas distintas
+__GOW8B.loadScenario('combat')      // jugador en el suelo + un objetivo ('dummy') al alcance
 __GOW8B.snapshot()                  // { frame, timeMs, entities, input, checksum }
 __GOW8B.step(30, ['move-right'])    // avanza 30 pasos fijos con acciones de dominio
 __GOW8B.advance(16.67, [])          // avanza el tiempo con paso fijo (desacoplado del render)
@@ -171,7 +172,52 @@ Capturas nativas 480×270 recortadas del canvas lógico:
 
 - El arte de las plataformas y la pose aérea es **provisional**; una etapa de arte posterior lo reemplazará.
 - La colisión usa el centro `x` del jugador para decidir si está sobre la plataforma (el sprite puede sobresalir visualmente medio cuerpo del borde).
-- Sin combate, enemigos, daño, esquiva, efectos ni audio.
+- Sin enemigos con IA, daño, esquiva, efectos ni audio (el ataque ligero se añade en la etapa 9, §Ataque ligero).
+
+
+## Ataque ligero (etapa 9)
+
+> **Arte provisional.** La retroalimentación del ataque (indicador de hitbox y marca de contacto) es **provisional**; el arte definitivo y el encadenamiento de combo se harán en etapas posteriores. La constante `PROVISIONAL_ART = true` en [`src/assets/manifest.ts`](src/assets/manifest.ts) gobierna el rótulo «Ataque ligero · provisional» en pantalla.
+
+El jugador gana un **estado de ataque determinista** con fases. Pulsar `J` con el jugador **en el suelo** y sin ataque en curso inicia el golpe (disparo *edge-trigger*: mantener `J` no lo reinicia ni lo repite). Mientras el ataque está en curso, `jump` no inicia un salto nuevo; al terminar, el salto vuelve a estar disponible. No se puede iniciar otro golpe hasta que la fase vuelva a `none` (sin combos ni cancelaciones en esta etapa).
+
+Ciclo completo con duraciones configurables (todas en `CONFIG.player.attack`, convertidas a ticks como en `vertical.ts`):
+
+| Fase | Duración | Ticks aprox. |
+| --- | --- | --- |
+| `startup` | `startupMs` = 83 | 5 |
+| `active` | `activeMs` = 67 | 4 |
+| `recovery` | `recoveryMs` = 117 | 7 |
+
+Desde la pulsación de `J` hasta el inicio de la fase `active` transcurren **≤6 ticks** (≤100 ms, PR-01).
+
+| Parámetro | Valor | Unidad |
+| --- | --- | --- |
+| `hitboxOffsetX` | 18 | px (delante, según `facing`) |
+| `hitboxWidth` | 24 | px |
+| `hitboxHeight` | 16 | px |
+| `targetHalfWidth` | 14 | px (semi-ancho del objetivo) |
+| `targetHalfHeight` | 24 | px (semi-alto del objetivo, anclado a los pies) |
+
+Durante la fase `active` existe una **hitbox delante** del jugador (offset/ancho/alto en `CONFIG`); **fuera de esa ventana no hay hitbox**. El módulo puro [`src/sim/attack.ts`](src/sim/attack.ts) (`stepAttack`, `computeAttackHitbox`) detecta **solapamiento** de la caja contra los objetivos del escenario (excluye al jugador). Un **mismo golpe no cuenta el mismo objetivo más de una vez**: los ids impactados se guardan en `EntityState.attackHits` (orden de registro) y se reinician al iniciar cada golpe. **Sin daño, retroceso ni muerte**: la entidad objetivo no cambia de estado.
+
+El escenario `combat` contiene al jugador en el suelo (`x = 200`, `y = 262`) y una entidad objetivo (`id: "dummy"`, `x = 240`, `y = 262`) dentro del alcance. Los escenarios `empty`/`test`/`movement`/`platforms` se conservan.
+
+### Presentación provisional (sin `jitter`)
+
+- El `ShellScene` dibuja un **rectángulo indicador de hitbox** (color `CONFIG.presentation.hitboxColor`, alfa `hitboxAlpha`) mientras la fase es `active`.
+- Las entidades objetivo se dibujan como **rectángulos provisionales** (`targetColor`); al registrarse el contacto se pintan con el color de contacto (`targetHitColor`), que sirve de **marca de contacto legible**.
+- En el aire/plataformas se conserva el comportamiento de la etapa 8 (pose neutral sin ciclo de carrera). La animación `kratos-run` se sigue usando en el suelo.
+
+### Evidencia visual
+
+[`docs/referencias/captura-ataque-ligero-480x270.png`](docs/referencias/captura-ataque-ligero-480x270.png) muestra el frame en fase `active` con el indicador de hitbox y el objetivo tintado por el contacto.
+
+### Limitaciones de esta etapa
+
+- Sin ataque pesado, esquiva, enemigos con IA, daño, muerte ni bloqueo; `heavy-attack`/`dodge`/`context-action` siguen sin efecto.
+- Sin combos ni cancelaciones: un golpe a la vez.
+- El indicador de hitbox y los objetivos son arte **provisional**.
 
 
 ## Documentación

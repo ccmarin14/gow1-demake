@@ -25,6 +25,8 @@ class ShellScene extends Phaser.Scene {
   private player: Phaser.GameObjects.Sprite | null = null;
   private platformRects: Phaser.GameObjects.Rectangle[] = [];
   private renderedScenario = '';
+  private attackHitboxRect: Phaser.GameObjects.Rectangle | null = null;
+  private targetRects = new Map<string, Phaser.GameObjects.Rectangle>();
 
   constructor() {
     super('shell');
@@ -57,7 +59,7 @@ class ShellScene extends Phaser.Scene {
       .text(
         CONFIG.internal.width / 2,
         20,
-        PROVISIONAL_ART ? 'Salto y plataformas · provisional' : 'Salto y plataformas',
+        PROVISIONAL_ART ? 'Ataque ligero · provisional' : 'Ataque ligero',
         {
           color: CONFIG.presentation.debugText,
           fontFamily: 'monospace',
@@ -112,9 +114,44 @@ class ShellScene extends Phaser.Scene {
       this.player.setFlipX(player.facing === -1);
       this.updateRunAnimation(Math.abs(player.vx), player.grounded);
     }
+    const hitbox = simulation.world.playerAttackHitbox();
+    if (hitbox) {
+      if (!this.attackHitboxRect) {
+        this.attackHitboxRect = this.add
+          .rectangle(hitbox.x1, hitbox.y1, hitbox.x2 - hitbox.x1, hitbox.y2 - hitbox.y1, CONFIG.presentation.hitboxColor, CONFIG.presentation.hitboxAlpha)
+          .setOrigin(0, 0)
+          .setDepth(5);
+      } else {
+        this.attackHitboxRect.setPosition(hitbox.x1, hitbox.y1);
+        this.attackHitboxRect.setSize(hitbox.x2 - hitbox.x1, hitbox.y2 - hitbox.y1);
+        this.attackHitboxRect.setVisible(true);
+      }
+    } else if (this.attackHitboxRect) {
+      this.attackHitboxRect.setVisible(false);
+    }
+    this.updateTargets();
+    const phase = player ? player.attackPhase : '-';
     this.debugText?.setText(
-      `tick ${simulation.world.frame} x=${player ? player.x.toFixed(1) : '-'}`,
+      `tick ${simulation.world.frame} x=${player ? player.x.toFixed(1) : '-'} atk=${phase}`,
     );
+  }
+
+  private updateTargets(): void {
+    const player = simulation.world.getEntity(PLAYER_ID);
+    const hits = player ? player.attackHits : [];
+    const targets = simulation.world.targetEntities();
+    const halfW = CONFIG.player.attack.targetHalfWidth;
+    const halfH = CONFIG.player.attack.targetHalfHeight;
+    for (const target of targets) {
+      let rect = this.targetRects.get(target.id);
+      if (!rect) {
+        rect = this.add.rectangle(0, 0, halfW * 2, halfH * 2, CONFIG.presentation.targetColor);
+        rect.setOrigin(0.5, 0.5).setDepth(1);
+        this.targetRects.set(target.id, rect);
+      }
+      rect.setPosition(target.x, target.y - halfH);
+      rect.setFillStyle(hits.includes(target.id) ? CONFIG.presentation.targetHitColor : CONFIG.presentation.targetColor);
+    }
   }
 
   private redrawPlatforms(): void {
@@ -122,6 +159,10 @@ class ShellScene extends Phaser.Scene {
       rect.destroy();
     }
     this.platformRects = [];
+    for (const rect of this.targetRects.values()) {
+      rect.destroy();
+    }
+    this.targetRects.clear();
     const { platformColor, platformEdgeColor, platformThickness } = CONFIG.presentation;
     for (const platform of simulation.world.surfacePlatforms) {
       this.platformRects.push(

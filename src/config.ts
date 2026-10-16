@@ -43,6 +43,16 @@ export const CONFIG = {
       jumpBufferMs: 100,
       topY: PLAYER_SPRITE_HEIGHT,
     },
+    attack: {
+      startupMs: 83,
+      activeMs: 67,
+      recoveryMs: 117,
+      hitboxOffsetX: 18,
+      hitboxWidth: 24,
+      hitboxHeight: 16,
+      targetHalfWidth: 14,
+      targetHalfHeight: 24,
+    },
   },
   presentation: {
     background: '#111827',
@@ -51,6 +61,10 @@ export const CONFIG = {
     platformColor: 0x6b4f2a,
     platformEdgeColor: 0x3f2e18,
     platformThickness: 4,
+    targetColor: 0x8a9bb0,
+    targetHitColor: 0xff5533,
+    hitboxColor: 0xff0000,
+    hitboxAlpha: 0.25,
   },
 } as const;
 

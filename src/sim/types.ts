@@ -43,6 +43,9 @@ export interface EntityState {
   grounded: boolean;
   coyoteTicks: number;
   jumpBufferTicks: number;
+  attackPhase: 'none' | 'startup' | 'active' | 'recovery';
+  attackTicks: number;
+  attackHits: string[];
 }
 
 export interface SimulationSnapshot {

@@ -6,6 +6,7 @@ import { cloneEntities, DEFAULT_SCENARIO, getScenario } from './scenarios';
 import type { EntityState, GameAction, SimulationSnapshot } from './types';
 import { PLAYER_ID, sortActions } from './types';
 import { stepVertical, type VerticalParams } from './vertical';
+import { computeAttackHitbox, stepAttack, type AttackParams } from './attack';
 
 const TICK_DT = 1 / CONFIG.sim.tickRate;
 
@@ -21,6 +22,16 @@ const VERTICAL_PARAMS: VerticalParams = {
   ),
   topY: CONFIG.player.vertical.topY,
 };
+const ATTACK_PARAMS: AttackParams = {
+  startupTicks: Math.round((CONFIG.player.attack.startupMs * CONFIG.sim.tickRate) / 1000),
+  activeTicks: Math.round((CONFIG.player.attack.activeMs * CONFIG.sim.tickRate) / 1000),
+  recoveryTicks: Math.round((CONFIG.player.attack.recoveryMs * CONFIG.sim.tickRate) / 1000),
+  hitboxOffsetX: CONFIG.player.attack.hitboxOffsetX,
+  hitboxWidth: CONFIG.player.attack.hitboxWidth,
+  hitboxHeight: CONFIG.player.attack.hitboxHeight,
+  targetHalfWidth: CONFIG.player.attack.targetHalfWidth,
+  targetHalfHeight: CONFIG.player.attack.targetHalfHeight,
+};
 
 export class World {
   private tick = 0;
@@ -28,6 +39,7 @@ export class World {
   private platforms: readonly Platform[] = [];
   private input: GameAction[] = [];
   private jumpHeld = false;
+  private lightAttackHeld = false;
   private activeScenario: string = DEFAULT_SCENARIO;
 
   constructor() {
@@ -65,8 +77,23 @@ export class World {
     this.tick = 0;
     this.input = [];
     this.jumpHeld = false;
+    this.lightAttackHeld = false;
     this.platforms = scenario.platforms;
     this.entities = cloneEntities(scenario.entities);
+  }
+
+  targetEntities(): EntityState[] {
+    return this.entities
+      .filter((entity) => entity.id !== PLAYER_ID)
+      .map((entity) => ({ ...entity }));
+  }
+
+  playerAttackHitbox(): { x1: number; y1: number; x2: number; y2: number } | null {
+    const player = this.entities.find((entity) => entity.id === PLAYER_ID);
+    if (!player) {
+      return null;
+    }
+    return computeAttackHitbox(player, ATTACK_PARAMS);
   }
 
   reset(): void {
@@ -79,8 +106,19 @@ export class World {
     const jumpEdge = wantsJump && !this.jumpHeld;
     this.jumpHeld = wantsJump;
 
+    const wantsLightAttack = this.input.includes('light-attack');
+    const lightAttackEdge = wantsLightAttack && !this.lightAttackHeld;
+    this.lightAttackHeld = wantsLightAttack;
+
     const player = this.entities.find((entity) => entity.id === PLAYER_ID);
     if (player) {
+      const targets = this.entities.filter((e) => e.id !== PLAYER_ID);
+      stepAttack(
+        player,
+        lightAttackEdge,
+        ATTACK_PARAMS,
+        targets,
+      );
       stepHorizontal(
         player,
         this.input.includes('move-left'),
@@ -88,7 +126,8 @@ export class World {
         TICK_DT,
         CONFIG.player,
       );
-      stepVertical(player, VERTICAL_PARAMS, TICK_DT, jumpEdge, this.platforms);
+      const canJumpEdge = jumpEdge && player.attackPhase === 'none';
+      stepVertical(player, VERTICAL_PARAMS, TICK_DT, canJumpEdge, this.platforms);
     }
     this.tick += 1;
   }

@@ -26,6 +26,9 @@ function playerAt(x: number, y: number): EntityState {
     grounded: true,
     coyoteTicks: 0,
     jumpBufferTicks: 0,
+    attackPhase: 'none',
+    attackTicks: 0,
+    attackHits: [],
   };
 }
 
@@ -54,6 +57,9 @@ register({
       grounded: false,
       coyoteTicks: 0,
       jumpBufferTicks: 0,
+      attackPhase: 'none',
+      attackTicks: 0,
+      attackHits: [],
     },
     {
       id: 'dummy-b',
@@ -65,6 +71,9 @@ register({
       grounded: false,
       coyoteTicks: 0,
       jumpBufferTicks: 0,
+      attackPhase: 'none',
+      attackTicks: 0,
+      attackHits: [],
     },
   ],
   platforms: [],
@@ -84,6 +93,28 @@ register({
     { x1: 280, x2: 370, yTop: 210 },
     { x1: 140, x2: 250, yTop: 158 },
   ],
+});
+
+register({
+  name: 'combat',
+  entities: [
+    playerAt(200, GROUND_Y),
+    {
+      id: 'dummy',
+      x: 240,
+      y: GROUND_Y,
+      vx: 0,
+      vy: 0,
+      facing: -1,
+      grounded: true,
+      coyoteTicks: 0,
+      jumpBufferTicks: 0,
+      attackPhase: 'none',
+      attackTicks: 0,
+      attackHits: [],
+    },
+  ],
+  platforms: [{ x1: 0, x2: 480, yTop: GROUND_Y }],
 });
 
 export const DEFAULT_SCENARIO = 'platforms';
