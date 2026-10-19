@@ -88,6 +88,13 @@ const PLAYER: any = {
     ],
   },
   dodge: {
+    // 250 ms is the declared roll window. Note the observable cost of the
+    // counter: `startRoll` sets the tick counters and `stepRoll` decrements and
+    // checks the threshold in the *same* tick, so a roll of 15 declared ticks
+    // only ever reports `rollTicks` 1..14 (14 active ticks, 233 ms) and
+    // `invulTicks` 14..1. Keep these at 250: the i-frames cover the 14 active
+    // ticks exactly without surviving the roll (H-ROLL-1), and shrinking the
+    // declared value would shorten the approved roll by a tick.
     durationMs: 250,
     invulMs: 250,
     rollSpeed: 280, // ~2.0 * maxSpeed aprox (140)
@@ -147,6 +154,13 @@ export const CONFIG: any = {
   rollInvulMs: 250,
 } as const;
 
+/**
+ * Roll timing, declared in ticks. The tick that closes the roll is not
+ * observable: `stepRoll` increments the counter and checks the threshold in the
+ * same tick, so a roll declared as 15 ticks reports `rollTicks` 1..14 (14 active
+ * ticks, 233 ms) and `invulTicks` 14..1. The i-frames therefore cover the active
+ * roll exactly and never survive it (H-ROLL-1).
+ */
 export const ROLL_TICKS = 15;
 export const ROLL_DURATION_MS = 250;
 export const ROLL_INVUL_TICKS = 15;

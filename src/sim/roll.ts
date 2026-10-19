@@ -1,13 +1,15 @@
-import { CONFIG } from '../config';
+import { CONFIG, ROLL_INVUL_TICKS, ROLL_TICKS } from '../config';
 import type { EntityState } from './types';
 
-const ROLL_DURATION_TICKS = Math.round(
-  (CONFIG.player.dodge.durationMs * CONFIG.sim.tickRate) / 1000,
-);
-
-const ROLL_INVUL_TICKS = Math.round(
-  (CONFIG.player.dodge.invulMs * CONFIG.sim.tickRate) / 1000,
-);
+/**
+ * Roll timing comes straight from the tick constants, not from the millisecond
+ * values in `CONFIG.player.dodge`. Converting ms to ticks with `Math.round`
+ * produces a staircase (round(233 * 60 / 1000) = 14 but round(242 * 60 / 1000)
+ * = 15), which makes a supposedly fine-grained knob jump a whole simulation
+ * tick. At a fixed `tickRate` the tick is the source of truth; the ms values
+ * are the derived, human-readable view of it.
+ */
+const ROLL_DURATION_TICKS = ROLL_TICKS;
 
 export function startRoll(entity: EntityState): boolean {
   if (entity.rollPhase !== 'none') {
