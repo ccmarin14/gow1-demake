@@ -7,6 +7,7 @@ export interface VerticalParams {
   maxFallSpeed: number;
   coyoteTicks: number;
   jumpBufferTicks: number;
+  maxJumps: number;
   topY: number;
 }
 
@@ -16,6 +17,7 @@ export function stepVertical(
   dtSeconds: number,
   jumpPressedEdge: boolean,
   platforms: readonly Platform[],
+  locked: boolean = false,
 ): void {
   const wasGrounded = entity.grounded;
 
@@ -29,11 +31,29 @@ export function stepVertical(
     entity.coyoteTicks -= 1;
   }
 
-  if (entity.jumpBufferTicks > 0 && (wasGrounded || entity.coyoteTicks > 0)) {
-    entity.vy = -params.jumpSpeed;
-    entity.grounded = false;
-    entity.coyoteTicks = 0;
-    entity.jumpBufferTicks = 0;
+  const canGroundJump =
+    entity.jumpBufferTicks > 0 && (wasGrounded || entity.coyoteTicks > 0);
+  // The air jump needs a fresh press (never the held key) and is rejected
+  // inside the coyote window, so a coyote jump stays a ground jump and keeps
+  // the air jump available.
+  const canAirJump =
+    jumpPressedEdge &&
+    !wasGrounded &&
+    entity.coyoteTicks <= 0 &&
+    entity.jumpsUsed < params.maxJumps;
+
+  if (!locked) {
+    if (canGroundJump) {
+      entity.vy = -params.jumpSpeed;
+      entity.grounded = false;
+      entity.coyoteTicks = 0;
+      entity.jumpBufferTicks = 0;
+      entity.jumpsUsed = 1;
+    } else if (canAirJump) {
+      entity.vy = -params.jumpSpeed;
+      entity.jumpBufferTicks = 0;
+      entity.jumpsUsed += 1;
+    }
   }
 
   entity.vy = Math.min(entity.vy + params.gravity * dtSeconds, params.maxFallSpeed);
@@ -67,6 +87,11 @@ export function stepVertical(
   }
   if (!landed) {
     entity.grounded = false;
+  }
+
+  // Touching ground (or a platform) replenishes the whole jump cycle.
+  if (entity.grounded) {
+    entity.jumpsUsed = 0;
   }
 
   if (entity.jumpBufferTicks > 0) {
