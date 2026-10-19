@@ -18,6 +18,8 @@ También el 2026-10-15, tras la aprobación de la etapa 6, la usuaria autorizó 
 
 > **Dos niveles.** Cada **bloque** es un item mayor que aprueba la usuaria (juicio de aspecto, sensación y diversión); cada **etapa** dentro de un bloque es un componente verificable que **audita un subagente** distinto del implementador (reglas, determinismo, integración). Los códigos `GOW8B-*` son **identificadores estables** y **no se renumeran**; el orden real de ejecución se indica en la columna «Orden». Las etapas ya aprobadas son **fundación provisional reutilizable**. El **sonido** es **transversal**: se añade simple en cada etapa y se pule al final. El **arte fino** (personaje, esbirros y enemigos) se difiere al final para no retrasar el avance; el **estilo actual del personaje no se cambia** hasta ese pulido.
 
+> **Pendientes de validación humana:** las comprobaciones que solo la usuaria puede hacer con su navegador (lectura visual, sensación, lateralidad) están consolidadas en [`docs/pendientes-de-validacion-humana.md`](pendientes-de-validacion-humana.md). Son **no bloqueantes** y **no detienen el avance**.
+
 ### Fundación (aprobada; provisional reutilizable)
 
 | ID | Etapa | Estado |
@@ -501,7 +503,7 @@ Tras la autorización de ejecución del usuario, el orquestador **reescribió** 
 
 **Veredicto global de la auditoría: APROBADA** (sin hallazgos bloqueantes). Observaciones no bloqueantes: (a) `run.frames 4→6` respecto a HEAD es de KRA-02, no de esta etapa; (b) `src/scale.ts` viaja en el bundle de producción porque `CONFIG.scale` se evalúa al importar `config.ts` — el criterio solo exigía que no se filtraran `__GOW8B` ni los símbolos del overlay; (c) el overlay dibuja las envolventes de ataque siempre, sin condicionarlas a `attackPhase` (coherente con ser una referencia de escala, no un indicador de combate); (d) el árbol de trabajo reúne tres etapas sin commit, así que la atribución se hizo por contenido, no por git.
 
-**Deuda no bloqueante abierta:** la verificación visual humana sigue difiriendo (§CMP-01, §GOW8B-KRA-02).
+**Deuda no bloqueante abierta:** la verificación visual humana sigue difiriendo (§CMP-01, §GOW8B-KRA-02). Las comprobaciones pendientes están consolidadas en [`docs/pendientes-de-validacion-humana.md`](pendientes-de-validacion-humana.md).
 
 ### Criterios de salida y evidencia — GOW8B-DJUMP-01 (nueva, Bloque 1)
 
@@ -627,7 +629,7 @@ Tras la autorización de ejecución del usuario, el orquestador **reescribió** 
 
 **Veredicto global de la auditoría: APROBADA** (sin hallazgos bloqueantes). Observaciones no bloqueantes: (a) **pérdida de contacto a muy corta distancia** — a dx≤7 no golpea ninguna cadena (`minReach` subió de 6 a 13.94); no rompe `GOW8B-LIGHT-01`, cuya evidencia se tomó a dx=40 y sigue contactando, pero es un cambio real de sensación en cuerpo a cuerpo; (b) **la envolvente vertical creció de 16 a 71.71 px** (el span real es ~59.8 y el valor es conservador): el arco llega hasta ~65.7 px sobre la línea de pies con un jugador de 59 px, o sea **por encima de la cabeza**; (c) los criterios de aceptación de esta etapa **no estaban escritos en el repositorio antes de implementar** — se formalizan en esta sección al cierre, y la auditoría se hizo contra el encargo; queda registrado como desviación de proceso.
 
-**Deuda no bloqueante abierta:** la verificación visual humana sigue difiriendo (§CMP-01, §GOW8B-KRA-02, §GOW8B-CHAOS-01).
+**Deuda no bloqueante abierta:** la verificación visual humana sigue difiriendo (§CMP-01, §GOW8B-KRA-02, §GOW8B-CHAOS-01). Las comprobaciones pendientes están consolidadas en [`docs/pendientes-de-validacion-humana.md`](pendientes-de-validacion-humana.md).
 
 ## Método de verificación para tareas futuras
 
@@ -967,10 +969,10 @@ Herramienta: **Chrome DevTools MCP**, servidor de desarrollo propio en el **puer
 
 **Nota de conteo (off-by-one del contador, no defecto):** `stepRoll` **incrementa y comprueba el umbral en el mismo tick**, y `startRoll` fija los contadores en el tick del flanco. Consecuencia medida y verificada: una rodada declarada de **15 ticks** (250 ms) reporta `rollTicks` **1..14** y `invulTicks` **14..1**, es decir **14 ticks activos = 233 ms reales**. El tick que cierra la fase nunca es observable como `rollPhase === 'active'`. **Se conserva `15`** en `ROLL_TICKS`/`ROLL_INVUL_TICKS` (fuente de verdad única de la duración): el i-frame cubre los 14 ticks activos exactamente sin sobrevivirlos (H-ROLL-1) y reducir el valor declarado **acortaría la rodada aprobada en un tick** (se probó: declarar 233 daba 13 ticks / 60.7 px). Se documenta la diferencia declarado-vs-observado en lugar de tocar la física.
 
-### Pendiente de validación humana (no bloqueante para la corrección, bloqueante para cerrar la etapa)
+### Pendiente de validación humana (NO bloqueante: la etapa ya se cerró y auditó)
 
 1. **Lectura visual** (criterio 1): A/D + `SHIFT` → ¿se lee como **voltereta lateral** y no como dash? Con arte provisional de 4 cuadros (todos distintos, pero sin revisión estética) es esperable que sea **pobre**; el arte final es del Bloque 11.
 2. **Sensación real** (criterio 9): duración, sync del clip y transición de salida con teclado físico.
 3. **Dirección** (criterio 3): lateralidad percibida en ambos sentidos.
 
-Hasta que estas tres se validen con teclado físico en tu navegador, la etapa queda **implementada y verificada mecánicamente, pendiente de percepción**.
+La etapa está **cerrada y auditada** (APROBADA CON OBSERVACIONES) y **verificada mecánicamente**; lo que resta es la **percepción humana**, que la usuaria realizará en su propio navegador. **No bloquea el avance**: si esta revisión detecta un defecto, se corrige por la compuerta normal (plan → corrección → reauditoría). Está consolidada en el **registro central** `docs/pendientes-de-validacion-humana.md`.

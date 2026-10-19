@@ -324,6 +324,7 @@ El escenario `combat` contiene al jugador en el suelo (`x = 200`, `y = 262`) y u
 
 ## Documentación
 
+- [`docs/pendientes-de-validacion-humana.md`](docs/pendientes-de-validacion-humana.md): **registro central** de las comprobaciones que solo la usuaria puede hacer con su teclado y su vista (el runtime de agentes no interpreta imágenes). **No bloqueante**: no detiene el avance.
 - [`docs/arquitectura.md`](docs/arquitectura.md): límites actuales y arquitectura, **en parte ya implementada** (simulación, entrada, manifest, movimiento, plataformas y ataque/combo); las secciones «objetivo/futuro» siguen pendientes.
 - [`docs/direccion-y-controles.md`](docs/direccion-y-controles.md): dirección del juego futuro y mapa de teclado propuesto.
 - [`docs/adaptacion-narrativa-y-niveles.md`](docs/adaptacion-narrativa-y-niveles.md): adaptación lateral propuesta de la historia de *God of War* (2005).
