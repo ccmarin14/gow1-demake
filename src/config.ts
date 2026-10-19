@@ -88,15 +88,9 @@ const PLAYER: any = {
     ],
   },
   dodge: {
-    // 250 ms is the declared roll window. Note the observable cost of the
-    // counter: `startRoll` sets the tick counters and `stepRoll` decrements and
-    // checks the threshold in the *same* tick, so a roll of 15 declared ticks
-    // only ever reports `rollTicks` 1..14 (14 active ticks, 233 ms) and
-    // `invulTicks` 14..1. Keep these at 250: the i-frames cover the 14 active
-    // ticks exactly without surviving the roll (H-ROLL-1), and shrinking the
-    // declared value would shorten the approved roll by a tick.
-    durationMs: 250,
-    invulMs: 250,
+    // Roll impulse speed. The roll *duration* is not declared here: it lives in
+    // `ROLL_TICKS` / `ROLL_INVUL_TICKS` below, which are the single source of
+    // truth consumed by `src/sim/roll.ts` and `src/main.ts`.
     rollSpeed: 280, // ~2.0 * maxSpeed aprox (140)
   },
 } as const;
@@ -148,23 +142,22 @@ export const CONFIG: any = {
     scaleReferenceFillAlpha: 0.12,
     scaleReferenceThickness: 1,
   },
-  rollTicks: 15,
-  rollDurationMs: 250,
-  rollInvulTicks: 15,
-  rollInvulMs: 250,
 } as const;
 
 /**
- * Roll timing, declared in ticks. The tick that closes the roll is not
- * observable: `stepRoll` increments the counter and checks the threshold in the
- * same tick, so a roll declared as 15 ticks reports `rollTicks` 1..14 (14 active
- * ticks, 233 ms) and `invulTicks` 14..1. The i-frames therefore cover the active
- * roll exactly and never survive it (H-ROLL-1).
+ * Roll timing, declared in ticks, and the SINGLE source of truth for the roll
+ * duration. Consumed by `src/sim/roll.ts` (duration + i-frames) and
+ * `src/main.ts` (animation frameRate).
+ *
+ * The tick that closes the roll is not observable: `stepRoll` increments the
+ * counter and checks the threshold in the same tick, so a roll declared as 15
+ * ticks reports `rollTicks` 1..14 (14 active ticks, 233 ms) and `invulTicks`
+ * 14..1. The i-frames therefore cover the active roll exactly and never survive
+ * it (H-ROLL-1). Keep these at 15: shrinking the declared value would shorten
+ * the approved roll by a tick.
  */
 export const ROLL_TICKS = 15;
-export const ROLL_DURATION_MS = 250;
 export const ROLL_INVUL_TICKS = 15;
-export const ROLL_INVUL_MS = 250;
 export const METRICS_WINDOW_FRAMES = CONFIG.presentation.metricsWindowFrames;
 
 export type GameConfig = typeof CONFIG;
