@@ -43,9 +43,23 @@ export interface EntityState {
   grounded: boolean;
   coyoteTicks: number;
   jumpBufferTicks: number;
+  /**
+   * Upward impulses applied since the entity last touched a surface. `0` means
+   * the ground jump is still available; the air jump needs a fresh `jump`
+   * press while airborne.
+   */
+  jumpsUsed: number;
   attackPhase: 'none' | 'startup' | 'active' | 'recovery';
   attackTicks: number;
   attackHits: string[];
+  attackChain: number;
+  /**
+   * Roll (dodge) state. Active when rollPhase !== 'none'; ticks count from
+   * phase start. invulTicks counts down while entity is invulnerable.
+   */
+  rollPhase: 'none' | 'active' | 'recovery';
+  rollTicks: number;
+  invulTicks: number;
 }
 
 export interface SimulationSnapshot {

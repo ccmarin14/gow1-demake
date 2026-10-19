@@ -6,9 +6,21 @@ import { cloneEntities, DEFAULT_SCENARIO, getScenario } from './scenarios';
 import type { EntityState, GameAction, SimulationSnapshot } from './types';
 import { PLAYER_ID, sortActions } from './types';
 import { stepVertical, type VerticalParams } from './vertical';
-import { computeAttackHitbox, stepAttack, type AttackParams } from './attack';
+import {
+  attackParamsForChain,
+  computeAttackHitbox,
+  stepAttack,
+  isEntityAttacking,
+  type AttackCombo,
+  type AttackParams,
+} from './attack';
+import { isRolling, startRoll, stepRoll } from './roll';
 
 const TICK_DT = 1 / CONFIG.sim.tickRate;
+
+function msToTicks(ms: number): number {
+  return Math.round((ms * CONFIG.sim.tickRate) / 1000);
+}
 
 const VERTICAL_PARAMS: VerticalParams = {
   gravity: CONFIG.player.vertical.gravity,
@@ -20,17 +32,26 @@ const VERTICAL_PARAMS: VerticalParams = {
   jumpBufferTicks: Math.round(
     (CONFIG.player.vertical.jumpBufferMs * CONFIG.sim.tickRate) / 1000,
   ),
+  maxJumps: CONFIG.player.vertical.maxJumps,
   topY: CONFIG.player.vertical.topY,
 };
-const ATTACK_PARAMS: AttackParams = {
-  startupTicks: Math.round((CONFIG.player.attack.startupMs * CONFIG.sim.tickRate) / 1000),
-  activeTicks: Math.round((CONFIG.player.attack.activeMs * CONFIG.sim.tickRate) / 1000),
-  recoveryTicks: Math.round((CONFIG.player.attack.recoveryMs * CONFIG.sim.tickRate) / 1000),
-  hitboxOffsetX: CONFIG.player.attack.hitboxOffsetX,
-  hitboxWidth: CONFIG.player.attack.hitboxWidth,
-  hitboxHeight: CONFIG.player.attack.hitboxHeight,
-  targetHalfWidth: CONFIG.player.attack.targetHalfWidth,
-  targetHalfHeight: CONFIG.player.attack.targetHalfHeight,
+const ATTACK_COMBO: AttackCombo = {
+  maxChain: CONFIG.player.attack.maxChain,
+  hits: CONFIG.player.attack.combo.map((hit: any): AttackParams => ({
+    startupTicks: msToTicks(hit.startupMs),
+    activeTicks: msToTicks(hit.activeMs),
+    recoveryTicks: msToTicks(hit.recoveryMs),
+    gripOffsetY: CONFIG.player.weapon.gripOffsetY,
+    arc: {
+      startRad: (hit.arc.startDeg * Math.PI) / 180,
+      endRad: (hit.arc.endDeg * Math.PI) / 180,
+      radius: hit.arc.radius,
+      width: hit.arc.width,
+      thickness: hit.arc.thickness,
+    },
+    targetHalfWidth: CONFIG.player.attack.targetHalfWidth,
+    targetHalfHeight: CONFIG.player.attack.targetHalfHeight,
+  })),
 };
 
 export class World {
@@ -40,6 +61,7 @@ export class World {
   private input: GameAction[] = [];
   private jumpHeld = false;
   private lightAttackHeld = false;
+  private dodgeHeld = false;
   private activeScenario: string = DEFAULT_SCENARIO;
 
   constructor() {
@@ -78,6 +100,7 @@ export class World {
     this.input = [];
     this.jumpHeld = false;
     this.lightAttackHeld = false;
+    this.dodgeHeld = false;
     this.platforms = scenario.platforms;
     this.entities = cloneEntities(scenario.entities);
   }
@@ -93,7 +116,10 @@ export class World {
     if (!player) {
       return null;
     }
-    return computeAttackHitbox(player, ATTACK_PARAMS);
+    return computeAttackHitbox(
+      player,
+      attackParamsForChain(ATTACK_COMBO, player.attackChain),
+    );
   }
 
   reset(): void {
@@ -110,24 +136,42 @@ export class World {
     const lightAttackEdge = wantsLightAttack && !this.lightAttackHeld;
     this.lightAttackHeld = wantsLightAttack;
 
+    const wantsDodge = this.input.includes('dodge');
+    const dodgeEdge = wantsDodge && !this.dodgeHeld;
+    this.dodgeHeld = wantsDodge;
+
     const player = this.entities.find((entity) => entity.id === PLAYER_ID);
     if (player) {
       const targets = this.entities.filter((e) => e.id !== PLAYER_ID);
-      stepAttack(
-        player,
-        lightAttackEdge,
-        ATTACK_PARAMS,
-        targets,
-      );
+      const rolling = isRolling(player);
+      const attacking = isEntityAttacking(player);
+      // Dodge: only on ground, consume action on new flank (edge), ininterruptible while active
+      if (!rolling && dodgeEdge) {
+        // Don't start if attacking? Requirement says "bloquea ataque durante la rodada (o acorde a diseño)" - better block starting attack during roll? but roll is the action
+        // Also start only grounded
+        startRoll(player);
+      }
+      stepRoll(player);
+      const nowRolling = isRolling(player);
+      // Attack blocked during roll
+      if (!nowRolling) {
+        stepAttack(
+          player,
+          lightAttackEdge,
+          ATTACK_COMBO,
+          targets,
+        );
+      }
       stepHorizontal(
         player,
         this.input.includes('move-left'),
         this.input.includes('move-right'),
         TICK_DT,
         CONFIG.player,
+        nowRolling,
       );
-      const canJumpEdge = jumpEdge && player.attackPhase === 'none';
-      stepVertical(player, VERTICAL_PARAMS, TICK_DT, canJumpEdge, this.platforms);
+      const canJumpEdge = jumpEdge && !nowRolling && !attacking;
+      stepVertical(player, VERTICAL_PARAMS, TICK_DT, canJumpEdge, this.platforms, nowRolling);
     }
     this.tick += 1;
   }

@@ -34,20 +34,26 @@ export function stepHorizontal(
   wantsRight: boolean,
   dtSeconds: number,
   params: MovementParams,
+  locked: boolean = false,
 ): void {
   const { maxSpeed, accel, brake, minX, maxX } = params;
   let vx = entity.vx;
 
-  if (wantsLeft === wantsRight) {
-    vx = brakeTowardZero(vx, brake * dtSeconds);
+  if (locked) {
+    // Preserve existing velocity; do not apply input acceleration/braking/facing changes
+    vx = entity.vx;
   } else {
-    const dir: -1 | 1 = wantsRight ? 1 : -1;
-    if (vx * dir < 0) {
+    if (wantsLeft === wantsRight) {
       vx = brakeTowardZero(vx, brake * dtSeconds);
     } else {
-      vx = clampSpeed(vx + dir * accel * dtSeconds, maxSpeed);
+      const dir: -1 | 1 = wantsRight ? 1 : -1;
+      if (vx * dir < 0) {
+        vx = brakeTowardZero(vx, brake * dtSeconds);
+      } else {
+        vx = clampSpeed(vx + dir * accel * dtSeconds, maxSpeed);
+      }
+      entity.facing = dir;
     }
-    entity.facing = dir;
   }
 
   entity.vx = vx;
