@@ -1,5 +1,6 @@
 import type { Simulation } from '../sim/engine';
 import { scenarioNames } from '../sim/scenarios';
+import type { ScaleReference } from '../scale';
 import type {
   GameAction,
   HarnessMetrics,
@@ -11,6 +12,9 @@ import type {
 export interface HarnessApp {
   simulation: Simulation;
   getPresentationMetrics: () => PresentationMetrics;
+  getScaleReference: () => ScaleReference;
+  toggleScaleReference?: () => boolean;
+  isScaleReferenceVisible?: () => boolean;
 }
 
 export interface DevHarness {
@@ -24,6 +28,9 @@ export interface DevHarness {
   record(): boolean;
   stop(): InputTrace;
   replay(trace: InputTrace): SimulationSnapshot;
+  scaleReference(): ScaleReference;
+  toggleScaleReference(): boolean;
+  isScaleReferenceVisible(): boolean;
 }
 
 declare global {
@@ -79,6 +86,9 @@ export function installHarness(app: HarnessApp): DevHarness | null {
       simulation.replay(trace);
       return simulation.world.snapshot();
     },
+    scaleReference: () => app.getScaleReference(),
+    toggleScaleReference: () => app.toggleScaleReference?.() ?? false,
+    isScaleReferenceVisible: () => app.isScaleReferenceVisible?.() ?? false,
   };
 
   window.__GOW8B = harness;
