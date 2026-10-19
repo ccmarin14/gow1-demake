@@ -47,6 +47,13 @@ export function stepRoll(entity: EntityState): void {
   if (entity.rollTicks >= ROLL_DURATION_TICKS) {
     entity.rollPhase = 'none';
     entity.rollTicks = 0;
+    // Hand control back on the closing tick. `stepRoll` runs before
+    // `stepHorizontal`, so without this the roll's own impulse (vx = +-280)
+    // would survive into an unlocked `stepHorizontal`: the player would keep
+    // sliding after the roll, with no i-frames and no roll animation, and
+    // holding the direction would even *brake* the leftover 280 down to
+    // `maxSpeed` instead of accelerating.
+    entity.vx = 0;
   }
 }
 
