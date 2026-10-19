@@ -1,12 +1,12 @@
 # Guía de verificación
 
-> **Estado vigente:** solo está ejecutable el shell Phaser/Vite en lienzo lógico horizontal **480×270**, con infraestructura de simulación determinista, harness DEV, movimiento horizontal del jugador, los assets provisionales aprobados integrados (fondo del Egeo y pose neutral de Kratos) y una **animación de carrera provisional** (placeholder procedural, etapa 7 **aprobada**) junto con **salto y plataformas** deterministas (etapa 8 **aprobada**) y una **acción de ataque ligero** inicial (etapa 9 **aprobada**); sin enemigos con IA, daño ni audio. Las aprobaciones anteriores al ciclo actual pertenecen al prototipo descartado y son historial, no pruebas del shell ni del producto futuro. `DOC-ALIGN-01` cerró la alineación documental; las etapas 1 `GOW8B-VIS-01`, 2 `GOW8B-KRA-01`, 3 `GOW8B-ENV-01`, 4 `GOW8B-CMP-01` y 5 `GOW8B-DEV-01` están aprobadas. `GOW8B-CMP-01` queda aprobada con verificación visual humana **diferida y no bloqueante** (§CMP-01). La etapa 6 `GOW8B-MOVE-01` (movimiento horizontal) está **aprobada** (2026-10-15) tras auditoría independiente de solo lectura (§GOW8B-MOVE-01). La etapa **6.5 `GOW8B-RES-01`** (migración a 480×270 e integración de assets, §GOW8B-RES-01) está **aprobada** (2026-10-15) tras auditoría independiente de solo lectura. La etapa 7 **`GOW8B-ANIM-01`** (animación de carrera con ciclo **placeholder procedural provisional**, §GOW8B-ANIM-01) está **aprobada** (2026-10-15) tras auditoría independiente de solo lectura. Tras cerrarla se autorizó y quedó **aprobada** ese mismo día la etapa 8 **`GOW8B-JUMP-01`** (salto y plataformas, §GOW8B-JUMP-01) tras auditoría independiente de solo lectura, y a continuación se autorizó la etapa 9 **`GOW8B-LIGHT-01`** (ataque ligero, §GOW8B-LIGHT-01), que quedó **aprobada** ese mismo día tras auditoría independiente de solo lectura; las etapas numeradas 10–29 siguen pendientes de autorización.
+> **Estado vigente:** solo está ejecutable el shell Phaser/Vite en lienzo lógico horizontal **480×270**, con infraestructura de simulación determinista, harness DEV, movimiento horizontal, assets provisionales integrados (fondo del Egeo y pose neutral de Kratos), animación de carrera **provisional** (etapa 7 aprobada), salto y plataformas (etapa 8 aprobada), ataque ligero (etapa 9 aprobado) y encadenamiento de combo (etapa 10 **aprobada**, 2026-10-16); sin enemigos con IA, daño ni audio. El plan se re-baselinó el 2026-10-16 a dos niveles (**bloques** = aprueba la usuaria; **etapas** = audita un subagente). Las etapas 1–10.5 ya aprobadas se mantienen; el arte definitivo (KRA-02) quedó **aprobado** y la etapa 10 `GOW8B-COMBO-01` (combo) también quedó **aprobada**, ambas (2026-10-16) tras auditoría independiente de solo lectura. El 2026-10-17 el usuario autorizó la etapa **1 `GOW8B-SCALE-01`** (escala y silueta de referencia, §GOW8B-SCALE-01), implementada y auditada ese mismo día: **aprobada**. No hay etapa activa. Las aprobaciones anteriores al ciclo actual pertenecen al prototipo descartado y son historial, no pruebas del shell ni del producto futuro. `DOC-ALIGN-01` cerró la alineación documental; las etapas 1 `GOW8B-VIS-01`, 2 `GOW8B-KRA-01`, 3 `GOW8B-ENV-01`, 4 `GOW8B-CMP-01` y 5 `GOW8B-DEV-01` están aprobadas. `GOW8B-CMP-01` queda aprobada con verificación visual humana **diferida y no bloqueante** (§CMP-01). La etapa 6 `GOW8B-MOVE-01` (movimiento horizontal) está **aprobada** (2026-10-15) tras auditoría independiente de solo lectura (§GOW8B-MOVE-01). La etapa **6.5 `GOW8B-RES-01`** (migración a 480×270 e integración de assets, §GOW8B-RES-01) está **aprobada** (2026-10-15) tras auditoría independiente de solo lectura. La etapa 7 **`GOW8B-ANIM-01`** (animación de carrera con ciclo **placeholder procedural provisional**, §GOW8B-ANIM-01) está **aprobada** (2026-10-15) tras auditoría independiente de solo lectura. Tras cerrarla se autorizó y quedó **aprobada** ese mismo día la etapa 8 **`GOW8B-JUMP-01`** (salto y plataformas, §GOW8B-JUMP-01) tras auditoría independiente de solo lectura, a continuación se autorizó la etapa 9 **`GOW8B-LIGHT-01`** (ataque ligero, §GOW8B-LIGHT-01), que quedó **aprobada** ese mismo día tras auditoría independiente de solo lectura, y enseguida la etapa 10 **`GOW8B-COMBO-01`** (combo ligero, §GOW8B-COMBO-01), que queda **aprobada** el 2026-10-16 tras auditoría independiente de solo lectura; las etapas numeradas 11–29 siguen pendientes de autorización. El 2026-10-16 el usuario autorizó el enfoque de arte de animación de Kratos (**generación procedural + verificación visual local**, D-21) y la conservación **sin integrar** de los artefactos generados sin autorización (D-22); se inserta la etapa **10.5 `GOW8B-KRA-02`** (arte definitivo de animación de Kratos, §GOW8B-KRA-02); el 2026-10-16 el usuario autorizó su ejecución y el arte se **generó e integró** (idle 2, carrera 6, aire 2, ataque 3; `PROVISIONAL_ART = false`; `CONFIG.player.run.frames = 6`, desajuste 6-vs-4 **resuelto**), quedando **aprobada** tras auditoría independiente de solo lectura. Con esto, las etapas 1–10.5 están aprobadas.
 
 ## Fuente de verdad y estado
 
 La dirección futura es una adaptación web horizontal con resolución interna de 480×270 (D-12) de la historia de *God of War 1* de PS2, con lectura, estructura lateral, estética y mecánicas estudiadas en *God of War: Betrayal*. La jugabilidad lateral de *Betrayal*, incluida su **verticalidad**, es el **baseline a igualar o superar** en la versión web (D-20), como intención de diseño concretada en los criterios de cada etapa. Todo recurso integrado será original; referencias externas son solo material de estudio. El primer objetivo narrativo es el Egeo y la Hidra. Ninguno de estos contenidos está implementado en el shell. La presentación prevista escala el canvas para una ventana amplia del navegador, con pixelado nítido y sin suavizado; la resolución interna no limita su tamaño CSS.
 
-La lista siguiente reemplaza como plan vigente la secuencia histórica de 22 etapas del prototipo descartado. `GOW8B-VIS-01`, `GOW8B-KRA-01`, `GOW8B-ENV-01`, `GOW8B-CMP-01`, `GOW8B-DEV-01` y `GOW8B-MOVE-01` están aprobadas tras auditoría. La etapa 6 `GOW8B-MOVE-01` (movimiento horizontal) se autorizó el 2026-10-15 y quedó aprobada el mismo día. Ese mismo día la usuaria eligió migrar el runtime a 480×270 e integrar los assets aprobados antes de la animación de carrera: se insertó la etapa **6.5 `GOW8B-RES-01`**, que quedó **aprobada** también el 2026-10-15 tras auditoría independiente de solo lectura. Enseguida autorizó la etapa 7 `GOW8B-ANIM-01` (animación de carrera), que quedó **aprobada** el 2026-10-15 tras auditoría independiente de solo lectura, con ciclo **provisional**. Al cerrarla se autorizó la etapa 8 `GOW8B-JUMP-01` (salto y plataformas), que quedó **aprobada** el 2026-10-15 tras auditoría independiente de solo lectura. A continuación se autorizó la etapa 9 `GOW8B-LIGHT-01` (ataque ligero), que quedó **aprobada** el 2026-10-15 tras auditoría independiente de solo lectura; las etapas numeradas 10–29 siguen pendientes de autorización.
+dejo la etapa 10.5 `GOW8B-KRA-02` **aprobada** y la etapa 10 `GOW8B-COMBO-01` **aprobada**, ambas tras auditoría independiente de solo lectura (2026-10-16); el 2026-10-17 el usuario autorizó el inicio del desarrollo (Bloque 1), se ejecutó la etapa **1 `GOW8B-SCALE-01`** (escala y silueta de referencia) y quedó **aprobada** ese mismo día tras auditoría independiente de solo lectura. La lista siguiente reemplaza como plan vigente la secuencia histórica de 22 etapas del prototipo descartado. `GOW8B-VIS-01`, `GOW8B-KRA-01`, `GOW8B-ENV-01`, `GOW8B-CMP-01`, `GOW8B-DEV-01` y `GOW8B-MOVE-01` están aprobadas tras auditoría. La etapa 6 `GOW8B-MOVE-01` (movimiento horizontal) se autorizó el 2026-10-15 y quedó aprobada el mismo día. Ese mismo día la usuaria eligió migrar el runtime a 480×270 e integrar los assets aprobados antes de la animación de carrera: se insertó la etapa **6.5 `GOW8B-RES-01`**, que quedó **aprobada** también el 2026-10-15 tras auditoría independiente de solo lectura. Enseguida autorizó la etapa 7 `GOW8B-ANIM-01` (animación de carrera), que quedó **aprobada** el 2026-10-15 tras auditoría independiente de solo lectura, con ciclo **provisional**. Al cerrarla se autorizó la etapa 8 `GOW8B-JUMP-01` (salto y plataformas), que quedó **aprobada** el 2026-10-15 tras auditoría independiente de solo lectura. A continuación se autorizó la etapa 9 `GOW8B-LIGHT-01` (ataque ligero), que quedó **aprobada** el 2026-10-15 tras auditoría independiente de solo lectura. Enseguida se autorizó la etapa 10 `GOW8B-COMBO-01` (combo ligero), que quedó **aprobada** el 2026-10-16 tras auditoría independiente de solo lectura (con arte provisional en su momento, hoy sustituido por el definitivo de la etapa 10.5). El 2026-10-16, tras una tarea de investigación de arte (solo lectura), el usuario autorizó el enfoque de la etapa **10.5 `GOW8B-KRA-02`** (generación procedural articulada + verificación visual local, D-21) y después autorizó su **ejecución**: el arte se **generó e integró** ese mismo día (hojas idle/carrera/aire/ataque, `PROVISIONAL_ART = false`, `run.frames = 6`) y quedó **aprobada** tras auditoría independiente de solo lectura; ver «Estado de implementación (2026-10-16)» en §GOW8B-KRA-02. Las etapas numeradas 11–29 siguen pendientes de autorización.
 
 El 2026-10-15, a partir de `investigacion-y-definicion.md`, se añadieron tres etapas al plan —**13 Bloqueo y parry** (H-1), **18 Finisher contextual** (H-2) y **22 Orbes, cofres y mejoras** (H-3)— y se incorporaron a criterios los hallazgos **PR-01** (umbrales de game feel), **PR-02** (trazas y paso fijo en el harness) y **PR-03** (separación de enemigos). El plan pasó de 26 a **29 etapas**. Las etapas ya aprobadas y la etapa 4 `GOW8B-CMP-01` no cambiaron de contenido. El mismo día se fijó **D-20** (PR-07): la jugabilidad lateral de *Betrayal*, incluida su verticalidad, es el baseline a igualar o superar, concretado en el alcance vertical de la etapa 8 y en los umbrales de las etapas de combate.
 
@@ -14,41 +14,123 @@ También el 2026-10-15, tras la aprobación de la etapa 6, la usuaria autorizó 
 
 ## Etapas y criterios de aceptación
 
-| Orden futuro | Tarea principal | Criterio de salida por definir en su ticket | Estado |
-| --- | --- | --- | --- |
-| DOC-ALIGN-01 | Alinear documentación al nuevo ciclo | Documentos distinguen shell, visión e historial; enlaces y afirmaciones verificadas. | Documental; cierre de esta tarea, no etapa de juego. |
-| 1 / GOW8B-VIS-01 | Referencia visual horizontal original | PNG conceptual original 480×270; ImageGen produjo la referencia y `/usr/bin/pngquant --nofs` hizo la cuantización local; reauditoría aprobó dimensiones, opacidad, 19 colores, bordes y lectura visual. | Aprobada; provisional, no integrada al runtime. |
-| 2 / GOW8B-KRA-01 | Pose y silueta neutral de Kratos | PNG conceptual provisional 480×270, 7 colores, bounds 97×59 px; transparencia en tabla alpha; lectura nativa, silueta y nearest-neighbor 2× aprobados. | Aprobada; provisional, no integrada al runtime. |
-| 3 / GOW8B-ENV-01 | Escenario del Egeo | PNG opaco 480×270, 19 colores; auditoría aprobó cielo/tormenta, mar/olas, barco/baranda y cubierta transitable a 1×/2× nearest-neighbor. | Aprobada; provisional, fuera del runtime. |
-| 4 / GOW8B-CMP-01 | Integración visual Kratos + Egeo | Una composición de los assets aprobados de etapas 2 y 3; criterios detallados bajo la tabla. | Aprobada con verificación visual humana diferida (no bloqueante); provisional, no integrada al runtime. |
-| 5 / GOW8B-DEV-01 | Contrato y harness DEV | Infraestructura de simulación determinista y harness DEV sin gameplay; criterios detallados en §GOW8B-DEV-01. **Trazas de input grabables y paso fijo desacoplado del render (PR-02, D-16).** | **Aprobada** (2026-10-15) tras corrección y reauditoría independiente; sin gameplay. |
-| 6 | Movimiento horizontal | Respuesta izquierda/derecha, aceleración, frenado y límites. **Respuesta al input ≤100 ms ≈ 6 frames (PR-01).** Criterios detallados en §GOW8B-MOVE-01. | **Aprobada (2026-10-15) tras auditoría independiente**; sin salto, combate ni arte. |
-| 6.5 / GOW8B-RES-01 **(nueva)** | Migración a 480×270 e integración de assets | Llevar el canvas lógico a 480×270 (D-12) y cargar por manifest los assets aprobados provisionales (fondo Egeo + pose neutral de Kratos), sin gameplay; criterios en §GOW8B-RES-01. **Criterios detallados en §GOW8B-RES-01.** | **Aprobada (2026-10-15) tras auditoría independiente**; sin gameplay nuevo. |
-| 7 / GOW8B-ANIM-01 | Animación de carrera | Pose y transición sincronizadas con movimiento. Ciclo de carrera **placeholder procedural provisional** derivado de la pose neutral; criterios en §GOW8B-ANIM-01. | **Aprobada** (2026-10-15) tras auditoría independiente de solo lectura; arte provisional, reemplazable. |
-| 8 / GOW8B-JUMP-01 | Salto y plataformas | Ascenso, aire, caída, aterrizaje y bordes. **Coyote time 60–100 ms y jump buffer ~100 ms (PR-01).** **Alcance vertical: al menos dos niveles de altura alcanzables y saltos encadenados entre plataformas, igualando o superando la verticalidad de *Betrayal* adaptada a 480×270 (D-20).** Criterios en §GOW8B-JUMP-01. | **Aprobada** (2026-10-15) tras auditoría independiente de solo lectura; arte provisional. |
-| 9 / GOW8B-LIGHT-01 | Ataque ligero inicial | Una acción completa con estado, pose, hitbox, contacto y recuperación. **Respuesta al input ≤100 ms (PR-01).** Criterios en §GOW8B-LIGHT-01. | **Aprobada** (2026-10-15) tras auditoría independiente de solo lectura; arte provisional. |
-| 10 | Continuación del combo ligero | Encadenamiento y contactos adicionales. **Respuesta al input ≤100 ms (PR-01).** | Pendiente; no activa. |
-| 11 | Ataque pesado | Preparación, impacto, recuperación, alcance y lectura audiovisual. **Respuesta al input ≤100 ms (PR-01).** | Pendiente; no activa. |
-| 12 | Esquiva | Dirección, distancia, duración, invulnerabilidad y recuperación. **Respuesta al input ≤100 ms (PR-01).** | Pendiente; no activa. |
-| 13 | Bloqueo y parry **(nueva, H-1)** | Sostener bloqueo, coste/ventana de parry, retroceso al bloquear y recuperación; legible y separado de la esquiva. **Respuesta al input ≤100 ms (PR-01).** | Pendiente; no activa. |
-| 14 | Respuesta al daño | Pérdida de vida, retroceso, interrupción, protección y derrota. **Respuesta al input ≤100 ms (PR-01).** | Pendiente; no activa. |
-| 15 | Arte del combatiente | Silueta y poses del primer arquetipo enemigo. | Pendiente; no activa. |
-| 16 | Arte del arquero | Silueta y pose de ataque diferenciables. | Pendiente; no activa. |
-| 17 | Conducta del combatiente | Aproximación, aviso, ataque, recuperación y derrota. **Separación de enemigos: no agresivos en círculo alrededor de Kratos, agresivos lo invaden (PR-03).** | Pendiente; no activa. |
-| 18 | Finisher contextual **(nueva, H-2)** | Enemigo debilitado muestra señal explícita; `E` ejecuta un remate opcional con ventana de input tolerante y respuesta visual clara. | Pendiente; no activa. |
-| 19 | Conducta del arquero | Posición, anticipación, trayectoria y recuperación. | Pendiente; no activa. |
-| 20 | Flujo y ritmo de oleadas | Aparición, barrera, despeje, liberación y cantidad de enemigos. **Separación y distancia ajustables por dificultad (PR-03).** | Pendiente; no activa. |
-| 21 | Checkpoint | Activación, estado guardado y reintento. | Pendiente; no activa. |
-| 22 | Orbes, cofres y mejoras **(nueva, H-3)** | Orbes verde/rojo/azul, cofres entre segmentos y una mejora de arma con coste y efecto legibles. | Pendiente; no activa. |
-| 23 | Arte de la Hidra | Cabeza, silueta y poses a escala del escenario. | Pendiente; no activa. |
-| 24 | Combate de la Hidra | Avisos, patrones, daño, ventanas vulnerables y resultado. | Pendiente; no activa. |
-| 25 | Interfaz | Inicio, HUD, pausa y estados terminales. | Pendiente; no activa. |
-| 26 | Efectos visuales | Impactos, clima y cámara sin tapar lectura. | Pendiente; no activa. |
-| 27 | Audio | Eventos diferenciables y balanceados después de prueba de escucha. | Pendiente; no activa. |
-| 28 | Partida completa | Recorrido futuro con controles normales, duración y consola. | Pendiente; no activa. |
-| 29 | Auditoría final | Revisión independiente del producto futuro integrado. | Pendiente; no activa. |
+## Plan vigente por bloques y etapas (re-baselinado 2026-10-16)
 
-### Etapa 1 aprobada — GOW8B-VIS-01
+> **Dos niveles.** Cada **bloque** es un item mayor que aprueba la usuaria (juicio de aspecto, sensación y diversión); cada **etapa** dentro de un bloque es un componente verificable que **audita un subagente** distinto del implementador (reglas, determinismo, integración). Los códigos `GOW8B-*` son **identificadores estables** y **no se renumeran**; el orden real de ejecución se indica en la columna «Orden». Las etapas ya aprobadas son **fundación provisional reutilizable**. El **sonido** es **transversal**: se añade simple en cada etapa y se pule al final. El **arte fino** (personaje, esbirros y enemigos) se difiere al final para no retrasar el avance; el **estilo actual del personaje no se cambia** hasta ese pulido.
+
+### Fundación (aprobada; provisional reutilizable)
+
+| ID | Etapa | Estado |
+| --- | --- | --- |
+| GOW8B-VIS-01 · KRA-01 · ENV-01 · CMP-01 | Referencia visual, pose neutral, fondo y composición (conceptuales) | **Aprobadas**; provisionales. CMP-01 con revisión visual humana diferida. |
+| GOW8B-DEV-01 | Contrato y harness DEV (PR-02, D-16) | **Aprobada** (2026-10-15). |
+| GOW8B-MOVE-01 | Movimiento horizontal (PR-01) | **Aprobada** (2026-10-15). |
+| GOW8B-RES-01 | 480×270 e integración de assets | **Aprobada** (2026-10-15). |
+| GOW8B-ANIM-01 | Animación de carrera (placeholder procedural) | **Aprobada** (2026-10-15); arte provisional. |
+| GOW8B-JUMP-01 | Salto y plataformas (PR-01, D-20) | **Aprobada** (2026-10-15); arte provisional. |
+| GOW8B-LIGHT-01 | Ataque ligero | **Aprobada** (2026-10-15); arte provisional. |
+| GOW8B-COMBO-01 | Ataque ligero encadenado (base del combo) | **Aprobada** (2026-10-16) tras auditoría independiente de solo lectura. |
+| GOW8B-KRA-02 | Arte de animación de Kratos (idle/carrera/aire/ataque) | **Aprobada** (2026-10-16) tras auditoría independiente de solo lectura. |
+
+### Bloque 1 — Identidad y movilidad
+
+| Orden | ID | Etapa | Estado |
+| --- | --- | --- | --- |
+| 1 | GOW8B-SCALE-01 **(nueva)** | Escala y silueta de referencia: reutiliza el arte actual **sin cambiar el estilo**; fija la línea de pies, la altura útil y los radios de alcance que condicionan el mapa | **Aprobada** (2026-10-17) tras auditoría independiente de solo lectura (§GOW8B-SCALE-01). |
+| 2 | GOW8B-DJUMP-01 **(nueva)** | Doble salto (segundo impulso aéreo, compatible con la etapa 8) | **Aprobada** (2026-10-17) tras auditoría independiente de solo lectura (§GOW8B-DJUMP-01). |
+| 3 | GOW8B-ROLL-01 **(nueva)** | Rodada con i-frames (absorbe la antigua «Esquiva»; su verificación plena se cierra al llegar el daño, Bloque 4) | **Aprobada** (2026-10-17): hallazgo bloqueante **H-ROLL-1** corregido por compuerta de plan y re-auditado por un auditor distinto (§GOW8B-ROLL-01). |
+
+### Bloque 2 — Arma: Cuchillas del Caos
+
+| Orden | ID | Etapa | Estado |
+| --- | --- | --- | --- |
+| 4 | GOW8B-CHAOS-01 **(nueva)** | Cuchillas del Caos: identidad del arma, cadenas (alcance) y arcos de golpe | **Aprobada** (2026-10-17) tras auditoría independiente de solo lectura (§GOW8B-CHAOS-01). |
+
+### Bloque 3 — Ataques y combate cuerpo a cuerpo
+
+| Orden | ID | Etapa | Estado |
+| --- | --- | --- | --- |
+| 5 | GOW8B-LIGHT-01 (revalidar) | Ataque ligero sobre las Cuchillas (revalida la etapa 9 con el nuevo arma) | Aprobada; revalidar aquí. |
+| 6 | GOW8B-HEAVY-01 | Ataque pesado (PR-01): preparación, impacto, recuperación y alcance | Pendiente; no activa. |
+| 7 | GOW8B-COMBO-01 | Encadenamiento del combo ligero, terrestre y aéreo (PR-01) | **Aprobada** (2026-10-16); arte definitivo integrado (10.5). |
+| 8 | GOW8B-GUARD-01 | Bloqueo y parry (H-1). La «esquiva» queda cubierta por la rodada (GOW8B-ROLL-01). | Pendiente; no activa. |
+| 9 | GOW8B-FINISH-01 | Finisher contextual (H-2) | Pendiente; no activa. |
+
+### Bloque 4 — Primer esbirro, vida y daño
+
+| Orden | ID | Etapa | Estado |
+| --- | --- | --- | --- |
+| 10 | GOW8B-ENEMY1-ART | Arte del combatiente (primer esbirro) | Pendiente; no activa. |
+| 11 | GOW8B-ENEMY1-AI | Conducta del combatiente (PR-03) | Pendiente; no activa. |
+| 12 | GOW8B-DAMAGE-01 | Vida y respuesta al daño del jugador (PR-01): pérdida de vida, retroceso, interrupción, protección y derrota | Pendiente; no activa. |
+| 13 | GOW8B-HUD-01 **(nueva)** | HUD de vida | Pendiente; no activa. |
+| 14 | GOW8B-ORBS-01 | Orbes rojos (economía; H-3, alcance inicial) | Pendiente; no activa. |
+
+### Bloque 5 — Ordas y zonas de combate
+
+| Orden | ID | Etapa | Estado |
+| --- | --- | --- | --- |
+| 15 | GOW8B-ENEMY2-ART | Arte del arquero: silueta y pose de ataque diferenciables | Pendiente; no activa. |
+| 16 | GOW8B-ENEMY2-AI | Conducta del arquero: posición, anticipación, trayectoria y recuperación | Pendiente; no activa. |
+| 17 | GOW8B-WAVES-01 | Flujo y ritmo de oleadas: aparición, barrera, despeje, liberación y cantidad (PR-03) | Pendiente; no activa. |
+| 18 | GOW8B-ARENA-01 **(nueva)** | Zonas de combate (delimitación y comportamiento del área de combate) | Pendiente; no activa. |
+
+### Bloque 6 — Magia
+
+| Orden | ID | Etapa | Estado |
+| --- | --- | --- | --- |
+| 19 | GOW8B-MAGIC-01 **(nueva)** | Ira de Poseidón (única magia por ahora; economía de magia) | Pendiente; no activa. |
+
+### Bloque 7 — Mapa y plataformeo
+
+| Orden | ID | Etapa | Estado |
+| --- | --- | --- | --- |
+| 20 | GOW8B-MAP-01 **(nueva)** | Mapa del primer nivel (estructura lateral y segmentos) | Pendiente; no activa. |
+| 21 | GOW8B-PLATFORM-01 **(nueva)** | Plataformeo del nivel: extiende la etapa 8 a la geometría real | Pendiente; no activa. |
+
+### Bloque 8 — Recogibles y cofres
+
+| Orden | ID | Etapa | Estado |
+| --- | --- | --- | --- |
+| 22 | GOW8B-PICK-01 **(nueva)** | Ojos de cíclope | Pendiente; no activa. |
+| 23 | GOW8B-PICK-02 **(nueva)** | Plumas de fénix | Pendiente; no activa. |
+| 24 | GOW8B-UPGRADE-01 | Cofres y mejora de arma (H-3, resto) | Pendiente; no activa. |
+
+### Bloque 9 — Checkpoint
+
+| Orden | ID | Etapa | Estado |
+| --- | --- | --- | --- |
+| 25 | GOW8B-CHECK-01 | Checkpoint (activación, estado guardado y reintento) | Pendiente; no activa. |
+
+### Bloque 10 — Jefes (Hidra)
+
+| Orden | ID | Etapa | Estado |
+| --- | --- | --- | --- |
+| 26 | GOW8B-HYDRA-ART | Arte de la Hidra: cabeza, silueta y poses a escala del escenario | Pendiente; no activa. |
+| 27 | GOW8B-HYDRA-COMBO **(nueva)** | Combate de la Hidra: avisos, patrones, daño, ventanas vulnerables y resultado | Pendiente; no activa. |
+
+### Bloque 11 — Pulido de arte (diferido)
+
+| Orden | ID | Etapa | Estado |
+| --- | --- | --- | --- |
+| 28 | GOW8B-ART-KRA | Arte fino del personaje (Kratos), sobre la movilidad y las animaciones ya hechas | Pendiente; no activa. |
+| 29 | GOW8B-ART-ENEMY | Arte fino de esbirros y enemigos | Pendiente; no activa. |
+
+### Bloque 12 — Presentación y cierre
+
+| Orden | ID | Etapa | Estado |
+| --- | --- | --- | --- |
+| 30 | GOW8B-UI-01 | Interfaz (inicio, HUD, pausa, estados terminales) | Pendiente; no activa. |
+| 31 | GOW8B-VFX-01 | Efectos visuales (impactos, clima y cámara sin tapar lectura) | Pendiente; no activa. |
+| 32 | GOW8B-AUDIO-01 | Audio (transversal; cierre y balance tras prueba de escucha) | Pendiente; no activa. |
+| 33 | GOW8B-FULL-01 | Partida completa del primer nivel | Pendiente; no activa. |
+| 34 | GOW8B-FINAL-01 | Auditoría final independiente del producto integrado | Pendiente; no activa. |
+
+**Correspondencia con la numeración anterior (para no romper referencias en prosa):** 11 ataque pesado · 12 esquiva (→ rodada `GOW8B-ROLL-01`) · 13 bloqueo y parry · 14 respuesta al daño · 15 arte del combatiente · 16 arte del arquero · 17 conducta del combatiente · 18 finisher contextual · 19 conducta del arquero · 20 flujo y ritmo de oleadas · 21 checkpoint · 22 orbes, cofres y mejoras · 23 arte de la Hidra · 24 combate de la Hidra · 25 interfaz · 26 efectos visuales · 27 audio · 28 partida completa · 29 auditoría final. Las etapas 1–10.5 conservan su número.
+
+
+
+ — GOW8B-VIS-01
 
 El asset conceptual original es `docs/referencias/concepto-egeo-480x270.png`. ImageGen generó una primera salida de 1672×941 que se tuvo que ajustar; el archivo final es PNG indexado exacto de 480×270, opaco y con 19 colores, cuantizado localmente mediante `/usr/bin/pngquant --nofs`. La auditoría independiente inicial quedó parcial al medir 56.246 colores; el mismo auditor aprobó el plan de cuantización antes de aplicarlo. La reauditoría aprobó dimensiones, opacidad, paleta de 19 colores, bordes nearest-neighbor y lectura de Kratos, Hidra y cubierta.
 
@@ -299,6 +381,254 @@ Evidencia: `pnpm exec tsc --noEmit` y `pnpm build` exit 0 (21 módulos); `__GOW8
 
 Hallazgos **no bloqueantes:** (NB-1) `cloneEntities` es copia superficial, por lo que `attackHits` comparte referencia con la plantilla; hoy es inocuo porque `attack.ts` **reasigna** `attackHits=[]` antes de cualquier `push`, pero todo `push` futuro debe reasignar para no contaminar entre recargas. (NB-2) el frame que transiciona `startup→active` no evalúa solapamiento (la hitbox se ve en el frame 6; el contacto se mide en el 7): cumple el criterio. (NB-3) el ataque no bloquea el movimiento horizontal ni cambia la pose del sprite (deuda de arte/combo, permitida por el criterio 9). (NB-4) la verificación **visual humana** sigue diferida (misma deuda que CMP-01/ANIM-01).
 
+### Criterios de salida — GOW8B-COMBO-01 (etapa 10)
+
+**Objetivo:** **continuar el combo ligero**: encadenar golpes con una **nueva pulsación** de `J` dentro de la ventana, con **contactos adicionales** por golpe, sobre 480×270 y **sin daño** (etapa 14). Arte provisional.
+
+**Funciones previas que deben protegerse:** ataque ligero (etapa 9), salto/plataformas y determinismo (etapa 8), movimiento (etapa 6), animación (etapa 7), assets, harness y guards.
+
+1. **Estado de combo determinista.** `EntityState` lleva el **índice del golpe** de la cadena (p. ej. `attackChain: number`, 0-based) y los temporizadores, actualizados en el paso fijo; sin `Math.random`/`Date`/reloj de render.
+2. **Encadenamiento por flanco dentro de la ventana.** Una **nueva** pulsación de `J` durante `active`/`recovery` del golpe en curso (y con `chain < maxChain`) **encadena** el golpe siguiente (transiciona inmediatamente al `startup` del siguiente). **Mantener `J` no encadena** (cada golpe requiere un flanco nuevo). No se inicia combo en el aire.
+3. **Ciclo por golpe.** Cada golpe recorre `startup`→`active`→`recovery`; si **no** hay pulsación en la ventana, al terminar la recuperación vuelve a `none` (comportamiento de la etapa 9 conservado). No se puede reiniciar desde `none` hasta terminar.
+4. **Respuesta al input ≤100 ms (PR-01).** La pulsación que encadena lleva a la fase `active` del **golpe siguiente** en **≤6 ticks** desde esa pulsación.
+3b. **Límites del combo.** `maxChain` configurable (por defecto 3). Tras el último golpe del combo no se encadena; se vuelve a `none` tras su `recovery`. No se inicia ataque en el aire.
+4b. **Interacción con salto.** Durante **todo el combo** (cualquier fase) `jump` no inicia salto; al volver a `none`, el salto vuelve a estar disponible.
+5. **Hitbox por golpe.** Cada golpe tiene su **ventana de hitbox** (delante según `facing`); fuera de la ventana **no** hay hitbox. Los parámetros por golpe (o reutilizados) viven en `CONFIG`.
+6. **Contactos adicionales.** Cada golpe registra contactos **una vez por objetivo**; `attackHits` se **reinicia por golpe**. Un objetivo dentro del alcance puede recibir impactos de **varios golpes** del combo. **Sin daño, retroceso ni muerte** (el objetivo no cambia de estado).
+7. **Solo combo ligero.** `heavy-attack`/`dodge`/`context-action` siguen sin efecto; sin dependencias nuevas.
+8. **Configuración centralizada.** `maxChain`, ventana de encadenamiento, duraciones por golpe y geometría de hitbox en `CONFIG.player.attack`; sin números de combate dispersos.
+9. **Presentación provisional legible.** Retroalimentación del encadenamiento (p. ej. el indicador de hitbox varía de color/posición según el índice del golpe) y de los contactos, **etiquetada como provisional**, sin `jitter`; en el aire se conserva la etapa 8.
+10. **Determinismo (regresión 5-9).** Propiedad (`×2`, 500 ms 60/30/irregular, `record`/`replay`) y guards.
+11. **Shell y harness sanos.** `tsc`/`build` exit 0; `__GOW8B` ausente del bundle; `pnpm dev` sin errores nuevos (404 `favicon.ico` permitido); harness con `combat`, `snapshot`, `record`/`replay`.
+12. **Documentación y evidencia + auditoría independiente** por un subagente distinto. **No se marca aprobada antes de esa auditoría.**
+
+**EVIDENCIA:** `pnpm exec tsc --noEmit`/`pnpm build`; navegador (`pnpm dev`, `J` repetido dentro de la ventana) con captura y consola; harness/Node con trazas de combo (índice, ≤6 ticks por golpe, contactos por golpe, `maxChain`, mantenimiento de `J`, salto bloqueado) y de determinismo. Auditoría independiente de solo lectura por un subagente distinto; **no se marca aprobada antes de esa auditoría**.
+
+#### Auditoría de GOW8B-COMBO-01 — APROBADA (2026-10-16)
+
+Auditoría **independiente y de solo lectura** (subagente `general` distinto del implementador; runtime OpenCode, `opencode/big-pickle`; código + `esbuild`/`node` para la simulación determinista + Chrome DevTools MCP en navegador). `git status` quedó **idéntico** (el auditor no modificó archivos) y el dev server que arrancó (5174) quedó detenido.
+
+**Veredicto por criterio (1–12): APROBADO** en todos. Evidencia destacada:
+
+- **Encadenamiento por flanco:** flanco→`active` del golpe siguiente en **3 ticks** (≤6, criterio 4). Mantener `J` **no** encadena (1 solo golpe, `maxChain` intacto); no inicia en el aire.
+- **Ciclo y límites:** ciclo exacto `startup`×5 / `active`×4 / `recovery`×7 → `none`; `maxChain=3`, secuencia `0,1,2`; sin flanco en la ventana vuelve a `none/0`.
+- **Salto:** bloqueado en todo el combo (`vy=0`, `grounded=true`); disponible al volver a `none` (`vy=-363`).
+- **Hitbox por golpe:** `computeAttackHitbox` = `null` salvo `active`; geometría por golpe desde `CONFIG` (g1 `206..230`, g2 `207..233`); delante según `facing` (con `facing=-1`, centro `x-18`).
+- **Contactos:** `attackHits` reasignado `[]` por golpe; los 3 golpes contactan al mismo objetivo; dummy **byte-a-byte idéntico** (sin daño, retroceso ni muerte); sin duplicar dentro de un mismo golpe.
+- **Alcance y config:** `heavy-attack`/`dodge`/`context-action` sin efecto; `package.json`/`pnpm-lock` sin diff (sin dependencias nuevas); `maxChain`, `combo[]`, `targetHalfWidth/Height` en `CONFIG.player.attack`.
+- **Determinismo:** traza ×2 → `59c350b7`; 500 ms a 60/30/irregular → frame 30 y `ba42551f` (idéntico Node/navegador); `replay` `e02526ce`; guards OK.
+- **Shell/harness:** `tsc --noEmit` y `build` exit 0 (21 módulos); `__GOW8B` = 0 en `dist`; escenarios `empty`/`test`/`movement`/`platforms`/`combat`, `snapshot`, `record`/`replay` OK; consola solo `404 favicon.ico`.
+
+**Hallazgos:** bloqueante **ninguno**. No bloqueantes: (NB-A) el rótulo «provisional» del HUD queda superado por el arte definitivo de la etapa 10.5; (NB-B) `cloneEntities`/`getEntity` hacen copia superficial de `attackHits` (pre-existente, hoy inocuo); (NB-C) el tap de CDP (down+up en el mismo frame) no lo observa el `InputManager` basado en polling (limitación de la prueba, no del juego); (NB-D) verificación visual humana diferida (este runtime no interpreta imágenes).
+
+**Veredicto global: APROBADA.**
+
+### Criterios de salida — GOW8B-KRA-02 (etapa 10.5, nueva)
+
+**Objetivo:** reemplazar el **arte provisional de animación** del jugador —placeholder de carrera de la etapa 7, pose aérea de la etapa 8 y ausencia de poses de ataque— por **hojas de animación originales** de Kratos (**idle, carrera, aire y ataque**) legibles con la silueta a 480×270, coherentes con las **fases de simulación ya existentes** (idle↔run de la etapa 7; `attackPhase`/`attackChain` de las etapas 9–10) y **sin cambiar la simulación**, el movimiento, el salto ni las hitboxes. Arte **original** (D-04), sin dependencias nuevas en el juego, con **verificación visual local** (D-21). Es una tarea de **arte e integración**, no de gameplay.
+
+**Funciones previas que deben protegerse:** determinismo de `Simulation` (propiedad y guards de etapas 5–10), `World.snapshot`/`loadScenario`/`reset`, movimiento (`maxSpeed`/`accel`/`brake`, límites `48.5`/`431.5`, respuesta ≤6 ticks), salto/plataformas (coyote/buffer, dos niveles), ataque/combo (fases, ventanas de hitbox, `attackHits`) y la integridad de los assets aprobados (`kratos-neutral.png`, `egeo-fondo.png`).
+
+1. **Cuadros originales en la rejilla del juego.** Cada hoja usa cuadros de **97×59** con los **pies anclados** al borde inferior y origen `(0.5, 1)`, igual que `kratos-neutral.png`; sin `jitter` (`roundPixels`, nearest-neighbor). El anclaje y el rectángulo de cuadro **no cambian** entre poses.
+2. **Silueta legible.** Kratos se dibuja **de perfil**, con **contorno exterior limpio** y **sombreado direccional coherente**; la silueta se distingue a tamaño nativo y no se «embarra» con el fondo. Paleta coherente con `kratos-neutral.png`.
+3. **Hojas y recuento.** Se entregan `kratos-idle` (reposo, ≥2 cuadros), `kratos-run` (carrera, ≥6 cuadros, con espejado), `kratos-air` (aire, ≥1 cuadro) y `kratos-attack` (ataque, ≥3 cuadros).
+4. **Principios de animación.** El ciclo de carrera evidencia **squash & stretch**, **anticipación** y **arcos**, con volumen aparente constante; el reposo respira sutilmente.
+5. **Coherencia con las fases existentes.** Aire = sin ciclo de carrera (etapa 8); ataque = pose ligada a `attackPhase`/`attackChain` de las etapas 9–10; idle↔run ligado a `|vx|` (etapa 7). **No** se cambian duraciones de fase, ventanas de hitbox ni `attackHits`.
+6. **Integración por manifest.** Nuevas claves en el dominio `characters` (`kratos-idle`, `kratos-run` con su recuento real, `kratos-air`, `kratos-attack`), cargadas por `src/assets/manifest.ts` sin rutas dispersas; `CONFIG.player.run.frames` **reconciliado** con la hoja real (elimina el desajuste 6 vs 4, D-22). Al ser arte **definitivo**, `PROVISIONAL_ART` pasa a `false` y se retira el rótulo provisional.
+7. **Verificación visual local (D-21).** Cada hoja se evalúa con un **verificador visual local** (Ollama + modelo de visión pequeño en CPU, **solo desarrollo**) o, en su defecto, con una **hoja de contacto** revisada por la usuaria; se registra la observación. **No se aprueba arte sin haberlo evaluado visualmente.** Si el verificador corre en CPU, se declara su límite perceptivo.
+8. **Solo presentación.** La animación se deriva del estado de simulación y **no** lo altera: misma traza por tick → mismo checksum; 500 ms a 60/30/irregular → mismo frame y checksum; `replay` idéntico; guards de `advance`/`stepManual` y `replay` descarta grabación.
+8b. **Sin dependencias en el juego.** No se añaden dependencias a `package.json` del juego; la herramienta de visión es **externa al runtime del juego** y reemplazable por revisión humana. Sin números de balance dispersos.
+9. **Shell y harness sanos.** `pnpm exec tsc --noEmit` y `pnpm build` exit 0; `pnpm dev` sin errores ni warnings nuevos (404 `favicon.ico` permitido); `__GOW8B` ausente del bundle de producción; el harness sigue funcionando (escenarios `empty`/`test`/`movement`/`platforms`/`combat`, `snapshot`, `record`/`replay`).
+10. **Documentación y evidencia.** `README.md` y docs reflejan el arte definitivo, el procedimiento reproducible de generación y los hashes; captura de idle/carrera/aire/ataque con controles normales; auditoría independiente de solo lectura por un subagente distinto del implementador. **No se marca aprobada antes de esa auditoría.**
+
+**EVIDENCIA:** hojas PNG y sus **SHA-256**; script reproducible (p. ej. `scripts/gen-kratos-anim.py`) y su procedimiento; **descripciones del verificador visual local** o hoja de contacto revisada; navegador (`pnpm dev`, `A`/`D` o `←`/`→`, `Espacio`, `J`) mostrando idle, carrera, aire y ataque, con captura y consola; harness/Node con la regresión de determinismo (60/30/irregular, `replay`) y de movimiento/salto/ataque; verificación de que `kratos-neutral.png` y `egeo-fondo.png` siguen intactos. Auditoría independiente de solo lectura por un subagente distinto; **no se marca aprobada antes de esa auditoría**.
+
+**Nota de proceso:** la etapa 10.5 se inserta entre las etapas 10 y 11 **sin renumerar** 11–29 (misma convención que 6.5). El usuario autorizó el **enfoque** (D-21) y, después, la **ejecución**; el arte quedó **integrado** el 2026-10-16 y **no se marca aprobada** hasta la auditoría independiente de solo lectura.
+
+**Entorno de verificación visual (2026-10-16): preparado.** A petición del usuario (`prepáralo`) se instalaron herramientas de **desarrollo**, fuera del runtime del juego y sin dependencias nuevas en `package.json`:
+
+- **Ollama v0.40.5** instalado local (sin sudo) en `~/.local/opt/ollama`, binario enlazado en `~/.local/bin/ollama`; servidor en `http://127.0.0.1:11434` (arranque manual o vía el envoltorio; no es servicio systemd).
+- **Modelo de visión `moondream`** (~1.7 GB, CPU; sin GPU dedicada — el equipo tiene una iGPU AMD Mendocino, así que la inferencia es en CPU). Prueba funcional: describió `kratos-neutral.png` (personaje pixel art con dos espadas) y `kratos-run.png` («seis figuras en fila»).
+- **Envoltorio `~/.local/bin/ollama-vision <imagen> ["prompt"] [modelo]`** que arranca el servidor si no está activo y devuelve la descripción. Es la vía reproducible del criterio 7.
+- **Skill oficial `phaserjs/phaser@animations`** instalada globalmente en `~/.agents/skills/animations` para el paso de integración.
+
+**Límites:** es un VLM pequeño; sirve como filtro, no como juicio de estilo definitivo. Sigue vigente la **deuda no bloqueante** de revisión visual humana hasta que este bucle se use sobre las hojas de la etapa.
+
+#### Estado de implementación (2026-10-16) — integrada, **pendiente de auditoría**
+
+Tras la autorización de ejecución del usuario, el orquestador **reescribió** `scripts/gen-kratos-anim.py` (pixel art con segmentos de píxeles enteros, contorno duro de 1px, paleta de 6 colores extraída y verificada de `kratos-neutral.png`, pies anclados) y **regeneró** las cuatro hojas: `kratos-idle.png` (194×59, 2 cuadros), `kratos-run.png` (582×59, **6** cuadros), `kratos-air.png` (194×59, 2 cuadros) y `kratos-attack.png` (291×59, 3 cuadros). **Integración:** `src/assets/manifest.ts` registra las 4 hojas como `spritesheet` 97×59 y `PROVISIONAL_ART = false`; `src/config.ts` fija `CONFIG.player.run.frames = 6` (**desajuste 6-vs-4 resuelto**) y añade `player.idle`/`player.air`; `src/main.ts` selecciona la pose por estado con prioridad **ataque > aire > carrera > reposo** (ataque ligado a `attackPhase`).
+
+**Evidencia recogida:**
+
+- **Hashes SHA-256 (2026-10-16):** idle `48b02b96a8efb52d0d6c0f4acec2f6886bedd81d22eeba09921fa4ee779635de`; run `27ec7d858bf82a0eb31deabe8405cb541ecb193512f15a747c4c44441aa932bc`; air `5deed24a5382d9e6ec61059d2b419548219c9544945741de32823a3abee1b1d0`; attack `22bbd179710c8c66809e63653489bc5cc8a8966def183a9c8cae28c464c1c276`. `kratos-neutral.png` (`df52a7fc…`) y `egeo-fondo.png` (`8f8b5885…`) **intactos**.
+- **Programático (Pillow):** cada cuadro 97×59; todos los colores opacos ⊂ los 6 del neutral; la fila `y=58` tiene píxeles opacos en todos los cuadros (pies anclados; bbox inferior = 58 en las cuatro hojas).
+- **Navegador (`pnpm dev`, sin errores de consola — solo el 404 de `favicon.ico`):** con entradas **sintéticas** (etiquetadas como tales) se midió sobre el canvas una **silueta distinta por estado** (reposo/aire/carrera/ataque) y se observó `attackPhase` en `startup`/`active`/`recovery`; las 4 hojas cargan `200`.
+- **Determinismo (regresión protegida):** 500 ms a 60/30/irregular (dos órdenes) → **mismo frame (30) y mismo checksum**; `replay` **idéntico**; límites de movimiento **48.5/431.5** intactos; salto (subida ~69 px) y ataque (contactos acumulados) sin regresión.
+- **`pnpm exec tsc --noEmit`** y **`pnpm build`** exit 0; `__GOW8B` **ausente** del bundle de producción.
+- **Verificador visual local (D-21):** `ollama-vision` + `moondream` (CPU). `kratos-idle` → «una persona»; `kratos-run` → «una persona corriendo en una línea». Fue **intermitente** (HTTP 500 transitorios y salidas incoherentes en `air`/`attack`), por lo que se declara su **límite perceptivo**: filtro grueso, no juicio de estilo. Hoja de contacto en `docs/referencias/kratos-anim-contact-sheet.png`.
+
+**Estado (2026-10-16): auditoría independiente de solo lectura APROBADA.** La realizó un subagente `general` distinto del implementador (runtime OpenCode, `opencode/big-pickle`): **aprobada** con una observación no bloqueante (la hoja `kratos-attack.png` tiene 4 cuadros pero `attackPhase` solo mapea 3; cumple ≥3). **Queda deuda no bloqueante:** la **revisión visual humana** de la hoja de contacto (criterio 7).
+
+**Limitación conocida:** el implementador subagente (`general`) no completó la tarea (dos intentos: uno devolvió vacío y otro fue interrumpido), por lo que la implementación la realizó el **orquestador**; la auditoría debe, por tanto, hacerla un subagente distinto.
+
+### Criterios de salida y evidencia — GOW8B-SCALE-01 (nueva, Bloque 1)
+
+**Objetivo:** fijar la **referencia de escala** del juego —línea de pies, silueta, altura útil de salto y radios/envolventes de alcance— derivada del arte y la física vigentes, para que el diseño del mapa (Bloque 7) la consuma. Es una tarea de **medida, centralización y visualización DEV**, no de gameplay: **no cambia el estilo del arte** ni el comportamiento.
+
+**Funciones previas que deben protegerse:** `CONFIG.player` completo (velocidades, límites `48.5`/`431.5`, gravedad/salto/`maxFallSpeed`, coyote/buffer, combo y hitboxes por golpe), determinismo (`checksum`, `replay`, 60/30/irregular), `src/sim/*` intacto, integridad de los assets aprobados (`kratos-*.png`, `egeo-fondo.png`) y ausencia de `__GOW8B` en el bundle de producción.
+
+1. **Referencia derivada, no copiada.** Las métricas se calculan desde las constantes vigentes (física y sprite); ninguna cifra de escala duplicada a mano y sin números dispersos en escenas o entidades.
+2. **Cobertura.** Línea de pies y anclaje, silueta (ancho/alto y relación con el canvas), altura útil y alcance horizontal del salto, envolvente de alcance de ataque por golpe del combo y su máximo, y las envolventes de mapa derivadas de lo anterior.
+3. **Sin cambio de comportamiento.** `CONFIG.player` conserva sus valores; determinismo preservado; `src/sim/*` sin tocar.
+4. **Solo DEV lo que es DEV.** El overlay de referencia no altera la simulación ni el render de producción; `__GOW8B` y los símbolos del overlay ausentes del bundle.
+5. **Verificable.** Métricas legibles desde el harness DEV; `pnpm exec tsc --noEmit` y `pnpm build` exit 0; sin dependencias nuevas; consola sin errores nuevos (solo el 404 preexistente de `favicon.ico`).
+6. **Documentación y evidencia** más auditoría independiente de solo lectura por un subagente distinto del implementador.
+
+**Entrega:** `src/scale.ts` (nuevo, cálculo puro y sin dependencias de motor), `CONFIG.scale` en `src/config.ts` derivado de una fuente única `PLAYER`, `src/dev/scaleOverlay.ts` (nuevo), el import DEV-guarded y el wiring de `src/main.ts`, y `getScaleReference`/`toggleScaleReference`/`isScaleReferenceVisible` en `src/dev/harness.ts`.
+
+**Registrado (2026-10-17, rama `tarea/GOW8B-SCALE-01`, HEAD `e6f9013` sin commits):** implementación por un subagente (`general`, runtime OpenCode, `big-pickle`); auditoría por un subagente distinto.
+
+**Evidencia del implementador:** `CONFIG.player` idéntico en valor al archivo previo (comparación carácter a carácter ignorando espacios: mismo contenido); `tsc --noEmit` y `build` exit 0; `replay` ×3 del mismo trace → `7e6ee4e4`; 500 ms a 60/30/irregular → frame 30 y `278a3618` en los tres; overlay visible vs oculto → mismo checksum `12b79e1b`; hashes de los 6 assets sin cambios; `__GOW8B` y símbolos del overlay ausentes de `dist/`; servidores detenidos.
+
+**Evidencia de la auditoría independiente (2026-10-17):**
+
+- **Métricas realmente derivadas (prueba de mutación):** sobre una copia fuera del repo, con `PLAYER_SPRITE_WIDTH 97→58` y `jumpSpeed 380→500` cambiaron `silhouette.width`, `horizontalTravel.minX`, `jump.ideal.apexHeight` (72.2→125), `airTimeSeconds` (0.76→1), `horizontalReach` (106.4→140), `jump.ticks.apexHeight` (69.056→120.833), `airTimeTicks` (45→59), `maxStepUp` y `maxGapWidth`; permanecieron sin cambio, correctamente, `sprite.height` y `heightRatio`. Controles de fórmula `true`.
+- **El cálculo replica el motor real:** `simulateJumpTicks` sobre `stepVertical` → `apexHeight 69.056 @ tick 22`, aire `45 t (0.75 s)`, alcance `105`; coinciden con las métricas derivadas.
+- **`src/scale.ts` puro:** cero `import`, cero `Math.random`/`Date`/`performance`/`window`/`document`/`Phaser`; solo `Math.min/max/floor`.
+- **Sin cambio de comportamiento:** velocidades, límites, gravedad, salto, coyote/buffer y `topY` sin cambios frente a HEAD; las diferencias restantes en `CONFIG.player` son de COMBO-01/KRA-02 (estructura de combo, `idle`/`air`, `run.frames 4→6`), **no** de esta etapa. Determinismo **8/8** (mismo plan → mismo checksum y frame; `replay` == paso fijo; 60 Hz == 30 Hz; irregular == paso fijo; 60 ticks exactos por segundo; 2 ticks por frame irregular).
+- **Navegador (puerto propio 5199; 5173/5175 del usuario intactos):** con el overlay activado aparecieron 2339 px de referencia (línea de pies cian, silueta amarilla, caja de salto verde, bandas de ataque rosa) y corrida horizontal de 480 px en la fila de la línea de pies; la tecla `G` verifica con keypress real; checksum `fa0bcd1b` **idéntico** con overlay OFF/ON/OFF; consola sin errores y sin respuestas 4xx/5xx; servidores detenidos.
+- **Cierre:** `git status --porcelain` con el mismo hash que al inicio (el auditor no modificó nada) y HEAD sin commits.
+
+**Veredicto global de la auditoría: APROBADA** (sin hallazgos bloqueantes). Observaciones no bloqueantes: (a) `run.frames 4→6` respecto a HEAD es de KRA-02, no de esta etapa; (b) `src/scale.ts` viaja en el bundle de producción porque `CONFIG.scale` se evalúa al importar `config.ts` — el criterio solo exigía que no se filtraran `__GOW8B` ni los símbolos del overlay; (c) el overlay dibuja las envolventes de ataque siempre, sin condicionarlas a `attackPhase` (coherente con ser una referencia de escala, no un indicador de combate); (d) el árbol de trabajo reúne tres etapas sin commit, así que la atribución se hizo por contenido, no por git.
+
+**Deuda no bloqueante abierta:** la verificación visual humana sigue difiriendo (§CMP-01, §GOW8B-KRA-02).
+
+### Criterios de salida y evidencia — GOW8B-DJUMP-01 (nueva, Bloque 1)
+
+**Objetivo:** añadir el **doble salto** —un segundo impulso aéreo— manteniendo la compatibilidad con la etapa 8 (salto, coyote, buffer y plataformas) y con el bloqueo de salto durante el combo (etapas 9–10).
+
+**Funciones previas que deben protegerse:** salto simple desde el suelo (altura y tiempo de vuelo), coyote y buffer, bloqueo de salto durante **todo** el combo (`attackPhase !== 'none'`), movimiento y límites `48.5`/`431.5`, plataformas, determinismo.
+
+1. Estado del doble salto **determinista** en `EntityState` (`jumpsUsed`), actualizado solo en el paso fijo.
+2. **Segundo impulso por flanco nuevo**: mantener la tecla **no** encadena saltos.
+3. **Límite configurable** `CONFIG.player.vertical.maxJumps` (defecto **2**): nunca más de 2 impulsos sin tocar suelo.
+4. **Reposición al aterrizar**: al quedar `grounded` el contador vuelve a 0.
+5. **Coyote y buffer preservados**: el salto dentro de la ventana de coyote cuenta como salto de suelo y no consume el aéreo.
+6. **Sin regresión del combo**: salto y doble salto siguen bloqueados durante el combo.
+7. **Sin regresión del salto simple**: la altura y el tiempo de vuelo del primer salto no cambian.
+8. **`CONFIG.scale` actualizado y derivado** para que el mapa se diseñe con el alcance real de dos impulsos (`doubleTicks`, `maxStepUp`, `maxGapWidth`).
+9. **Determinismo** (misma traza → mismo checksum; 60/30/irregular → mismo frame; `record`/`replay` idénticos).
+10. **Shell sano** (`tsc --noEmit` y `build` exit 0; `__GOW8B` ausente; sin dependencias nuevas; arte intacto) y **auditoría independiente**.
+
+**Entrega:** `src/sim/types.ts` (`jumpsUsed`), `src/sim/vertical.ts` (lógica del impulso aéreo), `src/sim/world.ts` (`maxJumps` en `VERTICAL_PARAMS`), `src/sim/scenarios.ts` (inicialización), `src/config.ts` (`maxJumps`) y `src/scale.ts` (`simulateJumpWithImpulses`, `simulateDoubleJumpTicks`, `JumpReference.doubleTicks`).
+
+**Evidencia re-medida por el orquestador (2026-10-17, rama `tarea/GOW8B-DJUMP-01`):** simulación directa sobre `World` con el escenario `movement` (60 ticks/s), 140 ticks por corrida, leyendo el estado con `getEntity` en cada tick:
+
+| Caso | Altura alcanzada | Ticks de aire | Checksum de la traza |
+|---|---|---|---|
+| A — 1 pulsación **mantenida** (t≥1) | 69.0556 | 44 | `7c9dfa09` |
+| B — 1 pulsación simple (t=1) | 69.0556 | 44 | `7c9dfa09` |
+| C — 2.ª pulsación en el aire (t=12) | **120.3889** | 62 | `07c7fa9f` |
+| D — 3.ª pulsación (t=24) | 120.3889 | 62 | `07c7fa9f` |
+| E — 2.ª pulsación tardía (t=40) | 99.3889 | 88 | `404b8cbd` |
+
+- **A == B**: mantener la tecla **no** encadena (misma altura y mismo checksum). Criterio 2 ✔
+- **C == D**: la tercera pulsación se **rechaza** (misma altura y mismo checksum). Criterio 3 ✔
+- **B == 69.0556**: es exactamente el ápice de referencia de `GOW8B-SCALE-01` → el salto simple **no cambió**. Criterio 7 ✔
+- **E < C**: el segundo impulso tardío da menos altura total, como corresponde a la física. ✔
+- **Determinismo:** mismo plan ×3 → `3ac7c309` idéntico. `mc` idéntico. Criterio 9 ✔
+
+> **Esquema de los checksums de esa tabla** (para poder reproducirlos): la traza es una línea por tick con `x,y,vy,jumpsUsed` a 4 decimales, unida con `\n`, y el valor es `checksumOf` (`src/sim/checksum.ts`) de ese texto. Sin el esquema, el hex no es reproducible: la re-auditoría posterior intentó 12 esquemas distintos y no dio con él — de ahí que quede escrito acá. Las relaciones que importan (**A == B**, **C == D**) se verificaron igual por ápice y tiempo de aire, que son agnósticos al esquema.
+- `tsc --noEmit` y `build` exit 0; `__GOW8B` ausente de `dist/`; sin dependencias nuevas; SHA-256 de los 6 assets intacto.
+
+**Auditoría independiente (2026-10-17): APROBADA**, por un subagente distinto del implementador. El informe llegó truncado al transcript del orquestador, por lo que la tabla anterior es la **re-medición del orquestador**, no una cita del auditor.
+
+**Observación no bloqueante:** `simulateDoubleJumpTicks` en `src/scale.ts:305-346` **sí** simula por tick (barre el tick del impulso extra y se queda con el mejor ápice y el mayor tiempo de aire), y por eso `apexHeight 138.111 = 2 × 69.0556` es el resultado legítimo de impulsar en el ápice, no un atajo aritmético. Dos detalles menores: (a) `src/scale.ts:340` devuelve `jumps: 2` **literal** en vez de la variable `jumps` calculada, así que con `maxJumps ≥ 3` el número reportado mentiría (hoy `maxJumps = 2`, correcto); (b) el comentario de `src/scale.ts:296-301` describe presentar los dos extremos por separado y el retorno es un único objeto con un solo `apexImpulseTick`. Ninguno afecta los valores actuales.
+
+### Criterios de salida y evidencia — GOW8B-ROLL-01 (nueva, Bloque 1)
+
+**Objetivo:** **rodada terrestre con i-frames** (absorbe la antigua «esquiva»). Su verificación plena se cierra cuando exista daño (Bloque 4).
+
+**Funciones previas que deben protegerse:** movimiento, límites, salto simple, doble salto, combo y sus bloqueos, plataformas, determinismo, arte y bundle de producción.
+
+1. Estado determinista en `EntityState` (`rollPhase`, `rollTicks`, `invulTicks`) y duración/i-frames en `CONFIG.player.dodge`.
+2. Solo **terrestre**: no se inicia en el aire.
+3. **Flanco nuevo**: mantener la tecla no reinicia la rodada.
+4. **Ininterrumpible** mientras está activa; bloquea el inicio de ataque durante su duración.
+5. **Los i-frames cubren la rodada** (no deben sobrevivir a la animación).
+6. Determinismo, shell sano y auditoría independiente.
+
+**Evidencia re-medida por el orquestador — estado ANTES de la corrección (2026-10-17):** escenario `movement`, una pulsación en `t=2`:
+
+- Rodada activa: ticks **2..15 → 14 ticks (233 ms)**. Config `durationMs: 250` → 15 ticks. ✔ (coherente)
+- I-frames activos: ticks **2..30 → 29 ticks (483 ms)**. Config `invulMs: 250` → 15 ticks. ✘
+- Mantener la tecla `dodge`: **una sola** rodada (no se reinicia). ✔
+- Rodada en el aire: **rechazada** (`rollPhase` sigue `none`, `vy` intacto). ✔
+
+**Hallazgo BLOQUEANTE (H-ROLL-1) — los i-frames duran el doble de lo configurado y sobreviven a la rodada.**
+
+- **Evidencia:** con `durationMs: 250` e `invulMs: 250`, la rodada dura 14 ticks observados (233 ms) pero la invulnerabilidad dura **29 ticks (483 ms)**: **15 ticks (250 ms) de invulnerabilidad gratis después de terminar la animación**.
+- **Causa raíz (leída en el código):** `src/sim/roll.ts:28-46`. En `stepRoll`, la rama `rollPhase !== 'none'` incrementa `rollTicks` pero **nunca decrementa `invulTicks`**; el bloque `if` de las líneas 37-40 está **vacío** (solo un comentario). Por eso el contador se queda en 15 durante toda la rodada y recién empieza a bajar al terminar: 15 + 15 = 30 ticks.
+- **Contradicción con el propio código:** `src/sim/types.ts:57-58` documenta «`invulTicks` counts down while entity is invulnerable», y **no** ocurre así durante la rodada.
+- **Impacto:** el jugador recibe ~250 ms de invulnerabilidad extra con la animación ya terminada. Es material para el Bloque 4 (vida y daño): la ventana de i-frames que se verifique allí no sería la configurada. **Una función aprobada (los i-frames de la rodada) no cumple su criterio.**
+- **Estado:** `GOW8B-ROLL-01` quedó **reabierta**; la corrección se aplicó y se re-auditó **el mismo día** (ver «Corrección aplicada y re-auditada» abajo). Criterio 5 de esta etapa: **cumplido tras la corrección**.
+- **Nota de proceso:** la auditoría de esta etapa había cerrado como **PARCIAL** señalando esta misma zona (`invulTicks`, hallazgo N1) y el orquestador la marcó «Aprobada» sin resolver el hallazgo. Fue un error de cierre: el defecto se detectó recién en la verificación propia del orquestador, días-después, y se registra aquí.
+
+**Plan de corrección (revisado y APROBADO en solo lectura por el auditor que reportó el hallazgo, antes de editar):**
+
+- **Cambio propuesto:** en `stepRoll`, decrementar `invulTicks` exactamente **una vez por tick** siempre que sea `> 0`, sin importar la fase; y **eliminar el bloque `if` vacío** de las líneas 37-40. `startRoll` conserva su semántica (`max(invulTicks, ROLL_INVUL_TICKS)`), de modo que los i-frames empiezan con la rodada y **nunca la sobreviven**.
+- **Archivos:** `src/sim/roll.ts` (corrección), `src/sim/types.ts` (ajustar el comentario de `invulTicks` si queda inexacto). Ningún otro.
+- **Criterios de aceptación:** (1) los i-frames duran **≤ 15 ticks** y **no sobreviven** a la rodada (último tick con `invulTicks > 0` ≤ último tick con `rollPhase !== 'none'`); (2) la duración de la rodada **no cambia** (14-15 ticks observados, misma sensación); (3) mantener la tecla sigue dando **una sola** rodada; (4) la rodada sigue **rechazada** en el aire; (5) determinismo preservado (misma traza → mismo checksum; 60/30/irregular → mismo frame; `record`/`replay` idénticos); (6) sin cambios medibles en movimiento, salto, doble salto ni ataque; (7) `tsc --noEmit` y `build` exit 0, `__GOW8B` ausente, sin dependencias nuevas, arte intacto; (8) el comentario de `invulTicks` coincide con el comportamiento.
+- **Regresiones protegidas:** SCALE-01, DJUMP-01 (ápice 69.0556 simple / 120.3889 doble, «mantener no encadena», tercera pulsación rechazada), COMBO-01 (encadenado por flanco, salto bloqueado en combo, ventanas), LIGHT-01 (contacto a dx=40) y CHAOS-01 (arcos y envolventes derivadas).
+- **Compuerta:** el auditor que reportó el hallazgo revisa este plan en **solo lectura**. Si lo rechaza, se revisa el plan y **no se edita** hasta su aprobación. Si lo aprueba, **un único implementador** aplica la corrección y **un auditor distinto** la re-audita.
+
+**Corrección aplicada y re-auditada (2026-10-17) — cierre de `H-ROLL-1`:**
+
+- **Compuerta superada:** el auditor que reportó el hallazgo **aprobó el plan en solo lectura**, incluidas dos recomendaciones no bloqueantes (declarar la coherencia de config y advertir que los checksums con rodada cambian por diseño). Cero archivos editados antes de esa aprobación.
+- **Aplicación (implementador único):** el decremento de `invulTicks` se movió a la **cabecera de `stepRoll`** (una vez por tick, en toda fase) y se eliminó el `if` vacío con su comentario. `startRoll` quedó **intacto** (`max(invulTicks, ROLL_INVUL_TICKS)`). Es el **único** archivo cuyo contenido cambió: `src/sim/types.ts` y `docs/` quedaron intactos — el comentario de `invulTicks` ya describía bien el comportamiento corregido.
+- **Medición del orquestador (contraste propio):** rodada `2..15` = **14 ticks (233 ms)**, i-frames `2..15` = **14 ticks**, `survive=false`, una sola rodada al mantener la tecla. Traza tick a tick: `rollTicks` 1..15 con `invulTicks` 14,13,…,1,0; **no existe ningún tick «rodando pero vulnerable»** ni «invulnerable sin rodar».
+- **Re-auditoría (auditor distinto del implementador, solo lectura): APROBADA**, 9/9 puntos OK, sin hallazgos bloqueantes. Verificó además con **navegador y tecla real** (Shift, puerto propio 5193) que la rodada no se reinicia manteniendo la tecla y que no se inicia en el aire, y que **la cobertura de i-frames es exacta** (no 1 tick corta ni larga) porque rodada e i-frames decrementan en lockstep. Confirmó `tsc`/`build` exit 0, `__GOW8B` ausente, sin dependencias nuevas, los 6 assets intactos, `git status` idéntico y servidor detenido; y que el fix toca **únicamente** `src/sim/roll.ts` y es byte-idéntico al plan aprobado.
+- **Sin regresión demostrada por identidad:** comparando contra una copia previa del defecto e **ignorando el campo `invulTicks`**, todas las trazas salen **byte-idénticas**: movimiento (límites `48.5`/`431.5`), salto simple **69.0556**, salto **mantenido** (mismo ápice y mismo checksum que el simple: no encadena), doble salto **120.3889**, **tercera** pulsación rechazada (mismo checksum que la segunda), combo ligero (contacto único, salto bloqueado en combo). Determinismo: 500 ms a 60/30/irregular → frame 30 y mismo checksum; `record`/`replay` idénticos.
+- **Efecto neto:** los i-frames pasan de **29 ticks (483 ms)** a **14 ticks (233 ms)**, es decir el doble de duración corregido a la duración configurada.
+- **Observación no bloqueante (para el Bloque 4):** la cobertura exacta depende de que `invulMs == durationMs` (hoy 250/250). Con `invulMs < durationMs` la rodada termina sin i-frames; con `invulMs > durationMs` los i-frames sobreviven a la animación. Nada en el código fuerza esa igualdad, y `startRoll` usa `max(invulTicks, ROLL_INVUL_TICKS)`: si el daño del Bloque 4 aporta i-frames más largos, podrían sobrevivir a la rodada. Es diseño del Bloque 4, no un defecto abierto. Otras dos observaciones preexistentes y ajenas al fix: `isEntityInvulnerable` (`src/sim/attack.ts:165`) sin uso todavía, y `rollPhase: 'recovery'` nunca asignado.
+- **Limitación declarada por la re-auditoría:** la sensación a 60 fps en tiempo real no se pudo evaluar (el `requestAnimationFrame` del entorno venía limitado a ~1 fps); sí se verificó el comportamiento por tick de simulación y con tecla real.
+
+**Estado final: `GOW8B-ROLL-01` — APROBADA** (2026-10-17), con la verificación plena de los i-frames diferida al Bloque 4, cuando exista daño con el que probarla.
+
+### Criterios de salida y evidencia — GOW8B-CHAOS-01 (nueva, Bloque 2)
+
+**Objetivo:** dar identidad al arma —**Cuchillas del Caos**— y modelar sus **cadenas** (alcance) y **arcos de golpe**. El golpe deja de ser una **caja pegada al cuerpo** (`hitboxOffsetX/hitboxWidth/hitboxHeight`, una por golpe) y pasa a ser un **arco barrido**: una caja de hoja (`width × thickness`) transportada por la cadena desde `startRad` hasta `endRad` alrededor del agarre. Es la identidad del arma de *God of War*, no un adorno.
+
+**Funciones previas que deben protegerse:** contacto **una vez por objetivo** por golpe y `attackHits` **reiniciado por golpe**; hitbox **solo** en fase `active`; encadenado por **flanco nuevo** de `J` (mantener no encadena); **salto bloqueado durante todo el combo** y disponible al terminar; el ataque **no** se inicia en el aire; la **rodada bloquea** el inicio de ataque; movimiento horizontal y límites `48.5`/`431.5`, salto simple, doble salto y rodada intactos; determinismo; `__GOW8B` ausente del bundle; arte intacto por hash.
+
+1. **Identidad del arma centralizada.** `PLAYER.weapon` (`id`, `name`, `gripOffsetY`) en `src/config.ts`; ningún literal de arma disperso por escenas o entidades.
+2. **Arcos por golpe.** Cada golpe del combo define su arco (ángulo inicial/final, radio, ancho y grosor de hoja) en `CONFIG`; la conversión grados→radianes ocurre en un único punto.
+3. **Cadenas = alcance, y derivado.** La envolvente del golpe se deriva del muestreo del arco más el agarre; `CONFIG.scale.attack` (`nearX`/`farX`/`topY`/`bottomY` por cadena, `maxReach`, `minReach`, `bandHeight`) **se calcula**, nunca se copia a mano.
+4. **Sin regresión de lo aprobado** (punto crítico: el modelo de golpe cambió): los cinco bloqueos y ventanas de las etapas 9–10 se conservan.
+5. **Determinismo.** Sin azar ni reloj de render; `progress` acotado a `[0,1]`; misma traza → mismo checksum; 500 ms a 60/30/irregular → mismo frame y mismo checksum; `record`/`replay` idénticos.
+6. **Shell sano.** `pnpm exec tsc --noEmit` y `pnpm build` exit 0; `__GOW8B` **ausente** de `dist/`; **sin dependencias nuevas**; arte intacto por SHA-256.
+7. **Navegador** con el escenario `combat` en **puerto propio** (sin tocar 5173/5175) y consola sin errores nuevos (solo el 404 preexistente de `favicon.ico`).
+8. **Auditoría independiente** de solo lectura por un subagente distinto del implementador.
+
+**Entrega:** `src/config.ts` (`PLAYER.weapon` con `id`/`name`/`gripOffsetY`, y `arc` por golpe del combo), `src/sim/attack.ts` (`AttackArc`, `AttackParams`, `computeAttackHitbox` por muestreo), `src/sim/world.ts` (mapeo config→params y grados→radianes) y `src/scale.ts` (`ScaleAttackArc`/`ScaleAttackHit`, helper puro `sweptArcEnvelope`, y `AttackHitEnvelope` con `nearX`/`farX`/`topY`/`bottomY` en lugar de `offsetX`/`width`/`height`).
+
+**Registrado (2026-10-17, rama `tarea/GOW8B-CHAOS-01`, HEAD `e6f9013` sin commits):** implementación por un subagente; auditoría por un subagente distinto.
+
+**Evidencia de la auditoría independiente (2026-10-17):**
+
+- **Regresión de lo aprobado: 5/5 sin fallos.** Contacto único por objetivo (`attackHits` nunca >1 y se reinicia por golpe; el dummy no cambia de estado); `computeAttackHitbox` devuelve `null` fuera de `active` (t6–t9 activos, resto 0); encadenado por flanco con `J`, mantener `J` no encadena, borde de salto bloqueado todo el combo y libre después, rodada bloquea el inicio de ataque; respuesta press→`active` 5/3/3 ticks (≤6); límites `48.5`/`431.5`, ápice `69.056 @ tick 22` y 45 ticks de aire intactos.
+- **El arco no está en la ruta de movimiento (prueba de mutación):** sustituyendo el arco por una geometría arbitraria en una copia de la simulación fuera del repo, las trazas de movimiento, salto, doble salto y rodada salieron **idénticas byte a byte**. Es el control que prueba que el modelo nuevo no contamina lo aprobado.
+- **Cobertura del arco, medida:** sin impacto a dx 5/6/7; `chain0` desde dx≥8; `chain1` desde dx≥9; `chain2` desde dx≥14; las tres entre dx 15 y 53; techo de `chain0` ~53, `chain1` ~58, `chain2` ~63. Span vertical real: `chain0` y[−48.3, −19.9], `chain1` y[−56.7, −17.9], `chain2` y[−65.7, −5.9]; el combo completo alcanza pies del objetivo en Y∈[−65.5, +5].
+- **Envolvente derivada, y derivada de verdad:** `CONFIG.scale.attack` leído en ejecución → `chain0` nearX 21.00 / farX 40.00; `chain1` 19.58 / 44.00; `chain2` 13.94 / 49.00; `maxReach 49`, `minReach 13.943`, `bandHeight 71.709`. Se calcula en `src/scale.ts:407-422` con `sweptArcEnvelope` sobre `attack.combo`; en `src/config.ts` **no hay** literales de `maxReach`/`minReach`/`bandHeight`/`maxAttackGap`. `maxAttackGap = attackReference.maxReach`.
+- **Determinismo:** misma traza ×2 → mismo checksum; 500 ms a 60/30/irregular → frame 30 y mismo checksum; 30×16.667 ms = 30 ticks; `record`/`replay` idénticos (`9be4049f…`).
+- **Shell y arte:** `tsc --noEmit` exit 0 y `build` exit 0 (24 módulos); `__GOW8B` ausente de `dist/`; `git diff HEAD -- package.json pnpm-lock.yaml` **vacío**; SHA-256 de los 6 assets coincidentes (`df52a7fc…`, `48b02b96…`, `27ec7d85…`, `5deed24a…`, `22bbd179…`, `8f8b5885…`).
+- **Navegador (puerto propio 5191; 5173/5175 intactos):** contactos t7/t13/t22 reproducidos, métricas idénticas a Node, toggle del overlay ON/OFF con checksum invariante `cf5a707f`, consola solo con el 404 preexistente de `favicon.ico`, loop a 60 fps. **Cierre:** `git status` idéntico al inicio del auditor y servidor detenido.
+- **Limitación declarada:** la prueba de teclado físico por CDP (`press_key`) no la observa el `InputManager` poll-based (down+up en el mismo frame → `atkFrames: 0`). Es la limitación **ya documentada de `GOW8B-COMBO-01`**, no un fallo nuevo, y queda como **no verificable por esa vía**.
+
+**Veredicto global de la auditoría: APROBADA** (sin hallazgos bloqueantes). Observaciones no bloqueantes: (a) **pérdida de contacto a muy corta distancia** — a dx≤7 no golpea ninguna cadena (`minReach` subió de 6 a 13.94); no rompe `GOW8B-LIGHT-01`, cuya evidencia se tomó a dx=40 y sigue contactando, pero es un cambio real de sensación en cuerpo a cuerpo; (b) **la envolvente vertical creció de 16 a 71.71 px** (el span real es ~59.8 y el valor es conservador): el arco llega hasta ~65.7 px sobre la línea de pies con un jugador de 59 px, o sea **por encima de la cabeza**; (c) los criterios de aceptación de esta etapa **no estaban escritos en el repositorio antes de implementar** — se formalizan en esta sección al cierre, y la auditoría se hizo contra el encargo; queda registrado como desviación de proceso.
+
+**Deuda no bloqueante abierta:** la verificación visual humana sigue difiriendo (§CMP-01, §GOW8B-KRA-02, §GOW8B-CHAOS-01).
+
 ## Método de verificación para tareas futuras
 
 Antes de implementar cada tarea, el orquestador define una sola tarea activa, superficies y aceptación. El implementador prueba los criterios aplicables; un auditor distinto revisa en solo lectura y repite una regresión breve de funciones ya aprobadas. Se registran fallos, limitaciones y aprendizaje agnóstico. Una tarea parcial o fallida no habilita la siguiente.
@@ -309,11 +639,27 @@ Antes de implementar cada tarea, el orquestador define una sola tarea activa, su
 - Los pasos y escenarios controlados pueden complementar la reproducción de bordes y estados, pero no sustituyen un recorrido de juego con controles normales.
 - Cuando aplique, la comprobación de implementación incluye navegador, captura de la condición, consola, auditor independiente y regresión breve. La compilación o el typecheck no sustituyen la prueba funcional.
 
-`GOW8B-VIS-01`, `GOW8B-KRA-01`, `GOW8B-ENV-01`, `GOW8B-CMP-01`, `GOW8B-DEV-01`, `GOW8B-MOVE-01` y `GOW8B-RES-01` están aprobadas por auditoría. `GOW8B-CMP-01` cerró con la verificación visual humana diferida y no bloqueante. La etapa **6.5 `GOW8B-RES-01`** (migración a 480×270 e integración de assets) quedó **aprobada** el 2026-10-15 tras auditoría independiente. La etapa **7 `GOW8B-ANIM-01`** (animación de carrera provisional) quedó **aprobada** el 2026-10-15 tras auditoría independiente de solo lectura. La etapa **8 `GOW8B-JUMP-01`** (salto y plataformas) quedó **aprobada** el 2026-10-15 tras auditoría independiente de solo lectura. La etapa **9 `GOW8B-LIGHT-01`** (ataque ligero) quedó **aprobada** el 2026-10-15 tras auditoría independiente de solo lectura; las etapas numeradas 10–29 siguen pendientes de autorización.
+`GOW8B-VIS-01`, `GOW8B-KRA-01`, `GOW8B-ENV-01`, `GOW8B-CMP-01`, `GOW8B-DEV-01`, `GOW8B-MOVE-01` y `GOW8B-RES-01` están aprobadas por auditoría. `GOW8B-CMP-01` cerró con la verificación visual humana diferida y no bloqueante. La etapa **6.5 `GOW8B-RES-01`** (migración a 480×270 e integración de assets) quedó **aprobada** el 2026-10-15 tras auditoría independiente. La etapa **7 `GOW8B-ANIM-01`** (animación de carrera provisional) quedó **aprobada** el 2026-10-15 tras auditoría independiente de solo lectura. La etapa **8 `GOW8B-JUMP-01`** (salto y plataformas) quedó **aprobada** el 2026-10-15 tras auditoría independiente de solo lectura. La etapa **9 `GOW8B-LIGHT-01`** (ataque ligero) quedó **aprobada** el 2026-10-15 tras auditoría independiente de solo lectura. La etapa **10 `GOW8B-COMBO-01`** (combo ligero) quedó **aprobada** el 2026-10-16 tras auditoría independiente de solo lectura. La etapa **10.5 `GOW8B-KRA-02`** (arte definitivo de animación de Kratos) se autorizó (D-21) y se **implementó e integró** el 2026-10-16 (hojas idle/carrera/aire/ataque, `PROVISIONAL_ART = false`, `CONFIG.player.run.frames = 6`, desajuste 6-vs-4 **resuelto**), quedando **aprobada** tras auditoría independiente de solo lectura (2026-10-16); ver «Estado de implementación (2026-10-16)». Con esto, las etapas 1–10.5 están **aprobadas**, más las etapas **`GOW8B-SCALE-01`** (Orden 1), **`GOW8B-DJUMP-01`** (Orden 2), **`GOW8B-ROLL-01`** (Orden 3) y **`GOW8B-CHAOS-01`** (Orden 4) el 2026-10-17; las etapas numeradas 11–34 siguen pendientes de autorización. La etapa **`GOW8B-ROLL-01`** quedó **reabierta** por el hallazgo bloqueante **H-ROLL-1** (i-frames que duraban el doble y sobrevivían a la rodada) y se **cerró aprobada** ese mismo día, tras corregirla por la compuerta de plan y re-auditarla con un auditor distinto.
 
 ## Registro de auditorías
 
-Lo que sigue conserva los resultados del prototipo anterior. Sus estados de «aprobada», «activa» o «pendiente» describen únicamente el momento histórico registrado; ninguno es una etapa activa del ciclo actual ni valida el shell neutral.
+### `GOW8B-ROLL-01` — rodada con i-frames (2026-10-17): **APROBADA tras corregir un hallazgo bloqueante**
+
+Historia completa, porque el cierre falló una vez y conviene que quede escrito. La auditoría de esta etapa cerró como **PARCIAL** (sin hallazgos bloqueantes declarados) señalando la zona de `invulTicks` en su hallazgo N1; el orquestador la marcó «Aprobada» **sin resolver ese hallazgo** — **error de cierre**. La **verificación propia del orquestador** (simulación directa sobre `World`, escenario `movement`) midió que la invulnerabilidad duraba **29 ticks (483 ms)** cuando la rodada dura **14 ticks (233 ms)** y `CONFIG.player.dodge.invulMs` es **250 ms**: **15 ticks (250 ms) de i-frames gratis con la animación ya terminada**, el doble de lo configurado. Causa raíz en `src/sim/roll.ts:28-46`: `stepRoll` incrementaba `rollTicks` en la fase activa pero **nunca decrementaba `invulTicks`**, y el `if` de las líneas 37-40 estaba **vacío**; el contador recién bajaba cuando la rodada terminaba. Contradecía el comentario de `src/sim/types.ts:57-58`. La etapa se **reabrió** y se aplicó la **compuerta**: el auditor que reportó el hallazgo aprobó el plan en solo lectura → **un único implementador** movió el decremento a la cabecera de `stepRoll` (una vez por tick, toda fase) y borró el `if` vacío, tocando **solo `src/sim/roll.ts`** → **un auditor distinto** la re-auditó con veredicto **APROBADA** (9/9 puntos OK, sin bloqueantes). Efecto neto: **29 ticks → 14 ticks** de i-frames, sin sobrevivir a la rodada, con cobertura exacta y **todo lo demás byte-idéntico** descontando `invulTicks`. Evidencia completa y observaciones no bloqueantes para el Bloque 4 en §GOW8B-ROLL-01; lección de proceso en `docs/aprendizajes-del-proceso.md`.
+
+### `GOW8B-CHAOS-01` — Cuchillas del Caos (2026-10-17): **aprobada**
+
+Auditoría independiente de solo lectura por un subagente distinto del implementador (OpenCode; simulación pura bundleada con esbuild fuera del repo + Chrome DevTools MCP en el puerto propio 5191, sin tocar 5173/5175). **APROBADA sin hallazgos bloqueantes**, pese a que el modelo de golpe cambió de caja a arco barrido: contacto único por objetivo y `attackHits` reiniciado por golpe, hitbox solo en `active`, encadenado por flanco, salto bloqueado durante todo el combo, rodada bloquea el ataque, respuesta 5/3/3 ticks, límites y ápice intactos, y **prueba de mutación** que demuestra que el arco no está en la ruta de movimiento (trazas de movimiento/salto/doble salto/rodada idénticas byte a byte). Envolvente derivada y verificada en ejecución (`maxReach 49`, `minReach 13.943`, `bandHeight 71.709`). Observaciones no bloqueantes: pérdida de contacto a dx≤7 (`minReach` 6→13.94, no rompe LIGHT-01), envolvente vertical 16→71.71 px, y **criterios de aceptación que no estaban escritos en el repositorio antes de implementar**. Evidencia completa en §GOW8B-CHAOS-01.
+
+### `GOW8B-DJUMP-01` — doble salto (2026-10-17): **aprobada**
+
+Auditoría independiente de solo lectura por un subagente distinto del implementador. **APROBADA**: el segundo impulso exige **flanco nuevo** (mantener la tecla da exactamente la misma altura y el mismo checksum que una pulsación simple), la **tercera** pulsación se rechaza (mismo checksum que la segunda), el ápice del salto simple sigue en **69.0556** —idéntico a la referencia de `SCALE-01`, luego sin regresión—, el doble salto alcanza **120.3889**, y el determinismo es estable (mismo plan ×3 → mismo checksum). El informe del auditor llegó truncado al transcript del orquestador, así que las cifras registradas en §GOW8B-DJUMP-01 son la **re-medición del orquestador**.
+
+### `GOW8B-SCALE-01` — escala y silueta de referencia (2026-10-17): **aprobada**
+
+Auditoría independiente de solo lectura por un subagente distinto del implementador (OpenCode, `big-pickle`; Node + esbuild para la simulación pura y Chrome DevTools MCP por el navegador en el puerto 5199, sin tocar 5173/5175). **APROBADA** sin hallazgos bloqueantes: prueba de **mutación** que demuestra que las métricas se derivan (y no son literales), replicación del salto real (`apexHeight 69.056 @ tick 22`, aire 45 t, alcance 105), `src/scale.ts` puro, determinismo 8/8, arte por hash sin cambios, `__GOW8B` y símbolos del overlay ausentes del bundle, navegador con 2339 px de referencia y checksum invariante al alternar el overlay, `git status` idéntico (el auditor no escribió nada) y servidores detenidos. Evidencia completa en §GOW8B-SCALE-01.
+
+Lo que sigue conserva los resultados del prototipo anterior. Sus estados de «aprobada», «activa» o «pendiente» describen únicamente el momento histórico registrado; ninguno es una etapa activa del ciclo actual ni valida el shell neutral. Sus estados de «aprobada», «activa» o «pendiente» describen únicamente el momento histórico registrado; ninguno es una etapa activa del ciclo actual ni valida el shell neutral.
 
 ### Reinicio solicitado — cancelación de GOW8B-02-A (2026-10-08)
 
@@ -514,3 +860,100 @@ Cuando una etapa autorizada requiera evidencia visual, guarda una captura repres
 Después de auditar cada etapa, cualquiera sea su estado, registra al menos una observación sobre el método de trabajo en [`aprendizajes-del-proceso.md`](aprendizajes-del-proceso.md). Si la tarea queda parcial o fallida, aplica el aprendizaje al siguiente intento y actualiza la entrada al volver a auditarla. Generaliza las lecciones para que sirvan fuera de este juego; no uses la bitácora para duplicar hallazgos de código, decisiones de producto o resultados detallados de una prueba.
 
 Separa los defectos reproducibles de las preferencias de diseño. Una entrada sintética que llega a los mismos listeners del juego puede verificar el flujo de eventos, pero no se debe describir como una pulsación física ni como evaluación completa de la sensación de control.
+
+## GOW8B-ROLL-ART
+
+**Estado:** Implementada y verificada mecánicamente en navegador (Chrome DevTools MCP, 2026-10-18/19); **percepción visual pendiente de validación humana**. Arte **provisional de 4 cuadros distintos**, generado por `gen-kratos-anim.py` y registrado en `ASSETS.characters`. Mecánica H-ROLL-1 blindada. Duración medida: **14 ticks observados (233 ms)** de rodada, con `invulTicks 14..1` sin sobrevivir; `CONFIG` sigue en `durationMs/invulMs = 250` (15 ticks configurados, 14 observados en `rollTicks`).
+
+### Objetivo
+Hacer que la rodada se lea como **voltereta lateral**, no como *dash*. Sin modificar mecánica aprobada: duration 250ms, invul 250ms, i-frames 15 ticks (cubren la duración, no sobreviven), terrestre, flanco nuevo, bloquea ataque/salto, vx~280*dir.
+
+### Cambios (alcance mínimo)
+- Constantes explícitas: `ROLL_TICKS=15`, `ROLL_DURATION_MS=250`, `ROLL_INVUL_TICKS=15`, `ROLL_INVUL_MS=250`.
+- Nuevo spritesheet: `public/assets/characters/kratos-roll.png` (**4 frames**, 97×59, lateral, provisional) generado por `scripts/gen-kratos-anim.py` (`ROLL`), no dibujado a mano.
+- Manifest: `ROLL_KEY`, registro del spritesheet **en `ASSETS.characters`**.
+- `src/main.ts`: preload/animación roll (loop=false, repeat=0, frameRate = frames/(15/60) = 16). Durante `rollPhase !== 'none'`, fuerza `ROLL_KEY` con facing (prioridad roll>ataque). Al salir, restaura idle/run según velocidad+grounded+facing.
+
+### Arte de la rodada: cómo se generó (trazabilidad)
+
+Los assets no se dibujan a mano: se **generan de forma procedural y determinista** con `scripts/gen-kratos-anim.py` (decisión **D-21**). El script rasteriza un esqueleto articulado sobre la rejilla 97×59 con los pies anclados, paleta de 6 colores heredada de `kratos-neutral.png`, y la verifica al cargar (`assert set(cols) == set(PALETTE)`).
+
+**Reproducibilidad comprobada:** volver a ejecutar el script produce **byte-idénticos** `kratos-idle.png`, `kratos-air.png` y `kratos-attack.png` respecto a los archivos ya en disco. Eso confirma que lo que está en el repositorio **proviene de ese generador** y no de una edición manual posterior.
+
+| Hoja | Frames | Generada por | Estado en Git |
+|---|---|---|---|
+| `kratos-neutral.png` | 1 | manual / no generada | **rastreada** |
+| `kratos-run.png` | 6 | `gen-run-frames.py` → luego `gen-kratos-anim.py` | rastreada (commit antiguo, 4 frames) |
+| `kratos-idle.png` | 2 | `gen-kratos-anim.py` (`IDLE`) | **sin rastrear** |
+| `kratos-air.png` | 2 | `gen-kratos-anim.py` (`AIR`) | **sin rastrear** |
+| `kratos-attack.png` | 3 | `gen-kratos-anim.py` (`ATTACK`) | **sin rastrear** |
+| `kratos-roll.png` | **4** | `gen-kratos-anim.py` (`ROLL`) | **sin rastrear** |
+
+**Deuda de trazabilidad detectada (no bloqueante, requiere decisión):** `scripts/gen-kratos-anim.py` y las hojas `idle`/`air`/`attack`/`roll` están **sin rastrear en Git**, mientras `kratos-run.png` sí está rastreado pero **desactualizado** (el commit conserva la versión de 4 frames). La cadena generador→salida es **reproducible**, pero **no está versionada**. La verificación por hash del arte que exige la etapa, tal como está hoy, cubriría archivos que Git no sigue.
+
+**Mecánica de la rodada en el generador:** `draw_pose` acepta una clave opcional `tuck` (0 → de pie, 1 → bola) que aplica una envolvente de *squash* (escala 1 → 0.58) y descenso (0 → 3 px) a **todos** los puntos calculados. Las poses existentes no pasan `tuck`, así que reciben factor 1.0 y **no cambian**. Los 4 cuadros son: `flexión` → `tuck` → `bola cerrada` → `salida`, con siluetas progresivamente encogidas (749 → 392 → 225 → 497 px opacos, 53 → 22 → 15 → 40 px de alto). **Los 4 cuadros son distintos entre sí** (a diferencia del placeholder anterior, cuyos 3 cuadros eran pixel-idénticos).
+
+### Criterios de aceptación (binarios, teclado real)
+1. **Lectura visual**: A/D+Shift → voltereta lateral (frames roll), NO dash lateral.
+2. **Sincronización**: clip ~250ms, último frame visible hasta fin. Sin desincronización.
+3. **Dirección**: facing fijo durante roll, lateralidad correcta (izq/der).
+4. **Prioridad**: ataque durante roll → sigue roll completo, no muestra ataque.
+5. **Mecánica intacta (H-ROLL-1 blindado)**: 15/15 ticks, i-frames cubren rodada, no sobreviven. Terrestre, flanco nuevo, bloquea ataque/salto, vx ~280*dir. Sin cambios en `src/sim/roll.ts`, `movement.ts`, `world.ts`, `vertical.ts`, `attack.ts`.
+6. **Restauración**: al salir → idle (sin movimiento) o run (corriendo) según velocidad, facing correcto, sin pop.
+7. **Casos borde**: mantener Shift no reinicia; solo terrestre; facing respeta entrada inicial.
+8. **Integración**: `tsc --noEmit` y `pnpm build` OK; `__GOW8B` ausente en `dist/`; sin dependencias nuevas; arte provisional etiquetado.
+9. **Aceptación usuario**: validación con teclado real (puerto propio).
+
+**Entrega:** cambios puramente visuales. Mecánica no modificada.
+
+### Verificación del orquestador en navegador (2026-10-18/19) — Chrome DevTools MCP
+
+Herramienta: **Chrome DevTools MCP**, servidor de desarrollo propio en el **puerto 5193** (`pnpm dev --port 5193 --strictPort`). Los servidores del usuario (5173/5175) **no se tocaron**. `localhost:5193` respondió HTTP 200 y el canvas se midió en **480×270** internos con presentación CSS de **960×540**.
+
+**Dos defectos reales encontrados y corregidos durante la verificación** (la verificación encontró lo que el typecheck no):
+
+1. **Bucle de juego congelado por una excepción.** `Uncaught TypeError: Cannot read properties of undefined (reading 'duration')` se lanzaba dentro de `update()`; Phaser **no continúa el bucle** después de un throw, así que el frame de simulación quedaba **clavado** (medido: `frame` inmóvil en 351 durante ~880 ms con la tecla pulsada). Es la causa directa del síntoma que reportó el usuario, «solo se pausa». Reproducido por primera vez en la consola del puerto 5193 con `list_console_messages`; el error se registró incluso después de recarga (`msgid=6`).
+2. **Animación creada sin frames válidos.** `createRollAnimation()` corría en `create()` cuando la textura `kratos-roll` **todavía no estaba cargada**. `texture.frameTotal` devuelve **1** (el frame `__BASE`) cuando la textura no existe, no 0; con `generateFrameNumbers(start:0, end:frameTotal-1)` se generaba un frame **sin `duration`**, y `applyAnimation` reventaba al leerla. Además `kratos-roll` **no estaba registrado** en `ASSETS.characters` (`src/assets/manifest.ts`), por lo que la textura nunca se cargaba: consola con `Texture "kratos-roll" not found` (`msgid=4`). Se añadió la guarda `textures.exists(ROLL_KEY)`/`frameTotal <= 0` y la rama de animación ahora exige `anims.exists(ROLL_KEY)` para degradar sin crashear.
+
+**Medición en vivo con el bucle a 60 fps** (`metrics().fps = 60.0`, `frameDeltaMs = 16.67`, teclas **sintéticas** vía `KeyboardEvent` inyectado, no teclado físico):
+
+| Observación | Resultado |
+|---|---|
+| `rollTicks` recorridos | `1..14` (14 valores, `maxTick 14`) |
+| `invulTicks` durante la rodada | `14..1`, lockstep con la rodada |
+| `invulTicks` después de la rodada | **0** (`survivals = 0`) |
+| Desplazamiento | `x 280.8 → 341.5` (~61 px en la ventana muestreada; `vx = ±280`) |
+| `facing` bloqueado | izquierda → `facing = -1`, `vx = -280` |
+| Rodada aérea | rechazada (`grounded:false` → `rollPhase:none`, `invul:0`) |
+| Mantener `SHIFT` | no reinicia (`active/invul 11` → `none/invul 0` tras 361 ms) |
+| Ataque durante la rodada | `rollPhase:active` ×14, `attackPhase:none` ×0 de ataque (prioridad roll>ataque) |
+| Regreso a carrera | `facing:-1`, `vx:-140`, `rollPhase:none` |
+| Determinismo | misma traza ×2 → `3c758954` idéntico |
+| Consola tras la corrección | solo el **404 preexistente de `favicon.ico`** |
+
+`curl` directo confirmó `kratos-roll.png` y `kratos-idle.png` en **HTTP 200**; los 404 de la consola no apuntan al spritesheet.
+
+**Shell:** `npx tsc --noEmit` exit 0; `pnpm build` exit 0; `grep __GOW8B dist` = **0**; `package.json`/`pnpm-lock.yaml` sin dependencias nuevas.
+
+**Limitaciones declaradas:**
+- Las entradas son **sintéticas**. El detector real es `InputManager.poll()` (`Key.isDown`), que **sí** procesa eventos inyectados, pero esto **no equivale a teclado físico ni a sensación humana**.
+- **La lectura visual no se verificó**: este runtime **no admite entrada de imagen**, por lo que las capturas tomadas (`/tmp/opencode/roll-art/*.png`) no pueden interpretarse. Queda pendiente el juicio humano.
+- **La calidad estética del arte de 4 cuadros no está evaluada.** Se verificó que los cuadros **difieren** entre sí (medido por silueta y colores), no que la rodada *se lea bien*. Sigue siendo provisional.
+- `createRollAnimation` **retorna sin crear la animación** si la textura no está cargada; la rodada caería entonces a la rama `grounded` normal. Es deuda técnica a revisar en la auditoría de esta etapa.
+- **`kratos-run.png` es deuda rastreada:** la animación de carrera corre sobre `CONFIG.player.run.frames = 6`, pero el generador escribió una hoja de 6 cuadros y `gen-run-frames.py` (el original) producía otra distinta. El commit conserva la versión vieja de 4 cuadros. Ver §GOW8B-KRA-02.
+
+**Regresión breve (misma sesión, teclas sintéticas):** reposo → carrera (`x 240→301.8`, `vx 140`) → salto en el aire (`y 200.3`, `grounded:false`) → aterrizaje en el límite derecho (`x 431.5`, `vx 0`) → ataque (`attackPhase:recovery`) → rodada (`rollPhase:active`) → reposo (`rollPhase:none`, `attackPhase:none`). **Sin excepciones** en toda la secuencia y el frame siguió avanzando (`72 → 214`), es decir, **el bucle no se congela**. Límite derecho `431.5` intacto.
+
+**Verificación del arte de 4 cuadros (2026-10-19, misma sesión, tras registrar en `ASSETS.characters`):** el spritesheet se carga (`HTTP 200`), la animación se crea **sin advertencias** (`Frame "4" not found` resuelta) y la rodada conserva toda su mecánica: `rollTicks 1..14`, **0 supervivencias** de i-frames, **0 cuadros de ataque** durante la rodada, sin excepciones, bucle avanzando (`frame 121`). Orientación por sentido: rodada a la derecha → `facing 1`, `vx 280`; rodada a la izquierda → `facing -1`, `vx -280`; regreso a reposo correcto.
+
+**Defecto encontrado y corregido en el mismo paso:** `texture.frameTotal` **cuenta el frame sintético `__BASE`**. Con 4 cuadros reales devuelve 5, así que `end: frameTotal - 1` pedía el cuadro **4**, inexistente → `Frame "4" not found in texture "kratos-roll"`. Se corrigió a `lastFrame = frameTotal - 2`. **El placeholder anterior de 3 cuadros tenía el mismo defecto** (pedía el cuadro 3, inexistente); no se detectó entonces porque la textura nunca se cargaba. Es la misma clase de error que el crash de `duration`: **confiar en un índice derivado sin verificar contra la textura real**.
+
+**Hallazgo observado (no bloqueante, preexistente):** en esa misma secuencia, iniciar la rodada sobre el **último frame de recuperación del ataque** dejó la rodada **activa pero con `vx = 0`** (la posición no cambió durante los 14 ticks). `stepHorizontal(..., locked = nowRolling)` preserva `vx`, y si el ataque terminó con velocidad 0, la rodada **no otorga impulso**. **No es una regresión de ROLL-ART** (el comportamiento del lock no se tocó), pero contradice la lectura ingenua de «rodada con `vx = 280·dir` siempre» y **merece una decisión explícita** en la etapa siguiente: o la rodada impone su impulso incondicionalmente, o se documenta que es aditiva y no garantiza desplazamiento.
+
+### Pendiente de validación humana (no bloqueante para la corrección, bloqueante para cerrar la etapa)
+
+1. **Lectura visual** (criterio 1): A/D + `SHIFT` → ¿se lee como **voltereta lateral** y no como dash? Con arte provisional de 4 cuadros (todos distintos, pero sin revisión estética) es esperable que sea **pobre**; el arte final es del Bloque 11.
+2. **Sensación real** (criterio 9): duración, sync del clip y transición de salida con teclado físico.
+3. **Dirección** (criterio 3): lateralidad percibida en ambos sentidos.
+
+Hasta que estas tres se validen con teclado físico en tu navegador, la etapa queda **implementada y verificada mecánicamente, pendiente de percepción**.

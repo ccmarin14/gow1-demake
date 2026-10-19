@@ -2,7 +2,7 @@
 
 ## Estado ejecutable actual
 
-El proyecto conserva el scaffold Phaser/TypeScript/Vite y un shell neutral con canvas lógico de **320×180**. No hay simulación de juego, escenas de combate, gestores de entrada, HUD de juego, manifest de sprites, personajes ni audio activos. La arquitectura de abajo es una propuesta para retomar el desarrollo; no describe sistemas que existan hoy. Para el trabajo futuro, la resolución interna objetivo es **480×270** (D-12); una implementación posterior debe escalar el canvas para llenar una ventana amplia del navegador con pixelado nítido y sin suavizado. La resolución interna no limita el tamaño CSS de presentación.
+El proyecto conserva el scaffold Phaser/TypeScript/Vite y un shell con canvas lógico de **480×270** (D-12), ya escalado a la ventana con pixelado nítido y sin suavizado. A 2026-10-16 hay implementados: **simulación determinista** con paso fijo y **harness DEV** `window.__GOW8B` (etapa 5), **gestor de entrada** teclado→acción de dominio, **manifest de assets** (etapa 6.5), **movimiento horizontal** (etapa 6), **salto y plataformas** (etapa 8), **animación idle↔run provisional** (etapa 7) y **ataque ligero con combo** (etapas 9–10). **No** hay enemigos con IA, daño, muerte, HUD de juego ni audio. Parte de la arquitectura de abajo **ya existe**; las secciones marcadas como «objetivo» o «futuro» describen el diseño aún no cubierto.
 
 ## Límites objetivo
 
@@ -28,7 +28,7 @@ acciones físicas → InputManager → acciones de dominio
 
 ## Contrato DEV futuro
 
-Al diseñar el harness de desarrollo, considerar una API controlada que sea explícita, sincronizada con el paso de simulación y fácil de retirar o deshabilitar en producción. **No está implementada en el shell actual.** No hay `window.__GOW8B` ni un runner de simulación activo.
+Al diseñar el harness de desarrollo, considerar una API controlada que sea explícita, sincronizada con el paso de simulación y fácil de retirar o deshabilitar en producción. **Está implementada desde la etapa 5** como `window.__GOW8B` (presente solo en DEV, ausente del bundle de producción). Esta sección se conserva como diseño de referencia y para ampliaciones futuras.
 
 ```ts
 snapshot(): SimulationSnapshot

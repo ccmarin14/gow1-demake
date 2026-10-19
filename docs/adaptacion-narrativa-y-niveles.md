@@ -1,6 +1,6 @@
 # Adaptación narrativa y estructura de niveles
 
-> **Estado:** propuesta futura, no contenido implementado. El runtime actual es solo un shell neutral Phaser/Vite a 320×180; la resolución interna objetivo futura es 480×270 (D-12). El gameplay previo fue descartado.
+> **Estado:** propuesta futura, no contenido implementado. El runtime actual es un shell Phaser/Vite a **480×270** (D-12) con movimiento, salto/plataformas y un ataque ligero con combo; **no** hay enemigos con IA, daño, muerte, HUD ni audio. Los niveles descritos aquí aún no existen. El gameplay previo fue descartado.
 
 ## Alcance de la adaptación
 

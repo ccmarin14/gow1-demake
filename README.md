@@ -1,6 +1,10 @@
 # Kratos · Tormenta del Egeo
 
-> **Estado vigente (2026-10-15):** el código ejecutable es un shell de Phaser, TypeScript y Vite con un canvas lógico de **480×270**. Incluye una simulación determinista con un **jugador controlable con movimiento horizontal** (etapa 6, `GOW8B-MOVE-01`), un **harness DEV** (etapa 5, `GOW8B-DEV-01`), la **integración de assets provisionales** (fondo del Egeo y pose neutral de Kratos) mediante un manifest (etapa 6.5, `GOW8B-RES-01`), una **animación de carrera provisional** (etapa 7, `GOW8B-ANIM-01`, placeholder procedural), **salto y plataformas deterministas** (etapa 8, `GOW8B-JUMP-01`, arte de plataformas y pose aérea provisionales) y un **ataque ligero inicial** (etapa 9, `GOW8B-LIGHT-01`, con estado, hitbox, contacto y recuperación, arte provisional). Todavía no hay enemigos con IA, daño, muerte ni audio.
+> **Estado vigente (2026-10-16):** el código ejecutable es un shell de Phaser, TypeScript y Vite con un canvas lógico de **480×270**. Incluye una simulación determinista con un **jugador controlable con movimiento horizontal** (etapa 6, `GOW8B-MOVE-01`), un **harness DEV** (etapa 5, `GOW8B-DEV-01`), la **integración de assets** (fondo del Egeo y pose neutral de Kratos) mediante un manifest (etapa 6.5, `GOW8B-RES-01`), **salto y plataformas deterministas** (etapa 8, `GOW8B-JUMP-01`, arte de plataformas aún provisional), un **ataque ligero inicial** (etapa 9, `GOW8B-LIGHT-01`) y su **encadenamiento de combo** (etapa 10, `GOW8B-COMBO-01`). Todavía no hay enemigos con IA, daño, muerte ni audio. El **arte de animación definitivo** del jugador (idle/carrera/aire/ataque) se generó e **integró** en la etapa 10.5 `GOW8B-KRA-02` (2026-10-16, D-21); `PROVISIONAL_ART` es `false`. La etapa 10.5 quedó **aprobada** tras auditoría independiente de solo lectura (2026-10-16); la etapa 10 `GOW8B-COMBO-01` también quedó **aprobada** el 2026-10-16 tras auditoría independiente de solo lectura. Con esto, las etapas 1–10.5 están aprobadas y no hay etapa activa. El plan se re-baselinó a dos niveles (**bloques = aprueba la usuaria; etapas = audita un subagente**); ver `docs/verificacion.md`.
+
+> **Actualización (2026-10-17):** con la autorización del usuario para iniciar el **Bloque 1**, se ejecutó la etapa **`GOW8B-SCALE-01`** (escala y silueta de referencia): `src/scale.ts` deriva las métricas de jugador, salto y alcance desde la física y el sprite vigentes; `CONFIG.scale` las expone; un overlay DEV (`G` para alternar) las dibuja dentro del canvas sin afectar a la simulación. Arte y tuning **sin cambios**; `PROVISIONAL_ART` sigue en `false`. Aprobada tras auditoría independiente de solo lectura (2026-10-17); no hay etapa activa.
+
+> **Actualización (2026-10-17, continuación del Bloque 1 y Bloque 2):** se ejecutaron **`GOW8B-DJUMP-01`** (doble salto: segundo impulso aéreo por flanco nuevo, `CONFIG.player.vertical.maxJumps = 2`, reposición al aterrizar), **`GOW8B-ROLL-01`** (rodada con i-frames, tecla `SHIFT`) y **`GOW8B-CHAOS-01`** (Cuchillas del Caos: identidad del arma, cadenas y **arcos de golpe** en lugar del modelo de caja por golpe). **Las tres quedaron aprobadas** tras auditoría independiente de solo lectura. En `GOW8B-ROLL-01` la verificación propia del orquestador encontró el hallazgo bloqueante **H-ROLL-1** (los i-frames duraban 29 ticks / 483 ms en vez de 15 / 250 ms y **sobrevivían a la rodada**, porque `stepRoll` no descontaba `invulTicks` mientras rodaba); la etapa se **reabrió**, se corrigió pasando por la **compuerta de plan** y un **auditor distinto** la re-auditó: efecto neto **29 → 14 ticks**. Con esto el **Bloque 1** (`SCALE-01`, `DJUMP-01`, `ROLL-01`) y la primera etapa del **Bloque 2** (`CHAOS-01`) están aprobados; ver `docs/verificacion.md`.
 
 ## Visión futura
 
@@ -30,7 +34,7 @@ No hay un script automatizado `test` configurado. El plan y el método de compro
 
 ## Controles
 
-El shell implementa movimiento horizontal, salto y **ataque ligero provisional** con `J`. Pulsa `A` o `←` para ir a la izquierda y `D` o `→` para ir a la derecha. Pulsa `ESPACIO` para saltar; pulsa `J` para atacar. El ataque solo se inicia **en el suelo**; mantener `J` **no** repite el golpe ni lo reinicia, y mientras dura el ataque `ESPACIO` no inicia un salto. En reposo se muestra la pose neutral de Kratos; al moverse en el suelo (`|vx|` > 1 px/s) se reproduce un **ciclo de carrera provisional** derivado de la pose neutral, sincronizado con la velocidad y volteado con `facing`. **En el aire no se reproduce la carrera**: se muestra la pose neutral provisional y el sprite sigue la trayectoria del salto. El resto de teclas del mapa objetivo (`K`, `SHIFT`, `E`, `ESC`) están mapeadas pero todavía no producen efectos. El mapa de teclado completo, aún propuesto, está en [`docs/direccion-y-controles.md`](docs/direccion-y-controles.md). El jugador se dibuja con el sprite correspondiente (neutral o ciclo de carrera), anclado por la base, en concordancia con el anclaje de pies establecido.
+El shell implementa movimiento horizontal, salto, **doble salto**, **ataque ligero** con `J` y **rodada** con `SHIFT`. Pulsa `A` o `←` para ir a la izquierda y `D` o `→` para ir a la derecha. Pulsa `ESPACIO` para saltar y **vuelve a pulsar `ESPACIO` en el aire** para el segundo impulso (mantener la tecla **no** encadena: hace falta una pulsación nueva por cada salto; hasta 2 impulsos sin tocar suelo, `maxJumps`); al aterrizar se repone. Pulsa `SHIFT` para **rodar**: es terrestre, no se inicia en el aire, mantener la tecla no repite la rodada y durante su duración no se inicia un ataque; la rodada otorga i-frames (ver la advertencia de `H-ROLL-1` más abajo). Pulsa `J` para atacar. El ataque solo se inicia **en el suelo**; mantener `J` **no** repite el golpe ni lo reinicia, y mientras dura el combo `ESPACIO` no inicia un salto. Una **nueva** pulsación de `J` durante el ataque **encadena** el golpe siguiente (hasta `maxChain` = 3). La animación se deriva del estado de simulación con prioridad **ataque > aire > carrera > reposo**: en reposo (`|vx| ≤ 1 px/s`) se reproduce `kratos-idle`; al moverse en el suelo se reproduce `kratos-run` (sincronizado con `|vx|` y volteado con `facing`); **en el aire** se reproduce `kratos-air` (sin ciclo de carrera); durante el ataque se muestra `kratos-attack` ligado a `attackPhase` (inicio/activo/recuperación). Las teclas `K` y `E` del mapa objetivo están mapeadas pero todavía no producen efectos. El mapa de teclado completo, aún propuesto, está en [`docs/direccion-y-controles.md`](docs/direccion-y-controles.md). El jugador se dibuja anclado por la base (origen `0.5,1`), en concordancia con el anclaje de pies establecido.
 
 ## Harness DEV
 
@@ -47,9 +51,96 @@ __GOW8B.advance(16.67, [])          // avanza el tiempo con paso fijo (desacopla
 __GOW8B.metrics()                   // fps, tiempo de frame, objetos y entidades activas
 __GOW8B.record(); /* … */ __GOW8B.stop();   // graba una traza de entrada
 __GOW8B.replay(traza)               // reproduce una traza (mismos checksums)
+__GOW8B.getScaleReference()         // métricas de escala derivadas (jugador, salto, alcance)
+__GOW8B.toggleScaleReference()      // muestra u oculta el overlay de referencia de escala
+__GOW8B.isScaleReferenceVisible()   // estado actual del overlay
 ```
 
 La simulación avanza en pasos fijos con un acumulador de microsegundos enteros, de modo que la misma traza produce el mismo estado por tick con independencia de la tasa de render.
+
+La **referencia de escala** se dibuja sobre el canvas con `G` (solo en desarrollo): línea de pies, caja de silueta, envolventes de salto y bandas de alcance del combo. El overlay es puramente de presentación: alternarlo **no cambia** el checksum de la simulación.
+
+## Escala y silueta de referencia (`GOW8B-SCALE-01`)
+
+Primera etapa del **Bloque 1** del plan vigente. Fija la **referencia de escala** que condiciona el diseño del mapa, calculada desde la física y el sprite vigentes para que no haya cifras duplicadas a mano cuando se construyan las etapas de mapa y plataformas.
+
+- `src/scale.ts` — cálculo **puro** (sin Phaser, sin reloj, sin azar): `deriveScaleReference`, `simulateJumpTicks`, `attackEnvelopeForChain`.
+- `CONFIG.scale` en `src/config.ts` — las métricas ya derivadas; `CONFIG.player` y `CONFIG.scale` leen la **misma** fuente `PLAYER`.
+- `src/dev/scaleOverlay.ts` — overlay de desarrollo (tecla `G`), excluido del bundle de producción.
+
+| Referencia | Valor | De dónde sale |
+| --- | --- | --- |
+| Silueta | 97 × 59 px (20.2 % × 21.9 % del canvas) | dimensiones del sprite |
+| Línea de pies | anclaje `anchorY = 1`; `y ∈ [59, 270]` | `sprite`, `jump.topY`, alto del canvas |
+| Recorrido horizontal | 48.5 … 431.5 px (span 383) | `sprite.width / 2` |
+| Salto ideal | 72.2 px · 0.76 s · 106.4 px | `jumpSpeed²/(2·gravity)`, `2·jumpSpeed/gravity`, `maxSpeed·t` |
+| Salto por ticks | cumbre 69.056 px @ tick 22; 45 ticks (0.75 s) de aire | réplica exacta de `stepVertical` |
+| Doble salto por ticks | cumbre 138.111 px (impulso en el tick 23); hasta 90 ticks (1.5 s) de aire | barrido del tick del impulso extra |
+| Arcos de ataque | 3 cadenas: radio 32/36/40, ancho 16/16/18, grosor 14/14/16, con arranque y fin en grados | `CONFIG.player.attack.combo[].arc` |
+| Alcance del combo | de 13.94 a 49 px, banda vertical real ~59.8 px (envolvente conservadora 71.71) | muestreo del arco desde el agarre (`gripOffsetY` 30) |
+| Envolventes de mapa | `maxStepUp` 138.11 px · `maxGapWidth` 210 px (con doble salto) | valores por tick, conservadores |
+
+**Verificación (2026-10-17).** Auditoría independiente de solo lectura: **APROBADA**. Las métricas se comprobaron por **prueba de mutación** (al cambiar `jumpSpeed` o el ancho del sprite, las derivadas cambian en consecuencia) y `simulateJumpTicks` replica el motor real (apex 69.056 @ tick 22, aire 45 t, alcance 105). Determinismo 8/8; el checksum con el overlay visible y oculto es **idéntico**; agentes y arte intactos por hash; `tsc --noEmit` y `build` exit 0; `__GOW8B` y los símbolos del overlay **ausentes** del bundle de producción. Arte y tuning: **sin cambios**. Detalle completo en `docs/verificacion.md` (§GOW8B-SCALE-01).
+
+**Limitación:** la referencia es una guía geométrica para el mapa; no sustituye la prueba de juego con controles normales cuando lleguen las etapas de mapa.
+
+## Doble salto (`GOW8B-DJUMP-01`)
+
+Segunda etapa del **Bloque 1**. Añade un **segundo impulso aéreo** sin tocar la geometría del salto simple.
+
+- `src/sim/vertical.ts` — el impulso aéreo se consume con **flanco nuevo** de la tecla de salto y solo si `jumpsUsed < maxJumps`; al quedar `grounded` el contador vuelve a 0. El salto dentro de la ventana de **coyote** cuenta como salto de suelo y **no** gasta el aéreo.
+- `src/config.ts` — `CONFIG.player.vertical.maxJumps = 2` (el salto de suelo más uno aéreo).
+- `src/sim/world.ts` — el salto sigue **bloqueado durante todo el combo**.
+- `src/scale.ts` — `simulateJumpWithImpulses` / `simulateDoubleJumpTicks` derivan el alcance real de dos impulsos (`doubleTicks`), y `maxStepUp` / `maxGapWidth` del mapa pasan a reflejarlo.
+
+| Caso (escenario `movement`, paso fijo a 60 Hz) | Altura alcanzada | Checksum |
+| --- | --- | --- |
+| Una pulsación, **mantenida** | 69.0556 px | `7c9dfa09` |
+| Una pulsación simple | 69.0556 px | `7c9dfa09` |
+| Segunda pulsación **en el aire** | **120.3889 px** | `07c7fa9f` |
+| **Tercera** pulsación | 120.3889 px | `07c7fa9f` |
+
+**Verificación (2026-10-17).** Auditoría independiente de solo lectura: **APROBADA**. Mantener la tecla da exactamente la misma altura y el mismo checksum que una pulsación simple; la tercera pulsación se rechaza (mismo checksum que la segunda); el ápice del salto simple sigue en **69.0556**, idéntico a la referencia de `SCALE-01`, luego **sin regresión**; determinismo estable (mismo plan ×3 → mismo checksum); `tsc --noEmit` y `build` exit 0; `__GOW8B` ausente; sin dependencias nuevas; arte intacto. Detalle completo en `docs/verificacion.md` (§GOW8B-DJUMP-01).
+
+**Limitación:** el barrido de `simulateDoubleJumpTicks` modela **un** impulso extra (coherente con `maxJumps = 2`); con `maxJumps ≥ 3` habría que generalizarlo.
+
+## Rodada con i-frames (`GOW8B-ROLL-01`)
+
+Tercera etapa del **Bloque 1**. Absorbe la antigua «esquiva»: una **rodada terrestre** con invulnerabilidad temporal.
+
+- `src/sim/roll.ts` — `startRoll` exige estar en el suelo y `rollPhase === 'none'`; `stepRoll` avanza la rodada y descuenta la invulnerabilidad **una vez por tick, en toda fase**.
+- `src/config.ts` — `CONFIG.player.dodge = { durationMs: 250, invulMs: 250 }`.
+- `src/sim/types.ts` — `rollPhase`, `rollTicks`, `invulTicks`.
+
+**Comportamiento:** la rodada es terrestre (no se inicia en el aire), mantener la tecla da **una sola** rodada (hace falta soltar y volver a pulsar), dura **14 ticks observados (233 ms)** y bloquea el inicio de ataque durante su duración. Los **i-frames cubren exactamente la rodada** (14 ticks) y **no la sobreviven**.
+
+**Un hallazgo bloqueante que se corrigió, y vale la pena contarlo.** La primera implementación hacía durar los i-frames **29 ticks (483 ms)** —el doble de los 250 ms configurados— y **sobrevivían a la animación**: 250 ms de invulnerabilidad gratis con la rodada ya terminada. Causa raíz: `stepRoll` incrementaba `rollTicks` en la fase activa pero **nunca decrementaba `invulTicks`**, y había un `if` **vacío**; el contador recién bajaba al terminar la rodada. Se corrigió pasando el descuento a la cabecera de `stepRoll`. Efecto neto: **29 → 14 ticks**, sin sobrevivir a la rodada.
+
+**Verificación (2026-10-17).** Auditoría independiente de solo lectura: **APROBADA** (9/9 puntos, sin hallazgos bloqueantes), tras corregir el defecto con la **compuerta de plan** del proceso y re-auditarlo con **un auditor distinto** del implementador. Se comprobó por identidad de trazas, **ignorando el campo `invulTicks`**, que todo lo demás queda **byte-idéntico**: movimiento y límites, salto simple (69.0556), salto mantenido (no encadena), doble salto (120.3889), tercera pulsación rechazada y combo ligero. También con **navegador y tecla real** (puerto propio, sin tocar tus servidores): la rodada no se reinicia manteniendo `SHIFT` y no se inicia en el aire. `tsc`/`build` exit 0, `__GOW8B` ausente, sin dependencias nuevas, arte intacto. Detalle completo en `docs/verificacion.md` (§GOW8B-ROLL-01).
+
+**Observaciones no bloqueantes (para el Bloque 4):** la cobertura exacta depende de que `invulMs == durationMs` (hoy 250/250); con `invulMs < durationMs` la rodada terminaría sin i-frames, y como `startRoll` usa `max(invulTicks, ROLL_INVUL_TICKS)`, si el daño del Bloque 4 aporta i-frames más largos podrían sobrevivir a la rodada. Es una decisión de diseño del Bloque 4, no un defecto abierto.
+
+**Limitación:** la sensación a 60 fps en tiempo real no se pudo evaluar (el entorno limitaba `requestAnimationFrame` a ~1 fps); sí se verificó por tick de simulación y con tecla real.
+
+## Cuchillas del Caos (`GOW8B-CHAOS-01`)
+
+Primera etapa del **Bloque 2**. Da identidad al arma y cambia el modelo de golpe: el ataque deja de ser una **caja pegada al cuerpo** y pasa a ser un **arco barrido** por la cadena alrededor del agarre.
+
+- `src/config.ts` — `PLAYER.weapon = { id: 'blades-of-chaos', name: 'Cuchillas del Caos', gripOffsetY: 30 }` y un `arc` por golpe del combo (ángulos en grados, radio, ancho y grosor de hoja).
+- `src/sim/attack.ts` — `computeAttackHitbox` muestrea el arco dentro de la fase `active`; el flujo de `stepAttack` no cambia.
+- `src/sim/world.ts` — mapea `CONFIG` a `AttackParams` y convierte grados a radianes en un solo punto.
+- `src/scale.ts` — `sweptArcEnvelope` deriva `nearX` / `farX` / `topY` / `bottomY` por cadena; `Array.prototype.map` sobre el combo, sin literales.
+
+| Cadena | Alcance horizontal | Banda vertical |
+| --- | --- | --- |
+| 0 | 21.00 … 40 px | −50.5 … −17.4 |
+| 1 | 19.58 … 44 px | −60.1 … −13.7 |
+| 2 | 13.94 … 49 px | −70.8 … +0.9 |
+| Combo | `maxReach` 49 · `minReach` 13.94 | `bandHeight` 71.71 (span real ~59.8) |
+
+**Verificación (2026-10-17).** Auditoría independiente de solo lectura: **APROBADA sin hallazgos bloqueantes**, pese a que cambió el modelo de golpe. Contacto único por objetivo con `attackHits` reiniciado por golpe; hitbox solo en fase `active`; encadenado por flanco; salto bloqueado durante todo el combo; la rodada bloquea el inicio de ataque; respuesta 5/3/3 ticks; límites `48.5`/`431.5` y ápice intactos; **prueba de mutación** que demuestra que el arco no está en la ruta de movimiento (trazas de movimiento/salto/doble salto/rodada idénticas byte a byte); envolvente derivada y verificada en ejecución; determinismo; `tsc`/`build` exit 0; sin dependencias nuevas; arte intacto por SHA-256. Detalle completo en `docs/verificacion.md` (§GOW8B-CHAOS-01).
+
+**Observaciones no bloqueantes:** (a) **pérdida de contacto a muy corta distancia** — a 7 px o menos ya no golpea ninguna cadena (`minReach` subió de 6 a 13.94); no rompe `GOW8B-LIGHT-01`, cuya evidencia se tomó a 40 px y sigue contactando, pero cambia la sensación en cuerpo a cuerpo; (b) **la envolvente vertical creció de 16 a 71.71 px**: el arco llega hasta ~65.7 px sobre la línea de pies con un jugador de 59 px, o sea por encima de la cabeza; (c) los criterios de aceptación de la etapa **no estaban escritos en el repositorio antes de implementar**, y se formalizaron al cierre.
 
 ## Movimiento horizontal (etapa 6)
 
@@ -75,7 +166,10 @@ Los assets aprobados de etapas 2 y 3 se sirven bajo `public/assets/` y se precar
 | --- | --- | --- | --- |
 | `environment` | `egeo-fondo` | `public/assets/environment/egeo-fondo.png` | 480×270 |
 | `characters` | `kratos-neutral` | `public/assets/characters/kratos-neutral.png` | 97×59 |
-| `characters` | `kratos-run` | `public/assets/characters/kratos-run.png` | 388×59 (4 cuadros × 97×59) |
+| `characters` | `kratos-idle` | `public/assets/characters/kratos-idle.png` | 194×59 (2 cuadros × 97×59) |
+| `characters` | `kratos-run` | `public/assets/characters/kratos-run.png` | 582×59 (6 cuadros × 97×59) |
+| `characters` | `kratos-air` | `public/assets/characters/kratos-air.png` | 194×59 (2 cuadros × 97×59) |
+| `characters` | `kratos-attack` | `public/assets/characters/kratos-attack.png` | 291×59 (3 cuadros × 97×59) |
 
 El fondo se dibuja en `(0,0)` a escala 1, con origen `(0,0)`, nearest-neighbor (por `pixelArt: true`) y **sin tinte**. El jugador se ancla con origen `(0.5, 1)` (base-centro) y se voltea horizontalmente cuando `facing = -1`.
 
@@ -102,31 +196,30 @@ Los PNG fuente en `docs/referencias/` quedan intactos (verificado por SHA-256). 
 - Las plataformas se dibujan de forma provisional (rectángulos sólidos, ver etapa 8); no hay arte definitivo de entorno transitable.
 - Los assets son provisionales y no están etiquetados como finales.
 
-## Animación de carrera provisional (etapa 7)
+## Arte de animación definitivo (etapa 10.5)
 
-> **Placeholder procedural provisional.** El ciclo de carrera **no es arte final**. Deriva de la pose neutral `kratos-neutral.png` con un balanceo/inclinación mínima solo para cablear y probar el sistema de animación. La constante `PROVISIONAL_ART = true` en [`src/assets/manifest.ts`](src/assets/manifest.ts) gobierna el rótulo «Carrera · placeholder provisional» en pantalla y quedará en `false` cuando exista arte definitivo. Una etapa de arte posterior reemplazará estos cuadros.
+> **Integrada el 2026-10-16; pendiente de auditoría independiente.** Reemplaza el placeholder de carrera (etapa 7), la pose aérea (etapa 8) y la ausencia de poses de ataque. Es **arte original** generado con un script reproducible (D-04, D-21); `PROVISIONAL_ART` es `false` en [`src/assets/manifest.ts`](src/assets/manifest.ts). **No** cambia la simulación, el movimiento, el salto ni las hitboxes.
 
-- **Cuadros:** 4, en la misma rejilla 97×59 y con la fila de pies anclada. La silueta aparente varía como máximo 1 px en el borde izquierdo (cuadros 2 y 3 quedan en 96 px), coherente con la inclinación mínima del placeholder.
-- **Clave y carga:** spritesheet `kratos-run` (dominio `characters`) en `public/assets/characters/kratos-run.png` (388×59 = 4×97×59), cargado por el manifest como `spritesheet` (sin rutas dispersas).
-- **Sincronía:** en reposo (`|vx| ≤ idleSpeedThreshold`) se muestra `kratos-neutral`; con `|vx| > idleSpeedThreshold` se reproduce `kratos-run` con volteo según `facing`. La cadencia escala con `|vx|` entre `frameRate` y `maxFrameRate` (configuración en `CONFIG.player.run`).
-- **Hashes SHA-256:** `kratos-run.png` = `78f68cf2e77ce5a42a4f81d1afa714d01281d7feeea0959737dbb43d85b7e2ea`; `kratos-neutral.png` = `df52a7fc298e6fd41241f555cef8f4d2dd00a6b81034a333872a55b4f9390c4a`.
+- **Hojas y claves** (dominio `characters`, cuadros 97×59, pies anclados, origen `0.5,1`): `kratos-idle` (2 cuadros), `kratos-run` (6, con espejado), `kratos-air` (2), `kratos-attack` (3).
+- **Selección de pose** (solo presentación, derivada del estado): **ataque > aire > carrera > reposo**. Ataque ligado a `attackPhase` (`startup`→cuadro 0, `active`→1, `recovery`→2); aire = `kratos-air`; reposo↔carrera ligado a `|vx|` (etapa 7). `CONFIG.player.run.frames = 6` (desajuste 6-vs-4 **resuelto**).
+- **Hashes SHA-256 (2026-10-16):** `kratos-idle.png` = `48b02b96a8efb52d0d6c0f4acec2f6886bedd81d22eeba09921fa4ee779635de`; `kratos-run.png` = `27ec7d858bf82a0eb31deabe8405cb541ecb193512f15a747c4c44441aa932bc`; `kratos-air.png` = `5deed24a5382d9e6ec61059d2b419548219c9544945741de32823a3abee1b1d0`; `kratos-attack.png` = `22bbd179710c8c66809e63653489bc5cc8a8966def183a9c8cae28c464c1c276`. `kratos-neutral.png` (`df52a7fc…`) y `egeo-fondo.png` (`8f8b5885…`) siguen **intactos**.
 
-### Procedimiento de derivación (reproducible)
+### Procedimiento de generación (reproducible)
 
 ```sh
-python3 scripts/gen-run-frames.py   # -> public/assets/characters/kratos-run.png (97×N x 59)
+python3 scripts/gen-kratos-anim.py   # -> public/assets/characters/kratos-{idle,run,air,attack}.png
 ```
 
-El script (Pillow, ya disponible; sin dependencias nuevas) lee la pose neutral indexada (`P`) y, por columnas, aplica un desplazamiento interpolado entre cabeza, cadera y pies (fila inferior anclada). Deja la paleta y la transparencia intactas. Parámetros en el propio script: `FRAMES = ((1,0),(1,-1),(0,1),(-1,1))` como `(head_dx, hip_dx)`.
+El script (Pillow; sin dependencias nuevas en `package.json` del juego) dibuja un esqueleto de perfil con **segmentos de píxeles enteros** (sin curvas ni tapas redondas), contorno duro de 1 px y sombreado por capas (lejano/`SHADOW`, torso, cercano/`HI`). Lee `kratos-neutral.png` y valida que su paleta coincide con los **6 colores** esperados; ningún píxel opaco queda fuera de esa paleta. Cada cuadro se traduce para anclar la fila de pies al borde inferior (`y=58`).
 
-### Evidencia visual (reposo ↔ carrera ↔ volteo)
+### Evidencia
 
-Capturas nativas 480×270 recortadas del canvas lógico:
+- **Hoja de contacto:** [`docs/referencias/kratos-anim-contact-sheet.png`](docs/referencias/kratos-anim-contact-sheet.png) (neutral + las 4 hojas, ×4 nearest).
+- **Navegador (controles sintéticos, DEV)**: `A`/`D`/`←`/`→`, `Espacio`, `J`. Siluetas distintas por estado medidas sobre el canvas (reposo/aire/carrera/ataque) y `attackPhase` observado en `startup`/`active`/`recovery`; sin errores de consola (solo el 404 de `favicon.ico`, permitido).
+- **Determinismo**: 500 ms a 60/30/irregular → mismo frame (30) y mismo checksum; `replay` idéntico; límites de movimiento 48.5/431.5 intactos.
+- **Verificador visual local (D-21, `moondream`/CPU)**: describió `kratos-idle` como «persona», `kratos-run` como «persona corriendo en una línea»; fue **intermitente** (errores HTTP 500 y salidas incoherentes en `air`/`attack`). Se declara su **límite perceptivo**: sirve de filtro grueso, no de juicio de estilo. La revisión visual humana de la hoja de contacto sigue siendo una **deuda no bloqueante**.
 
-- [`docs/referencias/captura-carrera-idle-480x270.png`](docs/referencias/captura-carrera-idle-480x270.png): reposo (`kratos-neutral`, sin animación).
-- [`docs/referencias/captura-carrera-derecha-480x270.png`](docs/referencias/captura-carrera-derecha-480x270.png): carrera hacia la derecha (`kratos-run`, `flipX=false`).
-- [`docs/referencias/captura-carrera-izquierda-480x270.png`](docs/referencias/captura-carrera-izquierda-480x270.png): carrera hacia la izquierda (`kratos-run`, `flipX=true`).
-
+**Entorno de verificación visual (2026-10-16): preparado.** Herramientas de **desarrollo**, fuera del repo y sin dependencias nuevas en `package.json`: **Ollama + modelo `moondream`** (CPU) con el envoltorio `ollama-vision <imagen> ["prompt"]`, y la skill oficial `phaserjs/phaser@animations`. Detalle en §GOW8B-KRA-02 de [`docs/verificacion.md`](docs/verificacion.md).
 
 ## Salto y plataformas (etapa 8)
 
@@ -172,57 +265,58 @@ Capturas nativas 480×270 recortadas del canvas lógico:
 
 - El arte de las plataformas y la pose aérea es **provisional**; una etapa de arte posterior lo reemplazará.
 - La colisión usa el centro `x` del jugador para decidir si está sobre la plataforma (el sprite puede sobresalir visualmente medio cuerpo del borde).
-- Sin enemigos con IA, daño, esquiva, efectos ni audio (el ataque ligero se añade en la etapa 9, §Ataque ligero).
+- Sin enemigos con IA, daño, esquiva, efectos ni audio (el ataque ligero y su combo se añaden en las etapas 9–10, §Ataque ligero y combo).
 
 
-## Ataque ligero (etapa 9)
+## Ataque ligero y combo (etapas 9–10)
 
-> **Arte provisional.** La retroalimentación del ataque (indicador de hitbox y marca de contacto) es **provisional**; el arte definitivo y el encadenamiento de combo se harán en etapas posteriores. La constante `PROVISIONAL_ART = true` en [`src/assets/manifest.ts`](src/assets/manifest.ts) gobierna el rótulo «Ataque ligero · provisional» en pantalla.
+> **Arte provisional.** La retroalimentación del ataque (indicador de hitbox y marca de contacto) es **provisional**. La constante `PROVISIONAL_ART = true` en [`src/assets/manifest.ts`](src/assets/manifest.ts) gobierna el rótulo «Combo ligero · provisional» en pantalla.
 
-El jugador gana un **estado de ataque determinista** con fases. Pulsar `J` con el jugador **en el suelo** y sin ataque en curso inicia el golpe (disparo *edge-trigger*: mantener `J` no lo reinicia ni lo repite). Mientras el ataque está en curso, `jump` no inicia un salto nuevo; al terminar, el salto vuelve a estar disponible. No se puede iniciar otro golpe hasta que la fase vuelva a `none` (sin combos ni cancelaciones en esta etapa).
+El jugador gana un **estado de ataque determinista** con fases. Pulsar `J` con el jugador **en el suelo** y sin ataque en curso inicia el golpe (disparo *edge-trigger*: mantener `J` no lo reinicia ni lo repite). Mientras el combo está en curso, `jump` no inicia un salto nuevo; al volver a `none`, el salto vuelve a estar disponible. No se puede iniciar un ataque en el aire.
 
-Ciclo completo con duraciones configurables (todas en `CONFIG.player.attack`, convertidas a ticks como en `vertical.ts`):
+### Encadenamiento del combo
 
-| Fase | Duración | Ticks aprox. |
+`EntityState` incorpora el índice del golpe (`attackChain`, 0-based) y el temporizador (`attackTicks`), actualizados en el paso fijo. **Una nueva pulsación de `J`** durante `active`/`recovery` del golpe en curso (y con `attackChain < maxChain - 1`) **cancela** el golpe actual y arranca el `startup` del siguiente (`attackChain + 1`, `attackTicks = 0`, `attackHits = []`). La fase `active` del golpe siguiente empieza **≤6 ticks** desde esa pulsación (los golpes encadenados usan un `startup` corto). **Mantener `J` no encadena**: cada golpe necesita un flanco nuevo. Si no hay pulsación en la ventana, al terminar `recovery` se vuelve a `none` y `attackChain = 0`. Tras el golpe de índice `maxChain - 1` una pulsación no encadena.
+
+La estructura del combo vive centralizada en `CONFIG.player.attack` (`maxChain` + array `combo`); el módulo puro [`src/sim/attack.ts`](src/sim/attack.ts) (`stepAttack`, `computeAttackHitbox`, `attackParamsForChain`) la convierte a ticks. `maxChain` por defecto = **3**, con parámetros por golpe:
+
+| Golpe (`combo[i]`) | `startupMs` (ticks) | `activeMs` (ticks) | `recoveryMs` (ticks) | `hitboxOffsetX` | `hitboxWidth` | `hitboxHeight` |
+| --- | --- | --- | --- | --- | --- | --- |
+| 0 | 83 (5) | 67 (4) | 117 (7) | 18 | 24 | 16 |
+| 1 | 50 (3) | 67 (4) | 100 (6) | 20 | 26 | 16 |
+| 2 | 50 (3) | 67 (4) | 117 (7) | 22 | 28 | 16 |
+
+| Parámetro global | Valor | Unidad |
 | --- | --- | --- |
-| `startup` | `startupMs` = 83 | 5 |
-| `active` | `activeMs` = 67 | 4 |
-| `recovery` | `recoveryMs` = 117 | 7 |
-
-Desde la pulsación de `J` hasta el inicio de la fase `active` transcurren **≤6 ticks** (≤100 ms, PR-01).
-
-| Parámetro | Valor | Unidad |
-| --- | --- | --- |
-| `hitboxOffsetX` | 18 | px (delante, según `facing`) |
-| `hitboxWidth` | 24 | px |
-| `hitboxHeight` | 16 | px |
+| `maxChain` | 3 | golpes |
 | `targetHalfWidth` | 14 | px (semi-ancho del objetivo) |
 | `targetHalfHeight` | 24 | px (semi-alto del objetivo, anclado a los pies) |
 
-Durante la fase `active` existe una **hitbox delante** del jugador (offset/ancho/alto en `CONFIG`); **fuera de esa ventana no hay hitbox**. El módulo puro [`src/sim/attack.ts`](src/sim/attack.ts) (`stepAttack`, `computeAttackHitbox`) detecta **solapamiento** de la caja contra los objetivos del escenario (excluye al jugador). Un **mismo golpe no cuenta el mismo objetivo más de una vez**: los ids impactados se guardan en `EntityState.attackHits` (orden de registro) y se reinician al iniciar cada golpe. **Sin daño, retroceso ni muerte**: la entidad objetivo no cambia de estado.
+Cada golpe usa su **ventana `active`** y su geometría: **fuera de `active` no hay hitbox** (`computeAttackHitbox` devuelve `null`). El módulo detecta **solapamiento** de la caja contra los objetivos del escenario (excluye al jugador). `attackHits` se **reinicia por golpe** y un objetivo puede recibir impacto de **varios golpes** del combo (una vez por golpe): los ids impactados se guardan en `EntityState.attackHits` (orden de registro). **Sin daño, retroceso ni muerte**: la entidad objetivo no cambia de estado.
 
 El escenario `combat` contiene al jugador en el suelo (`x = 200`, `y = 262`) y una entidad objetivo (`id: "dummy"`, `x = 240`, `y = 262`) dentro del alcance. Los escenarios `empty`/`test`/`movement`/`platforms` se conservan.
 
 ### Presentación provisional (sin `jitter`)
 
-- El `ShellScene` dibuja un **rectángulo indicador de hitbox** (color `CONFIG.presentation.hitboxColor`, alfa `hitboxAlpha`) mientras la fase es `active`.
+- El `ShellScene` dibuja un **rectángulo indicador de hitbox** mientras la fase es `active`. Su color indica el índice del combo: `hitboxColor` (golpe 0), `hitboxColorChain1` (golpe 1) y `hitboxColorChain2` (golpe 2), todos con alfa `hitboxAlpha`.
 - Las entidades objetivo se dibujan como **rectángulos provisionales** (`targetColor`); al registrarse el contacto se pintan con el color de contacto (`targetHitColor`), que sirve de **marca de contacto legible**.
 - En el aire/plataformas se conserva el comportamiento de la etapa 8 (pose neutral sin ciclo de carrera). La animación `kratos-run` se sigue usando en el suelo.
 
 ### Evidencia visual
 
-[`docs/referencias/captura-ataque-ligero-480x270.png`](docs/referencias/captura-ataque-ligero-480x270.png) muestra el frame en fase `active` con el indicador de hitbox y el objetivo tintado por el contacto.
+[`docs/referencias/captura-combo-480x270.png`](docs/referencias/captura-combo-480x270.png) muestra el frame `active` del **tercer golpe** (indicador de hitbox en color de cadena 2) con el objetivo tintado por el contacto. [`docs/referencias/captura-ataque-ligero-480x270.png`](docs/referencias/captura-ataque-ligero-480x270.png) conserva la evidencia del primer golpe de la etapa 9.
 
 ### Limitaciones de esta etapa
 
 - Sin ataque pesado, esquiva, enemigos con IA, daño, muerte ni bloqueo; `heavy-attack`/`dodge`/`context-action` siguen sin efecto.
-- Sin combos ni cancelaciones: un golpe a la vez.
+- El ataque no bloquea el movimiento horizontal ni cambia la pose del sprite del golpe.
 - El indicador de hitbox y los objetivos son arte **provisional**.
+
 
 
 ## Documentación
 
-- [`docs/arquitectura.md`](docs/arquitectura.md): límites del shell actual y arquitectura objetivo, todavía no implementada.
+- [`docs/arquitectura.md`](docs/arquitectura.md): límites actuales y arquitectura, **en parte ya implementada** (simulación, entrada, manifest, movimiento, plataformas y ataque/combo); las secciones «objetivo/futuro» siguen pendientes.
 - [`docs/direccion-y-controles.md`](docs/direccion-y-controles.md): dirección del juego futuro y mapa de teclado propuesto.
 - [`docs/adaptacion-narrativa-y-niveles.md`](docs/adaptacion-narrativa-y-niveles.md): adaptación lateral propuesta de la historia de *God of War* (2005).
 - [`docs/guia-visual-betrayal-pixel-art-v2.md`](docs/guia-visual-betrayal-pixel-art-v2.md): criterio visual vigente para una etapa futura; no hay muestra activa.

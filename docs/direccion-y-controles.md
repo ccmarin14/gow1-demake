@@ -2,7 +2,7 @@
 
 ## Estado
 
-El runtime actual es un shell neutral Phaser/Vite en lienzo lógico horizontal de **320×180**. No implementa movimiento, combate, HUD ni controles de juego. Este documento fija la intención para una adaptación futura; no es una descripción de la aplicación ejecutable.
+El runtime actual es un shell Phaser/Vite en lienzo lógico horizontal de **480×270** (D-12) que ya implementa **movimiento horizontal, salto y plataformas, y un ataque ligero con combo** con controles de teclado, además de una animación idle↔run **provisional**. **No** implementa enemigos con IA, daño, muerte, HUD de juego ni audio. Este documento fija la intención para la adaptación futura; a 2026-10-16 la aplicación ejecutable ya cubre los controles listados en la sección «Acciones de entrada».
 
 ## Dirección
 
@@ -23,7 +23,7 @@ Dos capas que no deben confundirse:
 
 ## Mapa de teclado propuesto
 
-El teclado será la entrada de primera entrega. Las teclas físicas se convertirán en acciones explícitas en un único gestor de entrada. **Ninguna de estas acciones está implementada actualmente.**
+El teclado es la entrada de primera entrega. Las teclas físicas se convierten en acciones explícitas en un único gestor de entrada. **Implementadas:** movimiento horizontal (`A`/`D`/`←`/`→`), salto (`ESPACIO`) y ataque ligero con combo (`J`). **Sin efecto todavía:** ataque pesado (`K`), magia (Ira de Poseidón, `K`), rodada (`SHIFT`), acción contextual (`E`) y pausa (`ESC`).
 
 | Acción objetivo | Entrada propuesta | Uso previsto |
 | --- | --- | --- |
@@ -31,7 +31,8 @@ El teclado será la entrada de primera entrega. Las teclas físicas se convertir
 | Saltar | `Espacio` | Salto y control aéreo cuando la etapa correspondiente exista. |
 | Ataque ligero | `J` | Golpe rápido; encadenamiento se definirá en su etapa. |
 | Ataque pesado | `K` | Golpe más comprometido, a definir y probar por separado. |
-| Esquivar | `Shift` | Evasión direccional, pendiente de diseño y verificación. |
+| Magia (Ira de Poseidón) | `K` | Única magia por ahora (se define en su etapa). |
+| Rodada / Esquiva | `Shift` | Rodada con i-frames (absorbe el rol de esquiva; pendiente de diseño y verificación). |
 | Acción contextual | `E` | Abrir cofres, activar mecanismos o ejecutar una acción indicada por un prompt explícito. |
 | Pausar/continuar | `Escape` | Menú de pausa cuando exista. |
 
@@ -39,7 +40,7 @@ La acción contextual tiene una tecla separada de los ataques `J` y `K`. El jueg
 
 ## Alcance de plataformas
 
-La primera entrega apunta a navegador y teclado. El soporte táctil queda fuera del primer alcance y puede evaluarse como ampliación futura. No se interpreta la ausencia de táctil como una limitación del shell neutral.
+La primera entrega apunta a navegador y teclado. El soporte táctil queda fuera del primer alcance y puede evaluarse como ampliación futura. No se interpreta la ausencia de táctil como una limitación del shell actual.
 
 ## Principios de lectura y respuesta
 

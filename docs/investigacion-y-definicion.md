@@ -85,6 +85,7 @@ Reconstruida a partir de StrategyWiki, GameFAQs (Shotgunnova, jarrodlover) y Gam
 
 - Antes de integrar: verificar tamaño, transparencia, anclaje y consistencia de cuadros (regla ya vigente en AGENTS.md); auditar por programa (bounds, conteo de colores, canal alfa) como se hace en las etapas 1–4.
 - El jitter se combate con escala entera + `roundPixels`, no con suavizado.
+- **Verificación visual de arte generado (2026-10-16).** El modelo del runtime **no admite entrada de imagen**, así que una hoja de *pixel art* generada no puede evaluarse «a ciegas». Para cerrar el bucle: (a) un **verificador visual local** (p. ej. Ollama + VLM pequeño en CPU, solo desarrollo) que describa el PNG; y (b) aplicar **contorno exterior, sombreado direccional y principios de animación** (squash & stretch, anticipación, arcos, volumen constante). La generación procedural geométrica sin esos pases rinde siluetas embarradas. Referencia aplicada: D-21/D-22 y etapa 10.5.
 
 ## 6. Bloque D — Verificación y harness
 
@@ -143,6 +144,7 @@ Lo que sí aporta la investigación como **mejora**:
 - **PR-05 — Dimensiones de Kratos.** Confirmar 57–63 px sobre 270 px como decisión estable (la crítica de IGN al sprite pequeño lo respalda). Estado: **validada externamente y registrada (D-18); sin cambio de código**.
 - **PR-06 — Actualizar el registro de decisiones.** `decisiones.md` D-11 y D-13 describían la restricción de familia Luna/OpenCode retirada de `AGENTS.md`; se marcaron como reemplazadas y se añadió D-14. Estado: **aplicada (2026-10-15)**.
 - **PR-07 — Verticalidad como baseline de jugabilidad.** Fijar que la jugabilidad lateral de *Betrayal*, incluida su verticalidad (ascensos, saltos entre niveles, plataformas y peligros a varias alturas), es el punto de partida a igualar o superar en la versión web, adaptado a GOW1 y sin copiar recursos; concretarlo en criterios de las etapas de movimiento/plataformas y combate. *Destino:* `decisiones.md` (D-20), `direccion-y-controles.md` y criterios de la etapa 8. Estado: **aprobada y aplicada (D-20, 2026-10-15)**.
+- **PR-08 — Arte de animación con generación procedural y verificación visual local (2026-10-16).** Producir el arte definitivo de Kratos (idle/carrera/aire/ataque) con **generación procedural articulada** (Pillow, original, sin dependencias), mejorada con contorno exterior, sombreado direccional, «squash & stretch» y poses clave a mano, y cerrar el bucle con una **verificación visual local** (Ollama + VLM pequeño en CPU, o hoja de contacto humana) porque el runtime no interpreta imágenes. *Destino:* `decisiones.md` (D-21/D-22) y etapa 10.5 `GOW8B-KRA-02` de `verificacion.md`. Estado: **aprobada en su enfoque (D-21/D-22, 2026-10-16); entorno de verificación visual preparado el 2026-10-16 (Ollama + `moondream` + skill `phaserjs/phaser@animations`); ejecución aún no iniciada.**
 
 ### 8.2 Huecos abiertos (decisiones de producto para el usuario)
 
@@ -162,4 +164,4 @@ Lo que sí aporta la investigación como **mejora**:
 | Plan de etapas | **Ampliado a 29** (2026-10-15): PR-01/PR-02/PR-03 incorporadas a criterios y tres etapas nuevas (D-19). PR-07 fija el baseline de jugabilidad/verticalidad (D-20) con criterio en la etapa 8. Sin errores de orden; los huecos detectados quedaron resueltos (H-1…H-4). |
 | Regla de verificación "sintético ≠ físico" | **Validada por la literatura** (§6.2); se mantiene intacta. |
 
-**Límites de este documento:** todo lo anterior es investigación documental; no se ejecutó el juego ni se midieron frames en navegador. Las recomendaciones PR-01 a PR-07 y los huecos H-1 a H-4 fueron aprobados por el usuario y registrados en `verificacion.md`, `decisiones.md`, `direccion-y-controles.md` y `adaptacion-narrativa-y-niveles.md` el 2026-10-15; su aplicación al código ocurrirá solo cuando las etapas correspondientes se activen.
+**Límites de este documento:** todo lo anterior es investigación documental; no se ejecutó el juego ni se midieron frames en navegador. Las recomendaciones PR-01 a PR-08 y los huecos H-1 a H-4 fueron aprobados por el usuario y registrados en `verificacion.md`, `decisiones.md`, `direccion-y-controles.md` y `adaptacion-narrativa-y-niveles.md` (PR-01 a PR-07 el 2026-10-15; **PR-08 el 2026-10-16**); su aplicación al código ocurrirá solo cuando las etapas correspondientes se activen.
