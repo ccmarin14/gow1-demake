@@ -29,12 +29,12 @@ const MOVES = {
   light_1: {
     chain: 0, startup: 4, active: 7, recovery: 7, poseFrame: 1,
     arc: { startDeg: -30, endDeg: 35, radius: 76, width: 18, thickness: 16 },
-    hitstop: 2, knockbackVx: 85, launchVy: 0,
+    hitstop: 2, knockbackVx: 85, launchVy: 0, lungeVx: 45,
   },
   light_2: {
     chain: 1, startup: 3, active: 7, recovery: 7, poseFrame: 6,
     arc: { startDeg: 40, endDeg: -28, radius: 82, width: 18, thickness: 16 },
-    hitstop: 2, knockbackVx: 95, launchVy: 0,
+    hitstop: 2, knockbackVx: 95, launchVy: 0, lungeVx: 55,
   },
   light_3: {
     chain: 2, startup: 4, active: 8, recovery: 10, poseFrame: 2,
@@ -44,12 +44,12 @@ const MOVES = {
   plume_of_prometheus: {
     chain: 2, startup: 5, active: 9, recovery: 12, poseFrame: 3,
     arc: { startDeg: 85, endDeg: -65, radius: 110, width: 24, thickness: 20 },
-    hitstop: 4, knockbackVx: 140, launchVy: -240, groundImpact: true,
+    hitstop: 4, knockbackVx: 140, launchVy: -240, lungeVx: 70, groundImpact: true,
   },
   heavy_slam: {
     chain: 0, startup: 7, active: 8, recovery: 11, poseFrame: 3,
     arc: { startDeg: 75, endDeg: -60, radius: 95, width: 22, thickness: 18 },
-    hitstop: 3, knockbackVx: 130, launchVy: 0, groundImpact: true,
+    hitstop: 3, knockbackVx: 130, launchVy: 0, lungeVx: 60, groundImpact: true,
   },
   ascension: {
     chain: 0, startup: 6, active: 8, recovery: 10, poseFrame: 4,
@@ -158,7 +158,7 @@ attack: {
   groundImpact: {
     durationTicks: 10,
     shakeTicks: 3,
-    shakePx: 1,
+    shakePx: 2,
     shockRadius: 28,
     sparkCount: 12,
     sparkGravity: 420,

@@ -59,6 +59,7 @@ export interface AttackRules {
   heavyHoldTicks: number;
   hitstunTicks: number;
   groundImpactTicks: number;
+  shockRadius: number;
   /** Targets receive knockback/launch/hitstun (scenario `targetPhysics`). */
   targetPhysics: boolean;
 }
@@ -233,15 +234,22 @@ export function bladePoseForTick(
 }
 
 function overlaps(
-  hitbox: AttackHitbox,
+  pose: BladePose,
   params: AttackParams,
   target: Readonly<EntityState>,
 ): boolean {
+  const halfW = params.arc.width / 2;
+  const halfH = params.arc.thickness / 2;
+  const bX1 = Math.min(pose.gripX, pose.bladeCenterX - halfW);
+  const bX2 = Math.max(pose.gripX, pose.bladeCenterX + halfW);
+  const bY1 = Math.min(pose.gripY - halfH, pose.bladeCenterY - halfH);
+  const bY2 = Math.max(pose.gripY + halfH, pose.bladeCenterY + halfH);
+
   const tX1 = target.x - params.targetHalfWidth;
   const tY1 = target.y - params.targetHalfHeight * 2;
   const tX2 = target.x + params.targetHalfWidth;
   const tY2 = target.y;
-  return hitbox.x1 < tX2 && hitbox.x2 > tX1 && hitbox.y1 < tY2 && hitbox.y2 > tY1;
+  return bX1 < tX2 && bX2 > tX1 && bY1 < tY2 && bY2 > tY1;
 }
 
 function beginMove(player: EntityState, params: AttackParams): void {
@@ -402,30 +410,29 @@ export function stepAttack(
     player.attackTicks += 1;
     const pose = bladePoseForTick(player, params, platforms);
     if (pose) {
-      const halfW = params.arc.width / 2;
-      const halfH = params.arc.thickness / 2;
-      const hitbox: AttackHitbox = {
-        x1: pose.bladeCenterX - halfW,
-        y1: pose.bladeCenterY - halfH,
-        x2: pose.bladeCenterX + halfW,
-        y2: pose.bladeCenterY + halfH,
-      };
+      // A diving slam that lands also counts as a floor impact.
+      const landedDive =
+        params.moveId === 'air_heavy_slam' && player.grounded;
+      const groundImpactActive =
+        params.groundImpact && (pose.clamped || landedDive);
+
       for (const target of targets) {
         if (player.attackHits.includes(target.id)) {
           continue;
         }
-        if (overlaps(hitbox, params, target)) {
+        const hitByBlade = overlaps(pose, params, target);
+        const hitByShockwave =
+          groundImpactActive &&
+          target.grounded &&
+          Math.abs(target.x - pose.bladeCenterX) <= rules.shockRadius;
+        if (hitByBlade || hitByShockwave) {
           player.attackHits.push(target.id);
           applyHit(player, target, params, rules);
           player.hitstopTicks = Math.max(player.hitstopTicks, params.hitstopTicks);
         }
       }
-      // A diving slam that lands also counts as a floor impact.
-      const landedDive =
-        params.moveId === 'air_heavy_slam' && player.grounded;
       if (
-        params.groundImpact &&
-        (pose.clamped || landedDive) &&
+        groundImpactActive &&
         !player.attackHits.includes(GROUND_HIT_MARK)
       ) {
         player.attackHits.push(GROUND_HIT_MARK);

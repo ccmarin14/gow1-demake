@@ -235,6 +235,7 @@ export class World {
           heavyHoldTicks: CONFIG.player.attack.heavyHoldTicks,
           hitstunTicks: CONFIG.player.attack.target.hitstunTicks,
           groundImpactTicks: CONFIG.player.attack.groundImpact.durationTicks,
+          shockRadius: CONFIG.player.attack.groundImpact.shockRadius,
           targetPhysics: this.targetPhysics,
         };
         stepAttack(

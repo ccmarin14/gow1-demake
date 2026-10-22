@@ -356,6 +356,8 @@ async function run() {
             landingTicks: p.landingTicks,
             scaleX: sc.player.scaleX,
             scaleY: sc.player.scaleY,
+            dummyX: dummy ? dummy.x : null,
+            dummyVx: dummy ? dummy.vx : null,
             dummyY: dummy ? dummy.y : null,
             dummyVy: dummy ? dummy.vy : null,
             groundImpact: p.groundImpactTicks,
