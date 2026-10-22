@@ -28,6 +28,9 @@ function clampSpeed(vx: number, maxSpeed: number): number {
   return vx;
 }
 
+const BRAKE_SKID = 2200;
+const SKID_TICKS = 6;
+
 export function stepHorizontal(
   entity: EntityState,
   wantsLeft: boolean,
@@ -39,20 +42,64 @@ export function stepHorizontal(
   const { maxSpeed, accel, brake, minX, maxX } = params;
   let vx = entity.vx;
 
-  if (locked) {
-    // Preserve existing velocity; do not apply input acceleration/braking/facing changes
-    vx = entity.vx;
-  } else {
-    if (wantsLeft === wantsRight) {
-      vx = brakeTowardZero(vx, brake * dtSeconds);
+  if (locked || !entity.grounded) {
+    entity.skidTicks = 0;
+    if (locked) {
+      vx = entity.vx;
     } else {
-      const dir: -1 | 1 = wantsRight ? 1 : -1;
-      if (vx * dir < 0) {
+      if (wantsLeft === wantsRight) {
         vx = brakeTowardZero(vx, brake * dtSeconds);
       } else {
-        vx = clampSpeed(vx + dir * accel * dtSeconds, maxSpeed);
+        const dir: -1 | 1 = wantsRight ? 1 : -1;
+        if (vx * dir < 0) {
+          vx = brakeTowardZero(vx, brake * dtSeconds);
+        } else {
+          vx = clampSpeed(vx + dir * accel * dtSeconds, maxSpeed);
+        }
+        entity.facing = dir;
       }
-      entity.facing = dir;
+    }
+  } else {
+    const hasDirectionInput = wantsLeft !== wantsRight;
+    const inputDir: -1 | 1 = wantsRight ? 1 : -1;
+
+    // Detect high-speed turnaround on ground
+    if (entity.skidTicks <= 0) {
+      if (
+        hasDirectionInput &&
+        vx * inputDir < 0 &&
+        Math.abs(vx) >= maxSpeed * 0.6
+      ) {
+        entity.skidTicks = SKID_TICKS;
+      }
+    }
+
+    if (entity.skidTicks > 0) {
+      entity.skidTicks -= 1;
+      vx = brakeTowardZero(vx, BRAKE_SKID * dtSeconds);
+
+      // If direction reversed back to facing, cancel skid early
+      if (hasDirectionInput && inputDir === entity.facing) {
+        entity.skidTicks = 0;
+        vx = clampSpeed(vx + inputDir * accel * dtSeconds, maxSpeed);
+      } else if (entity.skidTicks === 0 || vx === 0) {
+        entity.skidTicks = 0;
+        if (hasDirectionInput) {
+          entity.facing = inputDir;
+          vx = clampSpeed(vx + inputDir * accel * dtSeconds, maxSpeed);
+        }
+      }
+    } else {
+      if (!hasDirectionInput) {
+        vx = brakeTowardZero(vx, brake * dtSeconds);
+      } else {
+        if (vx * inputDir < 0) {
+          vx = brakeTowardZero(vx, brake * dtSeconds);
+        } else {
+          vx = clampSpeed(vx + inputDir * accel * dtSeconds, maxSpeed);
+        }
+        entity.facing = inputDir;
+      }
     }
   }
 
@@ -62,9 +109,11 @@ export function stepHorizontal(
   if (x < minX) {
     x = minX;
     entity.vx = 0;
+    entity.skidTicks = 0;
   } else if (x > maxX) {
     x = maxX;
     entity.vx = 0;
+    entity.skidTicks = 0;
   }
   entity.x = x;
 }

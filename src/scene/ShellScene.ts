@@ -275,9 +275,10 @@ export class ShellScene extends Phaser.Scene {
     if (this.anims.exists(key)) {
       return;
     }
+    const endFrame = key === RUN_KEY ? 5 : frames - 1;
     this.anims.create({
       key,
-      frames: this.anims.generateFrameNumbers(key, { start: 0, end: frames - 1 }),
+      frames: this.anims.generateFrameNumbers(key, { start: 0, end: endFrame }),
       frameRate,
       repeat: -1,
     });
@@ -320,6 +321,14 @@ export class ShellScene extends Phaser.Scene {
     const { attackPhase, grounded, facing } = simPlayer;
     const speed = Math.abs(simPlayer.vx);
     const rolling = simPlayer.rollPhase !== 'none';
+
+    // Elastic landing compression (squash)
+    if (simPlayer.landingTicks > 0 && grounded && attackPhase === 'none' && !rolling) {
+      player.setScale(1.06, 0.92);
+    } else {
+      player.setScale(1, 1);
+    }
+
     if (attackPhase !== 'none' && !rolling) {
       this.stopLoop();
       let frame = 0;
@@ -364,6 +373,17 @@ export class ShellScene extends Phaser.Scene {
     player.setRotation(0);
     if (!grounded) {
       this.playLoop(AIR_KEY);
+      return;
+    }
+    // High-speed turnaround skid on ground
+    if (simPlayer.skidTicks > 0) {
+      this.stopLoop();
+      if (player.texture.key !== RUN_KEY) {
+        player.setTexture(RUN_KEY, 6);
+      } else {
+        player.setFrame(6);
+      }
+      player.setFlipX(facing === -1);
       return;
     }
     if (speed > CONFIG.player.run.idleSpeedThreshold) {

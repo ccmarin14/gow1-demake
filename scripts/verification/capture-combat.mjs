@@ -318,14 +318,15 @@ async function run() {
           sctx.fillStyle = '#f9fafb';
           sctx.font = 'bold 11px monospace';
           const dummyInfo = dummy ? \` D:(y=\${dummy.y.toFixed(0)},vy=\${dummy.vy.toFixed(0)})\` : '';
+          const actionText = p.skidTicks > 0 ? \`SKID:\${p.skidTicks}\` : (p.landingTicks > 0 ? \`LANDING:\${p.landingTicks}\` : \`\${p.attackMove} \${p.attackPhase}:\${p.attackTicks}\`);
           sctx.fillText(
-            \`t=\${t} \${p.attackMove} \${p.attackPhase}:\${p.attackTicks} \${isWeaponVisible ? '⚔️CHAIN' : '❌NONE'}\`,
+            \`t=\${t} \${actionText} \${isWeaponVisible ? '⚔️CHAIN' : ''}\`,
             dx + 4,
             dy + 12
           );
           sctx.fillStyle = '#9ca3af';
           sctx.fillText(
-            \`Kratos(y=\${p.y.toFixed(0)},vy=\${p.vy.toFixed(0)}) frame=\${sc.player.frame.name}\${dummyInfo}\`,
+            \`Kratos(vx=\${p.vx.toFixed(0)},vy=\${p.vy.toFixed(0)}) f=\${sc.player.frame.name} s=(\${sc.player.scaleX.toFixed(2)},\${sc.player.scaleY.toFixed(2)})\${dummyInfo}\`,
             dx + 4,
             dy + 22
           );
@@ -336,7 +337,7 @@ async function run() {
           singleCtx.fillRect(2, 2, cropW * scale - 4, 18);
           singleCtx.fillStyle = '#f9fafb';
           singleCtx.font = 'bold 11px monospace';
-          singleCtx.fillText(\`t=\${t} \${p.attackMove} [\${p.attackPhase}:\${p.attackTicks}] Pose:\${sc.player.frame.name}\`, 4, 14);
+          singleCtx.fillText(\`t=\${t} \${actionText} Pose:\${sc.player.frame.name} S:(\${sc.player.scaleX.toFixed(2)},\${sc.player.scaleY.toFixed(2)})\`, 4, 14);
 
           frames.push(single.toDataURL('image/png'));
 
@@ -347,8 +348,14 @@ async function run() {
             ticks: p.attackTicks,
             poseFrame: sc.player.frame.name,
             weaponVisible: isWeaponVisible,
+            playerX: p.x,
+            playerVx: p.vx,
             playerY: p.y,
             playerVy: p.vy,
+            skidTicks: p.skidTicks,
+            landingTicks: p.landingTicks,
+            scaleX: sc.player.scaleX,
+            scaleY: sc.player.scaleY,
             dummyY: dummy ? dummy.y : null,
             dummyVy: dummy ? dummy.vy : null,
             groundImpact: p.groundImpactTicks,
@@ -477,12 +484,34 @@ async function run() {
     const grabMove = caseD.logs.find((l) => l.move === 'chain_grab' && l.phase === 'active');
     console.log('Case D chain grab active observed:', grabMove ? `t=${grabMove.t}` : 'NONE');
 
+    // CASE E: Locomotion Dynamics, Weight, Turnaround Skid & Landing Squash (GOW1-LOCO-WEIGHT-01)
+    // Run right to max speed -> turnaround left (triggers skidTicks=6 and brakeSkid=2200) -> ground jump -> air jump -> landing squash
+    const caseE = await recordScenarioSequence({
+      caseId: 'loco_weight_turnaround_landing',
+      scenario: 'movement',
+      totalSteps: 84,
+      getActions: (t) => {
+        if (t >= 1 && t <= 14) return ['move-right'];
+        if (t >= 15 && t <= 22) return ['move-left'];
+        if (t === 23) return ['jump'];
+        if (t === 30) return ['jump'];
+        return [];
+      },
+      cropW: 160,
+      cropH: 140,
+    });
+    const skidFrames = caseE.logs.filter((l) => l.skidTicks > 0);
+    const landingFrames = caseE.logs.filter((l) => l.landingTicks > 0);
+    console.log('Case E skid frames observed:', skidFrames.map((l) => `t=${l.t}(skid=${l.skidTicks},vx=${l.playerVx.toFixed(0)},f=${l.poseFrame})`));
+    console.log('Case E landing squash frames observed:', landingFrames.map((l) => `t=${l.t}(land=${l.landingTicks},s=(${l.scaleX.toFixed(2)},${l.scaleY.toFixed(2)}))`));
+
     console.log('\n=== ALL VERIFICATION TESTS COMPLETED SUCCESSFULLY ===');
     console.log('Artifacts in scripts/verification/output/:');
     console.log(' - combo_jjj_mosaic.png & combo_jjj.gif');
     console.log(' - plume_finish_mosaic.png & plume_finish.gif');
     console.log(' - ascension_air_dive_mosaic.png & ascension_air_dive.gif');
     console.log(' - chain_grab_mosaic.png & chain_grab.gif');
+    console.log(' - loco_weight_turnaround_landing_mosaic.png & loco_weight_turnaround_landing.gif');
 
     ws.close();
   } finally {

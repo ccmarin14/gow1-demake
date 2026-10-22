@@ -22,6 +22,10 @@ export function stepVertical(
 ): void {
   const wasGrounded = entity.grounded;
 
+  if (entity.landingTicks > 0) {
+    entity.landingTicks -= 1;
+  }
+
   if (jumpPressedEdge) {
     entity.jumpBufferTicks = params.jumpBufferTicks;
   }
@@ -50,10 +54,12 @@ export function stepVertical(
       entity.coyoteTicks = 0;
       entity.jumpBufferTicks = 0;
       entity.jumpsUsed = 1;
+      entity.landingTicks = 0;
     } else if (canAirJump) {
       entity.vy = -params.jumpSpeed;
       entity.jumpBufferTicks = 0;
       entity.jumpsUsed += 1;
+      entity.landingTicks = 0;
     }
   }
 
@@ -79,10 +85,14 @@ export function stepVertical(
         previousY <= platform.yTop &&
         entity.y >= platform.yTop
       ) {
+        const impactVy = entity.vy;
         entity.y = platform.yTop;
         entity.vy = 0;
         entity.grounded = true;
         landed = true;
+        if (!wasGrounded && impactVy >= 180) {
+          entity.landingTicks = 3;
+        }
         break;
       }
     }

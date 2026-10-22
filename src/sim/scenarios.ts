@@ -45,6 +45,8 @@ function playerAt(x: number, y: number): EntityState {
     rollPhase: 'none',
     rollTicks: 0,
     invulTicks: 0,
+    skidTicks: 0,
+    landingTicks: 0,
   };
 }
 
@@ -90,6 +92,8 @@ register({
       rollPhase: 'none',
       rollTicks: 0,
       invulTicks: 0,
+      skidTicks: 0,
+      landingTicks: 0,
     },
     {
       id: 'dummy-b',
@@ -118,6 +122,8 @@ register({
       rollPhase: 'none',
       rollTicks: 0,
       invulTicks: 0,
+      skidTicks: 0,
+      landingTicks: 0,
     },
   ],
   platforms: [],
@@ -170,6 +176,8 @@ register({
       rollPhase: 'none',
       rollTicks: 0,
       invulTicks: 0,
+      skidTicks: 0,
+      landingTicks: 0,
     },
   ],
   platforms: [{ x1: 0, x2: 480, yTop: GROUND_Y }],

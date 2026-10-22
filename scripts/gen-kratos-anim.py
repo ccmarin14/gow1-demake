@@ -830,7 +830,24 @@ RUN_BASE = [
         blade_len=15,
     ),
 ]
-RUN = RUN_BASE + [mirror(p) for p in RUN_BASE]
+# Cuadro 6 de kratos-run.png: postura de derrape y frenada en giro brusco (skid / turnaround).
+# Inclinacion hacia atras (~15 deg) contra el sentido del deslizamiento, talon delantero
+# clavado al piso, rodilla trasera flexionada absorbiendo inercia, brazos y Cuchillas
+# del Caos tensas abajo/atras, con anclaje inferior estricto en y=58.
+SKID_POSE = dict(
+    spine=-15,
+    pelvis_dy=1,
+    far_sh_dx=-8,
+    near_sh_dx=7,
+    legN=dict(thigh=44, knee=-12),
+    legF=dict(thigh=-36, knee=-40),
+    armF=dict(sh=-46, el=-18),
+    armN=dict(sh=-56, el=-22),
+    bladeF=-130,
+    bladeN=-120,
+    blade_len=15,
+)
+RUN = RUN_BASE + [mirror(p) for p in RUN_BASE] + [SKID_POSE]
 
 AIR = [
     dict(
