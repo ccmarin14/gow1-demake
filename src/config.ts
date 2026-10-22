@@ -168,12 +168,12 @@ attack: {
    * kratos-attack.png, facing right: dx forward, dy up-negative.
    */
   hands: {
-    1: { dx: 14, dy: -31 },
-    2: { dx: 14, dy: -31 },
-    3: { dx: 14, dy: -31 },
-    4: { dx: 14, dy: -31 },
-    5: { dx: 14, dy: -31 },
-    6: { dx: 14, dy: -31 },
+    1: { dx: 13, dy: -33 },
+    2: { dx: 26, dy: -31 },
+    3: { dx: 14, dy: -33 },
+    4: { dx: 7, dy: -33 },
+    5: { dx: 13, dy: -33 },
+    6: { dx: 13, dy: -33 },
   },
   combo: [MOVES.light_1, MOVES.light_2, MOVES.light_3],
 },
