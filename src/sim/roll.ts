@@ -25,10 +25,7 @@ export function startRoll(entity: EntityState): boolean {
     entity.invulTicks = ROLL_INVUL_TICKS;
   }
   const dir = entity.facing === -1 ? -1 : 1;
-  const dodgeCfg = (CONFIG as any).player?.dodge ?? (CONFIG as any).dodge;
-  const base = (dodgeCfg?.rollSpeed ?? ((CONFIG as any).player?.maxSpeed ?? 140) * 2.0);
-  const speed = typeof base === 'number' && Number.isFinite(base) ? base : 280;
-  entity.vx = speed * dir;
+  entity.vx = CONFIG.player.dodge.rollSpeed * dir;
   return true;
 }
 

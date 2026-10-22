@@ -2,7 +2,7 @@
 
 ## Estado ejecutable actual
 
-El proyecto conserva el scaffold Phaser/TypeScript/Vite y un shell con canvas lógico de **480×270** (D-12), ya escalado a la ventana con pixelado nítido y sin suavizado. A 2026-10-16 hay implementados: **simulación determinista** con paso fijo y **harness DEV** `window.__GOW8B` (etapa 5), **gestor de entrada** teclado→acción de dominio, **manifest de assets** (etapa 6.5), **movimiento horizontal** (etapa 6), **salto y plataformas** (etapa 8), **animación idle↔run provisional** (etapa 7) y **ataque ligero con combo** (etapas 9–10). **No** hay enemigos con IA, daño, muerte, HUD de juego ni audio. Parte de la arquitectura de abajo **ya existe**; las secciones marcadas como «objetivo» o «futuro» describen el diseño aún no cubierto.
+El proyecto conserva el scaffold Phaser/TypeScript/Vite y un shell con canvas lógico de **480×270** (D-12), ya escalado a la ventana con pixelado nítido y sin suavizado. A 2026-10-21 hay implementados: **simulación determinista** con paso fijo y **harness DEV** `window.__GOW8B` (etapa 5), **gestor de entrada** teclado→acción de dominio, **manifest de assets** (etapa 6.5), **movimiento horizontal** (etapa 6), **salto simple, doble salto y plataformas** (etapa 8 y `GOW8B-DJUMP-01`), **animaciones procedurales de Kratos** (`GOW8B-KRA-02` y `GOW8B-ROLL-ART`), **escala y silueta de referencia** (`GOW8B-SCALE-01` con overlay DEV), **rodada terrestre con i-frames** (`GOW8B-ROLL-01`) y **Cuchillas del Caos con cadenas, hoja orientada y combo ligero** (`GOW8B-CHAOS-01`, etapas 9–10). **No** hay enemigos con IA, daño, muerte, HUD de juego ni audio. Parte de la arquitectura de abajo **ya existe**; las secciones marcadas como «objetivo» o «futuro» describen el diseño aún no cubierto.
 
 ## Límites objetivo
 
@@ -18,9 +18,9 @@ acciones físicas → InputManager → acciones de dominio
                           audio y HUD DOM
 ```
 
-- **Simulación fuera de escenas:** los sistemas de dominio actualizan estado y reglas. Evitar mutar reglas de juego directamente desde `Scene.update()`.
-- **Escenas delgadas:** iniciar/preparar, presentar menús y conectar una escena de juego con la simulación. Las escenas coordinan entrada, paso de simulación y presentación; no poseen el estado autoritativo.
-- **Entradas por acciones:** mapear teclas físicas en un único lugar a acciones explícitas como `move-left`, `move-right`, `jump`, `light-attack`, `heavy-attack`, `dodge`, `context-action` y `pause`. La simulación recibe acciones, no códigos de teclas.
+- **Simulación fuera de escenas:** los sistemas de dominio actualizan estado y reglas, incluyendo las trayectorias de látigo de las Cuchillas del Caos (basadas en los movimientos de Nivel 1 de *God of War* de PS2, D-24), la colisión e impacto de las hojas/cadenas contra la superficie del suelo (`yTop`) y la respuesta física de los objetivos impactados (*hitstop*, retroceso horizontal `vx` y levantamiento aéreo *launch* `vy`). Evitar mutar reglas de juego directamente desde `Scene.update()`.
+- **Escenas delgadas:** iniciar/preparar, presentar menús y conectar una escena de juego con la simulación. Las escenas coordinan entrada, paso de simulación y presentación (`ShellScene`, `WeaponLayer`); no poseen el estado autoritativo.
+- **Entradas por acciones:** mapear teclas físicas en un único lugar (`InputManager`) a acciones explícitas de dominio equivalentes al mando de PS2 (D-08, D-24): `move-left`, `move-right`, `jump` (`Espacio` = $\times$), `light-attack` (`J` = $\square$), `heavy-attack` (`K` = $\triangle$), `grab` (`L` = $\bigcirc$), `dodge` (`Shift`), `magic` (`U`), `context-action` (`E`) y `pause` (`Escape`). La simulación recibe acciones de dominio, no códigos de teclas.
 - **Manifest de assets:** exponer claves estables y legibles por dominio (`characters`, `environment`, `ui`, `fx`, `audio`, `data`) en vez de propagar rutas de archivo por todo el juego. Crear recursos originales.
 - **UI DOM cuando corresponda:** HUD textual, menús, pausa, configuración y contenido de accesibilidad van en capas DOM por defecto; canvas/WebGL conserva el campo de juego.
 - **Estado serializable:** guardar valores de simulación y referencias estables, nunca sprites, tweens, cámaras ni emisores. Las animaciones y efectos se derivan del estado y eventos.

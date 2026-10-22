@@ -1,4 +1,5 @@
-import type { EntityState } from './types';
+import type { Platform } from './scenarios';
+import type { AttackMoveId, EntityState } from './types';
 
 /**
  * Chained-blade arc geometry. The hit area is a blade box (`width` ×
@@ -17,20 +18,53 @@ export interface AttackArc {
 }
 
 export interface AttackParams {
+  moveId: AttackMoveId;
+  /** Index reported in `attackChain` (hitbox color, scale envelope). */
+  chain: number;
   startupTicks: number;
   activeTicks: number;
   recoveryTicks: number;
   /** Height above the feet line where the chains leave the hands. */
   gripOffsetY: number;
   arc: AttackArc;
+  /** When set, the radius is `fromPx -> toPx -> fromPx` (straight chain throw). */
+  reach: { fromPx: number; toPx: number } | null;
   targetHalfWidth: number;
   targetHalfHeight: number;
+  hitstopTicks: number;
+  knockbackVx: number;
+  launchVy: number;
+  selfVy: number;
+  lungeVx: number;
+  airBrake: boolean;
+  groundImpact: boolean;
 }
 
 export interface AttackCombo {
   maxChain: number;
   hits: readonly AttackParams[];
 }
+
+export type AttackMoveSet = Readonly<Record<AttackMoveId, AttackParams>>;
+
+/** Per-tick attack input, already reduced to edges/holds by the world. */
+export interface AttackInput {
+  light: boolean;
+  heavy: boolean;
+  heavyHeld: boolean;
+  grab: boolean;
+}
+
+export interface AttackRules {
+  heavyHoldTicks: number;
+  hitstunTicks: number;
+  groundImpactTicks: number;
+  /** Targets receive knockback/launch/hitstun (scenario `targetPhysics`). */
+  targetPhysics: boolean;
+}
+
+/** Marker pushed to `attackHits` once a move already emitted its yTop impact. */
+const GROUND_HIT_MARK = '@ground';
 
 export interface AttackHitbox {
   x1: number;
@@ -48,43 +82,161 @@ export function attackParamsForChain(
 }
 
 /**
- * Blade box position for the active tick in progress. The sweep progress is
- * the midpoint of the current tick (`(tick - 0.5) / activeTicks`), so the arc
- * is sampled deterministically from the integer tick counter and never jumps
- * to the endpoints within a single active window.
+ * Sweep progress for the active tick in progress: the midpoint of the current
+ * tick (`(tick - 0.5) / activeTicks`), so the arc is sampled deterministically
+ * from the integer tick counter and never jumps to the endpoints.
  */
-export function computeAttackHitbox(
-  player: EntityState,
-  params: AttackParams,
-): AttackHitbox | null {
-  if (player.attackPhase !== 'active' || params.activeTicks <= 0) {
-    return null;
+function sweepProgress(player: Readonly<EntityState>, params: AttackParams): number {
+  if (params.activeTicks <= 0) {
+    return 0;
   }
-  const progress = Math.min(
+  const u = Math.min(
     Math.max((player.attackTicks - 0.5) / params.activeTicks, 0),
     1,
   );
-  const angle =
-    params.arc.startRad + (params.arc.endRad - params.arc.startRad) * progress;
-  const centerX =
-    player.x + player.facing * Math.cos(angle) * params.arc.radius;
-  const centerY =
-    player.y - params.gripOffsetY - Math.sin(angle) * params.arc.radius;
+  // Elastic acceleration with whip snap (easeOutCubic)
+  return 1 - Math.pow(1 - u, 3);
+}
+
+/**
+ * Chain throw reach profile: extends over the first 60% of the active window,
+ * retracts over the rest.
+ */
+function reachFraction(progress: number): number {
+  return progress < 0.6 ? progress / 0.6 : (1 - progress) / 0.4;
+}
+
+function radiusForProgress(params: AttackParams, progress: number): number {
+  if (!params.reach) {
+    return params.arc.radius;
+  }
+  return (
+    params.reach.fromPx +
+    (params.reach.toPx - params.reach.fromPx) * reachFraction(progress)
+  );
+}
+
+const NO_PLATFORMS: readonly Platform[] = [];
+
+/**
+ * `yTop` of the surface the chain can hit below the grip at column `x`: the
+ * highest platform covering `x` whose top is at or below `refY` (the grip), so
+ * platforms above the hand never clamp the chain. `Infinity` when none.
+ */
+export function groundYBelow(
+  platforms: readonly Platform[],
+  x: number,
+  refY: number,
+): number {
+  let best = Infinity;
+  for (let i = 0; i < platforms.length; i += 1) {
+    const platform = platforms[i];
+    if (
+      x >= platform.x1 &&
+      x <= platform.x2 &&
+      platform.yTop >= refY &&
+      platform.yTop < best
+    ) {
+      best = platform.yTop;
+    }
+  }
+  return best;
+}
+
+/** Chain/blade never go below `yTop - GROUND_CLEARANCE`. */
+export const GROUND_CLEARANCE = 2;
+
+/**
+ * Blade box position for the active tick in progress.
+ */
+export function computeAttackHitbox(
+  player: Readonly<EntityState>,
+  params: AttackParams,
+  platforms: readonly Platform[] = NO_PLATFORMS,
+): AttackHitbox | null {
+  const pose = bladePoseForTick(player, params, platforms);
+  if (!pose) {
+    return null;
+  }
   const halfW = params.arc.width / 2;
   const halfH = params.arc.thickness / 2;
   return {
-    x1: centerX - halfW,
-    y1: centerY - halfH,
-    x2: centerX + halfW,
-    y2: centerY + halfH,
+    x1: pose.bladeCenterX - halfW,
+    y1: pose.bladeCenterY - halfH,
+    x2: pose.bladeCenterX + halfW,
+    y2: pose.bladeCenterY + halfH,
   };
 }
 
-function overlaps(player: EntityState, params: AttackParams, target: EntityState): boolean {
-  const hitbox = computeAttackHitbox(player, params);
-  if (!hitbox) {
-    return false;
+/**
+ * Render pose of the chained blade for the active tick in progress, in world
+ * coordinates. Pure: reads only the entity, the params and the platforms, no
+ * clock, no randomness.
+ *
+ * - The grip sits on the body axis (`player.x`), so it does NOT mirror with
+ *   `facing`: the chains leave the torso, not a mirrored point.
+ * - Only the horizontal reach mirrors with `facing`; `bladeCenterX/Y` is the
+ *   CENTER of the blade, not its tip.
+ * - The blade center is clamped to `yTop - GROUND_CLEARANCE` (`clamped`,
+ *   `groundY`); a clamped pose is a floor contact.
+ *
+ * Returns `null` outside the active window (the weapon is only out while it
+ * sweeps), mirroring `computeAttackHitbox`.
+ */
+export interface BladePose {
+  gripX: number;
+  gripY: number;
+  bladeCenterX: number;
+  bladeCenterY: number;
+  angleRad: number;
+  /** Chain length (grip to blade center) before the floor clamp. */
+  radius: number;
+  progress: number;
+  /** The blade reached the floor and was clamped to it. */
+  clamped: boolean;
+  /** `yTop` of the surface under the blade (`Infinity` when none). */
+  groundY: number;
+}
+
+export function bladePoseForTick(
+  player: Readonly<EntityState>,
+  params: AttackParams,
+  platforms: readonly Platform[] = NO_PLATFORMS,
+): BladePose | null {
+  if (player.attackPhase !== 'active' || params.activeTicks <= 0) {
+    return null;
   }
+  const progress = sweepProgress(player, params);
+  const angle =
+    params.arc.startRad + (params.arc.endRad - params.arc.startRad) * progress;
+  const radius = radiusForProgress(params, progress);
+  const gripY = player.y - params.gripOffsetY;
+  const bladeCenterX = player.x + player.facing * Math.cos(angle) * radius;
+  let bladeCenterY = gripY - Math.sin(angle) * radius;
+  const groundY = groundYBelow(platforms, bladeCenterX, gripY);
+  let clamped = false;
+  if (bladeCenterY >= groundY - GROUND_CLEARANCE) {
+    bladeCenterY = groundY - GROUND_CLEARANCE;
+    clamped = true;
+  }
+  return {
+    gripX: player.x,
+    gripY,
+    bladeCenterX,
+    bladeCenterY,
+    angleRad: angle,
+    radius,
+    progress,
+    clamped,
+    groundY,
+  };
+}
+
+function overlaps(
+  hitbox: AttackHitbox,
+  params: AttackParams,
+  target: Readonly<EntityState>,
+): boolean {
   const tX1 = target.x - params.targetHalfWidth;
   const tY1 = target.y - params.targetHalfHeight * 2;
   const tX2 = target.x + params.targetHalfWidth;
@@ -92,55 +244,195 @@ function overlaps(player: EntityState, params: AttackParams, target: EntityState
   return hitbox.x1 < tX2 && hitbox.x2 > tX1 && hitbox.y1 < tY2 && hitbox.y2 > tY1;
 }
 
+function beginMove(player: EntityState, params: AttackParams): void {
+  player.attackPhase = 'startup';
+  player.attackTicks = 0;
+  player.attackHits = [];
+  player.attackMove = params.moveId;
+  player.attackChain = params.chain;
+  if (params.airBrake) {
+    player.vy = Math.max(player.vy, -60) * 0.35;
+  }
+}
+
+function beginFromIdle(
+  player: EntityState,
+  input: AttackInput,
+  moves: AttackMoveSet,
+): void {
+  if (input.grab && player.grounded) {
+    beginMove(player, moves.chain_grab);
+  } else if (input.heavy) {
+    beginMove(player, player.grounded ? moves.heavy_slam : moves.air_heavy_slam);
+  } else if (input.light) {
+    beginMove(player, player.grounded ? moves.light_1 : moves.air_light_1);
+  }
+}
+
+/** Branch to the next move of a combo/cancel, or `null` to keep the current one. */
+function nextMoveFor(
+  player: Readonly<EntityState>,
+  input: AttackInput,
+  moves: AttackMoveSet,
+  rules: AttackRules,
+): AttackParams | null {
+  const move = player.attackMove;
+  const phase = player.attackPhase;
+  const open = phase === 'active' || phase === 'recovery';
+  if (player.grounded) {
+    if (move === 'heavy_slam') {
+      // K, K or K held (hold is only honoured before the slam is released).
+      if (input.heavy) {
+        return moves.ascension;
+      }
+      if (phase === 'startup' && player.heavyHoldTicks >= rules.heavyHoldTicks) {
+        return moves.ascension;
+      }
+    }
+    if (open && input.light) {
+      if (move === 'light_1') return moves.light_2;
+      if (move === 'light_2') return moves.light_3;
+    }
+    if (open && input.heavy && move === 'light_2') {
+      return moves.plume_of_prometheus;
+    }
+    return null;
+  }
+  const airChain =
+    move === 'air_light_1' ||
+    move === 'air_light_2' ||
+    (move === 'ascension' && phase === 'recovery');
+  if (airChain && open) {
+    if (input.heavy) return moves.air_heavy_slam;
+    if (input.light) {
+      return move === 'air_light_1' ? moves.air_light_2 : moves.air_light_1;
+    }
+  }
+  return null;
+}
+
+function applyHit(
+  player: Readonly<EntityState>,
+  target: EntityState,
+  params: AttackParams,
+  rules: AttackRules,
+): void {
+  if (!rules.targetPhysics) {
+    return;
+  }
+  target.vx = params.knockbackVx * player.facing;
+  if (params.launchVy !== 0) {
+    target.vy = params.launchVy;
+    if (params.launchVy < 0) {
+      target.grounded = false;
+    }
+  }
+  target.hitstunTicks = rules.hitstunTicks;
+}
+
 export function stepAttack(
   player: EntityState,
-  lightAttackEdge: boolean,
-  combo: AttackCombo,
+  input: AttackInput,
+  moves: AttackMoveSet,
   targets: readonly EntityState[],
+  platforms: readonly Platform[],
+  rules: AttackRules,
 ): void {
+  if (player.groundImpactTicks > 0) {
+    player.groundImpactTicks -= 1;
+  }
+  player.heavyHoldTicks = input.heavyHeld ? player.heavyHoldTicks + 1 : 0;
+
+  // Combine fresh input edges with buffered attack action
+  const hasBufferedAction = Boolean(player.attackBufferAction && player.attackBufferTicks > 0);
+  const effectiveInput: AttackInput = {
+    light: input.light || (hasBufferedAction && player.attackBufferAction === 'light-attack'),
+    heavy: input.heavy || (hasBufferedAction && player.attackBufferAction === 'heavy-attack'),
+    heavyHeld: input.heavyHeld,
+    grab: input.grab || (hasBufferedAction && player.attackBufferAction === 'grab'),
+  };
+
   if (player.attackPhase === 'none') {
-    if (lightAttackEdge && player.grounded) {
-      player.attackPhase = 'startup';
-      player.attackTicks = 0;
-      player.attackHits = [];
-      player.attackChain = 0;
+    beginFromIdle(player, effectiveInput, moves);
+    if (player.attackPhase !== 'none') {
+      player.attackBufferAction = null;
+      player.attackBufferTicks = 0;
     }
     return;
   }
 
-  const params = attackParamsForChain(combo, player.attackChain);
-
-  const canChain =
-    lightAttackEdge &&
-    player.grounded &&
-    player.attackChain < combo.maxChain - 1 &&
-    (player.attackPhase === 'active' || player.attackPhase === 'recovery');
-
-  if (canChain) {
-    player.attackChain += 1;
-    player.attackPhase = 'startup';
-    player.attackTicks = 0;
-    player.attackHits = [];
+  const next = nextMoveFor(player, effectiveInput, moves, rules);
+  if (next) {
+    beginMove(player, next);
+    player.attackBufferAction = null;
+    player.attackBufferTicks = 0;
     return;
   }
+
+  // If buffer was not consumed this tick, decrement its lifespan
+  if (player.attackBufferTicks > 0) {
+    player.attackBufferTicks -= 1;
+    if (player.attackBufferTicks <= 0) {
+      player.attackBufferAction = null;
+    }
+  }
+
+  const params = moves[player.attackMove === 'none' ? 'light_1' : player.attackMove];
 
   if (player.attackPhase === 'startup') {
     player.attackTicks += 1;
     if (player.attackTicks >= params.startupTicks) {
       player.attackPhase = 'active';
       player.attackTicks = 0;
+      if (params.lungeVx !== 0) {
+        player.vx = params.lungeVx * player.facing;
+      }
+      if (params.selfVy !== 0) {
+        // Ascension only carries Kratos up while K is held.
+        if (params.moveId !== 'ascension' || input.heavyHeld) {
+          player.vy = params.selfVy;
+          player.grounded = false;
+        }
+      }
     }
     return;
   }
 
   if (player.attackPhase === 'active') {
     player.attackTicks += 1;
-    for (const target of targets) {
-      if (player.attackHits.includes(target.id)) {
-        continue;
+    const pose = bladePoseForTick(player, params, platforms);
+    if (pose) {
+      const halfW = params.arc.width / 2;
+      const halfH = params.arc.thickness / 2;
+      const hitbox: AttackHitbox = {
+        x1: pose.bladeCenterX - halfW,
+        y1: pose.bladeCenterY - halfH,
+        x2: pose.bladeCenterX + halfW,
+        y2: pose.bladeCenterY + halfH,
+      };
+      for (const target of targets) {
+        if (player.attackHits.includes(target.id)) {
+          continue;
+        }
+        if (overlaps(hitbox, params, target)) {
+          player.attackHits.push(target.id);
+          applyHit(player, target, params, rules);
+          player.hitstopTicks = Math.max(player.hitstopTicks, params.hitstopTicks);
+        }
       }
-      if (overlaps(player, params, target)) {
-        player.attackHits.push(target.id);
+      // A diving slam that lands also counts as a floor impact.
+      const landedDive =
+        params.moveId === 'air_heavy_slam' && player.grounded;
+      if (
+        params.groundImpact &&
+        (pose.clamped || landedDive) &&
+        !player.attackHits.includes(GROUND_HIT_MARK)
+      ) {
+        player.attackHits.push(GROUND_HIT_MARK);
+        player.groundImpactTicks = rules.groundImpactTicks;
+        player.groundImpactX = pose.bladeCenterX;
+        player.groundImpactY = pose.clamped ? pose.groundY : player.y;
+        player.hitstopTicks = Math.max(player.hitstopTicks, params.hitstopTicks);
       }
     }
     if (player.attackTicks >= params.activeTicks) {
@@ -155,6 +447,7 @@ export function stepAttack(
     player.attackPhase = 'none';
     player.attackTicks = 0;
     player.attackChain = 0;
+    player.attackMove = 'none';
   }
 }
 

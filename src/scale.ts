@@ -247,32 +247,33 @@ interface JumpRunMetrics {
 }
 
 /**
- * Replays the jump recurrence firing an impulse on tick 1 and again on every
- * tick in `impulseTicks`. Returns `null` when any extra impulse falls outside
- * the airborne window (the run already returned to the launch line), which is
- * how an impossible schedule is discarded.
+ * Replays the jump recurrence firing an impulse on tick 1 and again on
+ * `impulseTick`. Returns `null` when the extra impulse falls outside the
+ * airborne window (the run already returned to the launch line), which is how
+ * an impossible schedule is discarded.
  */
 function simulateJumpWithImpulses(
   jump: ScaleJump,
   tickRate: number,
-  impulseTicks: readonly number[],
+  impulseTick: number,
 ): JumpRunMetrics | null {
   const dtSeconds = 1 / tickRate;
   const maxTicks = tickRate * 10;
-  const requested = new Set(impulseTicks);
-  const applied = new Set<number>();
+  let appliedExtra = false;
   let vy = 0;
   let y = 0;
   let apexHeight = 0;
   let airTimeTicks = maxTicks;
   for (let tick = 1; tick <= maxTicks; tick += 1) {
-    if (tick === 1 || requested.has(tick)) {
+    if (tick === 1 || tick === impulseTick) {
       // The air impulse needs the feet strictly above the launch line.
       if (tick !== 1 && y >= 0) {
         return null;
       }
       vy = -jump.jumpSpeed;
-      applied.add(tick);
+      if (tick === impulseTick) {
+        appliedExtra = true;
+      }
     }
     vy = Math.min(vy + jump.gravity * dtSeconds, jump.maxFallSpeed);
     y += vy * dtSeconds;
@@ -284,10 +285,8 @@ function simulateJumpWithImpulses(
       break;
     }
   }
-  for (const tick of requested) {
-    if (!applied.has(tick)) {
-      return null;
-    }
+  if (!appliedExtra) {
+    return null;
   }
   return { apexHeight, airTimeTicks };
 }
@@ -317,12 +316,11 @@ export function simulateDoubleJumpTicks(
     };
   }
 
-  const maxTicks = tickRate * 10;
   let apexHeight = single.apexHeight;
   let apexImpulseTick = 0;
   let maxAirTimeTicks = single.airTimeTicks;
-  for (let impulseTick = 2; impulseTick <= maxTicks; impulseTick += 1) {
-    const run = simulateJumpWithImpulses(jump, tickRate, [impulseTick]);
+  for (let impulseTick = 2; impulseTick <= single.airTimeTicks; impulseTick += 1) {
+    const run = simulateJumpWithImpulses(jump, tickRate, impulseTick);
     if (!run) {
       continue;
     }
@@ -337,7 +335,7 @@ export function simulateDoubleJumpTicks(
 
   const airTimeSeconds = maxAirTimeTicks / tickRate;
   return {
-    jumps: 2,
+    jumps,
     apexHeight,
     apexImpulseTick,
     maxAirTimeTicks,

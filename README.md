@@ -10,9 +10,9 @@
 
 ## Visión futura
 
-El objetivo futuro es una adaptación web de acción lateral horizontal con resolución interna de 480×270 y la historia del primer *God of War* de PS2. Esta decisión busca más detalle visual con un esfuerzo de producción manejable. El canvas deberá escalarse para ocupar una ventana amplia del navegador con pixelado nítido y sin suavizado; la resolución interna no limita su tamaño CSS. La lectura, el ritmo y la estructura lateral toman *God of War: Betrayal* como estudio de referencia. Se crearán recursos originales; las referencias externas se consultan solo como material de estudio y no se integran como assets.
+El objetivo es una adaptación web de acción lateral horizontal con resolución interna de 480×270 cuya **historia, lore, enemigos y repertorio completo de armas y ataques provienen del primer *God of War* (2005, PlayStation 2)** (D-03, D-24). *God of War: Betrayal* se utiliza únicamente como referencia visual y espacial de cámara lateral 2D (D-20). Los ataques iniciales de las Cuchillas del Caos (Nivel 1 de PS2) se traducen al plano 2D con equivalencia directa de botones (`J` = Cuadrado $\square$, `K` = Triángulo $\triangle$, `L` = Círculo $\bigcirc$, `Espacio` = Equis $\times$) e impacto físico de las cadenas contra el suelo (`yTop`) y contra los enemigos. El canvas se escala para ocupar una ventana amplia del navegador con pixelado nítido y sin suavizado; la resolución interna no limita su tamaño CSS. Se crean recursos 100 % originales; las referencias externas se consultan solo como material de estudio y no se integran como assets.
 
-Esta visión aún no está implementada. Las aprobaciones del prototipo previo se conservan como historial y no verifican el shell actual ni la futura adaptación.
+Las aprobaciones del prototipo previo se conservan como historial y no verifican el shell actual ni la adaptación en curso.
 
 ## Ejecutar el shell
 
@@ -32,11 +32,22 @@ Abre la URL local indicada por Vite; normalmente es `http://localhost:5173/`.
 | `pnpm build` | Comprueba TypeScript y genera el paquete del shell en `dist/`. |
 | `pnpm preview` | Sirve localmente el paquete generado. |
 
-No hay un script automatizado `test` configurado. El plan y el método de comprobación futuros están en [`docs/verificacion.md`](docs/verificacion.md).
+No hay un script automatizado `test` configurado. El plan y el método de comprobación están en [`docs/verificacion.md`](docs/verificacion.md).
 
 ## Controles
 
-El shell implementa movimiento horizontal, salto, **doble salto**, **ataque ligero** con `J` y **rodada** con `SHIFT`. Pulsa `A` o `←` para ir a la izquierda y `D` o `→` para ir a la derecha. Pulsa `ESPACIO` para saltar y **vuelve a pulsar `ESPACIO` en el aire** para el segundo impulso (mantener la tecla **no** encadena: hace falta una pulsación nueva por cada salto; hasta 2 impulsos sin tocar suelo, `maxJumps`); al aterrizar se repone. Pulsa `SHIFT` para **rodar**: es terrestre, no se inicia en el aire, mantener la tecla no repite la rodada y durante su duración no se inicia un ataque; la rodada otorga i-frames (ver la advertencia de `H-ROLL-1` más abajo). Pulsa `J` para atacar. El ataque solo se inicia **en el suelo**; mantener `J` **no** repite el golpe ni lo reinicia, y mientras dura el combo `ESPACIO` no inicia un salto. Una **nueva** pulsación de `J` durante el ataque **encadena** el golpe siguiente (hasta `maxChain` = 3). La animación se deriva del estado de simulación con prioridad **ataque > aire > carrera > reposo**: en reposo (`|vx| ≤ 1 px/s`) se reproduce `kratos-idle`; al moverse en el suelo se reproduce `kratos-run` (sincronizado con `|vx|` y volteado con `facing`); **en el aire** se reproduce `kratos-air` (sin ciclo de carrera); durante el ataque se muestra `kratos-attack` ligado a `attackPhase` (inicio/activo/recuperación). Las teclas `K` y `E` del mapa objetivo están mapeadas pero todavía no producen efectos. El mapa de teclado completo, aún propuesto, está en [`docs/direccion-y-controles.md`](docs/direccion-y-controles.md). El jugador se dibuja anclado por la base (origen `0.5,1`), en concordancia con el anclaje de pies establecido.
+El shell implementa actualmente movimiento horizontal, salto, **doble salto** (`Espacio` = Equis $\times$), **ataque ligero con combo** (`J` = Cuadrado $\square$) y **rodada** (`Shift`). El mapa de combate completo traduce el mando de PlayStation 2 de *God of War* (2005) al teclado (D-08, D-24):
+- `A` / `←` y `D` / `→`: moverse a izquierda y derecha.
+- `Espacio` (**Equis $\times$**): saltar y **doble salto** aéreo con una segunda pulsación nueva en el aire (hasta `maxJumps = 2`; se repone al aterrizar).
+- `J` (**Cuadrado $\square$**): ataque ligero rápido encadenado con las Cuchillas del Caos (`maxChain = 3`).
+- `K` (**Triángulo $\triangle$**, planificado en [`docs/planes/GOW1-COMBAT-2D-01.md`](docs/planes/GOW1-COMBAT-2D-01.md)): ataque pesado descendente, *Launcher* ascendente (*Ascension*) que lanza enemigos al aire, y remate ***Plume of Prometheus* (`J, J, K` = $\square, \square, \triangle$)** que azota las cadenas contra el suelo (`yTop`).
+- `L` (**Círculo $\bigcirc$**, planificado en [`docs/planes/GOW1-COMBAT-2D-01.md`](docs/planes/GOW1-COMBAT-2D-01.md)): agarre con cadena a distancia / derribo o remate contextual.
+- `Shift`: rodada terrestre con i-frames (`GOW8B-ROLL-01` / `GOW8B-ART-POLISH-02`).
+- `U` (L2): magia (Ira de Poseidón, Bloque 6).
+- `E` (R2): acción contextual de entorno (cofres y palancas).
+- `Escape`: pausa.
+
+La animación se deriva del estado de simulación con prioridad **rodada > ataque > aire > carrera > reposo**: durante la rodada se reproduce `kratos-roll` sin rotación de contenedor; durante el ataque se muestra `kratos-attack` sincronizado con `WeaponLayer` (siempre dos Cuchillas del Caos visibles: una en la mano trasera y otra extendida en la cadena de 14 eslabones con estela continua); en el aire se reproduce `kratos-air`; al moverse en el suelo `kratos-run`; en reposo `kratos-idle`. El mapa completo está en [`docs/direccion-y-controles.md`](docs/direccion-y-controles.md). El jugador se dibuja anclado por la base (origen `0.5,1`).
 
 ## Harness DEV
 

@@ -4,6 +4,8 @@ export type GameAction =
   | 'jump'
   | 'light-attack'
   | 'heavy-attack'
+  | 'grab'
+  | 'magic'
   | 'dodge'
   | 'context-action'
   | 'pause';
@@ -14,6 +16,8 @@ export const DOMAIN_ACTIONS: readonly GameAction[] = [
   'jump',
   'light-attack',
   'heavy-attack',
+  'grab',
+  'magic',
   'dodge',
   'context-action',
   'pause',
@@ -28,8 +32,41 @@ const ACTION_ORDER: Record<GameAction, number> = DOMAIN_ACTIONS.reduce(
 );
 
 export function sortActions(actions: readonly GameAction[]): GameAction[] {
+  const len = actions.length;
+  if (len === 0) {
+    return [];
+  }
+  if (len === 1) {
+    return [actions[0]];
+  }
+  let strictlyOrdered = true;
+  let prevOrder = ACTION_ORDER[actions[0]];
+  for (let i = 1; i < len; i += 1) {
+    const order = ACTION_ORDER[actions[i]];
+    if (order <= prevOrder) {
+      strictlyOrdered = false;
+      break;
+    }
+    prevOrder = order;
+  }
+  if (strictlyOrdered) {
+    return [...actions];
+  }
   return [...new Set(actions)].sort((a, b) => ACTION_ORDER[a] - ACTION_ORDER[b]);
 }
+
+/** Level-1 move ids (see `CONFIG.player.attack.moves`). */
+export type AttackMoveId =
+  | 'light_1'
+  | 'light_2'
+  | 'light_3'
+  | 'plume_of_prometheus'
+  | 'heavy_slam'
+  | 'ascension'
+  | 'air_light_1'
+  | 'air_light_2'
+  | 'air_heavy_slam'
+  | 'chain_grab';
 
 export const PLAYER_ID = 'player';
 
@@ -53,6 +90,22 @@ export interface EntityState {
   attackTicks: number;
   attackHits: string[];
   attackChain: number;
+  /** Move in progress (`'none'` when idle). */
+  attackMove: AttackMoveId | 'none';
+  /** Buffered attack action ready to trigger as soon as the attack window opens. */
+  attackBufferAction: GameAction | null;
+  /** Ticks left before the buffered attack action expires. */
+  attackBufferTicks: number;
+  /** Ticks the heavy button has been held (K hold -> Ascension). */
+  heavyHoldTicks: number;
+  /** Ticks the whole simulation freezes after an impact (the world skips the step). */
+  hitstopTicks: number;
+  /** Ticks left of the target's hit reaction. */
+  hitstunTicks: number;
+  /** Ticks left of the last blade-vs-`yTop` impact event; `0` = none. */
+  groundImpactTicks: number;
+  groundImpactX: number;
+  groundImpactY: number;
   /**
    * Roll (dodge) state. Active when rollPhase !== 'none'; ticks count from
    * phase start. invulTicks counts down while entity is invulnerable.

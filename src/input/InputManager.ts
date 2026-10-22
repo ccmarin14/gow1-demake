@@ -10,18 +10,20 @@ const KEY_BINDINGS: Record<GameAction, number[]> = {
   jump: [KeyCodes.SPACE],
   'light-attack': [KeyCodes.J],
   'heavy-attack': [KeyCodes.K],
+  grab: [KeyCodes.L],
+  magic: [KeyCodes.U],
   dodge: [KeyCodes.SHIFT],
   'context-action': [KeyCodes.E],
   pause: [KeyCodes.ESC],
 };
 
-interface Binding {
+interface ActionBinding {
   action: GameAction;
-  key: Phaser.Input.Keyboard.Key;
+  keys: Phaser.Input.Keyboard.Key[];
 }
 
 export class InputManager {
-  private readonly bindings: Binding[] = [];
+  private readonly bindings: ActionBinding[] = [];
 
   constructor(scene: Phaser.Scene) {
     const keyboard = scene.input.keyboard;
@@ -29,19 +31,22 @@ export class InputManager {
       return;
     }
     for (const action of DOMAIN_ACTIONS) {
-      for (const code of KEY_BINDINGS[action]) {
-        this.bindings.push({ action, key: keyboard.addKey(code) });
-      }
+      const keys = KEY_BINDINGS[action].map((code) => keyboard.addKey(code));
+      this.bindings.push({ action, keys });
     }
   }
 
   poll(): GameAction[] {
-    const active = new Set<GameAction>();
-    for (const { action, key } of this.bindings) {
-      if (key.isDown) {
-        active.add(action);
+    const active: GameAction[] = [];
+    for (let i = 0; i < this.bindings.length; i += 1) {
+      const { action, keys } = this.bindings[i];
+      for (let j = 0; j < keys.length; j += 1) {
+        if (keys[j].isDown) {
+          active.push(action);
+          break;
+        }
       }
     }
-    return DOMAIN_ACTIONS.filter((action) => active.has(action));
+    return active;
   }
 }

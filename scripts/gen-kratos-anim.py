@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 """Genera las hojas de animacion de Kratos (arte original, pixel art).
 
-Figura humana de perfil, rasterizada sobre una rejilla de 97x59 con los pies
-anclados al borde inferior. Cada extremidad se dibuja con segmentos de
-pixeles enteros (bloques) y contorno duro de 1px: sin curvas, sin
-suavizado y sin tapas redondas. La paleta es la de `kratos-neutral.png`
-(6 colores), verificada al cargar.
+Figura espartana musculosa en 3/4 lateral coherente con `kratos-neutral.png`,
+rasterizada sobre una rejilla de 97x59 con los pies/apoyo anclados al borde
+inferior (y = 58). Usa exclusivamente la paleta exacta de 6 colores de
+`kratos-neutral.png`, verificada al cargar y al exportar cada hoja.
 
 Uso:
     python3 scripts/gen-kratos-anim.py
@@ -19,15 +18,17 @@ from PIL import Image, ImageDraw
 FRAME_W = 97
 FRAME_H = 59
 CX = 48
-PELVIS_Y = 28
-SPINE = 16
-NECK = 6
-THIGH = 14
-SHIN = 15
+PELVIS_Y = 29
+SPINE = 15
+NECK = 5
+THIGH = 13
+SHIN = 14
 UPPER = 9
 FORE = 9
-FAR_DX = -2
-NEAR_DX = 2
+FAR_HIP_DX = -5
+NEAR_HIP_DX = 5
+FAR_SH_DX = -9
+NEAR_SH_DX = 8
 
 OUTLINE = (29, 20, 21)
 DARK = (44, 18, 18)
@@ -37,8 +38,11 @@ MID = (160, 138, 113)
 HI = (215, 198, 173)
 PALETTE = [OUTLINE, DARK, LEATHER, SHADOW, MID, HI]
 
-OUT_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "public/assets/characters")
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+OUT_DIR = os.path.join(ROOT_DIR, "public/assets/characters")
+REF_DIR = os.path.join(ROOT_DIR, "docs/referencias")
 NEUTRAL_PATH = os.path.join(OUT_DIR, "kratos-neutral.png")
+CONTACT_SHEET_PATH = os.path.join(REF_DIR, "kratos-anim-contact-sheet.png")
 
 
 def load_palette():
@@ -55,7 +59,11 @@ def load_palette():
 
 
 def rect(d, x0, y0, w, h, color):
-    d.rectangle([int(round(x0)), int(round(y0)), int(round(x0)) + int(w) - 1, int(round(y0)) + int(h) - 1], fill=color)
+    w_i = max(1, int(round(w)))
+    h_i = max(1, int(round(h)))
+    x_i = int(round(x0))
+    y_i = int(round(y0))
+    d.rectangle([x_i, y_i, x_i + w_i - 1, y_i + h_i - 1], fill=color)
 
 
 def square(d, cx, cy, w, color):
@@ -72,9 +80,116 @@ def seg(d, p0, p1, w, color):
         square(d, p0[0] + (p1[0] - p0[0]) * t, p0[1] + (p1[1] - p0[1]) * t, w, color)
 
 
-def limb(d, p0, p1, w, color):
+def limb(d, p0, p1, w, base_color, hi_color=None, shade_color=None):
+    """Segmento muscular con contorno OUTLINE, base y volumen de luz/sombra."""
     seg(d, p0, p1, w + 2, OUTLINE)
-    seg(d, p0, p1, w, color)
+    if shade_color is not None:
+        seg(d, (p0[0] - 0.7, p0[1] + 0.4), (p1[0] - 0.7, p1[1] + 0.4), w, shade_color)
+    seg(d, p0, p1, w, base_color)
+    if hi_color is not None and w >= 3:
+        seg(d, (p0[0] + 0.6, p0[1] - 0.4), (p1[0] + 0.6, p1[1] - 0.4), max(2, w - 1), hi_color)
+
+
+def draw_bracer(d, elbow, hand, w, is_near, draw_chain=True):
+    """Brazalete pesado de cuero y bronce con eslabones de cadena colgantes."""
+    seg(d, elbow, hand, w + 2, OUTLINE)
+    seg(d, elbow, hand, w, LEATHER)
+    for t, col in ((0.18, SHADOW), (0.42, DARK), (0.68, SHADOW), (0.86, MID if is_near else SHADOW)):
+        bx = elbow[0] + (hand[0] - elbow[0]) * t
+        by = elbow[1] + (hand[1] - elbow[1]) * t
+        square(d, bx, by, max(2, w - 1), col)
+    # Puno cerrado
+    square(d, hand[0], hand[1], max(3, w + 1), OUTLINE)
+    square(d, hand[0], hand[1], max(2, w - 1), HI if is_near else MID)
+    # Eslabones de cadena colgando de la muneca
+    if draw_chain:
+        cx = int(round(hand[0]))
+        cy = int(round(hand[1]))
+        for step in range(1, 4):
+            ly = cy + step * 2
+            lx = cx + (-1 if not is_near else 1) * (step // 2)
+            if 2 <= lx < FRAME_W - 2 and 2 <= ly < FRAME_H - 4:
+                rect(d, lx - 1, ly, 3, 2, OUTLINE)
+                rect(d, lx, ly, 1, 1, SHADOW if step % 2 else MID)
+
+
+def draw_compact_blade(d, hand, angle_deg, length, is_near):
+    """Dibuja la silueta ancha y ganchuda de la Cuchilla del Caos sujeta en la mano."""
+    tip = polar(hand, angle_deg + (14 if is_near else -14), length)
+    belly = polar(hand, angle_deg - (10 if is_near else -10), length * 0.62)
+    hook = polar(belly, angle_deg + (42 if is_near else -42), 3.2)
+    guard = polar(hand, angle_deg, 2.5)
+    # Contorno exterior de guardia, vientre ancho, gancho y punta
+    square(d, guard[0], guard[1], 6, OUTLINE)
+    seg(d, guard, belly, 6, OUTLINE)
+    seg(d, belly, tip, 5, OUTLINE)
+    square(d, hook[0], hook[1], 4, OUTLINE)
+    # Relleno metalico (MID/HI) y acanaladura de bronce/sangre (SHADOW/DARK)
+    square(d, guard[0], guard[1], 4, SHADOW)
+    seg(d, guard, belly, 4, MID)
+    seg(d, belly, tip, 3, HI)
+    square(d, hook[0], hook[1], 2, HI)
+    seg(d, (guard[0], guard[1] + 0.6), (belly[0], belly[1] + 0.6), 2, SHADOW)
+    square(d, (guard[0] + belly[0]) * 0.5, (guard[1] + belly[1]) * 0.5, 2, DARK)
+    square(d, tip[0], tip[1], 2, HI)
+
+
+def draw_greave_and_boot(d, knee, foot, w, squash, is_near):
+    """Rodillera, greba espartana de cuero/bronce y bota."""
+    square(d, knee[0], knee[1], w + 2, OUTLINE)
+    square(d, knee[0], knee[1], w, MID if is_near else SHADOW)
+    seg(d, knee, foot, w + 2, OUTLINE)
+    seg(d, knee, foot, w, LEATHER)
+    seg(d, (knee[0] + 0.7, knee[1]), (foot[0] + 0.7, foot[1]), max(1, w - 2), SHADOW)
+    if is_near:
+        seg(d, (knee[0] + 1.1, knee[1] + 1), (foot[0] + 1.1, foot[1] - 1), 1, MID)
+    mid_shin = ((knee[0] + foot[0]) * 0.5, (knee[1] + foot[1]) * 0.5)
+    square(d, mid_shin[0], mid_shin[1], max(2, w - 1), DARK)
+    # Bota firme
+    bw = max(5, int(round(8 * squash)))
+    bh = max(3, int(round(4 * squash)))
+    bx = foot[0] - 2 * squash
+    by = foot[1]
+    rect(d, bx - 1, by, bw + 2, bh + 1, OUTLINE)
+    rect(d, bx, by, bw, bh, LEATHER)
+    rect(d, bx + 1, by, max(2, bw - 2), max(1, bh - 2), SHADOW)
+    if is_near:
+        rect(d, bx + bw - 3, by + 1, 2, max(1, bh - 2), MID)
+
+
+def draw_head(d, hx, hy, hr, squash=1.0):
+    """Cabeza espartana con craneo iluminado, tatuaje rojo, ceno y perilla."""
+    head_outer = [
+        (hx - 3 * squash - 1, hy - hr - 1),
+        (hx + 3 * squash + 1, hy - hr - 1),
+        (hx + hr + 1, hy - 2 * squash),
+        (hx + hr + 1, hy + 3 * squash),
+        (hx + 3 * squash + 1, hy + hr + 1),
+        (hx - 3 * squash - 1, hy + hr + 1),
+        (hx - hr - 1, hy + 2 * squash),
+        (hx - hr - 1, hy - 2 * squash),
+    ]
+    head_inner = [
+        (hx - 3 * squash, hy - hr),
+        (hx + 3 * squash, hy - hr),
+        (hx + hr, hy - 2 * squash),
+        (hx + hr, hy + 3 * squash),
+        (hx + 3 * squash, hy + hr),
+        (hx - 3 * squash, hy + hr),
+        (hx - hr, hy + 2 * squash),
+        (hx - hr, hy - 2 * squash),
+    ]
+    d.polygon(head_outer, fill=OUTLINE)
+    d.polygon(head_inner, fill=MID)
+    rect(d, hx - 2 * squash, hy - hr + 1, max(3, 5 * squash), max(2, 3 * squash), HI)
+    rect(d, hx - 1 * squash, hy, max(2, 4 * squash), max(1, 2 * squash), HI)
+    rect(d, hx - hr + 1, hy - 1, max(1, 2 * squash), max(2, 4 * squash), SHADOW)
+    rect(d, hx + 1, hy - hr + 1, max(1, 2 * squash), max(2, hr), SHADOW)
+    rect(d, hx + 1, hy - hr + 1, 1, max(2, hr - 1), DARK)
+    rect(d, hx + 1, hy - 1, max(2, 3 * squash), 1, OUTLINE)
+    rect(d, hx + 2, hy, 1, 1, HI)
+    rect(d, hx + 1, hy + hr - 2, max(2, 3 * squash), 2, DARK)
+    rect(d, hx + 2, hy + hr - 1, max(2, 2 * squash), 2, OUTLINE)
 
 
 def polar(origin, angle, length):
@@ -88,103 +203,360 @@ def translate(img, dy):
     return out
 
 
+def draw_roll_pose(d, stage):
+    """Dibuja los 4 cuadros de una voltereta espartana a ras de suelo:
+    0 = zambullida baja al frente
+    1 = ovillo compacto rodando sobre espalda/hombros en el suelo
+    2 = giro invertido sobre cadera/grebas saliendo hacia adelante
+    3 = incorporacion en guardia baja de combate
+    """
+    if stage == 0:
+        # Zambullida baja hacia adelante (altura ~38px, bbox[1] ~ 20)
+        # Pierna trasera extendida impulsando y pierna delantera flexionada
+        limb(d, (40, 39), (32, 48), 5, MID, hi_color=None, shade_color=SHADOW)
+        draw_greave_and_boot(d, (32, 48), (24, 54), 4, 0.9, is_near=False)
+        # Brazo lejano recogiendo cuchilla atras
+        draw_compact_blade(d, (35, 34), -125, 13, is_near=False)
+        draw_bracer(d, (43, 30), (35, 34), 4, is_near=False, draw_chain=False)
+        # Torso inclinado ~55 grados hacia adelante
+        torso_pts = [(38, 36), (48, 25), (60, 27), (58, 38), (44, 42)]
+        d.polygon([(x + (-1 if x < 48 else 1), y + (-1 if y < 33 else 1)) for x, y in torso_pts], fill=OUTLINE)
+        d.polygon(torso_pts, fill=MID)
+        rect(d, 46, 27, 10, 6, HI)
+        seg(d, (55, 27), (46, 36), 3, SHADOW)
+        seg(d, (55, 28), (47, 35), 2, DARK)
+        # Cinturon y faldon
+        rect(d, 36, 37, 12, 4, OUTLINE)
+        rect(d, 37, 38, 10, 3, SHADOW)
+        d.polygon([(35, 40), (47, 40), (49, 48), (33, 48)], fill=OUTLINE)
+        d.polygon([(36, 41), (46, 41), (48, 47), (34, 47)], fill=DARK)
+        rect(d, 37, 41, 4, 5, LEATHER)
+        rect(d, 41, 41, 3, 6, MID)
+        # Pierna delantera muy flexionada apoyando bota
+        limb(d, (45, 41), (56, 46), 5, MID, hi_color=HI, shade_color=SHADOW)
+        draw_greave_and_boot(d, (56, 46), (52, 54), 4, 0.9, is_near=True)
+        # Cabeza baja lanzandose al frente
+        draw_head(d, 62, 26, 4, squash=0.9)
+        # Brazo cercano buscando el suelo al frente
+        limb(d, (55, 30), (63, 37), 4, MID, hi_color=HI, shade_color=SHADOW)
+        draw_bracer(d, (63, 37), (68, 45), 4, is_near=True, draw_chain=False)
+
+    elif stage == 1:
+        # Ovillo compacto rodando sobre hombros/espalda en el suelo (bbox[1] >= 29, altura <= 30px)
+        # Cuchillas pegadas al ovillo
+        draw_compact_blade(d, (36, 44), -145, 11, is_near=False)
+        # Espalda curva y hombros apoyados en el suelo (y = 43..57)
+        ball_outer = [
+            (35, 44), (41, 36), (53, 35), (61, 41),
+            (62, 52), (56, 58), (40, 58), (34, 52),
+        ]
+        ball_inner = [
+            (36, 44), (42, 37), (52, 36), (60, 42),
+            (61, 51), (55, 57), (41, 57), (35, 51),
+        ]
+        d.polygon(ball_outer, fill=OUTLINE)
+        d.polygon(ball_inner, fill=MID)
+        # Luz en espalda/omoplatos (HI) y sombra interior (SHADOW)
+        rect(d, 43, 48, 13, 8, HI)
+        rect(d, 38, 44, 10, 6, SHADOW)
+        # Tatuaje rojo de Ares recorriendo el hombro/espalda en el suelo
+        seg(d, (44, 55), (56, 48), 3, SHADOW)
+        seg(d, (45, 55), (55, 49), 2, DARK)
+        # Cinturon y faldon espartano en la parte superior-izquierda del ovillo
+        rect(d, 36, 38, 12, 4, OUTLINE)
+        rect(d, 37, 39, 10, 2, SHADOW)
+        d.polygon([(35, 34), (47, 33), (48, 40), (35, 41)], fill=OUTLINE)
+        d.polygon([(36, 35), (46, 34), (47, 39), (36, 40)], fill=LEATHER)
+        rect(d, 40, 34, 3, 5, DARK)
+        rect(d, 43, 34, 2, 5, MID)
+        # Muslos y grebas encogidos por encima del torso (y = 31..43)
+        limb(d, (44, 38), (52, 34), 4, MID, hi_color=HI, shade_color=SHADOW)
+        seg(d, (52, 34), (60, 39), 6, OUTLINE)
+        seg(d, (52, 34), (60, 39), 4, LEATHER)
+        seg(d, (53, 34), (59, 38), 2, SHADOW)
+        # Bota recogida arriba a la derecha
+        rect(d, 58, 36, 6, 5, OUTLINE)
+        rect(d, 59, 37, 4, 3, LEATHER)
+        # Cabeza metida hacia el pecho dentro del ovillo (abajo a la derecha)
+        draw_head(d, 57, 48, 4, squash=0.85)
+        # Brazaletes protegiendo el pecho
+        draw_bracer(d, (48, 46), (54, 43), 4, is_near=True, draw_chain=False)
+
+    elif stage == 2:
+        # Giro invertido apoyando cadera/faldon y espinillas en el suelo (bbox[1] >= 28, altura <= 31px)
+        # Cuchilla asomando tras el hombro
+        draw_compact_blade(d, (36, 42), -140, 10, is_near=False)
+        # Cadera y faldon rodando contra el suelo (abajo izquierda)
+        d.polygon([(35, 46), (49, 46), (51, 58), (34, 58)], fill=OUTLINE)
+        d.polygon([(36, 47), (48, 47), (50, 57), (35, 57)], fill=DARK)
+        rect(d, 37, 48, 5, 8, LEATHER)
+        rect(d, 43, 48, 3, 8, SHADOW)
+        rect(d, 44, 49, 2, 6, MID)
+        # Cinturon
+        rect(d, 37, 44, 13, 3, OUTLINE)
+        rect(d, 38, 45, 11, 2, SHADOW)
+        # Torso curvo emergiendo hacia arriba/derecha (y = 35..48)
+        torso_pts = [(39, 45), (43, 36), (56, 36), (58, 46), (47, 48)]
+        d.polygon([(x + (-1 if x < 48 else 1), y + (-1 if y < 41 else 1)) for x, y in torso_pts], fill=OUTLINE)
+        d.polygon(torso_pts, fill=MID)
+        rect(d, 45, 37, 9, 6, HI)
+        seg(d, (47, 37), (55, 43), 3, SHADOW)
+        seg(d, (48, 38), (54, 43), 2, DARK)
+        # Piernas dobladas pasando a ras de suelo hacia adelante (y = 47..58)
+        limb(d, (48, 49), (56, 47), 5, MID, hi_color=HI, shade_color=SHADOW)
+        seg(d, (56, 47), (63, 55), 6, OUTLINE)
+        seg(d, (56, 47), (63, 55), 4, LEATHER)
+        seg(d, (57, 48), (62, 54), 2, SHADOW)
+        rect(d, 60, 53, 8, 5, OUTLINE)
+        rect(d, 61, 54, 6, 3, LEATHER)
+        # Cabeza saliendo al frente arriba
+        draw_head(d, 56, 35, 4, squash=0.88)
+        # Brazo con brazalete proyectandose al frente
+        draw_bracer(d, (53, 41), (62, 43), 4, is_near=True, draw_chain=False)
+
+    else:
+        # stage == 3: Salida en guardia baja de combate (altura ~40px, bbox[1] ~ 18)
+        draw_compact_blade(d, (33, 36), -120, 14, is_near=False)
+        # Pierna trasera baja casi arrodillada
+        limb(d, (42, 40), (35, 50), 5, MID, hi_color=None, shade_color=SHADOW)
+        draw_greave_and_boot(d, (35, 50), (27, 54), 4, 0.9, is_near=False)
+        # Brazo trasero en guardia
+        draw_bracer(d, (40, 31), (33, 36), 4, is_near=False, draw_chain=True)
+        # Torso inclinado al frente saliendo del giro
+        torso_pts = [(39, 38), (44, 24), (56, 25), (54, 39), (42, 40)]
+        d.polygon([(x + (-1 if x < 48 else 1), y + (-1 if y < 32 else 1)) for x, y in torso_pts], fill=OUTLINE)
+        d.polygon(torso_pts, fill=MID)
+        rect(d, 45, 26, 9, 6, HI)
+        rect(d, 49, 26, 1, 7, SHADOW)
+        seg(d, (53, 25), (46, 35), 3, SHADOW)
+        seg(d, (53, 26), (47, 35), 2, DARK)
+        # Cinturon y faldon
+        rect(d, 38, 38, 14, 3, OUTLINE)
+        rect(d, 39, 39, 12, 2, SHADOW)
+        d.polygon([(37, 41), (52, 41), (54, 49), (35, 49)], fill=OUTLINE)
+        d.polygon([(38, 42), (51, 42), (53, 48), (36, 48)], fill=DARK)
+        rect(d, 38, 42, 4, 5, LEATHER)
+        rect(d, 47, 42, 4, 5, LEATHER)
+        rect(d, 43, 42, 3, 6, SHADOW)
+        rect(d, 44, 42, 2, 5, MID)
+        # Pierna delantera plantando bota firme
+        limb(d, (49, 41), (58, 45), 5, MID, hi_color=HI, shade_color=SHADOW)
+        draw_greave_and_boot(d, (58, 45), (59, 54), 4, 0.92, is_near=True)
+        # Cabeza erguida mirando al frente
+        draw_head(d, 55, 22, 4, squash=0.92)
+        # Brazo cercano con Cuchilla del Caos lista al frente
+        draw_compact_blade(d, (64, 36), 72, 14, is_near=True)
+        limb(d, (53, 28), (58, 33), 4, MID, hi_color=HI, shade_color=SHADOW)
+        draw_bracer(d, (58, 33), (64, 36), 4, is_near=True, draw_chain=True)
+
+
 def draw_pose(pose, neutral):
     img = Image.new("RGBA", (FRAME_W, FRAME_H), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
 
-    # Envolvente de rodada: encoge y baja el cuerpo para cerrar la bola sin
-    # reescribir el esqueleto. `tuck` va de 0 (de pie) a 1 (bola).
+    if pose.get("roll_stage") is not None:
+        draw_roll_pose(d, pose["roll_stage"])
+        bbox = img.split()[3].getbbox()
+        if bbox:
+            img = translate(img, (FRAME_H - 1) - (bbox[3] - 1))
+        return img
+
     tuck = pose.get("tuck", 0.0)
-    squash = 1.0 - 0.42 * tuck
+    squash = 1.0 - 0.24 * tuck
     drop = 3.0 * tuck
-    reach_x = CX - 1.0
+    reach_x = CX
     reach_y = PELVIS_Y + drop
 
     def squash_pt(p):
-        return (reach_x + (p[0] - reach_x) * squash,
-                reach_y + (p[1] - reach_y) * squash)
+        return (
+            reach_x + (p[0] - reach_x) * squash,
+            reach_y + (p[1] - reach_y) * squash,
+        )
 
-    s = math.radians(pose.get("spine", 0) + 90)
+    spine_deg = pose.get("spine", 0)
+    s = math.radians(spine_deg + 90)
     pelvis = squash_pt((CX, PELVIS_Y + pose.get("pelvis_dy", 0)))
     shoulder = squash_pt((pelvis[0] + math.cos(s) * -SPINE, pelvis[1] + math.sin(s) * -SPINE))
-    head_c = squash_pt((shoulder[0] + math.cos(s) * -NECK, shoulder[1] + math.sin(s) * -NECK))
-    joint_w = max(2, int(round(4 * squash)))
-    limb_w = max(1, int(round(3 * squash)))
-    head_r = max(2, int(round(4 * squash)))
+    head_c = squash_pt((shoulder[0] + math.cos(s) * -NECK + 1.5 * squash, shoulder[1] + math.sin(s) * -NECK))
+
+    thigh_w = max(4, int(round(5.5 * squash)))
+    shin_w = max(3, int(round(4.5 * squash)))
+    upper_w = max(3, int(round(4.5 * squash)))
+    fore_w = max(3, int(round(4.2 * squash)))
+    head_r = max(3, int(round(4.6 * squash)))
 
     def leg(spec, dx):
-        hip = squash_pt((pelvis[0] + dx * squash, pelvis[1]))
+        hip = squash_pt((pelvis[0] + dx * squash, pelvis[1] + 1))
         knee = squash_pt(polar(hip, spec["thigh"], THIGH))
         foot = squash_pt(polar(knee, spec["thigh"] + spec["knee"], SHIN))
         return hip, knee, foot
 
-    def arm(spec, dx):
-        root = squash_pt((shoulder[0] + dx * squash, shoulder[1]))
+    def arm(spec, dx, dy=1.0):
+        root = squash_pt((shoulder[0] + dx * squash, shoulder[1] + dy * squash))
         elbow = squash_pt(polar(root, spec["sh"], UPPER))
         hand = squash_pt(polar(elbow, spec["sh"] + spec["el"], FORE))
         return root, elbow, hand
 
-    far_arm = arm(pose["armF"], FAR_DX)
-    far_leg = leg(pose["legF"], FAR_DX)
-    near_leg = leg(pose["legN"], NEAR_DX)
-    near_arm = arm(pose["armN"], NEAR_DX)
+    far_sh_dx = pose.get("far_sh_dx", FAR_SH_DX)
+    near_sh_dx = pose.get("near_sh_dx", NEAR_SH_DX)
+    far_hip_dx = pose.get("far_hip_dx", FAR_HIP_DX)
+    near_hip_dx = pose.get("near_hip_dx", NEAR_HIP_DX)
 
-    # Capas traseras.
-    limb(d, far_arm[0], far_arm[1], limb_w, SHADOW)
-    limb(d, far_arm[1], far_arm[2], limb_w, SHADOW)
-    limb(d, far_leg[0], far_leg[1], joint_w, SHADOW)
-    limb(d, far_leg[1], far_leg[2], joint_w, SHADOW)
-    for foot in (far_leg[2],):
-        rect(d, foot[0] - 3 * squash, foot[1] + 1, 7 * squash, 3 * squash, OUTLINE)
-        rect(d, foot[0] - 2 * squash, foot[1] + 1, 5 * squash, 2 * squash, SHADOW)
+    far_arm = arm(pose["armF"], far_sh_dx, dy=1.5)
+    far_leg = leg(pose["legF"], far_hip_dx)
+    near_leg = leg(pose["legN"], near_hip_dx)
+    near_arm = arm(pose["armN"], near_sh_dx, dy=1.5)
 
-    # Torso (piel) con franja de tatuaje.
-    waist = squash_pt((pelvis[0] + math.cos(s) * -SPINE * 0.45, pelvis[1] + math.sin(s) * -SPINE * 0.45))
-    torso = [
-        squash_pt((shoulder[0] - 5, shoulder[1])),
-        squash_pt((shoulder[0] + 5, shoulder[1])),
-        squash_pt((waist[0] + 5, waist[1] + 3)),
-        squash_pt((waist[0] - 5, waist[1] + 3)),
+    # 1. Brazo lejano (detras del torso) + cuchilla opcional
+    if pose.get("bladeF") is not None:
+        draw_compact_blade(d, far_arm[2], pose["bladeF"], pose.get("blade_len", 14), is_near=False)
+    square(d, far_arm[0][0], far_arm[0][1], upper_w + 3, OUTLINE)
+    square(d, far_arm[0][0], far_arm[0][1], upper_w + 1, MID)
+    limb(d, far_arm[0], far_arm[1], upper_w, MID, hi_color=HI, shade_color=SHADOW)
+    draw_bracer(d, far_arm[1], far_arm[2], fore_w, is_near=False, draw_chain=(tuck < 0.3))
+
+    # 2. Muslos (se dibujan ANTES del faldon espartano para que el faldon cubra la ingle/cadera
+    #    exactamente como en `kratos-neutral.png`)
+    limb(d, far_leg[0], far_leg[1], thigh_w, MID, hi_color=HI, shade_color=SHADOW)
+    limb(d, near_leg[0], near_leg[1], thigh_w, MID, hi_color=HI, shade_color=SHADOW)
+
+    # 3. Torso heroico en V con trapecios anchos, pectorales HI y tatuaje de Ares
+    chest = (
+        shoulder[0] * 0.70 + pelvis[0] * 0.30,
+        shoulder[1] * 0.70 + pelvis[1] * 0.30,
+    )
+    waist = (
+        shoulder[0] * 0.28 + pelvis[0] * 0.72,
+        shoulder[1] * 0.28 + pelvis[1] * 0.72,
+    )
+    trap_top = (shoulder[0], shoulder[1] - 3 * squash)
+    sh_left = (shoulder[0] - 9.5 * squash, shoulder[1])
+    sh_right = (shoulder[0] + 8.5 * squash, shoulder[1])
+    lat_left = (chest[0] - 8.0 * squash, chest[1] + 1 * squash)
+    lat_right = (chest[0] + 7.5 * squash, chest[1] + 1 * squash)
+    w_left = (waist[0] - 6.0 * squash, waist[1] + 2 * squash)
+    w_right = (waist[0] + 5.5 * squash, waist[1] + 2 * squash)
+
+    torso_outer = [
+        (trap_top[0] - 5 * squash, trap_top[1] - 1),
+        (trap_top[0] + 5 * squash, trap_top[1] - 1),
+        (sh_right[0] + 1, sh_right[1] - 1),
+        (lat_right[0] + 1, lat_right[1]),
+        (w_right[0] + 1, w_right[1] + 1),
+        (w_left[0] - 1, w_left[1] + 1),
+        (lat_left[0] - 1, lat_left[1]),
+        (sh_left[0] - 1, sh_left[1] - 1),
     ]
-    d.polygon(torso, fill=MID, outline=OUTLINE)
-    d.polygon([squash_pt((shoulder[0] - 1, shoulder[1])), squash_pt((shoulder[0] + 2, shoulder[1])),
-               squash_pt((waist[0] + 2, waist[1] + 2)), squash_pt((waist[0] - 1, waist[1] + 2))], fill=DARK)
-
-    # Lienzo/malla en la cadera.
-    skirt = [
-        squash_pt((pelvis[0] - 5, pelvis[1] - 2)),
-        squash_pt((pelvis[0] + 5, pelvis[1] - 2)),
-        squash_pt((pelvis[0] + 4, pelvis[1] + 4)),
-        squash_pt((pelvis[0] - 4, pelvis[1] + 4)),
+    torso_inner = [
+        (trap_top[0] - 4 * squash, trap_top[1]),
+        (trap_top[0] + 4 * squash, trap_top[1]),
+        sh_right,
+        lat_right,
+        w_right,
+        w_left,
+        lat_left,
+        sh_left,
     ]
-    d.polygon(skirt, fill=LEATHER, outline=OUTLINE)
+    d.polygon(torso_outer, fill=OUTLINE)
+    d.polygon(torso_inner, fill=MID)
 
-    # Pierna y brazo cercanos (delante).
-    limb(d, near_leg[0], near_leg[1], joint_w, HI)
-    limb(d, near_leg[1], near_leg[2], joint_w, HI)
-    rect(d, near_leg[2][0] - 3 * squash, near_leg[2][1] + 1, 7 * squash, 3 * squash, OUTLINE)
-    rect(d, near_leg[2][0] - 2 * squash, near_leg[2][1] + 1, 5 * squash, 2 * squash, HI)
-    limb(d, near_arm[0], near_arm[1], limb_w, HI)
-    limb(d, near_arm[1], near_arm[2], limb_w, HI)
-
-    # Cabeza (calva) con franja de tatuaje, ojo y perilla.
-    hr = head_r
-    hx, hy = head_c
-    head = [
-        (hx - 3 * squash, hy - hr), (hx + 3 * squash, hy - hr),
-        (hx + hr, hy - 3 * squash), (hx + hr, hy + 3 * squash),
-        (hx + 3 * squash, hy + hr), (hx - 3 * squash, hy + hr),
-        (hx - hr, hy + 3 * squash), (hx - hr, hy - 3 * squash),
+    # Sombra dorsal izquierda y bajo pectorales
+    dorsal = [
+        sh_left,
+        (shoulder[0] - 4 * squash, shoulder[1]),
+        (waist[0] - 3 * squash, waist[1] + 2 * squash),
+        w_left,
+        lat_left,
     ]
-    d.polygon(head, fill=HI, outline=OUTLINE)
-    rect(d, hx + 1, hy - hr, max(1, 2 * squash), hr + 1, DARK)
-    rect(d, hx + 2, hy, 1, max(1, 2 * squash), SHADOW)
-    rect(d, hx - 2, hy + 2, 4 * squash, 3 * squash, SHADOW)
+    d.polygon(dorsal, fill=SHADOW)
 
-    if pose.get("blade"):
-        tip = polar(near_arm[2], pose["blade"], 24)
-        limb(d, near_arm[2], tip, 3, DARK)
+    # Amplios pectorales y trapecio iluminados en HI (piel ceniza clara de Kratos)
+    rect(d, shoulder[0] - 6 * squash, shoulder[1] - 1, 6 * squash, 6 * squash, HI)
+    rect(d, shoulder[0] + 1 * squash, shoulder[1] - 1, 6 * squash, 6 * squash, HI)
+    # Pliegue pectoral y linea media esternal
+    rect(d, shoulder[0], shoulder[1] - 1, 1, 7 * squash, SHADOW)
+    rect(d, shoulder[0] - 6 * squash, chest[1] + 1, 12 * squash, 1, SHADOW)
+    # Bloques abdominales iluminados en HI/MID
+    rect(d, waist[0] - 3 * squash, chest[1] + 2, 6 * squash, 3 * squash, HI)
+    rect(d, waist[0], chest[1] + 2, 1, 4 * squash, SHADOW)
 
+    # Tatuaje rojo de Ares cruzando en diagonal hombro -> pectoral -> costillas
+    tattoo_band = [
+        (shoulder[0] + 2 * squash, shoulder[1] - 2 * squash),
+        (shoulder[0] + 6 * squash, shoulder[1] - 1 * squash),
+        (waist[0] + 2 * squash, waist[1] + 2 * squash),
+        (waist[0] - 1 * squash, waist[1] + 1 * squash),
+    ]
+    d.polygon(tattoo_band, fill=SHADOW)
+    seg(
+        d,
+        (shoulder[0] + 4 * squash, shoulder[1] - 1 * squash),
+        (waist[0] + 1 * squash, waist[1] + 1 * squash),
+        max(1, int(round(2 * squash))),
+        DARK,
+    )
+
+    # 4. Cinturon pesado y faldon espartano (pteruges) SOBRE la cadera e inicio de muslos
+    belt_y = pelvis[1] - 2 * squash
+    bw = max(7, int(round(14 * squash)))
+    bh = max(2, int(round(3 * squash)))
+    rect(d, pelvis[0] - bw // 2 - 1, belt_y - 1, bw + 2, bh + 2, OUTLINE)
+    rect(d, pelvis[0] - bw // 2, belt_y, bw, bh, SHADOW)
+    rect(d, pelvis[0] - 2 * squash, belt_y, max(2, 4 * squash), 1, HI)
+
+    skirt_top = belt_y + bh - 1
+    skirt_h = max(4, int(round(8.5 * squash)))
+    skirt_outer = [
+        (pelvis[0] - 6.0 * squash - 1, skirt_top),
+        (pelvis[0] + 6.0 * squash + 1, skirt_top),
+        (pelvis[0] + 7.5 * squash + 1, skirt_top + skirt_h - 4),
+        (pelvis[0] + 3.5 * squash, skirt_top + skirt_h),
+        (pelvis[0] - 1.0 * squash, skirt_top + skirt_h + 2),
+        (pelvis[0] - 4.0 * squash, skirt_top + skirt_h),
+        (pelvis[0] - 7.5 * squash - 1, skirt_top + skirt_h - 4),
+    ]
+    skirt_inner = [
+        (pelvis[0] - 5.5 * squash, skirt_top),
+        (pelvis[0] + 5.5 * squash, skirt_top),
+        (pelvis[0] + 6.5 * squash, skirt_top + skirt_h - 4),
+        (pelvis[0] + 3.0 * squash, skirt_top + skirt_h - 1),
+        (pelvis[0] - 1.0 * squash, skirt_top + skirt_h + 1),
+        (pelvis[0] - 3.5 * squash, skirt_top + skirt_h - 1),
+        (pelvis[0] - 6.5 * squash, skirt_top + skirt_h - 4),
+    ]
+    d.polygon(skirt_outer, fill=OUTLINE)
+    d.polygon(skirt_inner, fill=DARK)
+    # Placas de cuero del faldon (LEATHER) y faja central clara (SHADOW/MID)
+    rect(d, pelvis[0] - 5 * squash, skirt_top + 1, max(2, 3 * squash), max(2, skirt_h - 4), LEATHER)
+    rect(d, pelvis[0] + 2 * squash, skirt_top + 1, max(2, 3 * squash), max(2, skirt_h - 4), LEATHER)
+    # Faja central colgante (identica a la de kratos-neutral.png)
+    rect(d, pelvis[0] - 1 * squash, skirt_top + 1, max(2, 3 * squash), skirt_h, SHADOW)
+    rect(d, pelvis[0], skirt_top + 1, max(1, 2 * squash), skirt_h - 1, MID)
+
+    # 5. Grebas y botas (debajo de las rodillas)
+    draw_greave_and_boot(d, far_leg[1], far_leg[2], shin_w, squash, is_near=False)
+    draw_greave_and_boot(d, near_leg[1], near_leg[2], shin_w, squash, is_near=True)
+
+    # 6. Cabeza espartana proporcionada, encajada en los trapecios, con barba y tatuaje
+    draw_head(d, head_c[0], head_c[1], head_r, squash=squash)
+
+    # 7. Deltoides potente, brazo cercano y brazalete con cadena (+ cuchilla opcional)
+    if pose.get("bladeN") is not None:
+        draw_compact_blade(d, near_arm[2], pose["bladeN"], pose.get("blade_len", 14), is_near=True)
+    square(d, near_arm[0][0], near_arm[0][1], upper_w + 3, OUTLINE)
+    square(d, near_arm[0][0], near_arm[0][1], upper_w + 1, MID)
+    square(d, near_arm[0][0] - 0.5, near_arm[0][1] - 0.5, max(2, upper_w - 1), HI)
+    limb(d, near_arm[0], near_arm[1], upper_w, MID, hi_color=HI, shade_color=SHADOW)
+    draw_bracer(
+        d,
+        near_arm[1],
+        near_arm[2],
+        fore_w,
+        is_near=True,
+        draw_chain=(tuck < 0.3 and pose.get("bladeN") is not None),
+    )
+
+    # Anclaje estricto: fila inferior opaca en y = FRAME_H - 1 (58)
     bbox = img.split()[3].getbbox()
     if bbox:
         img = translate(img, (FRAME_H - 1) - (bbox[3] - 1))
@@ -195,56 +567,207 @@ def mirror(pose):
     out = dict(pose)
     out["legF"], out["legN"] = pose["legN"], pose["legF"]
     out["armF"], out["armN"] = pose["armN"], pose["armF"]
+    if "bladeF" in pose and "bladeN" in pose:
+        out["bladeF"], out["bladeN"] = pose["bladeN"], pose["bladeF"]
     return out
 
 
+# En IDLE Kratos adopta su guardia espartana abierta (como en kratos-neutral.png)
+# sujetando las Cuchillas del Caos a ambos lados del cuerpo con respiracion sutil.
 IDLE = [
-    dict(spine=3, pelvis_dy=0, legF=dict(thigh=-4, knee=-4), legN=dict(thigh=3, knee=-6),
-         armF=dict(sh=8, el=-14), armN=dict(sh=6, el=-14)),
-    dict(spine=3, pelvis_dy=-1, legF=dict(thigh=-4, knee=-4), legN=dict(thigh=3, knee=-6),
-         armF=dict(sh=6, el=-18), armN=dict(sh=4, el=-18)),
+    dict(
+        spine=3,
+        pelvis_dy=0,
+        legF=dict(thigh=-34, knee=-6),
+        legN=dict(thigh=32, knee=-16),
+        armF=dict(sh=-44, el=-18),
+        armN=dict(sh=46, el=16),
+        bladeF=-112,
+        bladeN=74,
+        blade_len=17,
+    ),
+    dict(
+        spine=4,
+        pelvis_dy=-1,
+        legF=dict(thigh=-34, knee=-6),
+        legN=dict(thigh=32, knee=-16),
+        armF=dict(sh=-48, el=-14),
+        armN=dict(sh=50, el=12),
+        bladeF=-108,
+        bladeN=70,
+        blade_len=17,
+    ),
 ]
 
+# En RUN Kratos corre inclinado con las Cuchillas del Caos invertidas hacia atras
+# siguiendo el braceo, tal como en God of War: Betrayal.
 RUN_BASE = [
-    dict(spine=9, pelvis_dy=-1, legF=dict(thigh=-30, knee=-40), legN=dict(thigh=32, knee=-12),
-         armF=dict(sh=24, el=22), armN=dict(sh=-22, el=46)),
-    dict(spine=11, pelvis_dy=1, legF=dict(thigh=-14, knee=-52), legN=dict(thigh=14, knee=-28),
-         armF=dict(sh=4, el=30), armN=dict(sh=-6, el=40)),
-    dict(spine=9, pelvis_dy=-2, legF=dict(thigh=10, knee=-60), legN=dict(thigh=-12, knee=-16),
-         armF=dict(sh=-22, el=46), armN=dict(sh=24, el=22)),
+    dict(
+        spine=12,
+        pelvis_dy=-1,
+        far_sh_dx=-7,
+        near_sh_dx=6,
+        legF=dict(thigh=-34, knee=-34),
+        legN=dict(thigh=36, knee=-12),
+        armF=dict(sh=38, el=16),
+        armN=dict(sh=-38, el=-14),
+        bladeF=72,
+        bladeN=-102,
+        blade_len=15,
+    ),
+    dict(
+        spine=14,
+        pelvis_dy=1,
+        far_sh_dx=-7,
+        near_sh_dx=6,
+        legF=dict(thigh=-16, knee=-46),
+        legN=dict(thigh=18, knee=-26),
+        armF=dict(sh=22, el=18),
+        armN=dict(sh=-26, el=-16),
+        bladeF=68,
+        bladeN=-98,
+        blade_len=15,
+    ),
+    dict(
+        spine=11,
+        pelvis_dy=-2,
+        far_sh_dx=-7,
+        near_sh_dx=6,
+        legF=dict(thigh=14, knee=-54),
+        legN=dict(thigh=-16, knee=-16),
+        armF=dict(sh=-36, el=-14),
+        armN=dict(sh=36, el=16),
+        bladeF=-102,
+        bladeN=72,
+        blade_len=15,
+    ),
 ]
 RUN = RUN_BASE + [mirror(p) for p in RUN_BASE]
 
 AIR = [
-    dict(spine=7, pelvis_dy=-2, legF=dict(thigh=-22, knee=-40), legN=dict(thigh=28, knee=-60),
-         armF=dict(sh=40, el=18), armN=dict(sh=34, el=26)),
-    dict(spine=5, pelvis_dy=-3, legF=dict(thigh=-8, knee=-28), legN=dict(thigh=18, knee=-52),
-         armF=dict(sh=26, el=30), armN=dict(sh=44, el=16)),
+    dict(
+        spine=8,
+        pelvis_dy=-2,
+        legF=dict(thigh=-24, knee=-38),
+        legN=dict(thigh=30, knee=-52),
+        armF=dict(sh=-46, el=-18),
+        armN=dict(sh=48, el=22),
+        bladeF=-118,
+        bladeN=68,
+        blade_len=15,
+    ),
+    dict(
+        spine=6,
+        pelvis_dy=-3,
+        legF=dict(thigh=-12, knee=-28),
+        legN=dict(thigh=22, knee=-46),
+        armF=dict(sh=-36, el=-24),
+        armN=dict(sh=36, el=28),
+        bladeF=-112,
+        bladeN=62,
+        blade_len=15,
+    ),
 ]
 
 ATTACK = [
-    dict(spine=-6, pelvis_dy=1, legF=dict(thigh=-18, knee=-14), legN=dict(thigh=22, knee=-20),
-         armF=dict(sh=-10, el=20), armN=dict(sh=-60, el=-30), blade=-120),
-    dict(spine=16, pelvis_dy=0, legF=dict(thigh=-24, knee=-18), legN=dict(thigh=28, knee=-16),
-         armF=dict(sh=30, el=24), armN=dict(sh=70, el=10), blade=70),
-    dict(spine=12, pelvis_dy=1, legF=dict(thigh=-20, knee=-16), legN=dict(thigh=24, knee=-18),
-         armF=dict(sh=26, el=30), armN=dict(sh=40, el=20), blade=95),
+    # 0 — startup: torsion espartana armando ambas cuchillas atras antes del latigazo
+    dict(
+        spine=-12,
+        pelvis_dy=1,
+        legF=dict(thigh=-28, knee=-12),
+        legN=dict(thigh=30, knee=-20),
+        armF=dict(sh=-42, el=-20),
+        armN=dict(sh=-64, el=-28),
+        bladeF=-122,
+        bladeN=-102,
+        blade_len=16,
+    ),
+    # 1 — active: zancada agresiva al frente con antebrazo proyectado horizontalmente
+    #     y puno delantero exactamente en (CX + 14, 28) = (player.x + 14, player.y - 31), sin bladeN
+    dict(
+        spine=12,
+        pelvis_dy=0,
+        near_sh_dx=0,
+        legF=dict(thigh=-32, knee=-16),
+        legN=dict(thigh=34, knee=-16),
+        armF=dict(sh=-48, el=-18),
+        armN=dict(sh=6, el=82),
+        bladeF=-118,
+        bladeN=None,
+        blade_len=15,
+    ),
+    # 2 — recovery: tiron firme recogiendo la cadena de vuelta a la guardia
+    dict(
+        spine=14,
+        pelvis_dy=1,
+        legF=dict(thigh=-26, knee=-14),
+        legN=dict(thigh=30, knee=-18),
+        armF=dict(sh=-38, el=-16),
+        armN=dict(sh=46, el=20),
+        bladeF=-112,
+        bladeN=60,
+        blade_len=15,
+    ),
+    # 3 — slam / plume: golpe descendente sobre la cabeza azotando las hojas contra el suelo
+    dict(
+        spine=16,
+        pelvis_dy=0,
+        near_sh_dx=0,
+        legF=dict(thigh=-34, knee=-14),
+        legN=dict(thigh=32, knee=-16),
+        armF=dict(sh=-40, el=-22),
+        armN=dict(sh=8, el=80),
+        bladeF=-128,
+        bladeN=None,
+        blade_len=15,
+    ),
+    # 4 — ascension launcher: tajo vertical ascendente hacia el cielo elevando al enemigo
+    dict(
+        spine=-4,
+        pelvis_dy=0,
+        near_sh_dx=0,
+        legF=dict(thigh=-24, knee=-20),
+        legN=dict(thigh=26, knee=-24),
+        armF=dict(sh=-54, el=-16),
+        armN=dict(sh=-8, el=96),
+        bladeF=-114,
+        bladeN=None,
+        blade_len=15,
+    ),
+    # 5 — chain grab: lanzamiento rectilineo horizontal de cadena al frente
+    dict(
+        spine=10,
+        pelvis_dy=0,
+        near_sh_dx=0,
+        legF=dict(thigh=-30, knee=-14),
+        legN=dict(thigh=32, knee=-18),
+        armF=dict(sh=-44, el=-18),
+        armN=dict(sh=6, el=82),
+        bladeF=-118,
+        bladeN=None,
+        blade_len=15,
+    ),
+    # 6 — light_2 slash (brazo izquierdo alternado): zancada opuesta con torso rotado
+    #     y antebrazo izquierdo proyectado al frente cruzando la guardia; sin bladeF
+    dict(
+        spine=12,
+        pelvis_dy=0,
+        far_sh_dx=0,
+        legF=dict(thigh=34, knee=-16),
+        legN=dict(thigh=-32, knee=-16),
+        armF=dict(sh=6, el=82),
+        armN=dict(sh=-48, el=-18),
+        bladeF=None,
+        bladeN=-118,
+        blade_len=15,
+    ),
 ]
 
-# Rodada: voltereta lateral. `tuck`/`roll` son la envolvente, no el esqueleto.
 ROLL = [
-    # 0 — flexion: peso al frente, brazos al pecho, rodillas quebradas.
-    dict(spine=34, tuck=0, legF=dict(thigh=-26, knee=-30), legN=dict(thigh=20, knee=-52),
-         armF=dict(sh=-26, el=-30), armN=dict(sh=-22, el=-34)),
-    # 1 — tuck: cuerpo comprimido formando bola.
-    dict(spine=88, tuck=0.62, legF=dict(thigh=-38, knee=-70), legN=dict(thigh=34, knee=-78),
-         armF=dict(sh=-34, el=-38), armN=dict(sh=-30, el=-42)),
-    # 2 — mid: bola cerrada en el punto mas alto del giro.
-    dict(spine=96, tuck=1.0, legF=dict(thigh=-44, knee=-82), legN=dict(thigh=40, knee=-90),
-         armF=dict(sh=-38, el=-44), armN=dict(sh=-34, el=-48)),
-    # 3 — exit: desenrollando, apoyando el pie para salir corriendo.
-    dict(spine=46, tuck=0.35, legF=dict(thigh=-30, knee=-44), legN=dict(thigh=26, knee=-40),
-         armF=dict(sh=-12, el=-24), armN=dict(sh=-6, el=-28)),
+    dict(roll_stage=0),
+    dict(roll_stage=1),
+    dict(roll_stage=2),
+    dict(roll_stage=3),
 ]
 
 
@@ -254,20 +777,44 @@ def colors_of(img):
 
 def sheet(name, poses, neutral):
     img = Image.new("RGBA", (FRAME_W * len(poses), FRAME_H), (0, 0, 0, 0))
+    frames = []
     for i, pose in enumerate(poses):
-        img.paste(draw_pose(pose, neutral), (i * FRAME_W, 0))
+        frame_img = draw_pose(pose, neutral)
+        f_bbox = frame_img.split()[3].getbbox()
+        assert f_bbox is not None and f_bbox[3] == FRAME_H, (name, i, f_bbox)
+        frames.append(frame_img)
+        img.paste(frame_img, (i * FRAME_W, 0))
+    sheet_colors = colors_of(img)
+    assert sheet_colors == set(PALETTE), (name, sheet_colors, set(PALETTE))
     img.save(os.path.join(OUT_DIR, name))
-    print(name, img.size, "frames:", len(poses), "colors:", len(colors_of(img)))
+    print(name, img.size, "frames:", len(poses), "colors:", len(sheet_colors))
+    return frames
+
+
+def save_contact_sheet(neutral, rows):
+    max_cols = max(len(r) for r in rows)
+    total_rows = 1 + len(rows)
+    scale = 2
+    canvas = Image.new("RGBA", (FRAME_W * max_cols, FRAME_H * total_rows), (24, 24, 32, 255))
+    canvas.paste(neutral, (0, 0), neutral)
+    for row_idx, frames in enumerate(rows, start=1):
+        for col_idx, frame_img in enumerate(frames):
+            canvas.paste(frame_img, (col_idx * FRAME_W, row_idx * FRAME_H), frame_img)
+    upscaled = canvas.resize((canvas.width * scale, canvas.height * scale), Image.NEAREST)
+    os.makedirs(REF_DIR, exist_ok=True)
+    upscaled.save(CONTACT_SHEET_PATH)
+    print("contact sheet saved:", CONTACT_SHEET_PATH, upscaled.size)
 
 
 def main():
     neutral = load_palette()
     print("palette OK:", PALETTE)
-    sheet("kratos-idle.png", IDLE, neutral)
-    sheet("kratos-run.png", RUN, neutral)
-    sheet("kratos-air.png", AIR, neutral)
-    sheet("kratos-attack.png", ATTACK, neutral)
-    sheet("kratos-roll.png", ROLL, neutral)
+    idle_f = sheet("kratos-idle.png", IDLE, neutral)
+    run_f = sheet("kratos-run.png", RUN, neutral)
+    air_f = sheet("kratos-air.png", AIR, neutral)
+    atk_f = sheet("kratos-attack.png", ATTACK, neutral)
+    roll_f = sheet("kratos-roll.png", ROLL, neutral)
+    save_contact_sheet(neutral, [idle_f, run_f, air_f, atk_f, roll_f])
 
 
 if __name__ == "__main__":

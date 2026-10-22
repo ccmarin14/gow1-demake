@@ -14,8 +14,21 @@ export function canonicalString(value: unknown): string {
   return JSON.stringify(value, (_key, current) => {
     if (current && typeof current === 'object' && !Array.isArray(current)) {
       const record = current as Record<string, unknown>;
+      const keys = Object.keys(record);
+      let alreadySorted = true;
+      for (let i = 1; i < keys.length; i += 1) {
+        if (keys[i] < keys[i - 1]) {
+          alreadySorted = false;
+          break;
+        }
+      }
+      if (alreadySorted) {
+        return current;
+      }
+      keys.sort();
       const sorted: Record<string, unknown> = {};
-      for (const key of Object.keys(record).sort()) {
+      for (let i = 0; i < keys.length; i += 1) {
+        const key = keys[i];
         sorted[key] = record[key];
       }
       return sorted;

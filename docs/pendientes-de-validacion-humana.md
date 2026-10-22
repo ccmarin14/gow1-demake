@@ -18,10 +18,10 @@ Estas deudas son **no bloqueantes**: no detienen el desarrollo. Si al hacer una 
 
 | # | Qué hay que mirar | Dónde | Estado | Detectado |
 |---|---|---|---|---|
-| 1 | Composición Egeo + Kratos: piel pálida, marca roja, dos hojas/cadenas, pies apoyados en la cubierta y silueta/contraste legibles | `docs/referencias/egeo-kratos-composicion-480x270.png` a 1× y 2× nearest-neighbor | **Pendiente** | CMP-01 |
-| 2 | Hoja de contacto del arte de Kratos: coherencia estética entre poses, sin *jitter*, anclaje de pies consistente | `docs/referencias/kratos-anim-contact-sheet.png` | **Pendiente** | KRA-02 |
-| 3 | Silueta del ataque: el arco de las Cuchillas del Caos se lee como barrido y no como caja pegada al cuerpo | Juego en vivo, `J` frente a un objetivo | **Pendiente** | CHAOS-01 |
-| 4 | **Voltereta lateral**: `A`/`D` + `SHIFT` ¿se lee como *voltereta* y no como *dash*? (con arte provisional de 4 cuadros es esperable que sea pobre; el arte final es del Bloque 11) | Juego en vivo, `SHIFT` | **Pendiente** | ROLL-ART |
+| 1 | Composición Egeo + Kratos: piel pálida, marca roja, dos hojas/cadenas, pies apoyados en la cubierta y silueta/contraste legibles | `docs/referencias/egeo-kratos-composicion-480x270.png` a 1× y 2× nearest-neighbor | **Parcial** (2026-10-20) — se reconoce Kratos, el contraste funciona y la composición es creíble; "se ve pegado", diferido al arte fino (Bloque 11). | CMP-01 |
+| 2 | Hoja de contacto del arte de Kratos: coherencia estética entre poses, sin *jitter*, anclaje de pies consistente | `docs/referencias/kratos-anim-contact-sheet.png` | **Actualizada en `ART-POLISH-01`** (2026-10-21) — silueta espartana musculosa coherente con `kratos-neutral.png`, sin *jitter*, pies anclados en `y=58`. | KRA-02 / ART-POLISH-01 |
+| 3 | Silueta del ataque: el arco de las Cuchillas del Caos se lee como barrido y no como caja pegada al cuerpo | Juego en vivo, `J` frente a un objetivo | **CORREGIDO en `ART-POLISH-02`, pendiente de re-mirar** (2026-10-21) — ahora las Cuchillas del Caos se lanzan en `startup`, barren con cadena ondulada + hoja ganchuda + estela en arco en `active` y se retraen en `recovery`, además de estar en manos de Kratos al correr y saltar. | CHAOS-01 / ART-POLISH-02 |
+| 4 | **Voltereta lateral**: `A`/`D` + `SHIFT` ¿se lee como *voltereta* y no como *dash*? (con arte provisional de 4 cuadros es esperable que sea pobre; el arte final es del Bloque 11) | Juego en vivo, `SHIFT` | **CORREGIDO en `ART-POLISH-02`, pendiente de re-mirar** (2026-10-21) — eliminado el `setRotation` alrededor de los pies (que hundía a Kratos fuera de pantalla) y reemplazado por 4 cuadros de voltereta a ras de suelo (`zambullida` → `ovillo sobre espalda` → `giro de cadera` → `guardia baja`) apoyados en `y=58`. | ROLL-ART / ART-POLISH-02 |
 | 5 | **Sensación de la rodada**: duración, sincronía del clip y transición de salida con teclado físico | Juego en vivo, `SHIFT` mantenido y soltado | **Pendiente** | ROLL-ART |
 | 6 | **Lateralidad de la rodada** percibida en ambos sentidos (`A`+`SHIFT` y `D`+`SHIFT`) | Juego en vivo | **Pendiente** | ROLL-ART |
 
@@ -39,15 +39,17 @@ Estas deudas son **no bloqueantes**: no detienen el desarrollo. Si al hacer una 
 
 **Qué comprobar:** la **hoja de contacto** `docs/referencias/kratos-anim-contact-sheet.png`: coherencia estética entre poses, ausencia de *jitter* y anclaje de pies consistente.
 
-**Deuda no bloqueante asociada:** la hoja `kratos-attack.png` tiene **4 cuadros** pero `attackPhase` solo mapea **3**; cumple el criterio (≥3), pero conviene saberlo al mirarla.
+**Deuda no bloqueante asociada:** no hay. La hoja `kratos-attack.png` tiene **3 cuadros** (291 px / 97 px por cuadro) y `attackPhase` mapea los **3** (`startup`/`active`/`recovery`); la observación anterior que decía "4 cuadros pero solo mapea 3" era una cifra incorrecta, corregida el 2026-10-21 tras verificarla contra el asset real.
 
 ### GOW8B-CHAOS-01 — Cuchillas del Caos (referencia #3)
 
-**Qué comprobar:** que el golpe se lea como **arco barrido** por la cadena y no como una caja pegada al cuerpo.
+**Estado: DEFECTO confirmado (2026-10-20). Etapa REABIERTA.** No es una observación de arte fino: **el arma no está implementada visualmente**. Detalle completo, causa raíz y alcance en `docs/verificacion.md` §GOW8B-CHAOS-01 → REAPERTURA.
 
-**Observaciones no bloqueantes para tener en cuenta al mirar:**
+**Qué comprobar (cuando la corrección esté lista):** que el golpe se lea como **arco barrido** por la cadena y no como una caja pegada al cuerpo, con **armas y cadenas visibles** en pantalla.
+
+**Observaciones no bloqueantes para tener en cuenta al mirar (siguen vigentes, ahora como síntoma del defecto):**
 - **Pérdida de contacto a muy corta distancia:** a 7 px o menos ya no golpea ninguna cadena (`minReach` subió de 6 a 13.94). No rompe `GOW8B-LIGHT-01` (cuya evidencia se tomó a 40 px) pero **cambia la sensación en cuerpo a cuerpo**.
-- **La envolvente vertical creció de 16 a 71.71 px:** el arco llega hasta ~65.7 px sobre la línea de pies con un jugador de 59 px, o sea **por encima de la cabeza**.
+- **La envolvente vertical creció de 16 a 71.71 px:** el arco llega hasta ~65.7 px sobre la línea de pies con un jugador de 59 px, o sea **por encima de la cabeza**. Ya no es "observación": hay que revisarlo a la luz de lo que se ve.  
 
 ### GOW8B-ROLL-ART — Rodada (referencias #4, #5, #6)
 
@@ -57,7 +59,26 @@ Estas deudas son **no bloqueantes**: no detienen el desarrollo. Si al hacer una 
 2. **Sensación real:** duración, sincronía del clip y transición de salida con **teclado físico**.
 3. **Dirección:** lateralidad percibida en ambos sentidos.
 
-**Contexto para la revisión:** el arte de la rodada es **provisional de 4 cuadros** (todos distintos entre sí, pero sin revisión estética). Es esperable que se lea **pobre**; el arte final es del **Bloque 11**. Lo que se busca confirmar es que la *silueta* se lea como voltereta, no que se vea bien.
+**Contexto para la revisión:** Tras correcciones aplicadas en este ciclo (arreglo de animación que estaba congelada en frame 0, ajuste de timing a 20 ticks / rollSpeed 260, e introducción de rotación de sprite durante la rodada), el clip avanza sus 4 cuadros y hay una cola vulnerable de 5 ticks. La lectura visual final es lo único que no fue posible verificar por agentes. El arte de la rodada es **provisional de 4 cuadros**; el arte final es del **Bloque 11**. Lo que se busca confirmar es que la *silueta* se lea como voltereta, no que se vea bien.
+
+#### Guion de prueba detallado (2026-10-20)
+
+**Cómo probar:** en `http://localhost:5193/` (o `pnpm dev`), con teclado físico, en el escenario `movement`. Seis preguntas concretas, cada una con su veredicto OK / Defecto:
+
+| # | Pregunta | Cómo se prueba | Qué se considera OK | Qué se considera defecto |
+|---|---|---|---|---|
+| 4 | **¿Se lee como voltereta?** | `D` + `SHIFT` y `A` + `SHIFT` parado | Se percibe que el cuerpo **gira / se da vuelta** | Se ve como el personaje deslizándose de pie, o un cartón rotando sin peso |
+| 5 | **¿Sirve para esquivar?** | Usar `SHIFT` contra un ataque (`J`/`K` del enemigo) | La rodada te saca del golpe y se siente una herramienta de esquiva real | Solo decora: te agarran igual o no se siente distinta de caminar rápido |
+| 6 | **¿La duración está bien?** | `SHIFT` varias veces seguidas | ~333 ms: se siente con peso, ni instantánea ni lenta | Demasiado larga (molesta) o demasiado corta (inapreciable) |
+| 7 | **¿La distancia está bien?** | `SHIFT` desde un extremo del escenario | Recorre ~82 px: se siente como un lance, no un paso | Muy corta (no te mueve) o muy larga (te pega a la pared) |
+| 8 | **¿La salida se siente bien?** | `SHIFT` y mirar el momento en que termina | Termina y retoma el control sin freno raro ni deslizamiento | El personaje sigue deslizándose, o se frena en seco de forma brusca |
+| 9 | **¿La cola vulnerable se siente justa?** | Rodar *justo* cuando llega un ataque | Se entiende que rodar demasiado temprano te deja expuesto los últimos 5 ticks | Se siente injusto: "rodé y me agarraron igual sin explicación" |
+
+**Notas para quien prueba:**
+- Los puntos **4** y **5** son los importantes: si la rodada no se lee como voltereta o no sirve para esquivar, el resto es secundario.
+- El arte es **provisional** (Bloque 11 hace el arte final). Un veredicto de "se ve pobre pero se entiende que gira" es **suficiente** en esta etapa.
+- Si algo es defecto, no hace falta diagnosticarlo: alcanza con describir **qué se vio** y cuándo.
+
 
 ---
 

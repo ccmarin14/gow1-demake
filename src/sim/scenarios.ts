@@ -11,6 +11,8 @@ export interface Scenario {
   name: string;
   entities: EntityState[];
   platforms: Platform[];
+  /** Targets integrate knockback/launch (gravity, friction, platforms). */
+  targetPhysics?: boolean;
 }
 
 const GROUND_Y = 262;
@@ -31,6 +33,15 @@ function playerAt(x: number, y: number): EntityState {
     attackTicks: 0,
     attackHits: [],
     attackChain: 0,
+    attackMove: 'none',
+    attackBufferAction: null,
+    attackBufferTicks: 0,
+    heavyHoldTicks: 0,
+      hitstopTicks: 0,
+      hitstunTicks: 0,
+      groundImpactTicks: 0,
+      groundImpactX: 0,
+      groundImpactY: 0,
     rollPhase: 'none',
     rollTicks: 0,
     invulTicks: 0,
@@ -67,6 +78,15 @@ register({
       attackTicks: 0,
       attackHits: [],
       attackChain: 0,
+      attackMove: 'none',
+      attackBufferAction: null,
+      attackBufferTicks: 0,
+      heavyHoldTicks: 0,
+      hitstopTicks: 0,
+      hitstunTicks: 0,
+      groundImpactTicks: 0,
+      groundImpactX: 0,
+      groundImpactY: 0,
       rollPhase: 'none',
       rollTicks: 0,
       invulTicks: 0,
@@ -86,6 +106,15 @@ register({
       attackTicks: 0,
       attackHits: [],
       attackChain: 0,
+      attackMove: 'none',
+      attackBufferAction: null,
+      attackBufferTicks: 0,
+      heavyHoldTicks: 0,
+      hitstopTicks: 0,
+      hitstunTicks: 0,
+      groundImpactTicks: 0,
+      groundImpactX: 0,
+      groundImpactY: 0,
       rollPhase: 'none',
       rollTicks: 0,
       invulTicks: 0,
@@ -129,12 +158,22 @@ register({
       attackTicks: 0,
       attackHits: [],
       attackChain: 0,
+      attackMove: 'none',
+      attackBufferAction: null,
+      attackBufferTicks: 0,
+      heavyHoldTicks: 0,
+      hitstopTicks: 0,
+      hitstunTicks: 0,
+      groundImpactTicks: 0,
+      groundImpactX: 0,
+      groundImpactY: 0,
       rollPhase: 'none',
       rollTicks: 0,
       invulTicks: 0,
     },
   ],
   platforms: [{ x1: 0, x2: 480, yTop: GROUND_Y }],
+  targetPhysics: true,
 });
 
 export const DEFAULT_SCENARIO = 'platforms';

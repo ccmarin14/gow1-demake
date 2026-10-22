@@ -18,6 +18,7 @@ export function stepVertical(
   jumpPressedEdge: boolean,
   platforms: readonly Platform[],
   locked: boolean = false,
+  gravityScale: number = 1.0,
 ): void {
   const wasGrounded = entity.grounded;
 
@@ -56,7 +57,8 @@ export function stepVertical(
     }
   }
 
-  entity.vy = Math.min(entity.vy + params.gravity * dtSeconds, params.maxFallSpeed);
+  const effectiveGravity = params.gravity * gravityScale;
+  entity.vy = Math.min(entity.vy + effectiveGravity * dtSeconds, params.maxFallSpeed);
 
   const previousY = entity.y;
   entity.y += entity.vy * dtSeconds;

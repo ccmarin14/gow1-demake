@@ -6,37 +6,36 @@ El runtime actual es un shell Phaser/Vite en lienzo lógico horizontal de **480�
 
 ## Dirección
 
-La historia corresponde al primer *God of War* de PS2. La estética, lectura de combate, estructura lateral y ritmo de segmentos breves toman *God of War: Betrayal* como estudio de referencia, sin trasladar su argumento ni copiar sus recursos. El mar Egeo y la Hidra son el primer objetivo narrativo propuesto. La jugabilidad lateral de *Betrayal* es el **baseline a igualar o superar** (D-20); ver la sección siguiente.
+La historia, el lore, los enemigos y el repertorio completo de armas y ataques provienen del primer ***God of War* (2005, PlayStation 2)** (D-03, D-24). La estética pixel art, la cámara y la lectura espacial en desplazamiento lateral toman *God of War: Betrayal* únicamente como estudio de formato 2D, sin trasladar su argumento, sus ataques simplificados ni copiar sus recursos. El mar Egeo y la Hidra son el primer objetivo narrativo propuesto. La jugabilidad lateral toma la referencia de encuadre 2D de *Betrayal* como **baseline espacial** (D-20), pero ejecuta los ataques y mecánicas originales del juego de PS2 traducidos al plano 2D (D-24); ver la sección siguiente.
 
-La presentación futura será pixel art original a 480×270. Kratos, amenazas y bordes transitables deben distinguirse por silueta, contraste y agrupación de píxeles; los efectos no deben ocultar ataques anunciados ni zonas peligrosas. Escalar el canvas a una ventana amplia del navegador con pixelado nítido y sin suavizado; la resolución interna no limita el tamaño CSS. La guía vigente es [`guia-visual-betrayal-pixel-art-v2.md`](guia-visual-betrayal-pixel-art-v2.md), aún sin muestra visual activa.
+La presentación es pixel art original a 480×270. Kratos, amenazas y bordes transitables deben distinguirse por silueta, contraste y agrupación de píxeles; los efectos no deben ocultar ataques anunciados ni zonas peligrosas. Escalar el canvas a una ventana amplia del navegador con pixelado nítido y sin suavizado; la resolución interna no limita el tamaño CSS. La guía vigente es [`guia-visual-betrayal-pixel-art-v2.md`](guia-visual-betrayal-pixel-art-v2.md).
 
-## Base de jugabilidad y verticalidad (D-20)
+## Base de jugabilidad, verticalidad y combate de PS2 en 2D (D-20, D-24)
 
-La jugabilidad lateral de *God of War: Betrayal* es el **punto de partida a igualar o superar**, no solo una referencia estética: ritmo de acción lateral, combate por combos, saltos y —de forma explícita— su **verticalidad** (ascensos, saltos entre niveles, plataformas y peligros a distintas alturas). Esa base se optimiza y se adapta a lo que ocurre en GOW1, cuya escala, variedad de enemigos y momentos narrativos superan a los de un juego de móvil de 2007.
+Dos capas claras que definen el proyecto:
 
-Dos capas que no deben confundirse:
+- ***God of War* (2005, PS2 — historia, enemigos, armas y ataques):** argumento, escala, repertorio de enemigos, momentos narrativos (Egeo, Hidra) y **todos los ataques iniciales de las Cuchillas del Caos (Nivel 1)** traducidos al plano 2D con impacto físico de las cadenas contra el suelo (`yTop`) y contra los enemigos (*hitstop*, retroceso horizontal `vx` y levantamiento aéreo *launch* `vy`).
+- ***God of War: Betrayal* (solo referencia de cámara y encuadre 2D):** estructura de desplazamiento lateral, lectura de siluetas en 2D, verticalidad de plataformas y ritmo de subniveles breves.
 
-- ***Betrayal* (formato y sensación):** estructura lateral, lectura de combate, verticalidad y ritmo de subniveles breves.
-- **GOW1 (historia y contenido):** argumento, escala, repertorio de enemigos y momentos como el Egeo y la Hidra.
+Todo arte, audio y código siguen siendo originales (D-04).
 
-«Igual o mejor que *Betrayal*» es una **intención de diseño**, no un criterio medible: se concreta en los criterios de las etapas (respuesta al input, coyote time, buffer de salto y objetivos de alcance vertical en movimiento y plataformas), no como afirmación de superioridad. La superación esperada es respecto al **alcance de la versión web** (encuadre 480×270 y entrada de teclado), no un juicio sobre el juego original. Todo arte, audio y código siguen siendo originales (D-04).
+## Mapa de teclado propuesto (equivalencia con mando de PS2 — D-08, D-24)
 
-## Mapa de teclado propuesto
+El teclado es la entrada de primera entrega. Las teclas físicas se convierten en acciones explícitas en un único gestor de entrada (`InputManager`), mapeando directamente los botones de combate de PlayStation 2 al plano 2D:
 
-El teclado es la entrada de primera entrega. Las teclas físicas se convierten en acciones explícitas en un único gestor de entrada. **Implementadas:** movimiento horizontal (`A`/`D`/`←`/`→`), salto (`ESPACIO`) y ataque ligero con combo (`J`). **Sin efecto todavía:** ataque pesado (`K`), magia (Ira de Poseidón, `K`), rodada (`SHIFT`), acción contextual (`E`) y pausa (`ESC`).
+| Acción de dominio | Tecla | Botón PS2 equivalente | Movimientos de *God of War* (2005, Nivel 1) en 2D |
+| --- | --- | --- | --- |
+| `move-left` / `move-right` | `A` / `D` o `←` / `→` | Stick izquierdo | Recorrido horizontal y orientación (`facing`). |
+| `jump` | `Espacio` | **Equis ($\times$)** | Salto simple, doble salto (*Ícaro*) y habilitación de ataques aéreos. |
+| `light-attack` | `J` | **Cuadrado ($\square$)** | Tajos rápidos encadenados de las Cuchillas del Caos (barridos horizontales/diagonales e impacto final; malabares en el aire). |
+| `heavy-attack` | `K` | **Triángulo ($\triangle$)** | Golpe pesado descendente contra el suelo, *Launcher* ascendente (*Ascension* al mantener `K` o segundo golpe que eleva al enemigo al aire), remate ***Plume of Prometheus* (`J, J, K` = $\square, \square, \triangle$)** que azota las cadenas contra el suelo (`yTop`) con onda expansiva, y picado aéreo contra el suelo. |
+| `grab` | `L` | **Círculo ($\bigcirc$)** | Agarre a distancia con lanzamiento de cadena / derribo o remate contextual sobre enemigos vulnerables. |
+| `dodge` | `Shift` | Stick derecho (*Evade*) | Rodada terrestre con i-frames (`GOW8B-ROLL-01`). |
+| `magic` | `U` | **L2** | Magia activa (Ira de Poseidón), separada de `K` para no colisionar con Triángulo ($\triangle$). |
+| `context-action` | `E` | **R2** | Interacción con el entorno: abrir cofres, activar palancas o mecanismos con prompt explícito. |
+| `pause` | `Escape` | **Start** | Menú de pausa cuando exista. |
 
-| Acción objetivo | Entrada propuesta | Uso previsto |
-| --- | --- | --- |
-| Mover a izquierda/derecha | `A` / `D` o `←` / `→` | Recorrido horizontal. |
-| Saltar | `Espacio` | Salto y control aéreo cuando la etapa correspondiente exista. |
-| Ataque ligero | `J` | Golpe rápido; encadenamiento se definirá en su etapa. |
-| Ataque pesado | `K` | Golpe más comprometido, a definir y probar por separado. |
-| Magia (Ira de Poseidón) | `K` | Única magia por ahora (se define en su etapa). |
-| Rodada / Esquiva | `Shift` | Rodada con i-frames (absorbe el rol de esquiva; pendiente de diseño y verificación). |
-| Acción contextual | `E` | Abrir cofres, activar mecanismos o ejecutar una acción indicada por un prompt explícito. |
-| Pausar/continuar | `Escape` | Menú de pausa cuando exista. |
-
-La acción contextual tiene una tecla separada de los ataques `J` y `K`. El juego deberá mostrar cuándo `E` tiene efecto; no se asumirá una interacción si no hay objetivo válido. Se puede cambiar el mapeo durante diseño futuro, con el cambio registrado aquí y en el README.
+El agarre de combate (`L` = $\bigcirc$) está separado de la interacción ambiental con cofres/palancas (`E` = R2) y la magia (`U` = L2) está separada del ataque pesado (`K` = $\triangle$). Se puede ajustar el mapeo durante diseño futuro, manteniendo sincronizados este documento, `docs/decisiones.md` y `README.md`.
 
 ## Alcance de plataformas
 

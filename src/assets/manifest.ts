@@ -29,7 +29,6 @@ function characterSheet(key: string, path: string): AssetEntry {
 
 export const ASSETS: Record<AssetDomain, readonly AssetEntry[]> = {
   characters: [
-    { key: 'kratos-neutral', path: 'assets/characters/kratos-neutral.png' },
     characterSheet('kratos-idle', 'assets/characters/kratos-idle.png'),
     characterSheet('kratos-run', 'assets/characters/kratos-run.png'),
     characterSheet('kratos-air', 'assets/characters/kratos-air.png'),
@@ -48,7 +47,7 @@ export const ASSETS: Record<AssetDomain, readonly AssetEntry[]> = {
 export const ASSET_DOMAINS = Object.keys(ASSETS) as AssetDomain[];
 
 export const BACKGROUND_KEY = ASSETS.environment[0].key;
-export const PLAYER_KEY = ASSETS.characters[0].key;
+export const PLAYER_KEY = 'kratos-neutral';
 
 export const IDLE_KEY = 'kratos-idle';
 export const RUN_KEY = 'kratos-run';

@@ -6,6 +6,7 @@ export class FrameMetrics {
   private cursor = 0;
   private filled = 0;
   private lastFrameMs = 0;
+  private runningSum = 0;
 
   constructor(windowSize: number = METRICS_WINDOW_FRAMES) {
     this.windowSize = Math.max(1, Math.floor(windowSize));
@@ -20,11 +21,7 @@ export class FrameMetrics {
     if (this.filled === 0) {
       return 0;
     }
-    let total = 0;
-    for (let i = 0; i < this.filled; i += 1) {
-      total += this.samples[i];
-    }
-    return total / this.filled;
+    return this.runningSum / this.filled;
   }
 
   get fps(): number {
@@ -41,6 +38,7 @@ export class FrameMetrics {
       return;
     }
     this.lastFrameMs = deltaMs;
+    this.runningSum += deltaMs - this.samples[this.cursor];
     this.samples[this.cursor] = deltaMs;
     this.cursor = (this.cursor + 1) % this.windowSize;
     if (this.filled < this.windowSize) {
@@ -53,5 +51,6 @@ export class FrameMetrics {
     this.cursor = 0;
     this.filled = 0;
     this.lastFrameMs = 0;
+    this.runningSum = 0;
   }
 }
