@@ -346,7 +346,7 @@ function applyHit(
   }
   target.hitstunTicks = rules.hitstunTicks;
 
-  if (target.kind === 'legionnaire') {
+  if (target.kind === 'legionnaire' || target.kind === 'archer') {
     if (target.aiState === 'death') {
       return;
     }

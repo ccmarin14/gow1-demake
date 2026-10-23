@@ -34,6 +34,8 @@ export class ShellScene extends Phaser.Scene {
   private attackHitboxRect: Phaser.GameObjects.Rectangle | null = null;
   private targetRects = new Map<string, Phaser.GameObjects.Rectangle>();
   private legionnaireSprites = new Map<string, Phaser.GameObjects.Sprite>();
+  private archerSprites = new Map<string, Phaser.GameObjects.Sprite>();
+  private arrowSprites = new Map<string, Phaser.GameObjects.Image>();
   private readonly orbSprites = new Map<string, { outer: Phaser.GameObjects.Arc; core: Phaser.GameObjects.Arc; highlight: Phaser.GameObjects.Arc }>();
   private readonly weaponLayer = new WeaponLayer();
   private defeatText: Phaser.GameObjects.Text | null = null;
@@ -204,6 +206,7 @@ export class ShellScene extends Phaser.Scene {
     this.weaponLayer.update(isPlayerAlive ? player : null, attackParams, this.simulation.world.surfacePlatforms);
     this.updateTargets(player);
     this.updateOrbs();
+    this.updateArrows();
     if (player && player.groundImpactTicks > 0) {
       const shakePx = CONFIG.player.attack.groundImpact.shakePx;
       const dy = player.groundImpactTicks % 2 === 1 ? shakePx : -shakePx;
@@ -251,8 +254,14 @@ export class ShellScene extends Phaser.Scene {
         this.legionnaireSprites.delete(id);
       }
     }
+    for (const [id, sprite] of this.archerSprites.entries()) {
+      if (!targets.some((t) => t.id === id && t.kind === 'archer')) {
+        sprite.destroy();
+        this.archerSprites.delete(id);
+      }
+    }
     for (const [id, rect] of this.targetRects.entries()) {
-      if (!targets.some((t) => t.id === id && t.kind !== 'legionnaire')) {
+      if (!targets.some((t) => t.id === id && t.kind !== 'legionnaire' && t.kind !== 'archer')) {
         rect.destroy();
         this.targetRects.delete(id);
       }
@@ -304,6 +313,50 @@ export class ShellScene extends Phaser.Scene {
         } else {
           sprite.clearTint();
         }
+      } else if (target.kind === 'archer') {
+        let sprite = this.archerSprites.get(target.id);
+        if (!sprite) {
+          sprite = this.add.sprite(target.x, target.y, 'archer', 0);
+          sprite.setOrigin(0.5, 1.0).setDepth(0);
+          this.archerSprites.set(target.id, sprite);
+        }
+        const shakeX = target.hitstunTicks > 0 && target.hitstunTicks % 2 === 1 ? (target.facing === 1 ? -2 : 2) : 0;
+        sprite.setPosition(target.x + shakeX, target.y);
+        // Sprite en PNG mira a la izquierda (facing = -1); si mira a la derecha (facing = 1), flipX = true
+        sprite.setFlipX(target.facing === 1);
+
+        let frame = 0;
+        switch (target.aiState) {
+          case 'idle':
+          case 'recover':
+            frame = 0;
+            break;
+          case 'reposition':
+          case 'approach':
+            frame = Math.floor(target.aiTicks / 8) % 2 === 0 ? 1 : 2;
+            break;
+          case 'aim':
+            frame = 3;
+            break;
+          case 'shoot':
+            frame = 4;
+            break;
+          case 'hitstun':
+            frame = 5;
+            break;
+          case 'juggle':
+            frame = 6;
+            break;
+          case 'death':
+            frame = 7;
+            break;
+        }
+        sprite.setFrame(frame);
+        if (target.hitstunTicks > 0) {
+          sprite.setTint(0xff7777);
+        } else {
+          sprite.clearTint();
+        }
       } else {
         let rect = this.targetRects.get(target.id);
         if (!rect) {
@@ -335,6 +388,14 @@ export class ShellScene extends Phaser.Scene {
       sprite.destroy();
     }
     this.legionnaireSprites.clear();
+    for (const sprite of this.archerSprites.values()) {
+      sprite.destroy();
+    }
+    this.archerSprites.clear();
+    for (const sprite of this.arrowSprites.values()) {
+      sprite.destroy();
+    }
+    this.arrowSprites.clear();
     const {
       platformColor,
       platformHighlightColor,
@@ -625,6 +686,41 @@ export class ShellScene extends Phaser.Scene {
     }
   }
 
+  private updateArrows(): void {
+    const simArrows = this.simulation.world.peekArrows();
+    const activeIds = new Set(simArrows.filter((a) => a.active).map((a) => a.id));
+
+    // Limpiar sprites de flechas inactivas
+    for (const [id, sprite] of this.arrowSprites.entries()) {
+      if (!activeIds.has(id)) {
+        sprite.destroy();
+        this.arrowSprites.delete(id);
+      }
+    }
+
+    // Renderizar o actualizar cada flecha activa
+    for (let i = 0; i < simArrows.length; i += 1) {
+      const arrow = simArrows[i];
+      if (!arrow.active) continue;
+
+      let sprite = this.arrowSprites.get(arrow.id);
+      if (!sprite) {
+        sprite = this.add.image(arrow.x, arrow.y, 'arrow');
+        sprite.setOrigin(0.5, 0.5).setDepth(20);
+        this.arrowSprites.set(arrow.id, sprite);
+      }
+      sprite.setPosition(arrow.x, arrow.y);
+      // arrow.png apunta por defecto a la izquierda (vx < 0).
+      // Si vx > 0 (proyectil reflejado hacia la derecha), flipX = true.
+      sprite.setFlipX(arrow.vx > 0);
+      if (arrow.reflected) {
+        sprite.setTint(0xffea00); // Resplandor dorado de reflejo por Parry
+      } else {
+        sprite.clearTint();
+      }
+    }
+  }
+
   shutdown(): void {
     this.hudLayer?.destroy();
     for (const gfx of this.orbSprites.values()) {
@@ -633,5 +729,13 @@ export class ShellScene extends Phaser.Scene {
       gfx.highlight.destroy();
     }
     this.orbSprites.clear();
+    for (const sprite of this.archerSprites.values()) {
+      sprite.destroy();
+    }
+    this.archerSprites.clear();
+    for (const sprite of this.arrowSprites.values()) {
+      sprite.destroy();
+    }
+    this.arrowSprites.clear();
   }
 }

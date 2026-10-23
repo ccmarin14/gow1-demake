@@ -3,10 +3,11 @@ import { checksumOf } from './checksum';
 import { stepHorizontal } from './movement';
 import type { Platform } from './scenarios';
 import { cloneEntities, DEFAULT_SCENARIO, getScenario } from './scenarios';
-import type { AttackMoveId, EntityState, GameAction, OrbState, SimulationSnapshot } from './types';
+import type { AttackMoveId, EntityState, GameAction, OrbState, ArrowState, SimulationSnapshot } from './types';
 import { PLAYER_ID, sortActions } from './types';
 import { stepVertical, type VerticalParams } from './vertical';
 import { spawnOrbsFromDeath, stepOrbs } from './orbs';
+import { stepArcher, stepArrows } from './archer';
 import {
   computeAttackHitbox,
   isEntityAttacking,
@@ -88,6 +89,8 @@ export class World {
   private readonly moveSet: AttackMoveSet = buildAttackMoveSet();
   private orbs: OrbState[] = [];
   private orbIdCounter = 0;
+  private arrows: ArrowState[] = [];
+  private arrowIdCounter = 0;
 
   constructor() {
     this.loadScenario(DEFAULT_SCENARIO);
@@ -125,6 +128,25 @@ export class World {
     return this.orbs;
   }
 
+  peekArrows(): readonly ArrowState[] {
+    return this.arrows;
+  }
+
+  spawnArrow(x: number, y: number, vx: number): ArrowState {
+    const arrow: ArrowState = {
+      id: `arrow-${this.arrowIdCounter++}`,
+      x,
+      y,
+      vx,
+      vy: 0,
+      reflected: false,
+      ageTicks: 0,
+      active: true,
+    };
+    this.arrows.push(arrow);
+    return arrow;
+  }
+
   spawnOrbs(x: number, y: number, redCount: number, greenCount: number): OrbState[] {
     const newOrbs = spawnOrbsFromDeath(x, y, redCount, greenCount, this.orbIdCounter);
     this.orbIdCounter += newOrbs.length;
@@ -153,6 +175,8 @@ export class World {
     this.targets = this.entities.filter((entity) => entity.id !== PLAYER_ID);
     this.orbs = [];
     this.orbIdCounter = 0;
+    this.arrows = [];
+    this.arrowIdCounter = 0;
   }
 
   targetEntities(): EntityState[] {
@@ -197,6 +221,7 @@ export class World {
     }
 
     this.orbs = this.orbs.filter((orb) => !orb.absorbed);
+    this.arrows = this.arrows.filter((arrow) => arrow.active);
 
     const wantsJump = this.input.includes('jump');
     const jumpEdge = wantsJump && !this.jumpHeld;
@@ -402,6 +427,17 @@ export class World {
             );
             target.aiTicks = 1;
           }
+        } else if (target.kind === 'archer') {
+          stepArcher(target, player, this.platforms, TICK_DT, this.spawnArrow.bind(this));
+          if (target.aiState === 'death' && target.aiTicks === 0) {
+            this.spawnOrbs(
+              target.x,
+              target.y - 18,
+              CONFIG.economy.orbs.dropPerArcher.red,
+              CONFIG.economy.orbs.dropPerArcher.green,
+            );
+            target.aiTicks = 1;
+          }
         }
 
         if (target.hitstunTicks > 0) {
@@ -434,7 +470,7 @@ export class World {
                 target.y = platform.yTop;
                 target.vy = 0;
                 target.grounded = true;
-                if (target.kind === 'legionnaire' && target.aiState === 'juggle') {
+                if ((target.kind === 'legionnaire' || target.kind === 'archer') && target.aiState === 'juggle') {
                   target.aiState = 'hitstun';
                   target.hitstunTicks = 12;
                   target.aiTicks = 0;
@@ -447,6 +483,7 @@ export class World {
       }
     }
 
+    stepArrows(this.arrows, player, this.targets, TICK_DT);
     stepOrbs(this.orbs, player, TICK_DT);
 
     this.tick += 1;
@@ -458,6 +495,7 @@ export class World {
       timeMs: this.timeMs,
       entities: this.entities.map((entity) => ({ ...entity })),
       orbs: this.orbs.map((orb) => ({ ...orb })),
+      arrows: this.arrows.map((arrow) => ({ ...arrow })),
       input: [...this.input],
     };
     return {

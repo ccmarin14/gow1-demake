@@ -153,6 +153,51 @@ export function legionnaireAt(id: string, x: number, y: number, facing: -1 | 1 =
   };
 }
 
+export function archerAt(id: string, x: number, y: number, facing: -1 | 1 = -1): EntityState {
+  return {
+    id,
+    kind: 'archer',
+    x,
+    y,
+    vx: 0,
+    vy: 0,
+    facing,
+    grounded: y >= GROUND_Y,
+    coyoteTicks: 0,
+    jumpBufferTicks: 0,
+    jumpsUsed: 0,
+    attackPhase: 'none',
+    attackTicks: 0,
+    attackHits: [],
+    attackChain: 0,
+    attackMove: 'none',
+    attackBufferAction: null,
+    attackBufferTicks: 0,
+    heavyHoldTicks: 0,
+    hitstopTicks: 0,
+    hitstunTicks: 0,
+    groundImpactTicks: 0,
+    groundImpactX: 0,
+    groundImpactY: 0,
+    rollPhase: 'none',
+    rollTicks: 0,
+    invulTicks: 0,
+    guardPhase: 'none',
+    guardTicks: 0,
+    parryActive: false,
+    skidTicks: 0,
+    landingTicks: 0,
+    aiState: 'reposition',
+    aiTicks: 0,
+    hp: CONFIG.enemy.archer.maxHp,
+    maxHp: CONFIG.enemy.archer.maxHp,
+    attackCooldownTicks: 0,
+    hurtInvulTicks: 0,
+    isDead: false,
+    redOrbs: 0,
+  };
+}
+
 const scenarios = new Map<string, Scenario>();
 
 function register(scenario: Scenario): void {
@@ -205,6 +250,16 @@ register({
   entities: [
     playerAt(190, GROUND_Y),
     legionnaireAt('legionnaire-1', 240, GROUND_Y, -1),
+  ],
+  platforms: [{ x1: 0, x2: 480, yTop: GROUND_Y }],
+  targetPhysics: true,
+});
+
+register({
+  name: 'archer',
+  entities: [
+    playerAt(160, GROUND_Y),
+    archerAt('archer-1', 300, GROUND_Y, -1),
   ],
   platforms: [{ x1: 0, x2: 480, yTop: GROUND_Y }],
   targetPhysics: true,

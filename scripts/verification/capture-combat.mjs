@@ -319,9 +319,11 @@ async function run() {
           sctx.fillRect(dx + 2, dy + 2, cropW * scale - 4, 24);
           sctx.fillStyle = '#f9fafb';
           sctx.font = 'bold 11px monospace';
-          const dummyInfo = dummy ? (dummy.kind === 'legionnaire' ? \` L:(hp=\${dummy.hp},st=\${dummy.aiState})\` : \` D:(y=\${dummy.y.toFixed(0)},vy=\${dummy.vy.toFixed(0)})\`) : '';
+          const dummyInfo = dummy ? (dummy.kind === 'legionnaire' || dummy.kind === 'archer' ? \` \${dummy.kind === 'archer' ? 'A' : 'L'}:(hp=\${dummy.hp},st=\${dummy.aiState})\` : \` D:(y=\${dummy.y.toFixed(0)},vy=\${dummy.vy.toFixed(0)})\`) : '';
           const hm = sc.hudLayer ? sc.hudLayer.getMetrics() : null;
           const hudInfo = hm ? \` [Bar:\${hm.currentWidth}px Gst:\${hm.ghostWidth}px Orbs:\${hm.redOrbs}]\` : '';
+          const arrowsLive = snap.arrows ? snap.arrows.filter((a) => a.active).length : 0;
+          const arrowsInfo = arrowsLive > 0 ? \` 🏹Arr:\${arrowsLive}\` : '';
           const actionText = p.isDead
             ? 'DEAD'
             : (p.hitstunTicks > 0
@@ -341,7 +343,7 @@ async function run() {
               )
             );
           sctx.fillText(
-            \`t=\${t} HP:\${p.hp}\${hudInfo} \${actionText} \${isWeaponVisible ? '⚔️CHAIN' : ''}\`,
+            \`t=\${t} HP:\${p.hp}\${hudInfo}\${arrowsInfo} \${actionText} \${isWeaponVisible ? '⚔️CHAIN' : ''}\`,
             dx + 4,
             dy + 12
           );
@@ -369,6 +371,11 @@ async function run() {
             orbsCount: snap.orbs ? snap.orbs.length : 0,
             orbsLive: snap.orbs ? snap.orbs.filter((o) => !o.absorbed).length : 0,
             orbsAbsorbed: snap.orbs ? snap.orbs.filter((o) => o.absorbed).length : 0,
+            arrowsCount: snap.arrows ? snap.arrows.length : 0,
+            arrowsActive: snap.arrows ? snap.arrows.filter((a) => a.active).length : 0,
+            arrowsReflected: snap.arrows ? snap.arrows.filter((a) => a.reflected).length : 0,
+            arrowX: snap.arrows && snap.arrows[0] ? snap.arrows[0].x : null,
+            arrowVx: snap.arrows && snap.arrows[0] ? snap.arrows[0].vx : null,
             hurtInvulTicks: p.hurtInvulTicks,
             hitstunTicks: p.hitstunTicks,
             isDead: p.isDead,
@@ -836,6 +843,58 @@ async function run() {
     console.log('Case M Absorption & Recovery (expected hp=100, redOrbs=20, orbsLive=0):', orbRecoveryLog ? `hp=${orbRecoveryLog.playerHp},redOrbs=${orbRecoveryLog.playerRedOrbs},live=${orbRecoveryLog.orbsLive},hudHp=${orbRecoveryLog.hud?.currentHp},hudOrbs=${orbRecoveryLog.hud?.redOrbs}` : 'NONE');
     console.log('Case M Settled state (expected hp=100, redOrbs=20):', orbFinalLog ? `hp=${orbFinalLog.playerHp},redOrbs=${orbFinalLog.playerRedOrbs},live=${orbFinalLog.orbsLive}` : 'NONE');
 
+    // CASE N: Undead Archer Combat AI & Projectile Mechanics (GOW8B-ENEMY2-AI)
+    // - t=1..24: Archer in preferred distance [110..180], enters 'aim' for 24 ticks (vx=0, telegraph with amethyst flare)
+    // - t=25: Archer enters 'shoot' (8 ticks), spawns arrow at (284, 212) with vx = -280 px/s
+    // - t=26..46: Arrow travels horizontally towards Kratos
+    // - t=43..52: Kratos inputs 'guard' at t=43. At t=47 (parry window tick 5), arrow impacts Kratos
+    //             -> ¡PARRY REFLECT! Arrow speed reflected to +420 px/s (1.5x) with reflected=true
+    // - t=48..65: Reflected arrow travels back towards Archer
+    // - t=66: Reflected arrow strikes Archer -> Archer takes 20 damage (40 -> 20 HP), enters hitstun for 36 ticks
+    // - t=74: Archer is defeated (hp=0, aiState='death', aiTicks=0)
+    // - t=75: Archer death eclosion -> spawns 3 red orbs + 1 green orb (dropPerArcher)
+    // - t=76..115: Orbs accelerate magnéticamente towards Kratos, absorbed (+15 HP, +15 Red Orbs)
+    // - t=126: Settled state
+    const caseN = await recordScenarioSequence({
+      caseId: 'archer_combat_ai',
+      scenario: 'archer',
+      totalSteps: 126,
+      cropW: 200,
+      cropH: 120,
+      getActions: (t) => {
+        const sc = window.__SHELL_SCENE;
+        // Kratos raises guard at t=43 to parry the incoming arrow at t=47 (in ticks 3..8 parry window)
+        if (t >= 43 && t <= 52) return ['guard'];
+
+        // Finish off archer at t=74
+        if (t === 74) {
+          const enemy = sc.simulation.world.peekTargets()[0];
+          if (enemy) {
+            enemy.hp = 0;
+            enemy.aiState = 'death';
+            enemy.aiTicks = 0;
+          }
+        }
+        return [];
+      },
+    });
+
+    const archerAimLog = caseN.logs.find((l) => l.t === 15);
+    const archerShootLog = caseN.logs.find((l) => l.t === 25);
+    const arrowInFlightLog = caseN.logs.find((l) => l.t === 36);
+    const parryReflectLog = caseN.logs.find((l) => l.t === 48);
+    const archerStunnedLog = caseN.logs.find((l) => l.t === 68);
+    const archerDeathLog = caseN.logs.find((l) => l.t === 76);
+    const archerOrbsAbsorbedLog = caseN.logs.find((l) => l.t === 120);
+
+    console.log('Case N Archer aim telegraph (expected state=aim, vx=0):', archerAimLog ? `st=${archerAimLog.targetState},vx=${archerAimLog.dummyVx}` : 'NONE');
+    console.log('Case N Archer shoot & arrow spawn (expected state=shoot, arrows=1, vx=-280):', archerShootLog ? `st=${archerShootLog.targetState},arr=${archerShootLog.arrowsActive},arrVx=${archerShootLog.arrowVx}` : 'NONE');
+    console.log('Case N Arrow in flight towards Kratos (expected arrows=1, vx=-280):', arrowInFlightLog ? `arr=${arrowInFlightLog.arrowsActive},x=${arrowInFlightLog.arrowX?.toFixed(1)},vx=${arrowInFlightLog.arrowVx}` : 'NONE');
+    console.log('Case N Parry reflect event (expected reflected=1, vx=+420, kratosHp=100):', parryReflectLog ? `ref=${parryReflectLog.arrowsReflected},arrVx=${parryReflectLog.arrowVx},hp=${parryReflectLog.playerHp}` : 'NONE');
+    console.log('Case N Reflected arrow hit on Archer (expected hp=20, st=hitstun):', archerStunnedLog ? `hp=${archerStunnedLog.targetHp},st=${archerStunnedLog.targetState}` : 'NONE');
+    console.log('Case N Archer death & orb spawn (expected orbs=4, 3 red + 1 green):', archerDeathLog ? `orbs=${archerDeathLog.orbsLive},count=${archerDeathLog.orbsCount}` : 'NONE');
+    console.log('Case N Settled state & orb absorption (expected redOrbs=15, liveOrbs=0):', archerOrbsAbsorbedLog ? `redOrbs=${archerOrbsAbsorbedLog.playerRedOrbs},live=${archerOrbsAbsorbedLog.orbsLive}` : 'NONE');
+
     console.log('\n=== ALL VERIFICATION TESTS COMPLETED SUCCESSFULLY ===');
     console.log('Artifacts in scripts/verification/output/:');
     console.log(' - combo_jjj_mosaic.png & combo_jjj.gif');
@@ -851,6 +910,7 @@ async function run() {
     console.log(' - player_damage_and_defeat_mosaic.png & player_damage_and_defeat.gif');
     console.log(' - hud_health_bar_presentation_mosaic.png & hud_health_bar_presentation.gif');
     console.log(' - orbs_economy_and_healing_mosaic.png & orbs_economy_and_healing.gif');
+    console.log(' - archer_combat_ai_mosaic.png & archer_combat_ai.gif');
 
     ws.close();
   } finally {

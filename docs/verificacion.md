@@ -73,7 +73,7 @@ También el 2026-10-15, tras la aprobación de la etapa 6, la usuaria autorizó 
 | Orden | ID | Etapa | Estado |
 | --- | --- | --- | --- |
 | 15 | GOW8B-ENEMY2-ART | Arte del combatiente a distancia (segundo esbirro: Arquero No-Muerto de Ares): hoja de 8 fotogramas de 64×54 px en pixel art original (`idle`, `walk_1`, `walk_2`, `aim` con telegraph amatista, `shoot`, `hurt`, `juggle`, `death`), anclaje $y=53$, proyectil de flecha 16×8 px, paleta estricta de 11 colores, diferenciación espectral violeta y hoja de contacto de referencia. | **Aprobada** (2026-10-23) bajo el plan [`GOW8B-ENEMY2-ART`](planes/GOW8B-ENEMY2-ART.md) tras auditoría independiente de solo lectura. |
-| 16 | GOW8B-ENEMY2-AI | Conducta del arquero: posición, anticipación, trayectoria y recuperación | Pendiente; no activa. |
+| 16 | GOW8B-ENEMY2-AI | Conducta del arquero: máquina de estados determinista (kiteo entre 110 y 180 px, anticipación `aim` de 24 ticks telegrafiada con inmovilidad e interrupción ante golpes, suelta `shoot` a 280 px/s, y recuperación), simulación de proyectiles con reflejo por *Parry* a 420 px/s contra el agresor, mitigación de guardia al 85%, aturdimiento, elevación aérea por Ascensión y colapso cadavérico con eclosión de 3 orbes rojos + 1 verde, verificado con Caso N en Chrome CDP. | **Aprobada** (2026-10-23) bajo el plan [`GOW8B-ENEMY2-AI`](planes/GOW8B-ENEMY2-AI.md) tras auditoría independiente de solo lectura. |
 | 17 | GOW8B-WAVES-01 | Flujo y ritmo de oleadas: aparición, barrera, despeje, liberación y cantidad (PR-03) | Pendiente; no activa. |
 | 18 | GOW8B-ARENA-01 **(nueva)** | Zonas de combate (delimitación y comportamiento del área de combate) | Pendiente; no activa. |
 

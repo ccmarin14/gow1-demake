@@ -80,7 +80,7 @@ export const PLAYER_ID = 'player';
 
 export interface EntityState {
   id: string;
-  kind: 'player' | 'legionnaire' | 'dummy';
+  kind: 'player' | 'legionnaire' | 'dummy' | 'archer';
   x: number;
   y: number;
   vx: number;
@@ -129,7 +129,19 @@ export interface EntityState {
   skidTicks: number;
   /** Ticks left of elastic landing impact absorption; 0 = normal presentation. */
   landingTicks: number;
-  aiState: 'idle' | 'patrol' | 'approach' | 'windup' | 'slash' | 'recover' | 'hitstun' | 'juggle' | 'death';
+  aiState:
+    | 'idle'
+    | 'patrol'
+    | 'approach'
+    | 'windup'
+    | 'slash'
+    | 'recover'
+    | 'hitstun'
+    | 'juggle'
+    | 'death'
+    | 'reposition'
+    | 'aim'
+    | 'shoot';
   aiTicks: number;
   hp: number;
   maxHp: number;
@@ -137,6 +149,17 @@ export interface EntityState {
   hurtInvulTicks: number;
   isDead: boolean;
   redOrbs: number;
+}
+
+export interface ArrowState {
+  id: string;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  reflected: boolean;
+  ageTicks: number;
+  active: boolean;
 }
 
 export interface OrbState {
@@ -156,6 +179,7 @@ export interface SimulationSnapshot {
   timeMs: number;
   entities: EntityState[];
   orbs: OrbState[];
+  arrows: ArrowState[];
   input: GameAction[];
   checksum: string;
 }
