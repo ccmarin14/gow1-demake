@@ -21,6 +21,7 @@ import { InputManager } from '../input/InputManager';
 import { HudLayer } from '../ui/HudLayer';
 import { GameFlowOverlay } from '../ui/GameFlowOverlay';
 import { VfxLayer } from './VfxLayer';
+import { SoundManager } from '../audio/SoundManager';
 import type { FrameMetrics } from '../metrics';
 import type { Simulation } from '../sim/engine';
 import type { EntityState } from '../sim/types';
@@ -69,9 +70,16 @@ export class ShellScene extends Phaser.Scene {
   hudLayer!: HudLayer;
   flowOverlay!: GameFlowOverlay;
   vfxLayer!: VfxLayer;
+  soundManager!: SoundManager;
   private prevParryActive = false;
   private prevHitsCount = 0;
   private prevGroundImpactTicks = 0;
+  private prevAttackPhase = 'none';
+  private prevMagicPhase = 'none';
+  private prevHydraState = 'none';
+  private prevAbsorbedOrbsCount = 0;
+  private prevOpenChestsCount = 0;
+  private prevFlowState = 'playing';
 
   constructor(
     private readonly simulation: Simulation,
@@ -160,6 +168,11 @@ export class ShellScene extends Phaser.Scene {
     this.hudLayer = new HudLayer(this);
     this.flowOverlay = new GameFlowOverlay(this);
     this.vfxLayer = new VfxLayer(this);
+    this.soundManager = new SoundManager();
+
+    this.input.keyboard?.on('keydown-M', () => {
+      this.soundManager.toggleMute();
+    });
 
     this.defeatText = this.add
       .text(
@@ -346,6 +359,74 @@ export class ShellScene extends Phaser.Scene {
       if (this.vfxLayer) {
         this.vfxLayer.emitCombatSparks(hydra ? hydra.x - 70 : 380, 262, 12);
       }
+      if (this.soundManager) {
+        this.soundManager.playHydraSlam();
+      }
+    }
+
+    if (this.soundManager) {
+      if (player) {
+        // Attack swing sound
+        if (player.attackPhase === 'startup' && this.prevAttackPhase !== 'startup') {
+          const isHeavy =
+            player.attackMove === 'heavy_slam' ||
+            player.attackMove === 'spirit_of_hercules' ||
+            player.attackMove === 'air_heavy_slam';
+          this.soundManager.playSlash(isHeavy);
+        }
+        this.prevAttackPhase = player.attackPhase;
+
+        // Magic thunder sound
+        if (player.magicPhase === 'startup' && this.prevMagicPhase !== 'startup') {
+          this.soundManager.playMagicThunder();
+        }
+        this.prevMagicPhase = player.magicPhase;
+
+        // Hit sound
+        const hitsCount = player.attackHits ? player.attackHits.length : 0;
+        if (hitsCount > this.prevHitsCount && player.attackPhase === 'active') {
+          this.soundManager.playHit();
+        }
+
+        // Ground impact sound
+        if (player.groundImpactTicks > 0 && this.prevGroundImpactTicks === 0) {
+          this.soundManager.playGroundImpact();
+        }
+
+        // Parry sound
+        if (player.parryActive && !this.prevParryActive) {
+          this.soundManager.playParry();
+        }
+      }
+
+      // Hydra roar sound
+      if (hydra) {
+        if (hydra.aiState === 'hydra_roar' && this.prevHydraState !== 'hydra_roar') {
+          this.soundManager.playHydraRoar();
+        }
+        this.prevHydraState = hydra.aiState;
+      }
+
+      // Orbs absorbed sound
+      const absorbedOrbs = this.simulation.world.peekOrbs().filter((o) => o.absorbed);
+      if (absorbedOrbs.length > this.prevAbsorbedOrbsCount) {
+        const lastOrb = absorbedOrbs[absorbedOrbs.length - 1];
+        this.soundManager.playOrbAbsorb(lastOrb ? lastOrb.type : 'red');
+      }
+      this.prevAbsorbedOrbsCount = absorbedOrbs.length;
+
+      // Chest opened sound
+      const openChests = this.simulation.world.peekChests().filter((c) => c.state === 'open').length;
+      if (openChests > this.prevOpenChestsCount) {
+        this.soundManager.playChestOpen();
+      }
+      this.prevOpenChestsCount = openChests;
+
+      // Victory fanfare
+      if (flowState === 'victory' && this.prevFlowState !== 'victory') {
+        this.soundManager.playVictoryFanfare();
+      }
+      this.prevFlowState = flowState;
     }
 
     if (this.vfxLayer) {

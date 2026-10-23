@@ -722,6 +722,18 @@ Mantén cada entrada breve y accionable. Actualiza las guías de trabajo solo cu
 - Cambio recomendado al proceso: al diseñar el audio (`GOW8B-AUDIO-01`), atenuar contextualmente el sonido ambiental de la lluvia durante el inicio de combos pesados y rugidos para mantener el balance auditivo.
 - Evidencia o referencia: `docs/planes/GOW8B-VFX-01.md`; `src/scene/VfxLayer.ts`; `src/scene/ShellScene.ts`; `scripts/verification/capture-combat.mjs` (Caso Z: $t=2$ lluvia activa 56 gotas, $t=6$ relámpago $alpha=0.15$, $t=11$ decaimiento $alpha=0$, $t=21$ chispas emitidas 6, $t=30$ desvanecimiento en 8 ticks, $t=34$ destello parry, $t=43$ y $t=46$ congelamiento en pausa, $t=50$ reanudación en playing).
 
+### GOW8B-AUDIO-01 — La síntesis procedural pura con WebAudio API desacopla el diseño sonoro de activos externos y garantiza cero latencia sin sobrecarga de red (2026-10-23)
+
+- Resultado: aprobada tras auditoría independiente de solo lectura (4/4 criterios).
+- Método que funcionó:
+  1. **Generación acústica procedural mediante WebAudio API nativa:** sustituir la dependencia de archivos de audio pre-grabados (`.wav`, `.mp3`) por síntesis matemática en tiempo real (`AudioContext`, `OscillatorNode`, `GainNode`). El modelado de envolventes de ataque/decaimiento (`exponentialRampToValueAtTime`) y transiciones de frecuencia (barridos descendentes para tajos, armónicos múltiplos para campana de bronce de *Parry* y acordes mayores para fanfarria) ofrece efectos acústicos canónicos con 0 KB de carga de red y nulo riesgo de copyright.
+  2. **Desbloqueo robusto y no intrusivo de la política de autoplay:** capturar de manera anticipada los primeros gestos del usuario (`keydown`, `pointerdown`) para llamar a `AudioContext.resume()`. Si el contexto aún estuviera suspendido en entornos headless de prueba (CDP), el gestor no lanza excepciones y continúa registrando la telemetría acústica de forma determinista.
+  3. **Monitoreo y telemetría de eventos sonoros (`SoundStats`):** instrumentar cada llamada procedural con contadores acumulados (`playCounts`), registro de última pista reproducida (`lastPlayed`) y estado de mute conmutado con tecla `M`. Esto permite que la suite de verificación automatizada compruebe la reactividad sonora tick a tick en el navegador sin depender de captura de hardware de audio.
+- Dificultad o fallo observado: las políticas modernas de autoplay bloquean la emisión de sonido antes del primer input humano; vincular listeners globales en la inicialización y proteger cada llamada con try/catch evita caídas del bucle de juego o advertencias rojas en consola.
+- Aprendizaje transferible: la síntesis procedural nativa en WebAudio es una alternativa sumamente potente y ligera para prototipos y juegos web retro, permitiendo crear paisajes sonoros responsivos y reactivos a la física del combate sin sobrecarga de descarga ni fricción de licencias.
+- Cambio recomendado al proceso: al diseñar la partida completa del primer nivel (`GOW8B-FULL-01`), conectar transiciones de fase musical o fanfarrias a las puertas cinemáticas del nivel.
+- Evidencia o referencia: `docs/planes/GOW8B-AUDIO-01.md`; `src/audio/SoundManager.ts`; `src/config.ts`; `src/scene/ShellScene.ts`; `scripts/verification/capture-combat.mjs` (Caso AA: $t=1$ `isReady=true, muted=false`, $t=10$ `slash=26`, $t=18$ `hit=33`, $t=25$ `magic=3`, $t=32$ `orb=13`, $t=40$ `parry=8`, $t=48$ `roar=4`, $t=56$ `muted=true`, $t=65$ `muted=false, total=101`, 0 errores en consola).
+
 
 
 

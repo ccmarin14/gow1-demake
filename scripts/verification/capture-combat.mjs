@@ -469,6 +469,10 @@ async function run() {
             lightningAlpha: sc.vfxLayer ? sc.vfxLayer.getLightningAlpha() : 0,
             sparksCount: sc.vfxLayer ? sc.vfxLayer.getActiveSparksCount() : 0,
             parryFlashActive: sc.vfxLayer ? sc.vfxLayer.isParryFlashActive() : false,
+            soundStats: sc.soundManager ? sc.soundManager.getStats() : null,
+            soundMuted: sc.soundManager ? sc.soundManager.isMuted() : false,
+            soundLastPlayed: sc.soundManager ? sc.soundManager.getStats().lastPlayed : null,
+            soundTotalPlayed: sc.soundManager ? sc.soundManager.getStats().totalPlayed : 0,
           });
         }
 
@@ -2045,6 +2049,120 @@ async function run() {
       throw new Error(`Case Z failure: resumeLog invalid: ${JSON.stringify(caseZResumeLog)}`);
     }
 
+    // CASE AA: Procedural Audio Engine: Synthesis, Combat Sound Events & Mute Controls (GOW8B-AUDIO-01)
+    // - t=1: Verify SoundManager is initialized and WebAudio context is ready (isReady=true, muted=false).
+    // - t=6: Kratos moves right towards enemy.
+    // - t=8: Kratos attacks with light attack -> sound 'slash' triggered (playCounts.slash > 0).
+    // - t=16: Blade connects with enemy -> sound 'hit' triggered (playCounts.hit > 0).
+    // - t=22: Cast Poseidon's Rage magic -> sound 'magicThunder' triggered (playCounts.magicThunder > 0).
+    // - t=30: Collect orb / trigger orb sound -> sound 'orbAbsorb' triggered (playCounts.orbAbsorb > 0).
+    // - t=38: Trigger parry sound -> sound 'parry' triggered (playCounts.parry > 0).
+    // - t=46: Trigger hydra roar sound -> sound 'hydraRoar' triggered (playCounts.hydraRoar > 0).
+    // - t=54: Toggle mute via sc.soundManager.toggleMute() -> muted=true.
+    // - t=62: Toggle mute back via sc.soundManager.toggleMute() -> muted=false.
+    const caseAA = await recordScenarioSequence({
+      caseId: 'audio_synthesis_and_sound_events',
+      scenario: 'combat',
+      totalSteps: 70,
+      cropW: 240,
+      cropH: 140,
+      fixedCropX: 120,
+      fixedCropY: 100,
+      getActions: (t) => {
+        const sc = window.__SHELL_SCENE;
+
+        // t=6..7: Move right towards enemy
+        if (t === 6 || t === 7) {
+          return ['move-right'];
+        }
+
+        // t=8: Attack with light attack
+        if (t === 8) {
+          return ['light-attack'];
+        }
+
+        // t=22: Cast magic Poseidon's Rage
+        if (t === 22) {
+          return ['magic'];
+        }
+
+        // t=30: Trigger orb absorb
+        if (t === 30 && sc.soundManager) {
+          sc.soundManager.playOrbAbsorb('red');
+        }
+
+        // t=38: Trigger parry sound
+        if (t === 38 && sc.soundManager) {
+          sc.soundManager.playParry();
+        }
+
+        // t=46: Trigger hydra roar
+        if (t === 46 && sc.soundManager) {
+          sc.soundManager.playHydraRoar();
+        }
+
+        // t=54: Toggle mute
+        if (t === 54 && sc.soundManager) {
+          sc.soundManager.toggleMute();
+        }
+
+        // t=62: Unmute
+        if (t === 62 && sc.soundManager) {
+          sc.soundManager.toggleMute();
+        }
+
+        return [];
+      },
+    });
+
+    const caseAAInitLog = caseAA.logs.find((l) => l.t === 1);
+    const caseAASlashLog = caseAA.logs.find((l) => l.t === 10);
+    const caseAAHitLog = caseAA.logs.find((l) => l.t === 18);
+    const caseAAMagicLog = caseAA.logs.find((l) => l.t === 25);
+    const caseAAOrbLog = caseAA.logs.find((l) => l.t === 32);
+    const caseAAParryLog = caseAA.logs.find((l) => l.t === 40);
+    const caseAARoarLog = caseAA.logs.find((l) => l.t === 48);
+    const caseAAMutedLog = caseAA.logs.find((l) => l.t === 56);
+    const caseAAUnmutedLog = caseAA.logs.find((l) => l.t === 65);
+
+    console.log('Case AA Audio engine ready (expected isReady=true, muted=false):', caseAAInitLog ? `isReady=${caseAAInitLog.soundStats?.isReady},muted=${caseAAInitLog.soundMuted}` : 'NONE');
+    console.log('Case AA Slash sound triggered (expected slash > 0):', caseAASlashLog ? `slash=${caseAASlashLog.soundStats?.playCounts?.slash}` : 'NONE');
+    console.log('Case AA Hit sound triggered (expected hit > 0):', caseAAHitLog ? `hit=${caseAAHitLog.soundStats?.playCounts?.hit}` : 'NONE');
+    console.log('Case AA Magic thunder sound triggered (expected magicThunder > 0):', caseAAMagicLog ? `magic=${caseAAMagicLog.soundStats?.playCounts?.magicThunder}` : 'NONE');
+    console.log('Case AA Orb absorb sound triggered (expected orbAbsorb > 0):', caseAAOrbLog ? `orb=${caseAAOrbLog.soundStats?.playCounts?.orbAbsorb}` : 'NONE');
+    console.log('Case AA Parry sound triggered (expected parry > 0):', caseAAParryLog ? `parry=${caseAAParryLog.soundStats?.playCounts?.parry}` : 'NONE');
+    console.log('Case AA Hydra roar sound triggered (expected hydraRoar > 0):', caseAARoarLog ? `roar=${caseAARoarLog.soundStats?.playCounts?.hydraRoar}` : 'NONE');
+    console.log('Case AA Mute toggled (expected muted=true):', caseAAMutedLog ? `muted=${caseAAMutedLog.soundMuted}` : 'NONE');
+    console.log('Case AA Unmute toggled back (expected muted=false, totalPlayed >= 6):', caseAAUnmutedLog ? `muted=${caseAAUnmutedLog.soundMuted},total=${caseAAUnmutedLog.soundTotalPlayed}` : 'NONE');
+
+    if (!caseAAInitLog || !caseAAInitLog.soundStats?.isReady || caseAAInitLog.soundMuted) {
+      throw new Error(`Case AA failure: initLog invalid: ${JSON.stringify(caseAAInitLog)}`);
+    }
+    if (!caseAASlashLog || (caseAASlashLog.soundStats?.playCounts?.slash ?? 0) <= 0) {
+      throw new Error(`Case AA failure: slashLog invalid: ${JSON.stringify(caseAASlashLog)}`);
+    }
+    if (!caseAAHitLog || (caseAAHitLog.soundStats?.playCounts?.hit ?? 0) <= 0) {
+      throw new Error(`Case AA failure: hitLog invalid: ${JSON.stringify(caseAAHitLog)}`);
+    }
+    if (!caseAAMagicLog || (caseAAMagicLog.soundStats?.playCounts?.magicThunder ?? 0) <= 0) {
+      throw new Error(`Case AA failure: magicLog invalid: ${JSON.stringify(caseAAMagicLog)}`);
+    }
+    if (!caseAAOrbLog || (caseAAOrbLog.soundStats?.playCounts?.orbAbsorb ?? 0) <= 0) {
+      throw new Error(`Case AA failure: orbLog invalid: ${JSON.stringify(caseAAOrbLog)}`);
+    }
+    if (!caseAAParryLog || (caseAAParryLog.soundStats?.playCounts?.parry ?? 0) <= 0) {
+      throw new Error(`Case AA failure: parryLog invalid: ${JSON.stringify(caseAAParryLog)}`);
+    }
+    if (!caseAARoarLog || (caseAARoarLog.soundStats?.playCounts?.hydraRoar ?? 0) <= 0) {
+      throw new Error(`Case AA failure: roarLog invalid: ${JSON.stringify(caseAARoarLog)}`);
+    }
+    if (!caseAAMutedLog || !caseAAMutedLog.soundMuted) {
+      throw new Error(`Case AA failure: mutedLog invalid: ${JSON.stringify(caseAAMutedLog)}`);
+    }
+    if (!caseAAUnmutedLog || caseAAUnmutedLog.soundMuted || (caseAAUnmutedLog.soundTotalPlayed ?? 0) < 6) {
+      throw new Error(`Case AA failure: unmutedLog invalid: ${JSON.stringify(caseAAUnmutedLog)}`);
+    }
+
     console.log('\n=== ALL VERIFICATION TESTS COMPLETED SUCCESSFULLY ===');
     console.log('Artifacts in scripts/verification/output/:');
     console.log(' - combo_jjj_mosaic.png & combo_jjj.gif');
@@ -2073,6 +2191,7 @@ async function run() {
     console.log(' - hydra_boss_combat_and_defeat_mosaic.png & hydra_boss_combat_and_defeat.gif');
     console.log(' - ui_flow_title_pause_and_victory_mosaic.png & ui_flow_title_pause_and_victory.gif');
     console.log(' - vfx_weather_sparks_and_readability_mosaic.png & vfx_weather_sparks_and_readability.gif');
+    console.log(' - audio_synthesis_and_sound_events_mosaic.png & audio_synthesis_and_sound_events.gif');
 
     ws.close();
   } finally {

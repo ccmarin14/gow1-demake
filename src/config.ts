@@ -580,6 +580,22 @@ export const CONFIG = {
       depth: 36,
     },
   },
+  audio: {
+    masterVolume: 0.70,
+    sfxVolume: 0.85,
+    musicVolume: 0.50,
+    enabled: true,
+    profiles: {
+      slash: { startFreq: 440, endFreq: 110, durationMs: 120 },
+      heavySlam: { startFreq: 120, endFreq: 35, durationMs: 250 },
+      parry: { harmonics: [880, 1320, 1760], durationMs: 350 },
+      magic: { baseFreq: 60, durationMs: 400 },
+      roar: { baseFreq: 55, durationMs: 600 },
+      orb: { frequencies: [523.25, 659.25, 783.99], durationMs: 150 },
+      chest: { startFreq: 150, endFreq: 400, durationMs: 300 },
+      victory: { chord: [261.63, 329.63, 392.00, 523.25], durationMs: 800 },
+    },
+  },
 } as const;
 
 /**
