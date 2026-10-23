@@ -770,6 +770,18 @@ Mantén cada entrada breve y accionable. Actualiza las guías de trabajo solo cu
 - Cambio recomendado al proceso: adoptar esta estructura tripartita (Orquestador, Implementador, Auditor de solo lectura) y la suite de verificación CDP como estándar permanente para futuros desarrollos de videojuegos o simulaciones web complejas.
 - Evidencia o referencia: `docs/planes/GOW8B-FINAL-01.md`; `docs/verificacion.md`; `scripts/verification/capture-combat.mjs` (28/28 casos aprobados, 0 errores en consola); `dist/` verificado (0 coincidencias `__GOW8B`, exit code 0 en `tsc` y `vite build`).
 
+### CORRECCION-ANIMACION-KRATOS-01 — La auditoría cinemática obligatoria mediante diferencial de píxeles entre cuadros previene falsos positivos de animación en pipelines con generadores de imágenes (2026-10-23)
+
+- Resultado: aprobada tras reauditoría independiente de solo lectura por un auditor distinto.
+- Método que funcionó:
+  1. **Auditoría de animación basada en deltas de píxeles inter-cuadro (`ImageChops.difference`):** no conformarse con comprobar que el motor de juego avance el índice numérico del clip (`anims.currentFrame.index`), sino exigir un umbral mínimo medible de desplazamiento de píxeles entre fotogramas consecutivos (p. ej. $>900\text{ px}$ en un ciclo de carrera sobre lienzo de 97×59 px). Esto detecta de inmediato clips congelados o figuras rígidas.
+  2. **Reconocimiento de las limitaciones de modelos de difusión para animación 2D:** los generadores de imágenes estáticas carecen de noción de tiempo y cinemática ósea. Al pedirles secuencias de animación bajo la instrucción de "mantener diseño y pose", tienden a clonar la misma silueta con mínimas variaciones de ruido superficial (deltas $<200\text{ px}$ y cajas delimitadoras estáticas en extremidades).
+  3. **Priorización de la cinemática viva sobre el detalle estático en juegos de acción:** un personaje articulado con movimiento biomecánico real a 60 Hz (zancada completa, respiración torácica y voltereta) proporciona una lectura visual y un *game feel* inmensamente superior a ilustraciones estáticas detalladas que se deslizan sin vida sobre el escenario.
+- Dificultad o fallo observado: el auditor independiente inicial aprobó la etapa porque los spritesheets tenían el tamaño en píxeles y paleta correctos y el script de prueba no arrojaba excepciones, sin auditar visual ni matemáticamente si Kratos realmente se movía al correr.
+- Aprendizaje transferible: en toda auditoría de animación o *game feel*, es mandatorio contrastar matemáticamente la diferencia espacial entre fotogramas consecutivos de un clip antes de certificar que está animado. Si el delta no supera el umbral cinemático esperado para la extremidad activa, la etapa debe considerarse congelada y rechazada.
+- Cambio recomendado al proceso: incorporar en el script de verificación automatizada una aserción de delta mínimo entre fotogramas para cada clip cargado en el motor.
+- Evidencia o referencia: `docs/planes/CORRECCION-ANIMACION-KRATOS-01.md`; `scratch/audit/run_cycle_audit_comparison.png`; `AUDITORIA_CRITERIO_ANIMACION_KRATOS.md`; `kratos-run.png` (deltas entre 972 y 1598 px; promedio 1223.3 px/cuadro).
+
 
 
 
