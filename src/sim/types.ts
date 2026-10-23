@@ -245,9 +245,21 @@ export interface SavedPlayerData {
   phoenixUpgrades: number;
 }
 
+export type GameFlowState = 'title' | 'playing' | 'paused' | 'victory' | 'gameover';
+
+export interface CombatStats {
+  totalKills: number;
+  redOrbs: number;
+  chestsOpened: number;
+  totalChests: number;
+  weaponLevel: number;
+  rank: string;
+}
+
 export interface SimulationSnapshot {
   frame: number;
   timeMs: number;
+  flowState: GameFlowState;
   entities: EntityState[];
   orbs: OrbState[];
   arrows: ArrowState[];
@@ -263,6 +275,7 @@ export interface SimulationSnapshot {
   bossMaxHp?: number;
   bossState?: string;
   bossName?: string;
+  stats?: CombatStats;
   input: GameAction[];
   checksum: string;
 }

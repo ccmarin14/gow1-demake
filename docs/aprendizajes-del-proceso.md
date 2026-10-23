@@ -698,6 +698,19 @@ Mantén cada entrada breve y accionable. Actualiza las guías de trabajo solo cu
 - Cambio recomendado al proceso: al diseñar la interfaz y presentación de cierre (`GOW8B-UI-01`), sincronizar la pantalla de victoria del nivel con la eclosión de los 19 orbes de la Hidra.
 - Evidencia o referencia: `docs/planes/GOW8B-HYDRA-COMBO.md`; `src/sim/hydra.ts`; `src/sim/attack.ts`; `src/sim/magic.ts`; `src/ui/HudLayer.ts`; `src/scene/ShellScene.ts`; `scripts/verification/capture-combat.mjs` (Caso X: $t=1$ HP 300, $t=3$ telegraph roar, $t=12$ evasión exitosa con rodada $playerHp=100$, $t=17$ hydra_stuck, $t=26$ daño de cadenas Nv. 2 $hydraHp=282$, $t=46$ multi-hit Ira de Poseidón $hydraHp=266$, $t=56$ derrota terminal $hp=0, dead=true$, $t=65$ eclosión de 19 orbes y barra vacía).
 
+### GOW8B-UI-01 — El congelamiento atómico de ticks y la unificación de modales en capas de scroll cero garantizan pausa determinista y presentación robusta (2026-10-23)
+
+- Resultado: aprobada tras auditoría independiente de solo lectura (4/4 criterios).
+- Método que funcionó:
+  1. **Congelamiento atómico de la simulación sin pausar el motor gráfico:** en lugar de usar `scene.scene.pause()` —lo que detiene el bucle de renderizado, tweens y el procesamiento de eventos de teclado de Phaser—, articular la pausa como una compuerta condicional temprana en `World.prototype.step`. Cuando `flowState === 'paused'`, la simulación no incrementa `this.tick`, no computa física ni actualiza IAs (`frame20 === 10, frame24 === 10`), permitiendo que Phaser siga renderizando a 60 fps, anime los velos y capture fluidamente la tecla `ESC` para despausar sin latencia.
+  2. **Unificación de modales de flujo en una sola capa de scroll cero (`GameFlowOverlay`):** agrupar las pantallas de Título, Pausa, Victoria y Game Over bajo un único orquestador visual con `setScrollFactor(0)` y alta profundidad (`depth = 150`). Esto erradica colisiones de dibujo en niveles con scroll horizontal ($1440\text{ px}$) y asegura que el menú de pausa consulte directamente los datos vivos del héroe (salud, maná, coleccionables, armas).
+  3. **Ponderación de logros en la pantalla de victoria:** formatear los datos de simulación al superar el nivel (enemigos abatidos, orbes acumulados, cofres saqueados y nivel de arma) en un rango marcial espartano (`GUERRERO ESPARTANO`, `DIOS DE LA GUERRA`), cerrando el bucle motivacional del jugador tras abatir a la Hidra.
+- Dificultad o fallo observado: pausar el reloj global de Phaser congela los listeners de teclado internos y dificulta reanudar de forma limpia con `ESC`; mantener la simulación congelada a nivel de tick en `world.ts` mientras el framework sigue vivo en `ShellScene.ts` resuelve elegantemente el problema.
+- Aprendizaje transferible: en arquitecturas deterministas a paso fijo, la pausa debe ser un estado explícito de la simulación que suprime el avance del tick físico, no un congelamiento del motor de presentación; esto permite que menús, introspección de estadísticas y animaciones de interfaz operen de forma fluida y reactiva.
+- Cambio recomendado al proceso: al diseñar los efectos climáticos y ambientales del Egeo (`GOW8B-VFX-01`), sincronizar las partículas atmosféricas (lluvia, oleaje) con el estado de flujo para que congelen su velocidad durante la pausa.
+- Evidencia o referencia: `docs/planes/GOW8B-UI-01.md`; `src/sim/world.ts`; `src/ui/GameFlowOverlay.ts`; `src/scene/ShellScene.ts`; `scripts/verification/capture-combat.mjs` (Caso Y: $t=8$ título activo, $t=12$ inicio, $t=18$ pausa activa, $t=20$ y $t=24$ tick congelado en 10, $t=27$ reanudación en 13, $t=38$ victoria con rango, $t=46$ reinicio, $t=50$ derrota, $t=58$ reaparición en checkpoint).
+
+
 
 
 

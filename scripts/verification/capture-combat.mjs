@@ -457,6 +457,13 @@ async function run() {
             bossHp: snap.bossHp ?? null,
             bossMaxHp: snap.bossMaxHp ?? null,
             bossState: snap.bossState ?? null,
+            flowState: snap.flowState ?? null,
+            frame: snap.frame,
+            titleVisible: sc.flowOverlay ? sc.flowOverlay.isTitleVisible() : false,
+            pauseVisible: sc.flowOverlay ? sc.flowOverlay.isPauseVisible() : false,
+            victoryVisible: sc.flowOverlay ? sc.flowOverlay.isVictoryVisible() : false,
+            gameOverVisible: sc.flowOverlay ? sc.flowOverlay.isGameOverVisible() : false,
+            stats: snap.stats ?? null,
           });
         }
 
@@ -1764,6 +1771,160 @@ async function run() {
       throw new Error(`Case X failure: victoryOrbsLog invalid: ${JSON.stringify(victoryOrbsLog)}`);
     }
 
+    // CASE Y: Complete UI Flow: Title Screen, Pause Freeze, Terminal States & Level Victory (GOW8B-UI-01)
+    // - t=1..5: Initial play in 'level1' scenario. flowState='playing'. Kratos activates checkpoint and moves right.
+    // - t=6: Switch flowState='title' to verify Title Screen overlay (omega symbol, monumental gold title, controls card).
+    // - t=10: Press 'jump' (SPACE/ENTER) to exit title and start adventure. flowState transitions back to 'playing'.
+    // - t=16: Press 'pause' (ESC) to enter interactive Pause Menu.
+    // - t=17..24: Empty inputs while paused. Simulation ticks strictly frozen (snapshot.frame does not advance).
+    // - t=25: Press 'pause' (ESC) again to resume simulation.
+    // - t=26..35: Simulation resumes, frame advances normally, Kratos moves and attacks.
+    // - t=36: Trigger victory screen via world.triggerVictory().
+    //   -> flowState='victory', victoryVisible=true, stats panel active.
+    // - t=44: Press 'restart' to return from victory screen to playing.
+    // - t=48: Inflict lethal damage to test Defeat / Game Over screen.
+    //   -> flowState='gameover', gameOverVisible=true, defeatText visible.
+    // - t=56: Press 'restart' to respawn at active checkpoint.
+    //   -> flowState='playing', gameOverVisible=false, isDead=false.
+    const caseY = await recordScenarioSequence({
+      caseId: 'ui_flow_title_pause_and_victory',
+      scenario: 'level1',
+      totalSteps: 60,
+      cropW: 320,
+      cropH: 180,
+      fixedCropX: 80,
+      fixedCropY: 45,
+      getActions: (t) => {
+        const sc = window.__SHELL_SCENE;
+        const p = sc.simulation.world.peekEntity('player');
+
+        // t=1: Activate checkpoint 'chk-popa' for respawn testing
+        if (t === 1) {
+          sc.simulation.world.activateCheckpoint('chk-popa');
+        }
+
+        // t=1..5: Kratos moves right
+        if (t >= 1 && t <= 5) {
+          return ['move-right'];
+        }
+
+        // t=6: Switch to title screen to verify Title overlay
+        if (t === 6) {
+          sc.simulation.world.setFlowState('title');
+          return [];
+        }
+
+        // t=10: Press 'jump' (SPACE/ENTER) to exit title and start
+        if (t === 10) {
+          return ['jump'];
+        }
+
+        // t=11..14: Run forward
+        if (t >= 11 && t <= 14) {
+          return ['move-right'];
+        }
+
+        // t=16: Press 'pause' (ESC) to pause
+        if (t === 16) {
+          return ['pause'];
+        }
+
+        // t=17..24: No inputs while paused (verify ticks frozen)
+        if (t >= 17 && t <= 24) {
+          return [];
+        }
+
+        // t=25: Press 'pause' (ESC) to unpause
+        if (t === 25) {
+          return ['pause'];
+        }
+
+        // t=26..29: Move right
+        if (t >= 26 && t <= 29) {
+          return ['move-right'];
+        }
+
+        // t=30: Attack
+        if (t === 30) {
+          return ['light-attack'];
+        }
+
+        // t=36: Trigger victory
+        if (t === 36) {
+          sc.simulation.world.triggerVictory();
+          return [];
+        }
+
+        // t=44: Press 'restart' to restart from victory
+        if (t === 44) {
+          return ['restart'];
+        }
+
+        // t=48: Setup lethal hit / defeat
+        if (t === 48 && p) {
+          p.hp = 0;
+          p.isDead = true;
+          return [];
+        }
+
+        // t=56: Press 'restart' to respawn
+        if (t === 56) {
+          return ['restart'];
+        }
+
+        return [];
+      },
+    });
+
+    const caseYTitleLog = caseY.logs.find((l) => l.t === 8);
+    const caseYTitleStartLog = caseY.logs.find((l) => l.t === 12);
+    const caseYPauseStartLog = caseY.logs.find((l) => l.t === 18);
+    const caseYPauseFreezeLogA = caseY.logs.find((l) => l.t === 20);
+    const caseYPauseFreezeLogB = caseY.logs.find((l) => l.t === 24);
+    const caseYUnpauseLog = caseY.logs.find((l) => l.t === 28);
+    const caseYVictoryLog = caseY.logs.find((l) => l.t === 38);
+    const caseYVictoryResetLog = caseY.logs.find((l) => l.t === 46);
+    const caseYGameOverLog = caseY.logs.find((l) => l.t === 50);
+    const caseYRespawnLog = caseY.logs.find((l) => l.t === 58);
+
+    console.log('Case Y Title screen presentation (expected flowState=title, titleVisible=true):', caseYTitleLog ? `flowState=${caseYTitleLog.flowState},titleVisible=${caseYTitleLog.titleVisible}` : 'NONE');
+    console.log('Case Y Title dismiss and start (expected flowState=playing, titleVisible=false):', caseYTitleStartLog ? `flowState=${caseYTitleStartLog.flowState},titleVisible=${caseYTitleStartLog.titleVisible}` : 'NONE');
+    console.log('Case Y Pause menu activation (expected flowState=paused, pauseVisible=true):', caseYPauseStartLog ? `flowState=${caseYPauseStartLog.flowState},pauseVisible=${caseYPauseStartLog.pauseVisible}` : 'NONE');
+    console.log('Case Y Pause deterministic freeze (expected frame20 == frame24):', caseYPauseFreezeLogA && caseYPauseFreezeLogB ? `frame20=${caseYPauseFreezeLogA.frame},frame24=${caseYPauseFreezeLogB.frame}` : 'NONE');
+    console.log('Case Y Simulation unpause resume (expected flowState=playing, pauseVisible=false, frame > frame20):', caseYUnpauseLog ? `flowState=${caseYUnpauseLog.flowState},pauseVisible=${caseYUnpauseLog.pauseVisible},frame=${caseYUnpauseLog.frame}` : 'NONE');
+    console.log('Case Y Level 1 Victory screen (expected flowState=victory, victoryVisible=true, stats.rank defined):', caseYVictoryLog ? `flowState=${caseYVictoryLog.flowState},victoryVisible=${caseYVictoryLog.victoryVisible},rank=${caseYVictoryLog.stats?.rank}` : 'NONE');
+    console.log('Case Y Victory reset to playing (expected flowState=playing, victoryVisible=false):', caseYVictoryResetLog ? `flowState=${caseYVictoryResetLog.flowState},victoryVisible=${caseYVictoryResetLog.victoryVisible}` : 'NONE');
+    console.log('Case Y Adaptive Game Over screen (expected flowState=gameover, gameOverVisible=true, isDead=true):', caseYGameOverLog ? `flowState=${caseYGameOverLog.flowState},gameOverVisible=${caseYGameOverLog.gameOverVisible},isDead=${caseYGameOverLog.isDead}` : 'NONE');
+    console.log('Case Y Checkpoint respawn recovery (expected flowState=playing, gameOverVisible=false, isDead=false):', caseYRespawnLog ? `flowState=${caseYRespawnLog.flowState},gameOverVisible=${caseYRespawnLog.gameOverVisible},isDead=${caseYRespawnLog.isDead},hp=${caseYRespawnLog.playerHp}` : 'NONE');
+
+    if (!caseYTitleLog || caseYTitleLog.flowState !== 'title' || !caseYTitleLog.titleVisible) {
+      throw new Error(`Case Y failure: titleLog invalid: ${JSON.stringify(caseYTitleLog)}`);
+    }
+    if (!caseYTitleStartLog || caseYTitleStartLog.flowState !== 'playing' || caseYTitleStartLog.titleVisible) {
+      throw new Error(`Case Y failure: titleStartLog invalid: ${JSON.stringify(caseYTitleStartLog)}`);
+    }
+    if (!caseYPauseStartLog || caseYPauseStartLog.flowState !== 'paused' || !caseYPauseStartLog.pauseVisible) {
+      throw new Error(`Case Y failure: pauseStartLog invalid: ${JSON.stringify(caseYPauseStartLog)}`);
+    }
+    if (!caseYPauseFreezeLogA || !caseYPauseFreezeLogB || caseYPauseFreezeLogA.frame !== caseYPauseFreezeLogB.frame) {
+      throw new Error(`Case Y failure: pauseFreezeLog frame mismatch: ${caseYPauseFreezeLogA?.frame} vs ${caseYPauseFreezeLogB?.frame}`);
+    }
+    if (!caseYUnpauseLog || caseYUnpauseLog.flowState !== 'playing' || caseYUnpauseLog.pauseVisible || caseYUnpauseLog.frame <= caseYPauseFreezeLogA.frame) {
+      throw new Error(`Case Y failure: unpauseLog invalid: ${JSON.stringify(caseYUnpauseLog)}`);
+    }
+    if (!caseYVictoryLog || caseYVictoryLog.flowState !== 'victory' || !caseYVictoryLog.victoryVisible || !caseYVictoryLog.stats?.rank) {
+      throw new Error(`Case Y failure: victoryLog invalid: ${JSON.stringify(caseYVictoryLog)}`);
+    }
+    if (!caseYVictoryResetLog || caseYVictoryResetLog.flowState !== 'playing' || caseYVictoryResetLog.victoryVisible) {
+      throw new Error(`Case Y failure: victoryResetLog invalid: ${JSON.stringify(caseYVictoryResetLog)}`);
+    }
+    if (!caseYGameOverLog || caseYGameOverLog.flowState !== 'gameover' || !caseYGameOverLog.gameOverVisible || !caseYGameOverLog.isDead) {
+      throw new Error(`Case Y failure: gameoverLog invalid: ${JSON.stringify(caseYGameOverLog)}`);
+    }
+    if (!caseYRespawnLog || caseYRespawnLog.flowState !== 'playing' || caseYRespawnLog.gameOverVisible || caseYRespawnLog.isDead || caseYRespawnLog.playerHp <= 0) {
+      throw new Error(`Case Y failure: respawnLog invalid: ${JSON.stringify(caseYRespawnLog)}`);
+    }
+
     console.log('\n=== ALL VERIFICATION TESTS COMPLETED SUCCESSFULLY ===');
     console.log('Artifacts in scripts/verification/output/:');
     console.log(' - combo_jjj_mosaic.png & combo_jjj.gif');
@@ -1790,6 +1951,7 @@ async function run() {
     console.log(' - red_orbs_chest_and_weapon_upgrade_mosaic.png & red_orbs_chest_and_weapon_upgrade.gif');
     console.log(' - checkpoint_activation_death_and_respawn_mosaic.png & checkpoint_activation_death_and_respawn.gif');
     console.log(' - hydra_boss_combat_and_defeat_mosaic.png & hydra_boss_combat_and_defeat.gif');
+    console.log(' - ui_flow_title_pause_and_victory_mosaic.png & ui_flow_title_pause_and_victory.gif');
 
     ws.close();
   } finally {

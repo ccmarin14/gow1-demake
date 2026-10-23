@@ -3,7 +3,7 @@ import { checksumOf } from './checksum';
 import { stepHorizontal } from './movement';
 import type { Platform } from './scenarios';
 import { cloneCheckpoints, cloneChests, cloneEntities, DEFAULT_SCENARIO, getScenario, archerAt, legionnaireAt } from './scenarios';
-import type { AttackMoveId, CheckpointState, ChestState, EntityState, GameAction, OrbState, ArrowState, SavedPlayerData, WaveState, ArenaState, SimulationSnapshot } from './types';
+import type { AttackMoveId, CheckpointState, ChestState, CombatStats, EntityState, GameAction, GameFlowState, OrbState, ArrowState, SavedPlayerData, WaveState, ArenaState, SimulationSnapshot } from './types';
 import { PLAYER_ID, sortActions } from './types';
 import { stepVertical, type VerticalParams } from './vertical';
 import { spawnOrbsFromDeath, stepOrbs } from './orbs';
@@ -113,6 +113,9 @@ export class World {
   private arenaTriggered = false;
   private hydraSlamImpactNotice = false;
   private hydraDefeatedNotice = false;
+  private flowState: GameFlowState = 'playing';
+  private pauseHeld = false;
+  private totalKills = 0;
 
   constructor() {
     this.loadScenario(DEFAULT_SCENARIO);
@@ -136,6 +139,38 @@ export class World {
 
   get surfacePlatforms(): readonly Platform[] {
     return this.platforms;
+  }
+
+  getFlowState(): GameFlowState {
+    return this.flowState;
+  }
+
+  setFlowState(state: GameFlowState): void {
+    this.flowState = state;
+  }
+
+  triggerVictory(): void {
+    this.flowState = 'victory';
+  }
+
+  getCombatStats(): CombatStats {
+    const player = this.peekEntity(PLAYER_ID);
+    const waveKills = this.waveManager ? this.waveManager.getState(this.targets).totalKills : 0;
+    const kills = Math.max(this.totalKills, waveKills);
+    const chestsOpened = this.chests.filter((c) => c.state === 'open').length;
+    const redOrbs = player?.redOrbs ?? 0;
+    const weaponLevel = player?.weaponLevel ?? 1;
+    let rank = 'GUERRERO ESPARTANO';
+    if (kills >= 10 || redOrbs >= 100) rank = 'HÉROE DEL OLIMPO';
+    if (kills >= 15 && weaponLevel >= 2) rank = 'DIOS DE LA GUERRA';
+    return {
+      totalKills: kills,
+      redOrbs,
+      chestsOpened,
+      totalChests: this.chests.length,
+      weaponLevel,
+      rank,
+    };
   }
 
   peekEntity(id: string): Readonly<EntityState> | undefined {
@@ -353,6 +388,9 @@ export class World {
     const scenario = getScenario(name);
     this.activeScenario = name;
     this.tick = 0;
+    this.flowState = 'playing';
+    this.pauseHeld = false;
+    this.totalKills = 0;
     this.input = [];
     this.jumpHeld = false;
     this.lightAttackHeld = false;
@@ -442,13 +480,62 @@ export class World {
 
   step(actions: readonly GameAction[] = []): void {
     this.input = sortActions(actions);
+
+    const wantsPause = this.input.includes('pause');
+    const pauseEdge = wantsPause && !this.pauseHeld;
+    this.pauseHeld = wantsPause;
+
+    if (pauseEdge) {
+      if (this.flowState === 'playing') {
+        this.flowState = 'paused';
+        return;
+      } else if (this.flowState === 'paused') {
+        this.flowState = 'playing';
+        return;
+      }
+    }
+
+    if (this.flowState === 'paused') {
+      if (this.input.includes('restart')) {
+        const p = this.entities.find((entity) => entity.id === PLAYER_ID);
+        if (p && p.isDead && this.activeCheckpointId) {
+          this.respawnAtCheckpoint();
+        } else {
+          this.reset();
+        }
+        this.flowState = 'playing';
+      }
+      return;
+    }
+
+    if (this.flowState === 'title') {
+      const startActions: GameAction[] = ['jump', 'light-attack', 'heavy-attack', 'context-action', 'restart'];
+      if (this.input.some((a) => startActions.includes(a))) {
+        this.flowState = 'playing';
+      }
+      return;
+    }
+
+    if (this.flowState === 'victory') {
+      if (this.input.includes('restart')) {
+        this.reset();
+        this.flowState = 'playing';
+      } else if (this.input.includes('pause')) {
+        this.reset();
+        this.flowState = 'title';
+      }
+      return;
+    }
+
     if (this.input.includes('restart')) {
       const p = this.entities.find((entity) => entity.id === PLAYER_ID);
       if (p && p.isDead && this.activeCheckpointId) {
         this.respawnAtCheckpoint();
+        this.flowState = 'playing';
         return;
       }
       this.reset();
+      this.flowState = 'playing';
       return;
     }
 
@@ -492,6 +579,7 @@ export class World {
       }
 
       if (player.isDead) {
+        this.flowState = 'gameover';
         player.vx = 0;
         player.attackPhase = 'none';
         player.attackMove = 'none';
@@ -518,6 +606,9 @@ export class World {
           1.0,
         );
       } else {
+        if (this.flowState === 'gameover') {
+          this.flowState = 'playing';
+        }
         const inHitstun = player.hitstunTicks > 0;
         const isOpeningChest = this.chests.some((c) => c.state === 'opening');
 
@@ -709,6 +800,7 @@ export class World {
         if (target.kind === 'legionnaire') {
           stepLegionnaire(target, player, this.platforms, TICK_DT);
           if (target.aiState === 'death' && target.aiTicks === 0) {
+            this.totalKills += 1;
             this.spawnOrbs(
               target.x,
               target.y - 18,
@@ -724,6 +816,7 @@ export class World {
         } else if (target.kind === 'archer') {
           stepArcher(target, player, this.platforms, TICK_DT, this.spawnArrow.bind(this));
           if (target.aiState === 'death' && target.aiTicks === 0) {
+            this.totalKills += 1;
             this.spawnOrbs(
               target.x,
               target.y - 18,
@@ -742,6 +835,7 @@ export class World {
             this.hydraSlamImpactNotice = true;
           }
           if (hydraRes.orbsSpawned) {
+            this.totalKills += 1;
             this.spawnOrbs(
               target.x - 70,
               target.y - 30,
@@ -848,6 +942,13 @@ export class World {
       this.cameraX = 0;
     }
 
+    if (this.flowState === 'playing') {
+      const hydra = this.entities.find((e) => e.kind === 'hydra');
+      if (this.mapData && hydra && hydra.isDead && player && player.x >= 1380) {
+        this.flowState = 'victory';
+      }
+    }
+
     this.tick += 1;
   }
 
@@ -869,6 +970,7 @@ export class World {
     const payload = {
       frame: this.tick,
       timeMs: this.timeMs,
+      flowState: this.flowState,
       entities: this.entities.map((entity) => ({ ...entity })),
       orbs: this.orbs.map((orb) => ({ ...orb })),
       arrows: this.arrows.map((arrow) => ({ ...arrow })),
@@ -885,6 +987,7 @@ export class World {
           }
         : {}),
       ...bossPayload,
+      stats: this.getCombatStats(),
       input: [...this.input],
     };
     return {

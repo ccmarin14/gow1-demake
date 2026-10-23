@@ -19,6 +19,7 @@ import {
 import { WeaponLayer } from '../entities/WeaponLayer';
 import { InputManager } from '../input/InputManager';
 import { HudLayer } from '../ui/HudLayer';
+import { GameFlowOverlay } from '../ui/GameFlowOverlay';
 import type { FrameMetrics } from '../metrics';
 import type { Simulation } from '../sim/engine';
 import type { EntityState } from '../sim/types';
@@ -65,6 +66,7 @@ export class ShellScene extends Phaser.Scene {
   private checkpointGraphics: Phaser.GameObjects.Graphics | null = null;
   private magicGraphics: Phaser.GameObjects.Graphics | null = null;
   hudLayer!: HudLayer;
+  flowOverlay!: GameFlowOverlay;
 
   constructor(
     private readonly simulation: Simulation,
@@ -151,6 +153,7 @@ export class ShellScene extends Phaser.Scene {
 
     this.weaponLayer.create(this);
     this.hudLayer = new HudLayer(this);
+    this.flowOverlay = new GameFlowOverlay(this);
 
     this.defeatText = this.add
       .text(
@@ -251,6 +254,15 @@ export class ShellScene extends Phaser.Scene {
     }
     const actions = this.inputManager.poll();
     this.simulation.advance(delta, actions);
+    const flowState = this.simulation.world.getFlowState();
+
+    if (this.player && this.player.anims) {
+      if (flowState === 'paused') {
+        if (this.player.anims.isPlaying) this.player.anims.pause();
+      } else {
+        if (this.player.anims.isPaused) this.player.anims.resume();
+      }
+    }
     const player = this.simulation.world.peekEntity(PLAYER_ID) ?? null;
     if (player && this.player) {
       this.player.setPosition(player.x, player.y);
@@ -310,6 +322,18 @@ export class ShellScene extends Phaser.Scene {
       delta / 1000,
       hydra ? { hp: hydra.hp, maxHp: hydra.maxHp, name: 'LA HIDRA DE LERNA' } : null,
     );
+
+    if (this.flowOverlay) {
+      const stats = this.simulation.world.getCombatStats();
+      const hasChk = Boolean(this.simulation.world.getActiveCheckpoint());
+      this.flowOverlay.update(
+        flowState,
+        player ?? undefined,
+        stats,
+        hasChk,
+        delta / 1000,
+      );
+    }
 
     if (this.simulation.world.consumeHydraSlamNotice()) {
       this.cameras.main.shake(150, 0.012);

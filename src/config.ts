@@ -517,6 +517,30 @@ export const CONFIG = {
       depth: 1,
     },
   },
+  ui: {
+    title: 'GOD OF WAR',
+    subtitle: 'MAR EGEO - PROCESO 8-BIT',
+    fontFamily: 'monospace',
+    colors: {
+      gold: '#facc15',
+      goldBright: '#fde047',
+      crimson: '#ef4444',
+      crimsonDark: '#7f1d1d',
+      bronze: '#92662c',
+      stone: '#1f140e',
+      panelBg: 0x18100c,
+      panelBevel: 0xc49a45,
+      panelShadow: 0x0c0705,
+      overlayBg: 0x000000,
+    },
+    stats: {
+      totalEnemiesLabel: 'ENEMIGOS ABATIDOS',
+      chestsFoundLabel: 'COFRES DESCUBIERTOS',
+      redOrbsLabel: 'ORBES ROJOS',
+      weaponLevelLabel: 'NIVEL DE ARMA',
+    },
+    depth: 150,
+  },
 } as const;
 
 /**
