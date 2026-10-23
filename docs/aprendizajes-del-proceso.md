@@ -758,6 +758,18 @@ Mantén cada entrada breve y accionable. Actualiza las guías de trabajo solo cu
 - Cambio recomendado al proceso: al realizar la auditoría final independiente (`GOW8B-FINAL-01`), validar exhaustivamente que los 22 fotogramas de Kratos se sincronicen armónicamente con los 8 fotogramas del Legionario, los 8 del Arquero y los 8 de la Hidra de Lerna a 60 Hz.
 - Evidencia o referencia: `docs/planes/KRATOS-2D-SPRITE-GEN-01.md`; `scripts/sprite-gen/poses.json`; `scripts/sprite-gen/assemble.py`; `public/assets/characters/kratos-*.png`; `scripts/verification/capture-combat.mjs` (28 casos A a AB aprobados con 0 errores de consola en Chrome CDP).
 
+### GOW8B-FINAL-01 — La compuerta de auditoría final independiente con verificación continua sobre CDP y aserción de arnés en producción garantiza integridad absoluta en proyectos multi-etapa (2026-10-23)
+
+- Resultado: aprobada tras auditoría independiente de solo lectura (4/4 criterios). Plan de 34 etapas completado al 100 %.
+- Método que funcionó:
+  1. **Aislamiento estricto entre entorno de pruebas y bundle de distribución:** condicionar los hooks de telemetría y harness (`__GOW8B`) exclusivamente a compilación de desarrollo o inyección condicional de Vite, auditando programáticamente con `grep -rn "__GOW8B" dist/` que el artefacto de producción final esté 100 % libre de utilidades de depuración o exposición de estado interno.
+  2. **Batería de regresión end-to-end automatizada (28 casos A a AB):** estructurar una suite de pruebas headless sobre Chrome DevTools Protocol que recorra de forma secuencial cada mecánica introducida a lo largo de las 34 etapas (física de salto, rodada con i-frames, combate ligero, remates pesados, combate aéreo, guardias y desvíos, IAs enemigas, confinamiento de arena, cofres, plataformas multicota, jefe naval, menús de interfaz, VFX de tormenta, síntesis de audio procedural y playthrough completo). La coincidencia matemática de checksums garantiza que ninguna optimización o asset posterior degrade sistemas previos.
+  3. **Verificación matemática de homogeneidad de assets:** automatizar la inspección de fotogramas (dimensiones por cuadro, anclaje al suelo, binariedad del canal alfa y tamaño de paleta) para asegurar que sprites creados en momentos distintos del ciclo respeten estrictamente la rejilla física y la coherencia estética del renderizador.
+- Dificultad o fallo observado: el crecimiento exponencial del proyecto a lo largo de 34 etapas incrementa el riesgo de regresiones silenciosas o desincronizaciones entre capas visuales y lógicas; mantener un arnés DEV determinista con paso fijo a 60 Hz fue el factor decisivo que permitió avanzar sin reescribir código previo ni arrastrar deuda técnica oculta.
+- Aprendizaje transferible: para proyectos complejos de emulación o adaptación de juegos clásicos con múltiples subsistemas interactivos, la separación entre la simulación física pura (determinista, sin reloj de pared) y la capa de presentación (Phaser, audio, VFX), combinada con una compuerta estricta de auditoría independiente de solo lectura en cada etapa, elimina el retrabajo y permite culminar planes ambiciosos con cero fallos de integración.
+- Cambio recomendado al proceso: adoptar esta estructura tripartita (Orquestador, Implementador, Auditor de solo lectura) y la suite de verificación CDP como estándar permanente para futuros desarrollos de videojuegos o simulaciones web complejas.
+- Evidencia o referencia: `docs/planes/GOW8B-FINAL-01.md`; `docs/verificacion.md`; `scripts/verification/capture-combat.mjs` (28/28 casos aprobados, 0 errores en consola); `dist/` verificado (0 coincidencias `__GOW8B`, exit code 0 en `tsc` y `vite build`).
+
 
 
 

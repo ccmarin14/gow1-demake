@@ -4,15 +4,15 @@
 >
 > **Regla de uso:** al abrir, pausar, bloquear o cerrar un hilo, se actualiza este archivo **en el mismo commit** que el cambio. Un hilo sin fila aquí se considera olvidado. Los resultados de cada etapa siguen en su plan (`docs/planes/`) y las lecciones en `docs/aprendizajes-del-proceso.md`.
 
-Última actualización: 2026-10-23 (00:15).
+Última actualización: 2026-10-23 (13:05).
 
 ## 1. Ramas
 
 | Rama | Contenido | Estado |
 | --- | --- | --- |
-| `master` | Toda la línea aprobada (combate GoW 1 PS2, rediseño anatómico, peso de locomoción, lunge, combos extendidos) más el registro de hilos y el script de arte. Fusionada por avance directo el 2026-10-22. | **Línea estable vigente.** |
+| `master` | Toda la línea aprobada del producto final integrado (34 etapas, 12 bloques completados al 100%). | **Línea estable vigente (Versión Final Completa).** |
 | `tarea/GOW8B-CHAOS-01` | Historial previo de la línea estable; ya contenida en `master`. | Redundante; se puede borrar cuando la usuaria quiera. |
-| `arte/KRATOS-2D-SPRITE-GEN-01` | Hilo de arte; hoy apunta al mismo commit que `master`. Aquí continúa el trabajo de sprites. | **Pausada** por cuota del generador de imágenes. |
+| `arte/KRATOS-2D-SPRITE-GEN-01` | Hilo de arte; sincronizado con `master` conteniendo los 22 sprites auténticos de Kratos. | **Cerrada y aprobada**. |
 | Etiqueta `respaldo/pre-merge-2026-10-22` | Punto de respaldo previo a la fusión y al borrado de ramas. | Conservar. |
 
 Ramas `tarea/GOW8B-{DJUMP,KRA-02,RES-01,ROLL-01,SCALE-01}`: eliminadas el 2026-10-22 (apuntaban a `e6f9013`, ancestro de `master`; sin trabajo propio).
@@ -46,7 +46,7 @@ Ramas `tarea/GOW8B-{DJUMP,KRA-02,RES-01,ROLL-01,SCALE-01}`: eliminadas el 2026-1
 | **Efectos visuales del Egeo** (`GOW8B-VFX-01`) | Cerrado y aprobado | Capa VfxLayer (lluvia marina multicapa, relámpagos con decaimiento, chispas de combate, destello estelar de parry, congelamiento en pausa), Caso Z verificado en CDP. | Ninguno. | [`planes/GOW8B-VFX-01.md`](planes/GOW8B-VFX-01.md) |
 | **Audio y diseño sonoro del juego** (`GOW8B-AUDIO-01`) | Cerrado y aprobado | Motor de síntesis WebAudio procedural nativo (tajos, latigazos, parry, ira de poseidón, rugido de hidra, impactos y fanfarria triunfal), control de mute con tecla `M`, Caso AA verificado en CDP. | Ninguno. | [`planes/GOW8B-AUDIO-01.md`](planes/GOW8B-AUDIO-01.md) |
 | **Partida completa del primer nivel** (`GOW8B-FULL-01`) | Cerrado y aprobado | Recorrido continuo integral de Popa a Proa con superación de arena de combate, plataformeo en mástiles, checkpoint, batalla culminante contra la Hidra y pantalla de victoria con rango espartano, Caso AB verificado en CDP. | Ninguno. | [`planes/GOW8B-FULL-01.md`](planes/GOW8B-FULL-01.md) |
-| **Auditoría final independiente del producto integrado** (`GOW8B-FINAL-01`) | Activo | Bloque 12: Auditoría integral final del producto terminado a 60 Hz en resolución lógica 480×270, validación de ausencia total de fugas del arnés, verificación completa de los 28 casos en Chrome CDP, integración y empaquetado limpio. | Ninguno. | [`planes/GOW8B-FINAL-01.md`](planes/GOW8B-FINAL-01.md) |
+| **Auditoría final independiente del producto integrado** (`GOW8B-FINAL-01`) | Cerrado y aprobado | Auditoría integral final completada con éxito: 100% de los 28 casos en Chrome CDP aprobados, cero errores en consola, cero fugas de arnés en dist/, 100% de assets pixel art validados. Plan completo de 34 etapas finalizado. | Ninguno. Producto 100% completado. | [`planes/GOW8B-FINAL-01.md`](planes/GOW8B-FINAL-01.md) |
 
 ## 3. Decisiones
 
