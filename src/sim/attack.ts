@@ -345,6 +345,35 @@ function applyHit(
     }
   }
   target.hitstunTicks = rules.hitstunTicks;
+
+  if (target.kind === 'legionnaire') {
+    if (target.aiState === 'death') {
+      return;
+    }
+    const damage =
+      params.moveId === 'plume_of_prometheus' ? 30 :
+      params.moveId === 'spirit_of_hercules' ? 25 :
+      params.moveId === 'heavy_slam' || params.moveId === 'air_heavy_slam' ? 22 :
+      params.moveId === 'ascension' ? 18 :
+      params.moveId === 'air_grab' || params.moveId === 'chain_grab' ? 24 :
+      params.moveId === 'light_4' ? 18 :
+      params.moveId === 'light_3' ? 15 :
+      params.moveId === 'dash_attack' ? 14 : 12;
+
+    target.hp = Math.max(0, target.hp - damage);
+    if (target.hp <= 0) {
+      target.aiState = 'death';
+      target.aiTicks = 0;
+      target.vx = player.facing * 35;
+    } else if (params.launchVy < 0) {
+      target.aiState = 'juggle';
+      target.aiTicks = 0;
+      target.grounded = false;
+    } else {
+      target.aiState = 'hitstun';
+      target.aiTicks = 0;
+    }
+  }
 }
 
 export function stepAttack(

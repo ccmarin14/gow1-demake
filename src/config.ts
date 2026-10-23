@@ -227,6 +227,21 @@ export const CONFIG = {
     maxAccumulatorMicros: 5 * TICK_MICROS,
   },
   player: PLAYER,
+  enemy: {
+    legionnaire: {
+      maxHp: 60,
+      speed: 65,
+      aggroRange: 160,
+      attackRange: 28,
+      windupTicks: 24,
+      activeSlashTicks: 8,
+      recoveryTicks: 16,
+      cooldownTicks: 40,
+      slashDamage: 12,
+      slashReach: 32,
+      parryStunTicks: 32,
+    },
+  },
   // Reference scale for map/level stages; every field is computed from the
   // values above (see `src/scale.ts`).
   scale: deriveScaleReference({

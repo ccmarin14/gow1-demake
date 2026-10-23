@@ -292,7 +292,7 @@ async function run() {
 
           const snap = g.snapshot();
           const p = snap.entities.find((e) => e.id === 'player');
-          const dummy = snap.entities.find((e) => e.id === 'dummy');
+          const dummy = snap.entities.find((e) => e.id !== 'player');
 
           // Check weapon visibility
           const isWeaponVisible = sc.weaponLayer.weaponChainRects.some((r) => r.visible);
@@ -317,7 +317,7 @@ async function run() {
           sctx.fillRect(dx + 2, dy + 2, cropW * scale - 4, 24);
           sctx.fillStyle = '#f9fafb';
           sctx.font = 'bold 11px monospace';
-          const dummyInfo = dummy ? \` D:(y=\${dummy.y.toFixed(0)},vy=\${dummy.vy.toFixed(0)})\` : '';
+          const dummyInfo = dummy ? (dummy.kind === 'legionnaire' ? \` L:(hp=\${dummy.hp},st=\${dummy.aiState})\` : \` D:(y=\${dummy.y.toFixed(0)},vy=\${dummy.vy.toFixed(0)})\`) : '';
           const actionText = p.skidTicks > 0 ? \`SKID:\${p.skidTicks}\` : (p.landingTicks > 0 ? \`LANDING:\${p.landingTicks}\` : (p.guardPhase !== 'none' ? \`GUARD:\${p.guardPhase}:\${p.guardTicks}\${p.parryActive ? ' PARRY' : ''}\` : \`\${p.attackMove} \${p.attackPhase}:\${p.attackTicks}\`));
           sctx.fillText(
             \`t=\${t} \${actionText} \${isWeaponVisible ? '⚔️CHAIN' : ''}\`,
@@ -364,6 +364,8 @@ async function run() {
             dummyVx: dummy ? dummy.vx : null,
             dummyY: dummy ? dummy.y : null,
             dummyVy: dummy ? dummy.vy : null,
+            targetState: dummy ? dummy.aiState : null,
+            targetHp: dummy ? dummy.hp : null,
             groundImpact: p.groundImpactTicks,
           });
         }
@@ -587,6 +589,40 @@ async function run() {
     console.log('Case I t=6 Dodge cancel rollPhase:', dodgeCancelLog ? dodgeCancelLog.rollPhase : 'NONE');
     console.log('Case I t=31 Counterattack move/phase:', counterattackLog ? `${counterattackLog.move}:${counterattackLog.phase}` : 'NONE');
 
+    // CASE J: Legionnaire Combat AI (GOW8B-ENEMY1-AI)
+    // Scenario: 'legionnaire' (Player at 190, Legionnaire at 240)
+    // t=1..22: Approach (Legionnaire stalks towards Kratos)
+    // t=23..46: Windup (Telegraph: raised falcata, flaming red eyes)
+    // t=45..49: Kratos raises guard / parry window with 'guard' (Q)
+    // t=49: Legionnaire slash is deflected by Kratos's Parry -> Legionnaire enters hitstun (32 ticks)
+    // t=50..58: Kratos executes Ascension (Launcher) -> Legionnaire launched into juggle (vy = -350)
+    // t=85..120: Kratos executes light combo + Plume finisher -> ground impact & defeat (death)
+    const caseJ = await recordScenarioSequence({
+      caseId: 'legionnaire_combat_ai',
+      scenario: 'legionnaire',
+      totalSteps: 126,
+      getActions: (t) => {
+        if (t >= 45 && t <= 49) return ['guard'];
+        if (t >= 50 && t <= 58) return ['heavy-attack']; // Ascension launcher
+        if (t === 85 || t === 95) return ['light-attack']; // Light combo hits
+        if (t === 105) return ['heavy-attack']; // Plume of Prometheus finisher
+        return [];
+      },
+      cropW: 160,
+      cropH: 100,
+    });
+    const approachObserved = caseJ.logs.find((l) => l.targetState === 'approach');
+    const windupObserved = caseJ.logs.find((l) => l.targetState === 'windup');
+    const parryHitstunObserved = caseJ.logs.find((l) => l.t === 49 && l.targetState === 'hitstun');
+    const juggleObserved = caseJ.logs.find((l) => l.targetState === 'juggle');
+    const deathObserved = caseJ.logs.find((l) => l.targetState === 'death');
+
+    console.log('Case J Legionnaire approach observed:', approachObserved ? `t=${approachObserved.t}` : 'NONE');
+    console.log('Case J Legionnaire windup telegraph observed:', windupObserved ? `t=${windupObserved.t}` : 'NONE');
+    console.log('Case J Legionnaire parry deflection observed:', parryHitstunObserved ? `t=${parryHitstunObserved.t}` : 'NONE');
+    console.log('Case J Legionnaire ascension juggle observed:', juggleObserved ? `t=${juggleObserved.t}` : 'NONE');
+    console.log('Case J Legionnaire death collapse observed:', deathObserved ? `t=${deathObserved.t}` : 'NONE');
+
     console.log('\n=== ALL VERIFICATION TESTS COMPLETED SUCCESSFULLY ===');
     console.log('Artifacts in scripts/verification/output/:');
     console.log(' - combo_jjj_mosaic.png & combo_jjj.gif');
@@ -598,6 +634,7 @@ async function run() {
     console.log(' - ascension_air_harpoon_mosaic.png & ascension_air_harpoon.gif');
     console.log(' - guard_parry_window_mosaic.png & guard_parry_window.gif');
     console.log(' - guard_cancel_actions_mosaic.png & guard_cancel_actions.gif');
+    console.log(' - legionnaire_combat_ai_mosaic.png & legionnaire_combat_ai.gif');
 
     ws.close();
   } finally {

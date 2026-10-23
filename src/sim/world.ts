@@ -18,6 +18,7 @@ import {
 } from './attack';
 import { isRolling, startRoll, stepRoll } from './roll';
 import { isGuarding, startGuard, stepGuard } from './guard';
+import { stepLegionnaire } from './legionnaire';
 
 const TICK_DT = 1 / CONFIG.sim.tickRate;
 
@@ -320,6 +321,10 @@ export class World {
 
       for (let i = 0; i < this.targets.length; i += 1) {
         const target = this.targets[i];
+        if (target.kind === 'legionnaire') {
+          stepLegionnaire(target, player, this.platforms, TICK_DT);
+        }
+
         if (target.hitstunTicks > 0) {
           target.hitstunTicks -= 1;
         }
@@ -350,6 +355,11 @@ export class World {
                 target.y = platform.yTop;
                 target.vy = 0;
                 target.grounded = true;
+                if (target.kind === 'legionnaire' && target.aiState === 'juggle') {
+                  target.aiState = 'hitstun';
+                  target.hitstunTicks = 12;
+                  target.aiTicks = 0;
+                }
                 break;
               }
             }

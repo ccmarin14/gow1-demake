@@ -78,6 +78,7 @@ export const PLAYER_ID = 'player';
 
 export interface EntityState {
   id: string;
+  kind: 'player' | 'legionnaire' | 'dummy';
   x: number;
   y: number;
   vx: number;
@@ -126,6 +127,11 @@ export interface EntityState {
   skidTicks: number;
   /** Ticks left of elastic landing impact absorption; 0 = normal presentation. */
   landingTicks: number;
+  aiState: 'idle' | 'patrol' | 'approach' | 'windup' | 'slash' | 'recover' | 'hitstun' | 'juggle' | 'death';
+  aiTicks: number;
+  hp: number;
+  maxHp: number;
+  attackCooldownTicks: number;
 }
 
 export interface SimulationSnapshot {

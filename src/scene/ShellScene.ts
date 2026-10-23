@@ -32,6 +32,7 @@ export class ShellScene extends Phaser.Scene {
   private renderedScenario = '';
   private attackHitboxRect: Phaser.GameObjects.Rectangle | null = null;
   private targetRects = new Map<string, Phaser.GameObjects.Rectangle>();
+  private legionnaireSprites = new Map<string, Phaser.GameObjects.Sprite>();
   private readonly weaponLayer = new WeaponLayer();
 
   constructor(
@@ -188,20 +189,82 @@ export class ShellScene extends Phaser.Scene {
     const targets = this.simulation.world.peekTargets();
     const halfW = CONFIG.player.attack.targetHalfWidth;
     const halfH = CONFIG.player.attack.targetHalfHeight;
-    for (const target of targets) {
-      let rect = this.targetRects.get(target.id);
-      if (!rect) {
-        rect = this.add.rectangle(0, 0, halfW * 2, halfH * 2, CONFIG.presentation.targetColor);
-        rect.setOrigin(0.5, 0.5).setDepth(1);
-        this.targetRects.set(target.id, rect);
+
+    // Clean up stale sprites
+    for (const [id, sprite] of this.legionnaireSprites.entries()) {
+      if (!targets.some((t) => t.id === id && t.kind === 'legionnaire')) {
+        sprite.destroy();
+        this.legionnaireSprites.delete(id);
       }
-      const shakeX = target.hitstunTicks > 0 && target.hitstunTicks % 2 === 1 ? 1 : 0;
-      rect.setPosition(target.x + shakeX, target.y - halfH);
-      rect.setFillStyle(
-        hits.includes(target.id)
-          ? CONFIG.presentation.targetHitColor
-          : CONFIG.presentation.targetColor,
-      );
+    }
+    for (const [id, rect] of this.targetRects.entries()) {
+      if (!targets.some((t) => t.id === id && t.kind !== 'legionnaire')) {
+        rect.destroy();
+        this.targetRects.delete(id);
+      }
+    }
+
+    for (const target of targets) {
+      if (target.kind === 'legionnaire') {
+        let sprite = this.legionnaireSprites.get(target.id);
+        if (!sprite) {
+          sprite = this.add.sprite(target.x, target.y, 'legionnaire', 0);
+          sprite.setOrigin(0.5, 1.0).setDepth(0);
+          this.legionnaireSprites.set(target.id, sprite);
+        }
+        const shakeX = target.hitstunTicks > 0 && target.hitstunTicks % 2 === 1 ? (target.facing === 1 ? -2 : 2) : 0;
+        sprite.setPosition(target.x + shakeX, target.y);
+        sprite.setFlipX(target.facing === -1);
+
+        let frame = 0;
+        switch (target.aiState) {
+          case 'idle':
+          case 'patrol':
+            frame = 0;
+            break;
+          case 'approach':
+            frame = Math.floor(target.aiTicks / 8) % 2 === 0 ? 1 : 2;
+            break;
+          case 'windup':
+            frame = 3;
+            break;
+          case 'slash':
+            frame = 4;
+            break;
+          case 'hitstun':
+            frame = 5;
+            break;
+          case 'juggle':
+            frame = 6;
+            break;
+          case 'death':
+            frame = 7;
+            break;
+          case 'recover':
+            frame = 0;
+            break;
+        }
+        sprite.setFrame(frame);
+        if (target.hitstunTicks > 0) {
+          sprite.setTint(0xff7777);
+        } else {
+          sprite.clearTint();
+        }
+      } else {
+        let rect = this.targetRects.get(target.id);
+        if (!rect) {
+          rect = this.add.rectangle(0, 0, halfW * 2, halfH * 2, CONFIG.presentation.targetColor);
+          rect.setOrigin(0.5, 0.5).setDepth(1);
+          this.targetRects.set(target.id, rect);
+        }
+        const shakeX = target.hitstunTicks > 0 && target.hitstunTicks % 2 === 1 ? 1 : 0;
+        rect.setPosition(target.x + shakeX, target.y - halfH);
+        rect.setFillStyle(
+          hits.includes(target.id)
+            ? CONFIG.presentation.targetHitColor
+            : CONFIG.presentation.targetColor,
+        );
+      }
     }
   }
 
@@ -214,6 +277,10 @@ export class ShellScene extends Phaser.Scene {
       rect.destroy();
     }
     this.targetRects.clear();
+    for (const sprite of this.legionnaireSprites.values()) {
+      sprite.destroy();
+    }
+    this.legionnaireSprites.clear();
     const {
       platformColor,
       platformHighlightColor,
