@@ -1,4 +1,5 @@
 import { CONFIG } from '../config';
+import { createHydraState } from './hydra';
 import type { CheckpointState, ChestState, EntityState } from './types';
 import { PLAYER_ID } from './types';
 
@@ -240,6 +241,10 @@ export function archerAt(id: string, x: number, y: number, facing: -1 | 1 = -1, 
   };
 }
 
+export function hydraAt(id: string, x: number, y: number, facing: -1 | 1 = -1): EntityState {
+  return createHydraState(id, x, y, facing);
+}
+
 export function chestAt(
   id: string,
   type: ChestState['type'],
@@ -381,6 +386,7 @@ register({
   entities: [
     playerAt(100, GROUND_Y),
     archerAt('archer-crow', 1170, 138, -1),
+    hydraAt('hydra-proa', 1360, 262, -1),
   ],
   platforms: [
     { x1: 0, x2: 1440, yTop: 262 },
@@ -409,6 +415,16 @@ register({
   checkpoints: [
     checkpointAt('chk-test', 180, GROUND_Y, 'Punto de Prueba'),
   ],
+  targetPhysics: true,
+});
+
+register({
+  name: 'hydra',
+  entities: [
+    playerAt(180, GROUND_Y),
+    hydraAt('hydra-boss', 360, GROUND_Y, -1),
+  ],
+  platforms: [{ x1: 0, x2: 480, yTop: GROUND_Y }],
   targetPhysics: true,
 });
 

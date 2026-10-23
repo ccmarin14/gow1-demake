@@ -25,6 +25,7 @@ import {
 import { isRolling, startRoll, stepRoll } from './roll';
 import { isGuarding, startGuard, stepGuard } from './guard';
 import { stepLegionnaire } from './legionnaire';
+import { stepHydra } from './hydra';
 import { isCastingMagic, stepMagic } from './magic';
 import { buildLevel1Map, computeCameraScrollX, getSegmentAtX, type LevelMapData } from './map';
 
@@ -110,6 +111,8 @@ export class World {
   private mapData: LevelMapData | null = null;
   private cameraX = 0;
   private arenaTriggered = false;
+  private hydraSlamImpactNotice = false;
+  private hydraDefeatedNotice = false;
 
   constructor() {
     this.loadScenario(DEFAULT_SCENARIO);
@@ -274,6 +277,22 @@ export class World {
     }
   }
 
+  getHydra(): EntityState | undefined {
+    return this.entities.find((e) => e.kind === 'hydra');
+  }
+
+  consumeHydraSlamNotice(): boolean {
+    const val = this.hydraSlamImpactNotice;
+    this.hydraSlamImpactNotice = false;
+    return val;
+  }
+
+  consumeHydraDefeatNotice(): boolean {
+    const val = this.hydraDefeatedNotice;
+    this.hydraDefeatedNotice = false;
+    return val;
+  }
+
   get cameraScrollX(): number {
     return this.cameraX;
   }
@@ -355,6 +374,8 @@ export class World {
     this.savedPlayerData = null;
     this.savedOpenedChestIds.clear();
     this.checkpointActivatedNotice = null;
+    this.hydraSlamImpactNotice = false;
+    this.hydraDefeatedNotice = false;
     if (name === 'waves') {
       this.waveManager = new WaveManager();
       this.waveEnemyIdCounter = 0;
@@ -715,47 +736,64 @@ export class World {
               this.waveManager.recordKill();
             }
           }
+        } else if (target.kind === 'hydra') {
+          const hydraRes = stepHydra(target, player, TICK_DT);
+          if (hydraRes.slamImpact) {
+            this.hydraSlamImpactNotice = true;
+          }
+          if (hydraRes.orbsSpawned) {
+            this.spawnOrbs(
+              target.x - 70,
+              target.y - 30,
+              CONFIG.enemy.hydra.dropOrbs.red,
+              CONFIG.enemy.hydra.dropOrbs.green,
+              CONFIG.enemy.hydra.dropOrbs.blue,
+            );
+            this.hydraDefeatedNotice = true;
+          }
         }
 
         if (target.hitstunTicks > 0) {
           target.hitstunTicks -= 1;
         }
 
-        target.x += target.vx * TICK_DT;
-        if (target.grounded) {
-          if (target.vx > 0) {
-            target.vx = Math.max(0, target.vx - friction * TICK_DT);
-          } else if (target.vx < 0) {
-            target.vx = Math.min(0, target.vx + friction * TICK_DT);
+        if (target.kind !== 'hydra') {
+          target.x += target.vx * TICK_DT;
+          if (target.grounded) {
+            if (target.vx > 0) {
+              target.vx = Math.max(0, target.vx - friction * TICK_DT);
+            } else if (target.vx < 0) {
+              target.vx = Math.min(0, target.vx + friction * TICK_DT);
+            }
           }
-        }
-        if (target.x < minX) {
-          target.x = minX;
-          target.vx = 0;
-        } else if (target.x > maxX) {
-          target.x = maxX;
-          target.vx = 0;
-        }
+          if (target.x < minX) {
+            target.x = minX;
+            target.vx = 0;
+          } else if (target.x > maxX) {
+            target.x = maxX;
+            target.vx = 0;
+          }
 
-        if (!target.grounded) {
-          target.vy = Math.min(target.vy + gravity * TICK_DT, maxFallSpeed);
-          target.y += target.vy * TICK_DT;
-          for (let p = 0; p < this.platforms.length; p += 1) {
-            const platform = this.platforms[p];
-            if (target.x >= platform.x1 && target.x <= platform.x2) {
-              if (target.vy >= 0 && target.y >= platform.yTop) {
-                target.y = platform.yTop;
-                target.vy = 0;
-                target.grounded = true;
-                if (target.aiState === 'spawning') {
-                  target.aiState = target.kind === 'archer' ? 'reposition' : 'approach';
-                  target.aiTicks = 0;
-                } else if ((target.kind === 'legionnaire' || target.kind === 'archer') && target.aiState === 'juggle') {
-                  target.aiState = 'hitstun';
-                  target.hitstunTicks = 12;
-                  target.aiTicks = 0;
+          if (!target.grounded) {
+            target.vy = Math.min(target.vy + gravity * TICK_DT, maxFallSpeed);
+            target.y += target.vy * TICK_DT;
+            for (let p = 0; p < this.platforms.length; p += 1) {
+              const platform = this.platforms[p];
+              if (target.x >= platform.x1 && target.x <= platform.x2) {
+                if (target.vy >= 0 && target.y >= platform.yTop) {
+                  target.y = platform.yTop;
+                  target.vy = 0;
+                  target.grounded = true;
+                  if (target.aiState === 'spawning') {
+                    target.aiState = target.kind === 'archer' ? 'reposition' : 'approach';
+                    target.aiTicks = 0;
+                  } else if ((target.kind === 'legionnaire' || target.kind === 'archer') && target.aiState === 'juggle') {
+                    target.aiState = 'hitstun';
+                    target.hitstunTicks = 12;
+                    target.aiTicks = 0;
+                  }
+                  break;
                 }
-                break;
               }
             }
           }
@@ -819,6 +857,15 @@ export class World {
     const currentSegment = this.mapData
       ? getSegmentAtX(this.mapData, this.peekEntity(PLAYER_ID)?.x ?? 0)
       : undefined;
+    const hydra = this.entities.find((e) => e.kind === 'hydra');
+    const bossPayload = hydra
+      ? {
+          bossHp: hydra.hp,
+          bossMaxHp: hydra.maxHp,
+          bossState: hydra.aiState,
+          bossName: CONFIG.presentation.hud.boss?.name ?? 'LA HIDRA DE LERNA',
+        }
+      : {};
     const payload = {
       frame: this.tick,
       timeMs: this.timeMs,
@@ -837,6 +884,7 @@ export class World {
             segmentName: currentSegment?.name,
           }
         : {}),
+      ...bossPayload,
       input: [...this.input],
     };
     return {

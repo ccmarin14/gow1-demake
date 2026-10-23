@@ -246,9 +246,9 @@ function overlaps(
   const bY1 = Math.min(pose.gripY - halfH, pose.bladeCenterY - halfH);
   const bY2 = Math.max(pose.gripY + halfH, pose.bladeCenterY + halfH);
 
-  const tX1 = target.x - params.targetHalfWidth;
-  const tY1 = target.y - params.targetHalfHeight * 2;
-  const tX2 = target.x + params.targetHalfWidth;
+  const tX1 = target.kind === 'hydra' ? target.x - 120 : target.x - params.targetHalfWidth;
+  const tY1 = target.kind === 'hydra' ? target.y - 100 : target.y - params.targetHalfHeight * 2;
+  const tX2 = target.kind === 'hydra' ? target.x + 20 : target.x + params.targetHalfWidth;
   const tY2 = target.y;
   return bX1 < tX2 && bX2 > tX1 && bY1 < tY2 && bY2 > tY1;
 }
@@ -338,17 +338,21 @@ function applyHit(
   if (!rules.targetPhysics) {
     return;
   }
-  target.vx = params.knockbackVx * player.facing;
-  if (params.launchVy !== 0) {
-    target.vy = params.launchVy;
-    if (params.launchVy < 0) {
-      target.grounded = false;
+  if (target.kind !== 'hydra') {
+    target.vx = params.knockbackVx * player.facing;
+    if (params.launchVy !== 0) {
+      target.vy = params.launchVy;
+      if (params.launchVy < 0) {
+        target.grounded = false;
+      }
     }
+    target.hitstunTicks = rules.hitstunTicks;
+  } else {
+    target.hitstunTicks = 6;
   }
-  target.hitstunTicks = rules.hitstunTicks;
 
-  if (target.kind === 'legionnaire' || target.kind === 'archer') {
-    if (target.aiState === 'death') {
+  if (target.kind === 'legionnaire' || target.kind === 'archer' || target.kind === 'hydra') {
+    if (target.aiState === 'death' || target.aiState === 'hydra_defeat') {
       return;
     }
     const baseDamage =
@@ -368,9 +372,18 @@ function applyHit(
 
     target.hp = Math.max(0, target.hp - damage);
     if (target.hp <= 0) {
-      target.aiState = 'death';
+      target.aiState = target.kind === 'hydra' ? 'hydra_defeat' : 'death';
       target.aiTicks = 0;
-      target.vx = player.facing * 35;
+      if (target.kind !== 'hydra') {
+        target.vx = player.facing * 35;
+      } else {
+        target.isDead = true;
+      }
+    } else if (target.kind === 'hydra') {
+      if (target.aiState === 'hydra_idle') {
+        target.aiState = 'hydra_hurt';
+        target.aiTicks = 0;
+      }
     } else if (params.launchVy < 0) {
       target.aiState = 'juggle';
       target.aiTicks = 0;

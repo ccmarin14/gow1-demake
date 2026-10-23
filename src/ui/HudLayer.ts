@@ -22,6 +22,8 @@ export interface HudMetrics {
   phoenixFeathers: number;
   phoenixUpgrades: number;
   weaponLevel: number;
+  bossHp?: number;
+  bossMaxHp?: number;
 }
 
 /**
@@ -92,6 +94,21 @@ export class HudLayer {
   // Ranuras ornamentales de Plumas de Fénix bajo los ojos
   private readonly phoenixFeatherSlots: Phaser.GameObjects.Rectangle[] = [];
   private readonly phoenixFeatherGems: Phaser.GameObjects.Rectangle[] = [];
+
+  // Barra de salud monumental de Jefe
+  private readonly bossElements: (Phaser.GameObjects.Rectangle | Phaser.GameObjects.Text)[] = [];
+  private readonly bossFrameBg: Phaser.GameObjects.Rectangle;
+  private readonly bossFrameTopBevel: Phaser.GameObjects.Rectangle;
+  private readonly bossFrameBottomShadow: Phaser.GameObjects.Rectangle;
+  private readonly bossChannelTrough: Phaser.GameObjects.Rectangle;
+  private readonly bossGhostBar: Phaser.GameObjects.Rectangle;
+  private readonly bossGhostHighlight: Phaser.GameObjects.Rectangle;
+  private readonly bossHealthBar: Phaser.GameObjects.Rectangle;
+  private readonly bossHealthHighlight: Phaser.GameObjects.Rectangle;
+  private readonly bossTitleText: Phaser.GameObjects.Text;
+  private bossGhostHp = 300;
+  private bossPrevHp = 300;
+  private bossGhostPauseTimer = 0;
 
   // Estado del drenaje fantasma
   private prevHp = 100;
@@ -401,9 +418,109 @@ export class HudLayer {
       this.phoenixFeatherGems.push(gem);
       this.elements.push(gem);
     }
+
+    // 11. Barra de salud ornamental de Jefe (La Hidra de Lerna)
+    const bossCfg = CONFIG.presentation.hud.boss ?? {
+      x: 140,
+      y: 252,
+      barWidth: 200,
+      barHeight: 7,
+      name: 'LA HIDRA DE LERNA',
+    };
+    const bx = bossCfg.x;
+    const by = bossCfg.y;
+    const bw = bossCfg.barWidth;
+    const bh = bossCfg.barHeight;
+
+    this.bossFrameBg = scene.add
+      .rectangle(bx - 2, by - 2, bw + 4, bh + 4, 0x18100c)
+      .setOrigin(0, 0)
+      .setScrollFactor(0)
+      .setDepth(depth + 10)
+      .setVisible(false);
+    this.bossElements.push(this.bossFrameBg);
+    this.elements.push(this.bossFrameBg);
+
+    this.bossFrameTopBevel = scene.add
+      .rectangle(bx - 2, by - 2, bw + 4, 1, 0xc49a45)
+      .setOrigin(0, 0)
+      .setScrollFactor(0)
+      .setDepth(depth + 12)
+      .setVisible(false);
+    this.bossElements.push(this.bossFrameTopBevel);
+    this.elements.push(this.bossFrameTopBevel);
+
+    this.bossFrameBottomShadow = scene.add
+      .rectangle(bx - 2, by + bh + 1, bw + 4, 1, 0x0c0705)
+      .setOrigin(0, 0)
+      .setScrollFactor(0)
+      .setDepth(depth + 12)
+      .setVisible(false);
+    this.bossElements.push(this.bossFrameBottomShadow);
+    this.elements.push(this.bossFrameBottomShadow);
+
+    this.bossChannelTrough = scene.add
+      .rectangle(bx, by, bw, bh, 0x120c09)
+      .setOrigin(0, 0)
+      .setScrollFactor(0)
+      .setDepth(depth + 10)
+      .setVisible(false);
+    this.bossElements.push(this.bossChannelTrough);
+    this.elements.push(this.bossChannelTrough);
+
+    this.bossGhostBar = scene.add
+      .rectangle(bx, by, bw, bh, 0xfca5a5)
+      .setOrigin(0, 0)
+      .setScrollFactor(0)
+      .setDepth(depth + 11)
+      .setVisible(false);
+    this.bossElements.push(this.bossGhostBar);
+    this.elements.push(this.bossGhostBar);
+
+    this.bossGhostHighlight = scene.add
+      .rectangle(bx, by, bw, 2, 0xfecaca)
+      .setOrigin(0, 0)
+      .setScrollFactor(0)
+      .setDepth(depth + 11)
+      .setVisible(false);
+    this.bossElements.push(this.bossGhostHighlight);
+    this.elements.push(this.bossGhostHighlight);
+
+    this.bossHealthBar = scene.add
+      .rectangle(bx, by, bw, bh, 0xdc2626)
+      .setOrigin(0, 0)
+      .setScrollFactor(0)
+      .setDepth(depth + 12)
+      .setVisible(false);
+    this.bossElements.push(this.bossHealthBar);
+    this.elements.push(this.bossHealthBar);
+
+    this.bossHealthHighlight = scene.add
+      .rectangle(bx, by, bw, 2, 0xf87171)
+      .setOrigin(0, 0)
+      .setScrollFactor(0)
+      .setDepth(depth + 12)
+      .setVisible(false);
+    this.bossElements.push(this.bossHealthHighlight);
+    this.elements.push(this.bossHealthHighlight);
+
+    this.bossTitleText = scene.add
+      .text(bx + bw / 2, by - 4, bossCfg.name, {
+        fontFamily: 'monospace',
+        fontSize: '8px',
+        color: '#facc15',
+        fontStyle: 'bold',
+      })
+      .setOrigin(0.5, 1)
+      .setScrollFactor(0)
+      .setDepth(depth + 13)
+      .setShadow(1, 1, '#000000', 1)
+      .setVisible(false);
+    this.bossElements.push(this.bossTitleText);
+    this.elements.push(this.bossTitleText);
   }
 
-  update(player: EntityState | undefined, dt: number): void {
+  update(player: EntityState | undefined, dt: number, boss?: { hp: number; maxHp: number; name?: string } | null): void {
     if (!player) {
       this.greenBarBase.setVisible(false);
       this.greenBarHighlight.setVisible(false);
@@ -562,6 +679,63 @@ export class HudLayer {
       this.phoenixFeatherGems[i].setFillStyle(isLit ? 0x38bdf8 : 0x0c4a6e, isLit ? 1.0 : 0.35);
     }
 
+    // 10. Actualización de la barra ornamental de Jefe (La Hidra de Lerna)
+    if (boss && boss.maxHp > 0) {
+      const bHp = Math.max(0, boss.hp);
+      const bMax = boss.maxHp;
+      const bw = CONFIG.presentation.hud.boss?.barWidth ?? 200;
+      const bh = CONFIG.presentation.hud.boss?.barHeight ?? 7;
+
+      if (bHp > this.bossPrevHp) {
+        this.bossGhostHp = bHp;
+        this.bossPrevHp = bHp;
+        this.bossGhostPauseTimer = 0;
+      } else if (bHp < this.bossPrevHp) {
+        this.bossGhostPauseTimer = 0.2;
+        this.bossPrevHp = bHp;
+      } else {
+        if (this.bossGhostPauseTimer > 0) {
+          this.bossGhostPauseTimer = Math.max(0, this.bossGhostPauseTimer - dt);
+        } else if (this.bossGhostHp > bHp) {
+          this.bossGhostHp = Math.max(bHp, this.bossGhostHp - 50 * dt);
+        } else {
+          this.bossGhostHp = bHp;
+        }
+      }
+
+      const bRatio = Math.max(0, Math.min(1, bHp / bMax));
+      const bGhostRatio = Math.max(0, Math.min(1, this.bossGhostHp / bMax));
+      const bCurW = Math.round(bw * bRatio);
+      const bGhostW = Math.round(bw * bGhostRatio);
+
+      const isVisible = bHp > 0 || bGhostW > 0;
+      this.bossFrameBg.setVisible(isVisible);
+      this.bossFrameTopBevel.setVisible(isVisible);
+      this.bossFrameBottomShadow.setVisible(isVisible);
+      this.bossChannelTrough.setVisible(isVisible);
+      this.bossTitleText.setVisible(isVisible);
+
+      if (isVisible && bCurW > 0) {
+        this.bossHealthBar.setSize(bCurW, bh).setVisible(true);
+        this.bossHealthHighlight.setSize(bCurW, 2).setVisible(true);
+      } else {
+        this.bossHealthBar.setVisible(false);
+        this.bossHealthHighlight.setVisible(false);
+      }
+
+      if (isVisible && bGhostW > 0) {
+        this.bossGhostBar.setSize(bGhostW, bh).setVisible(true);
+        this.bossGhostHighlight.setSize(bGhostW, 2).setVisible(true);
+      } else {
+        this.bossGhostBar.setVisible(false);
+        this.bossGhostHighlight.setVisible(false);
+      }
+    } else {
+      for (const elem of this.bossElements) {
+        elem.setVisible(false);
+      }
+    }
+
     // Registro de métricas para introspección y tests CDP
     this.lastMetrics = {
       currentHp,
@@ -583,6 +757,7 @@ export class HudLayer {
       phoenixFeathers,
       phoenixUpgrades,
       weaponLevel,
+      ...(boss ? { bossHp: boss.hp, bossMaxHp: boss.maxHp } : {}),
     };
   }
 

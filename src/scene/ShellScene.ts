@@ -36,6 +36,7 @@ export class ShellScene extends Phaser.Scene {
   private targetRects = new Map<string, Phaser.GameObjects.Rectangle>();
   private legionnaireSprites = new Map<string, Phaser.GameObjects.Sprite>();
   private archerSprites = new Map<string, Phaser.GameObjects.Sprite>();
+  private hydraSprites = new Map<string, Phaser.GameObjects.Sprite>();
   private arrowSprites = new Map<string, Phaser.GameObjects.Image>();
   private readonly orbSprites = new Map<string, { outer: Phaser.GameObjects.Arc; core: Phaser.GameObjects.Arc; highlight: Phaser.GameObjects.Arc }>();
   private readonly chestGfx = new Map<
@@ -56,6 +57,8 @@ export class ShellScene extends Phaser.Scene {
   private upgradeBannerText: Phaser.GameObjects.Text | null = null;
   private checkpointBannerText: Phaser.GameObjects.Text | null = null;
   private checkpointBannerTimer: number = 0;
+  private hydraVictoryBannerText: Phaser.GameObjects.Text | null = null;
+  private hydraVictoryTimer: number = 0;
   private prevWeaponLevel: number = 1;
   private upgradeBannerTimer: number = 0;
   private barrierGraphics: Phaser.GameObjects.Graphics | null = null;
@@ -212,6 +215,21 @@ export class ShellScene extends Phaser.Scene {
       .setAlpha(0)
       .setVisible(true);
 
+    this.hydraVictoryBannerText = this.add
+      .text(CONFIG.internal.width / 2, 75, '¡HIDRA DERROTADA!', {
+        color: '#facc15',
+        fontFamily: 'monospace',
+        fontSize: '13px',
+        fontStyle: 'bold',
+        backgroundColor: '#000000cc',
+        padding: { x: 12, y: 5 },
+      })
+      .setOrigin(0.5)
+      .setDepth(28)
+      .setScrollFactor(0)
+      .setAlpha(0)
+      .setVisible(true);
+
     this.checkpointGraphics = this.add.graphics().setDepth(CONFIG.presentation.checkpoint.depth ?? 1);
 
     if (import.meta.env.DEV) {
@@ -286,7 +304,26 @@ export class ShellScene extends Phaser.Scene {
       }
     }
 
-    this.hudLayer.update(player ?? undefined, delta / 1000);
+    const hydra = this.simulation.world.getHydra();
+    this.hudLayer.update(
+      player ?? undefined,
+      delta / 1000,
+      hydra ? { hp: hydra.hp, maxHp: hydra.maxHp, name: 'LA HIDRA DE LERNA' } : null,
+    );
+
+    if (this.simulation.world.consumeHydraSlamNotice()) {
+      this.cameras.main.shake(150, 0.012);
+    }
+
+    if (this.simulation.world.consumeHydraDefeatNotice()) {
+      this.hydraVictoryTimer = 4.0;
+    }
+    if (this.hydraVictoryTimer > 0) {
+      this.hydraVictoryTimer = Math.max(0, this.hydraVictoryTimer - delta / 1000);
+      this.hydraVictoryBannerText?.setAlpha(Math.min(1, this.hydraVictoryTimer * 1.5));
+    } else {
+      this.hydraVictoryBannerText?.setAlpha(0);
+    }
 
     if (this.simulation.world.scenarioName === 'level1') {
       this.cameras.main.scrollX = this.simulation.world.cameraScrollX;
@@ -415,8 +452,14 @@ export class ShellScene extends Phaser.Scene {
         this.archerSprites.delete(id);
       }
     }
+    for (const [id, sprite] of this.hydraSprites.entries()) {
+      if (!targets.some((t) => t.id === id && t.kind === 'hydra')) {
+        sprite.destroy();
+        this.hydraSprites.delete(id);
+      }
+    }
     for (const [id, rect] of this.targetRects.entries()) {
-      if (!targets.some((t) => t.id === id && t.kind !== 'legionnaire' && t.kind !== 'archer')) {
+      if (!targets.some((t) => t.id === id && t.kind !== 'legionnaire' && t.kind !== 'archer' && t.kind !== 'hydra')) {
         rect.destroy();
         this.targetRects.delete(id);
       }
@@ -514,6 +557,52 @@ export class ShellScene extends Phaser.Scene {
         } else {
           sprite.clearTint();
         }
+      } else if (target.kind === 'hydra') {
+        let sprite = this.hydraSprites.get(target.id);
+        if (!sprite) {
+          sprite = this.add.sprite(target.x, target.y, 'hydra', 0);
+          sprite.setOrigin(1.0, 1.0).setDepth(1);
+          this.hydraSprites.set(target.id, sprite);
+        }
+        const shakeX = target.hitstunTicks > 0 && target.hitstunTicks % 2 === 1 ? (target.facing === 1 ? -2 : 2) : 0;
+        sprite.setPosition(target.x + shakeX, target.y);
+        sprite.setFlipX(target.facing === 1);
+
+        let animKey = 'hydra-idle';
+        switch (target.aiState) {
+          case 'hydra_idle':
+            animKey = 'hydra-idle';
+            break;
+          case 'hydra_roar':
+            animKey = 'hydra-roar';
+            break;
+          case 'hydra_slam':
+          case 'hydra_stuck':
+            animKey = 'hydra-slam';
+            break;
+          case 'hydra_sweep':
+            animKey = 'hydra-sweep';
+            break;
+          case 'hydra_hurt':
+            animKey = 'hydra-hurt';
+            break;
+          case 'hydra_stagger':
+            animKey = 'hydra-stagger';
+            break;
+          case 'hydra_defeat':
+            animKey = 'hydra-defeat';
+            break;
+        }
+
+        if (sprite.anims.currentAnim?.key !== animKey) {
+          sprite.play(animKey);
+        }
+
+        if (target.hitstunTicks > 0) {
+          sprite.setTint(player && player.magicPhase === 'active' ? 0x67e8f9 : 0xff7777);
+        } else {
+          sprite.clearTint();
+        }
       } else {
         let rect = this.targetRects.get(target.id);
         if (!rect) {
@@ -555,6 +644,10 @@ export class ShellScene extends Phaser.Scene {
       sprite.destroy();
     }
     this.archerSprites.clear();
+    for (const sprite of this.hydraSprites.values()) {
+      sprite.destroy();
+    }
+    this.hydraSprites.clear();
     for (const sprite of this.arrowSprites.values()) {
       sprite.destroy();
     }
@@ -1423,6 +1516,10 @@ export class ShellScene extends Phaser.Scene {
       sprite.destroy();
     }
     this.archerSprites.clear();
+    for (const sprite of this.hydraSprites.values()) {
+      sprite.destroy();
+    }
+    this.hydraSprites.clear();
     for (const sprite of this.arrowSprites.values()) {
       sprite.destroy();
     }
@@ -1455,6 +1552,8 @@ export class ShellScene extends Phaser.Scene {
     this.upgradeBannerText = null;
     this.checkpointBannerText?.destroy();
     this.checkpointBannerText = null;
+    this.hydraVictoryBannerText?.destroy();
+    this.hydraVictoryBannerText = null;
     this.checkpointGraphics?.destroy();
     this.checkpointGraphics = null;
   }

@@ -685,6 +685,20 @@ Mantén cada entrada breve y accionable. Actualiza las guías de trabajo solo cu
 - Cambio recomendado al proceso: al implementar la lógica de combate de la Hidra (`GOW8B-HYDRA-COMBO`), acoplar los hitboxes de daño exactamente a las coordenadas y rotaciones de los fotogramas anclados en $y=111$.
 - Evidencia o referencia: `docs/planes/GOW8B-HYDRA-ART.md`; `scripts/gen-enemy-hydra.py`; `scripts/verify-enemy-hydra.py`; `public/assets/characters/hydra.png`; `docs/referencias/hydra-contact-sheet.png`; `src/scene/ShellScene.ts`.
 
+### GOW8B-HYDRA-COMBO — El telegrafiado asimétrico, las ventanas de castigo en recuperación forzada y el HUD contextual convierten jefes colosales en duelos tácticos legibles (2026-10-23)
+
+- Resultado: aprobada tras auditoría independiente de solo lectura (4/4 criterios). Bloque 10 completado al 100 %.
+- Método que funcionó:
+  1. **Estructura rítmica en tres actos (Telegraph $\rightarrow$ Strike $\rightarrow$ Recovery/Stuck):** estructurar los ataques del jefe en un bucle temporal riguroso: (a) 500 ms de advertencia visual con fauces abiertas y garganta incandescente (`hydra_roar`); (b) picado fulminante con impacto sísmico en cubierta (`hydra_slam`); (c) colmillos clavados en las maderas de cubierta durante 750 ms (`hydra_stuck`). Esta fase de inmovilidad en el suelo es la recompensa kinética directa para el jugador que esquivó a tiempo.
+  2. **Cascada defensiva completa ante ataques de gran envergadura:** someter el mordisco monumental a la misma cascada de justicia que los esbirros ordinarios: evasión con rodada (i-frames) o magia con super-armadura otorgan inmunidad completa (0 daño); la guardia activa reduce el impacto en un 85% (4 daño residual); la desprotección total castiga con 25 de daño y knockback.
+  3. **Ventanas de vulnerabilidad crítica por umbrales de daño (`stagger` de 90 ticks):** forzar un colapso exhausto cada 100 HP perdidos rompe el ritmo defensivo y brinda al jugador el espacio táctico necesario para desencadenar combos completos (*Spirit of Hercules*, *Plume of Prometheus*) o descargar la *Ira de Poseidón*.
+  4. **Desacoplamiento de interfaz en medidores monumentales:** situar la barra de salud del jefe en la franja inferior ($200 \times 7\text{ px}$) con marco de bronce y drenaje fantasma garantiza seguimiento visual continuo del encuentro sin competir ni saturar los medidores personales de Kratos (salud, maná, orbes y ranuras de coleccionables) en la esquina superior izquierda.
+- Dificultad o fallo observado: si la caja de colisión del jefe se restringe a un rectángulo estático centrado en el sprite, los tajos de Kratos fallan con frecuencia cuando la cabeza se eleva en el rugido o se inclina en el suelo; definir un volumen de intercepción amplio en `attack.ts` para entidades colosales garantiza que las cadenas conecten siempre que el jefe esté en rango horizontal.
+- Aprendizaje transferible: en batallas contra jefes gigantes de pantalla fija en 2D, el factor determinante del game feel es la previsibilidad de los avisos y la generosidad de las ventanas de recuperación vulnerable: el jugador debe experimentar que la victoria es el fruto de dominar el timing de esquiva y maximizar el daño en las ventanas abiertas.
+- Cambio recomendado al proceso: al diseñar la interfaz y presentación de cierre (`GOW8B-UI-01`), sincronizar la pantalla de victoria del nivel con la eclosión de los 19 orbes de la Hidra.
+- Evidencia o referencia: `docs/planes/GOW8B-HYDRA-COMBO.md`; `src/sim/hydra.ts`; `src/sim/attack.ts`; `src/sim/magic.ts`; `src/ui/HudLayer.ts`; `src/scene/ShellScene.ts`; `scripts/verification/capture-combat.mjs` (Caso X: $t=1$ HP 300, $t=3$ telegraph roar, $t=12$ evasión exitosa con rodada $playerHp=100$, $t=17$ hydra_stuck, $t=26$ daño de cadenas Nv. 2 $hydraHp=282$, $t=46$ multi-hit Ira de Poseidón $hydraHp=266$, $t=56$ derrota terminal $hp=0, dead=true$, $t=65$ eclosión de 19 orbes y barra vacía).
+
+
 
 
 

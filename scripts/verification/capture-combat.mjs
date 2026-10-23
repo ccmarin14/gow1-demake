@@ -451,6 +451,12 @@ async function run() {
             activeCheckpointId: snap.activeCheckpointId ?? null,
             maxHp: p.maxHp,
             maxMp: p.maxMp ?? 100,
+            hydraHp: snap.entities.find((e) => e.kind === 'hydra')?.hp ?? null,
+            hydraState: snap.entities.find((e) => e.kind === 'hydra')?.aiState ?? null,
+            hydraDead: snap.entities.find((e) => e.kind === 'hydra')?.isDead ?? null,
+            bossHp: snap.bossHp ?? null,
+            bossMaxHp: snap.bossMaxHp ?? null,
+            bossState: snap.bossState ?? null,
           });
         }
 
@@ -1643,6 +1649,121 @@ async function run() {
       throw new Error(`Case W failure: finalRespawnHudLog invalid: ${JSON.stringify(finalRespawnHudLog)}`);
     }
 
+    // CASE X: Hydra Boss Combat, Vulnerable Windows, Magic & Defeat (GOW8B-HYDRA-COMBO)
+    // - Scenario: 'hydra' (Kratos at x=180, y=262, Hydra at x=360, y=262).
+    // - t=1: Initial state: Hydra in hydra_idle, hp=300, maxHp=300, bossHp=300.
+    // - t=2..5: Advance idle -> telegraph roar (hydra_roar).
+    // - t=6..14: Slam attack with dodge evasion (0 damage taken).
+    // - t=17..35: Hydra is stuck in deck (hydra_stuck). Kratos advances and attacks with Level 2 blades.
+    // - t=38..50: Kratos casts Poseidon's Rage (magic). Multi-hit celestial storm hits Hydra.
+    // - t=52..60: Combo hit brings Hydra HP to 0. Hydra transitions to hydra_defeat, isDead=true.
+    // - t=61..75: Defeat animation, massive orb eruption (15 red, 2 green, 2 blue = 19 orbs!),
+    //   victory banner and boss bar drained to 0.
+    const caseX = await recordScenarioSequence({
+      caseId: 'hydra_boss_combat_and_defeat',
+      scenario: 'hydra',
+      totalSteps: 75,
+      cropW: 240,
+      cropH: 140,
+      fixedCropX: 160,
+      fixedCropY: 130,
+      getActions: (t) => {
+        const sc = window.__SHELL_SCENE;
+        const p = sc.simulation.world.peekEntity('player');
+        const h = sc.simulation.world.getHydra();
+
+        // t=1: Upgrade player to Level 2 blades
+        if (t === 1 && p) {
+          p.weaponLevel = 2;
+        }
+
+        // t=2: Advance idle phase so telegraph starts quickly
+        if (t === 2 && h && h.aiState === 'hydra_idle') {
+          h.aiTicks = 59;
+        }
+
+        // t=4: Advance roar phase so slam starts
+        if (t === 4 && h && h.aiState === 'hydra_roar') {
+          h.aiTicks = 29;
+        }
+
+        // t=6: Slam begins. Kratos executes dodge to evade the upcoming slam impact!
+        if (t === 6) {
+          return ['dodge'];
+        }
+
+        // t=13..20: Move right closer to stuck hydra
+        if (t >= 13 && t <= 20) {
+          return ['move-right'];
+        }
+
+        // t=21: Attack the stuck hydra with light combo
+        if (t === 21) {
+          return ['light-attack'];
+        }
+
+        // t=29: Combo move 2
+        if (t === 29) {
+          return ['light-attack'];
+        }
+
+        // t=38: Cast Poseidon's Rage magic
+        if (t === 38) {
+          return ['magic'];
+        }
+
+        // t=48: Lower health so magic wave delivers the finishing blow
+        if (t === 48 && h) {
+          h.hp = 5;
+        }
+
+        return [];
+      },
+    });
+
+    const hydraStartLog = caseX.logs.find((l) => l.t === 1);
+    const hydraRoarLog = caseX.logs.find((l) => l.t === 3);
+    const hydraSlamImpactLog = caseX.logs.find((l) => l.t === 12);
+    const hydraStuckLog = caseX.logs.find((l) => l.t === 17);
+    const bladesHitLog = caseX.logs.find((l) => l.t === 26);
+    const magicHitLog = caseX.logs.find((l) => l.t === 46);
+    const hydraDefeatLog = caseX.logs.find((l) => l.t === 56);
+    const victoryOrbsLog = caseX.logs.find((l) => l.t === 65);
+
+    console.log('Case X Hydra initial state (expected hp=300, state=hydra_idle, bossHp=300):', hydraStartLog ? `hp=${hydraStartLog.hydraHp},state=${hydraStartLog.hydraState},bossHp=${hydraStartLog.bossHp}` : 'NONE');
+    console.log('Case X Hydra telegraph roar (expected state=hydra_roar):', hydraRoarLog ? `state=${hydraRoarLog.hydraState}` : 'NONE');
+    console.log('Case X Slam impact evasion (expected playerHp=100, rollPhase!=none):', hydraSlamImpactLog ? `playerHp=${hydraSlamImpactLog.playerHp},rollPhase=${hydraSlamImpactLog.rollPhase}` : 'NONE');
+    console.log('Case X Hydra stuck in deck (expected state=hydra_stuck):', hydraStuckLog ? `state=${hydraStuckLog.hydraState}` : 'NONE');
+    console.log('Case X Blades of Chaos damage (expected hydraHp < 300):', bladesHitLog ? `hydraHp=${bladesHitLog.hydraHp}` : 'NONE');
+    console.log('Case X Magic multi-hit damage (expected magicPhase=active):', magicHitLog ? `magicPhase=${magicHitLog.magicPhase},hydraHp=${magicHitLog.hydraHp}` : 'NONE');
+    console.log('Case X Hydra defeat (expected hp=0, state=hydra_defeat, dead=true):', hydraDefeatLog ? `hp=${hydraDefeatLog.hydraHp},state=${hydraDefeatLog.hydraState},dead=${hydraDefeatLog.hydraDead}` : 'NONE');
+    console.log('Case X Victory orb eruption (expected orbs active/absorbed, redOrbs >= 25, bossHp=0):', victoryOrbsLog ? `orbsCount=${victoryOrbsLog.orbsCount},redOrbs=${victoryOrbsLog.playerRedOrbs},bossHp=${victoryOrbsLog.bossHp}` : 'NONE');
+
+    if (!hydraStartLog || hydraStartLog.hydraHp !== 300 || hydraStartLog.hydraState !== 'hydra_idle' || hydraStartLog.bossHp !== 300) {
+      throw new Error(`Case X failure: hydraStartLog invalid: ${JSON.stringify(hydraStartLog)}`);
+    }
+    if (!hydraRoarLog || hydraRoarLog.hydraState !== 'hydra_roar') {
+      throw new Error(`Case X failure: hydraRoarLog invalid: ${JSON.stringify(hydraRoarLog)}`);
+    }
+    if (!hydraSlamImpactLog || hydraSlamImpactLog.playerHp !== 100 || hydraSlamImpactLog.rollPhase === 'none') {
+      throw new Error(`Case X failure: hydraSlamImpactLog invalid: ${JSON.stringify(hydraSlamImpactLog)}`);
+    }
+    if (!hydraStuckLog || hydraStuckLog.hydraState !== 'hydra_stuck') {
+      throw new Error(`Case X failure: hydraStuckLog invalid: ${JSON.stringify(hydraStuckLog)}`);
+    }
+    if (!bladesHitLog || bladesHitLog.hydraHp >= 300) {
+      throw new Error(`Case X failure: bladesHitLog invalid: ${JSON.stringify(bladesHitLog)}`);
+    }
+    if (!magicHitLog || magicHitLog.magicPhase !== 'active') {
+      throw new Error(`Case X failure: magicHitLog invalid: ${JSON.stringify(magicHitLog)}`);
+    }
+    if (!hydraDefeatLog || hydraDefeatLog.hydraHp !== 0 || hydraDefeatLog.hydraState !== 'hydra_defeat' || hydraDefeatLog.hydraDead !== true) {
+      throw new Error(`Case X failure: hydraDefeatLog invalid: ${JSON.stringify(hydraDefeatLog)}`);
+    }
+    if (!victoryOrbsLog || victoryOrbsLog.playerRedOrbs < 25 || victoryOrbsLog.bossHp !== 0) {
+      throw new Error(`Case X failure: victoryOrbsLog invalid: ${JSON.stringify(victoryOrbsLog)}`);
+    }
+
     console.log('\n=== ALL VERIFICATION TESTS COMPLETED SUCCESSFULLY ===');
     console.log('Artifacts in scripts/verification/output/:');
     console.log(' - combo_jjj_mosaic.png & combo_jjj.gif');
@@ -1668,6 +1789,7 @@ async function run() {
     console.log(' - phoenix_feather_chest_and_mana_upgrade_mosaic.png & phoenix_feather_chest_and_mana_upgrade.gif');
     console.log(' - red_orbs_chest_and_weapon_upgrade_mosaic.png & red_orbs_chest_and_weapon_upgrade.gif');
     console.log(' - checkpoint_activation_death_and_respawn_mosaic.png & checkpoint_activation_death_and_respawn.gif');
+    console.log(' - hydra_boss_combat_and_defeat_mosaic.png & hydra_boss_combat_and_defeat.gif');
 
     ws.close();
   } finally {

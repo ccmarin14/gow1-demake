@@ -84,7 +84,7 @@ export const PLAYER_ID = 'player';
 
 export interface EntityState {
   id: string;
-  kind: 'player' | 'legionnaire' | 'dummy' | 'archer';
+  kind: 'player' | 'legionnaire' | 'dummy' | 'archer' | 'hydra';
   x: number;
   y: number;
   vx: number;
@@ -146,7 +146,15 @@ export interface EntityState {
     | 'reposition'
     | 'aim'
     | 'shoot'
-    | 'spawning';
+    | 'spawning'
+    | 'hydra_idle'
+    | 'hydra_roar'
+    | 'hydra_slam'
+    | 'hydra_stuck'
+    | 'hydra_sweep'
+    | 'hydra_hurt'
+    | 'hydra_stagger'
+    | 'hydra_defeat';
   aiTicks: number;
   hp: number;
   maxHp: number;
@@ -251,6 +259,10 @@ export interface SimulationSnapshot {
   cameraX?: number;
   segmentId?: number;
   segmentName?: string;
+  bossHp?: number;
+  bossMaxHp?: number;
+  bossState?: string;
+  bossName?: string;
   input: GameAction[];
   checksum: string;
 }

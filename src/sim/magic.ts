@@ -98,11 +98,14 @@ export function stepMagic(
       const radiusSq = cfg.radius * cfg.radius;
       for (let i = 0; i < targets.length; i += 1) {
         const target = targets[i];
-        if (target.isDead || target.aiState === 'death') {
+        if (target.isDead || target.aiState === 'death' || target.aiState === 'hydra_defeat') {
           continue;
         }
 
-        const dx = target.x - player.x;
+        const targetEffectiveX = target.kind === 'hydra'
+          ? Math.min(target.x, Math.max(target.x - 100, player.x))
+          : target.x;
+        const dx = targetEffectiveX - player.x;
         const dy = (target.y - 18) - (player.y - 20);
         const distSq = dx * dx + dy * dy;
 
@@ -111,10 +114,12 @@ export function stepMagic(
           target.hp = Math.max(0, target.hp - cfg.damagePerHit);
           result.totalDamage += cfg.damagePerHit;
           target.hitstunTicks = Math.max(target.hitstunTicks, cfg.stunTicksPerHit);
-          target.vx = 0;
+          if (target.kind !== 'hydra') {
+            target.vx = 0;
+          }
 
           if (target.hp === 0) {
-            target.aiState = 'death';
+            target.aiState = target.kind === 'hydra' ? 'hydra_defeat' : 'death';
             target.aiTicks = 0;
             target.isDead = true;
             result.kills.push(target.id);

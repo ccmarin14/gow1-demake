@@ -283,6 +283,17 @@ export const CONFIG = {
       parryReflectSpeedMult: 1.5,
       parryStunTicks: 36,
     },
+    hydra: {
+      maxHp: 300,
+      slamDamage: 25,
+      sweepDamage: 20,
+      telegraphTicks: 30,
+      stuckTicks: 45,
+      staggerThresholdHp: 100,
+      staggerDurationTicks: 90,
+      slamImpactRadius: 40,
+      dropOrbs: { red: 15, green: 2, blue: 2 },
+    },
   },
   combat: {
     arena: {
@@ -470,6 +481,13 @@ export const CONFIG = {
       ghostPauseMs: 200,
       criticalHpThreshold: 25,
       depth: 100,
+      boss: {
+        x: 140,
+        y: 252,
+        barWidth: 200,
+        barHeight: 7,
+        name: 'LA HIDRA DE LERNA',
+      },
     },
     chest: {
       width: 24,
