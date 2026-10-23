@@ -21,7 +21,7 @@ Ramas `tarea/GOW8B-{DJUMP,KRA-02,RES-01,ROLL-01,SCALE-01}`: eliminadas el 2026-1
 
 | Hilo | Estado | Siguiente paso | Bloqueo / decisión pendiente | Documento |
 | --- | --- | --- | --- | --- |
-| **Arte de Kratos GoW 1** (sprites 2D generados) | Pausado | Pedir idle con guardia simétrica y resto de poses (respiración, salto, caída, rodada, derrape, ataques) con escala fija; integrar y auditar. | Cuota del `image-generator` (reinicio ~4.5 h desde 21:40). Paleta ampliada a ≤12 colores (ver §3). | [`planes/KRATOS-2D-SPRITE-GEN-01.md`](planes/KRATOS-2D-SPRITE-GEN-01.md) |
+| **Arte de Kratos GoW 1** (sprites 2D generados) | Pausado | Pedir idle con guardia simétrica y resto de poses (respiración, salto, caída, rodada, derrape, ataques) con escala fija; luego paleta compartida → cuadros → hoja validada (herramientas ya listas, ver el plan); integrar y auditar. | Cuota del `image-generator` (reinicio ~4.5 h desde 21:40). Paleta ampliada a ≤12 colores (ver §3). | [`planes/KRATOS-2D-SPRITE-GEN-01.md`](planes/KRATOS-2D-SPRITE-GEN-01.md) |
 | **Combate PS2 y locomoción** (4 niveles) | Cerrado y aprobado | Ninguno. El juego usa todavía el arte anterior (maniquí del generador procedural). | Validación humana de sensación: ver registro de pendientes. | [`verificacion.md`](verificacion.md) |
 | **Arte actual (maniquí procedural)** | Vigente pero rechazado visualmente | Sustituir por el hilo de arte anterior. No invertir más en `gen-kratos-anim.py`. | Depende del hilo de arte. | `scripts/gen-kratos-anim.py` |
 | **Bloque 4 en adelante** (enemigos, daño, HUD, orbes, oleadas, magia, mapa, Hidra) | Sin iniciar | Según `verificacion.md`; requiere autorización de la usuaria. | Sin etapa activa. | [`verificacion.md`](verificacion.md) |

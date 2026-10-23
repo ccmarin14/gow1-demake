@@ -4,7 +4,7 @@
 Pasos: clave de croma magenta -> recorte al bbox -> reduccion con filtro de caja ->
 umbral de alfa (sin semitransparencias) -> cuantizacion a paleta -> anclaje de pies en y=58.
 
-Uso: process_generated_sprite.py ENTRADA.jpg SALIDA.png [--colors N] [--scale S]
+Uso: process_generated_sprite.py ENTRADA.jpg SALIDA.png [--colors N] [--scale S] [--palette PALETA.png]
 """
 import argparse
 
@@ -28,7 +28,7 @@ def key_magenta(img):
     return out
 
 
-def process(src, dst, colors, scale):
+def process(src, dst, colors, scale, palette=None):
     keyed = key_magenta(Image.open(src))
     bbox = keyed.getbbox()
     crop = keyed.crop(bbox)
@@ -40,7 +40,17 @@ def process(src, dst, colors, scale):
     # cuantizacion adaptativa solo sobre pixeles opacos
     rgb = Image.new("RGB", small.size, (255, 0, 255))
     rgb.paste(small.convert("RGB"), mask=a)
-    q = rgb.quantize(colors=colors, method=Image.MEDIANCUT, dither=Image.NONE).convert("RGB")
+    if palette:
+        pal_img = Image.open(palette).convert("RGB")
+        pal = sorted({pal_img.getpixel((i, 0)) for i in range(pal_img.width)})
+        q = rgb.copy()
+        qp = q.load()
+        for y in range(q.height):
+            for x in range(q.width):
+                c = qp[x, y]
+                qp[x, y] = min(pal, key=lambda k: (k[0] - c[0]) ** 2 + (k[1] - c[1]) ** 2 + (k[2] - c[2]) ** 2)
+    else:
+        q = rgb.quantize(colors=colors, method=Image.MEDIANCUT, dither=Image.NONE).convert("RGB")
     out = Image.new("RGBA", small.size, (0, 0, 0, 0))
     out.paste(q, mask=a)
     # colocar en cuadro 97x59, centrado, pies en la fila 58
@@ -59,5 +69,6 @@ if __name__ == "__main__":
     ap.add_argument("dst")
     ap.add_argument("--colors", type=int, default=12)
     ap.add_argument("--scale", type=float, default=56 / 870, help="factor fijo de reduccion (igual para todas las poses)")
+    ap.add_argument("--palette", help="PNG de paleta compartida (1 fila); si se da, ignora --colors")
     args = ap.parse_args()
-    process(args.src, args.dst, args.colors, args.scale)
+    process(args.src, args.dst, args.colors, args.scale, args.palette)

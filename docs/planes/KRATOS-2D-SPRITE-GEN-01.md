@@ -18,7 +18,14 @@
 2. **Decisión de la usuaria pendiente:** ampliar la paleta de 6 a ~12 colores (los sprites generados usan ~11). Sin ella no se puede integrar.
 3. Integración, medición (cuadros, anclaje y=58, tamaño 97x59), auditoría independiente.
 
-## Herramienta
+## Herramientas (listas y probadas con idle-v5 y run-v4)
 
-- `scripts/sprite-gen/process_generated_sprite.py ENTRADA.jpg SALIDA.png [--colors N] [--scale S]`: clave de croma magenta, reducción con filtro de caja a escala fija (`56/870`), alfa binario, cuantización, pies en `y = 58`.
-- Material de trabajo (sin versionar): `scratch/sprite-gen/` (`compare-v1..v5.png`, `idle-v*.jpg`, `run-v*.jpg`, recortes de referencia de las hojas).
+Flujo para cada tanda de poses:
+
+1. `scripts/sprite-gen/build_shared_palette.py PALETA.png IMG1.jpg IMG2.jpg ... --colors 12 --accent '#b03028' --accent '#ff8c1a'`: una **paleta compartida** para todas las poses. Reserva los acentos (rojo del tatuaje, naranja de runas), que si no se pierden al promediar al reducir.
+2. `scripts/sprite-gen/process_generated_sprite.py ENTRADA.jpg SALIDA.png --palette PALETA.png`: clave de croma magenta, reduccion con filtro de caja a escala fija (`56/870`), alfa binario, mapeo a la paleta compartida, pies en `y = 58`.
+3. `scripts/sprite-gen/build_spritesheet.py HOJA.png CUADRO1.png CUADRO2.png ... --max-colors 12`: arma la hoja y **valida** tamano 97x59 por cuadro, alfa binario, pies anclados y maximo de colores.
+
+**Aprendizaje de esta prueba:** cuantizar cada pose por separado dio 22 colores en la hoja (la validacion lo detecto); la paleta debe fijarse una vez para todo el conjunto. Y el median-cut puro descarta el rojo y el naranja por ser pocos pixeles, por lo que hay que reservarlos como acentos. La paleta compartida debe recalcularse al llegar las poses finales (hoy se probo solo con idle y carrera).
+
+Material de trabajo (sin versionar): `scratch/sprite-gen/` (`compare-*.png`, `idle-v*.jpg`, `run-v*.jpg`, recortes de referencia de las hojas, `shared-palette.png`).
