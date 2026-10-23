@@ -541,6 +541,45 @@ export const CONFIG = {
     },
     depth: 150,
   },
+  vfx: {
+    rain: {
+      dropCount: 60,
+      angleDeg: 15,
+      fallSpeed: 320,
+      driftSpeed: 70,
+      dropLength: 6,
+      dropThickness: 1,
+      color: 0x94a3b8,
+      alphaBack: 0.25,
+      alphaFront: 0.38,
+      splashDurationTicks: 6,
+      splashRadius: 3,
+      backDepth: -1,
+      frontDepth: 40,
+    },
+    lightning: {
+      intervalTicksMin: 360,
+      intervalTicksMax: 600,
+      flashDurationTicks: 3,
+      flashAlpha: 0.30,
+      color: 0xe0f2fe,
+      depth: -2,
+    },
+    combatSparks: {
+      sparkCount: 6,
+      lifetimeTicks: 8,
+      colors: [0xfde047, 0xf97316, 0xef4444],
+      speedMin: 60,
+      speedMax: 180,
+      depth: 35,
+    },
+    parryFlash: {
+      durationTicks: 8,
+      radius: 12,
+      color: 0xfef08a,
+      depth: 36,
+    },
+  },
 } as const;
 
 /**

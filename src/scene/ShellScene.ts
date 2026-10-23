@@ -20,6 +20,7 @@ import { WeaponLayer } from '../entities/WeaponLayer';
 import { InputManager } from '../input/InputManager';
 import { HudLayer } from '../ui/HudLayer';
 import { GameFlowOverlay } from '../ui/GameFlowOverlay';
+import { VfxLayer } from './VfxLayer';
 import type { FrameMetrics } from '../metrics';
 import type { Simulation } from '../sim/engine';
 import type { EntityState } from '../sim/types';
@@ -67,6 +68,10 @@ export class ShellScene extends Phaser.Scene {
   private magicGraphics: Phaser.GameObjects.Graphics | null = null;
   hudLayer!: HudLayer;
   flowOverlay!: GameFlowOverlay;
+  vfxLayer!: VfxLayer;
+  private prevParryActive = false;
+  private prevHitsCount = 0;
+  private prevGroundImpactTicks = 0;
 
   constructor(
     private readonly simulation: Simulation,
@@ -154,6 +159,7 @@ export class ShellScene extends Phaser.Scene {
     this.weaponLayer.create(this);
     this.hudLayer = new HudLayer(this);
     this.flowOverlay = new GameFlowOverlay(this);
+    this.vfxLayer = new VfxLayer(this);
 
     this.defeatText = this.add
       .text(
@@ -337,6 +343,40 @@ export class ShellScene extends Phaser.Scene {
 
     if (this.simulation.world.consumeHydraSlamNotice()) {
       this.cameras.main.shake(150, 0.012);
+      if (this.vfxLayer) {
+        this.vfxLayer.emitCombatSparks(hydra ? hydra.x - 70 : 380, 262, 12);
+      }
+    }
+
+    if (this.vfxLayer) {
+      if (player) {
+        // Detect parry trigger
+        if (player.parryActive && !this.prevParryActive) {
+          this.vfxLayer.emitParryFlash(player.x + player.facing * 18, player.y - 18);
+        }
+        this.prevParryActive = Boolean(player.parryActive);
+
+        // Detect ground impact
+        if (player.groundImpactTicks > 0 && this.prevGroundImpactTicks === 0) {
+          const impactX = player.x + player.facing * (player.attackMove === 'plume_of_prometheus' ? 45 : 30);
+          this.vfxLayer.emitCombatSparks(impactX, player.groundImpactY, 8);
+        }
+        this.prevGroundImpactTicks = player.groundImpactTicks;
+
+        // Detect new hits on targets
+        const hitsCount = player.attackHits ? player.attackHits.length : 0;
+        if (hitsCount > this.prevHitsCount && player.attackPhase === 'active') {
+          const target = this.simulation.world.peekTargets().find((t) => t.hitstunTicks > 0);
+          if (target) {
+            this.vfxLayer.emitCombatSparks(target.x, target.y - 15, 6);
+          } else {
+            this.vfxLayer.emitCombatSparks(player.x + player.facing * 35, player.y - 20, 6);
+          }
+        }
+        this.prevHitsCount = hitsCount;
+      }
+
+      this.vfxLayer.update(delta / 1000, flowState === 'paused');
     }
 
     if (this.simulation.world.consumeHydraDefeatNotice()) {

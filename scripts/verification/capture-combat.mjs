@@ -464,6 +464,11 @@ async function run() {
             victoryVisible: sc.flowOverlay ? sc.flowOverlay.isVictoryVisible() : false,
             gameOverVisible: sc.flowOverlay ? sc.flowOverlay.isGameOverVisible() : false,
             stats: snap.stats ?? null,
+            rainDropsCount: sc.vfxLayer ? sc.vfxLayer.getActiveRainDropsCount() : 0,
+            lightningActive: sc.vfxLayer ? sc.vfxLayer.isLightningActive() : false,
+            lightningAlpha: sc.vfxLayer ? sc.vfxLayer.getLightningAlpha() : 0,
+            sparksCount: sc.vfxLayer ? sc.vfxLayer.getActiveSparksCount() : 0,
+            parryFlashActive: sc.vfxLayer ? sc.vfxLayer.isParryFlashActive() : false,
           });
         }
 
@@ -1925,6 +1930,121 @@ async function run() {
       throw new Error(`Case Y failure: respawnLog invalid: ${JSON.stringify(caseYRespawnLog)}`);
     }
 
+    // CASE Z: Aegean Storm VFX: Dual-Layer Rain, Lightning Flash, Combat Sparks & Deterministic Freeze (GOW8B-VFX-01)
+    // - t=1: Verify rain is active (> 30 rain drops across back and front layers).
+    // - t=5: Trigger ambient Aegean lightning flash via sc.vfxLayer.triggerLightning().
+    // - t=6: Verify lightning is actively flashing (lightningActive=true, lightningAlpha > 0).
+    // - t=11: Verify lightning returns smoothly to idle (lightningActive=false, lightningAlpha=0).
+    // - t=14..18: Kratos advances towards target and launches light attack combo.
+    // - t=21: Attack impacts target, emitting radial combat sparks (sparksCount > 0).
+    // - t=30: Sparks completely decay after 8 ticks (sparksCount === 0).
+    // - t=33: Parry flash triggered via sc.vfxLayer.emitParryFlash(p.x, p.y - 20).
+    // - t=34: Verify parry flash active (parryFlashActive=true).
+    // - t=40: Emit new batch of sparks right before pause test.
+    // - t=41: Press 'pause' (ESC) to pause simulation.
+    // - t=42..46: Verify particles remain strictly frozen during pause (sparksCount t42 === sparksCount t46).
+    // - t=47: Press 'pause' (ESC) to resume simulation.
+    // - t=50..60: Normal simulation resumes smoothly.
+    const caseZ = await recordScenarioSequence({
+      caseId: 'vfx_weather_sparks_and_readability',
+      scenario: 'combat',
+      totalSteps: 60,
+      cropW: 240,
+      cropH: 140,
+      fixedCropX: 120,
+      fixedCropY: 100,
+      getActions: (t) => {
+        const sc = window.__SHELL_SCENE;
+        const p = sc.simulation.world.peekEntity('player');
+
+        // t=5: Trigger lightning
+        if (t === 5 && sc.vfxLayer) {
+          sc.vfxLayer.triggerLightning(6);
+        }
+
+        // t=14..15: Move right towards enemy
+        if (t === 14 || t === 15) {
+          return ['move-right'];
+        }
+
+        // t=16: Light attack to hit enemy
+        if (t === 16) {
+          return ['light-attack'];
+        }
+
+        // t=33: Trigger parry flash
+        if (t === 33 && sc.vfxLayer && p) {
+          sc.vfxLayer.emitParryFlash(p.x + p.facing * 18, p.y - 18);
+        }
+
+        // t=40: Emit combat sparks right before pause
+        if (t === 40 && sc.vfxLayer && p) {
+          sc.vfxLayer.emitCombatSparks(p.x + p.facing * 25, p.y - 20, 6);
+        }
+
+        // t=41: Press 'pause'
+        if (t === 41) {
+          return ['pause'];
+        }
+
+        // t=42..46: Paused ticks
+        if (t >= 42 && t <= 46) {
+          return [];
+        }
+
+        // t=47: Unpause
+        if (t === 47) {
+          return ['pause'];
+        }
+
+        return [];
+      },
+    });
+
+    const caseZRainLog = caseZ.logs.find((l) => l.t === 2);
+    const caseZLightningActiveLog = caseZ.logs.find((l) => l.t === 6);
+    const caseZLightningDecayLog = caseZ.logs.find((l) => l.t === 11);
+    const caseZSparksLog = caseZ.logs.find((l) => l.t === 21);
+    const caseZSparksDecayLog = caseZ.logs.find((l) => l.t === 30);
+    const caseZParryLog = caseZ.logs.find((l) => l.t === 34);
+    const caseZPauseFreezeLogA = caseZ.logs.find((l) => l.t === 43);
+    const caseZPauseFreezeLogB = caseZ.logs.find((l) => l.t === 46);
+    const caseZResumeLog = caseZ.logs.find((l) => l.t === 50);
+
+    console.log('Case Z Dual-layer rain active (expected rainDropsCount >= 30):', caseZRainLog ? `rainDrops=${caseZRainLog.rainDropsCount}` : 'NONE');
+    console.log('Case Z Lightning active flash (expected lightningActive=true, alpha > 0):', caseZLightningActiveLog ? `active=${caseZLightningActiveLog.lightningActive},alpha=${caseZLightningActiveLog.lightningAlpha}` : 'NONE');
+    console.log('Case Z Lightning decay (expected lightningActive=false, alpha=0):', caseZLightningDecayLog ? `active=${caseZLightningDecayLog.lightningActive},alpha=${caseZLightningDecayLog.lightningAlpha}` : 'NONE');
+    console.log('Case Z Combat hit sparks emitted (expected sparksCount > 0):', caseZSparksLog ? `sparks=${caseZSparksLog.sparksCount}` : 'NONE');
+    console.log('Case Z Combat sparks decay (expected sparksCount=0):', caseZSparksDecayLog ? `sparks=${caseZSparksDecayLog.sparksCount}` : 'NONE');
+    console.log('Case Z Parry star flare active (expected parryFlashActive=true):', caseZParryLog ? `parry=${caseZParryLog.parryFlashActive}` : 'NONE');
+    console.log('Case Z VFX particles freeze during pause (expected sparks43 == sparks46 > 0, frame43 == frame46):', caseZPauseFreezeLogA && caseZPauseFreezeLogB ? `sparksA=${caseZPauseFreezeLogA.sparksCount},sparksB=${caseZPauseFreezeLogB.sparksCount},frameA=${caseZPauseFreezeLogA.frame},frameB=${caseZPauseFreezeLogB.frame}` : 'NONE');
+    console.log('Case Z VFX unpause resume (expected flowState=playing):', caseZResumeLog ? `flowState=${caseZResumeLog.flowState}` : 'NONE');
+
+    if (!caseZRainLog || caseZRainLog.rainDropsCount < 30) {
+      throw new Error(`Case Z failure: rainDropsCount invalid: ${JSON.stringify(caseZRainLog)}`);
+    }
+    if (!caseZLightningActiveLog || !caseZLightningActiveLog.lightningActive || caseZLightningActiveLog.lightningAlpha <= 0) {
+      throw new Error(`Case Z failure: lightningActiveLog invalid: ${JSON.stringify(caseZLightningActiveLog)}`);
+    }
+    if (!caseZLightningDecayLog || caseZLightningDecayLog.lightningActive || caseZLightningDecayLog.lightningAlpha !== 0) {
+      throw new Error(`Case Z failure: lightningDecayLog invalid: ${JSON.stringify(caseZLightningDecayLog)}`);
+    }
+    if (!caseZSparksLog || caseZSparksLog.sparksCount <= 0) {
+      throw new Error(`Case Z failure: sparksLog invalid: ${JSON.stringify(caseZSparksLog)}`);
+    }
+    if (!caseZSparksDecayLog || caseZSparksDecayLog.sparksCount !== 0) {
+      throw new Error(`Case Z failure: sparksDecayLog invalid: ${JSON.stringify(caseZSparksDecayLog)}`);
+    }
+    if (!caseZParryLog || !caseZParryLog.parryFlashActive) {
+      throw new Error(`Case Z failure: parryLog invalid: ${JSON.stringify(caseZParryLog)}`);
+    }
+    if (!caseZPauseFreezeLogA || !caseZPauseFreezeLogB || caseZPauseFreezeLogA.sparksCount !== caseZPauseFreezeLogB.sparksCount || caseZPauseFreezeLogA.sparksCount <= 0 || caseZPauseFreezeLogA.frame !== caseZPauseFreezeLogB.frame) {
+      throw new Error(`Case Z failure: pauseFreezeLog invalid: A=${JSON.stringify(caseZPauseFreezeLogA)}, B=${JSON.stringify(caseZPauseFreezeLogB)}`);
+    }
+    if (!caseZResumeLog || caseZResumeLog.flowState !== 'playing') {
+      throw new Error(`Case Z failure: resumeLog invalid: ${JSON.stringify(caseZResumeLog)}`);
+    }
+
     console.log('\n=== ALL VERIFICATION TESTS COMPLETED SUCCESSFULLY ===');
     console.log('Artifacts in scripts/verification/output/:');
     console.log(' - combo_jjj_mosaic.png & combo_jjj.gif');
@@ -1952,6 +2072,7 @@ async function run() {
     console.log(' - checkpoint_activation_death_and_respawn_mosaic.png & checkpoint_activation_death_and_respawn.gif');
     console.log(' - hydra_boss_combat_and_defeat_mosaic.png & hydra_boss_combat_and_defeat.gif');
     console.log(' - ui_flow_title_pause_and_victory_mosaic.png & ui_flow_title_pause_and_victory.gif');
+    console.log(' - vfx_weather_sparks_and_readability_mosaic.png & vfx_weather_sparks_and_readability.gif');
 
     ws.close();
   } finally {

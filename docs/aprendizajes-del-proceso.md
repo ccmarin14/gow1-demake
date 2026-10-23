@@ -710,6 +710,19 @@ Mantén cada entrada breve y accionable. Actualiza las guías de trabajo solo cu
 - Cambio recomendado al proceso: al diseñar los efectos climáticos y ambientales del Egeo (`GOW8B-VFX-01`), sincronizar las partículas atmosféricas (lluvia, oleaje) con el estado de flujo para que congelen su velocidad durante la pausa.
 - Evidencia o referencia: `docs/planes/GOW8B-UI-01.md`; `src/sim/world.ts`; `src/ui/GameFlowOverlay.ts`; `src/scene/ShellScene.ts`; `scripts/verification/capture-combat.mjs` (Caso Y: $t=8$ título activo, $t=12$ inicio, $t=18$ pausa activa, $t=20$ y $t=24$ tick congelado en 10, $t=27$ reanudación en 13, $t=38$ victoria con rango, $t=46$ reinicio, $t=50$ derrota, $t=58$ reaparición en checkpoint).
 
+### GOW8B-VFX-01 — La distribución de partículas en planos sándwich y los topes de opacidad preservan el contraste en píxeles nítidos (2026-10-23)
+
+- Resultado: aprobada tras auditoría independiente de solo lectura (4/4 criterios).
+- Método que funcionó:
+  1. **Estructura "sándwich" de profundidad atmosférica:** bifurcar la cortina de lluvia marina en dos capas de profundidad: el 50% de las gotas se ubica en un plano posterior (`depth = -1`, detrás de las entidades) aportando volumen ambiental sin interferir con los sprites, mientras que el restante 50% se ubica en el plano frontal (`depth = 40`) con un techo estricto de opacidad ($\le 0.38$). Esto recrea una tormenta oceánica envolvente sin provocar "ruido estático" sobre los cuerpos de Kratos o de los enemigos.
+  2. **Generador pseudoaleatorio determinista con semilla:** emplear un generador PRNG determinista (`createDeterministicRandom(12345)`) para el posicionamiento y ciclo de vida de gotas y partículas. Esto garantiza que la simulación meteorológica sea reproducible tick a tick en las grabaciones CDP, impidiendo divergencias no deterministas en las pruebas de verificación.
+  3. **Partículas de colisión de corta duración ($\le 8$ ticks):** estructurar las chispas ígneas de combate, las micro-salpicaduras en cubierta y el destello estelar de *Parry* con vidas útiles ultracortas (6 a 8 ticks) y dispersión radial rápida. Esto imprime contundencia kinética inmediata a los impactos de las cadenas sin dejar rastros residuales que ensucien el lienzo de 480×270.
+- Dificultad o fallo observado: situar toda la lluvia en un único plano frontal con opacidades superiores a 0.6 fragmenta las siluetas de los personajes y dificulta la lectura del telegraph en baja resolución; dividir la densidad entre fondo y frente con tope de 0.38 elimina por completo la pérdida de contraste.
+- Aprendizaje transferible: en videojuegos 2D con estética pixel art o resolución reducida, los fenómenos climáticos densos (lluvia, ventisca, polvo) deben distribuirse en planos intercalados (detrás y delante del plano de acción) con topes estrictos de transparencia para no comprometer la legibilidad del combate.
+- Cambio recomendado al proceso: al diseñar el audio (`GOW8B-AUDIO-01`), atenuar contextualmente el sonido ambiental de la lluvia durante el inicio de combos pesados y rugidos para mantener el balance auditivo.
+- Evidencia o referencia: `docs/planes/GOW8B-VFX-01.md`; `src/scene/VfxLayer.ts`; `src/scene/ShellScene.ts`; `scripts/verification/capture-combat.mjs` (Caso Z: $t=2$ lluvia activa 56 gotas, $t=6$ relámpago $alpha=0.15$, $t=11$ decaimiento $alpha=0$, $t=21$ chispas emitidas 6, $t=30$ desvanecimiento en 8 ticks, $t=34$ destello parry, $t=43$ y $t=46$ congelamiento en pausa, $t=50$ reanudación en playing).
+
+
 
 
 
