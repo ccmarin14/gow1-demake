@@ -63,6 +63,11 @@ export class ShellScene extends Phaser.Scene {
       frameWidth: 64,
       frameHeight: 54,
     });
+    this.load.spritesheet('archer', 'assets/characters/archer.png', {
+      frameWidth: 64,
+      frameHeight: 54,
+    });
+    this.load.image('arrow', 'assets/characters/arrow.png');
   }
 
   create(): void {

@@ -4,7 +4,7 @@
 >
 > **Regla de uso:** al abrir, pausar, bloquear o cerrar un hilo, se actualiza este archivo **en el mismo commit** que el cambio. Un hilo sin fila aquí se considera olvidado. Los resultados de cada etapa siguen en su plan (`docs/planes/`) y las lecciones en `docs/aprendizajes-del-proceso.md`.
 
-Última actualización: 2026-10-22 (21:48).
+Última actualización: 2026-10-23 (00:15).
 
 ## 1. Ramas
 
@@ -28,8 +28,10 @@ Ramas `tarea/GOW8B-{DJUMP,KRA-02,RES-01,ROLL-01,SCALE-01}`: eliminadas el 2026-1
 | **Vida y respuesta al daño del jugador** (`GOW8B-DAMAGE-01`) | Cerrado y aprobado | Cascada de mitigación (evasión, parry, guardia 85%), i-frames de gracia post-golpe (45 ticks), retroceso direccional, derrota a 0 HP y reinicio rápido (`R`), Caso K verificado. | Ninguno. | [`planes/GOW8B-DAMAGE-01.md`](planes/GOW8B-DAMAGE-01.md) |
 | **HUD de vida clásico** (`GOW8B-HUD-01`) | Cerrado y aprobado | Marco de piedra y bronce, barra verde viva de 110 px, barra fantasma con retención de 200 ms y drenaje suave, notches cada 20 HP, alerta crítica, Caso L verificado. | Ninguno. | [`planes/GOW8B-HUD-01.md`](planes/GOW8B-HUD-01.md) |
 | **Orbes rojos y verdes** (`GOW8B-ORBS-01`) | Cerrado y aprobado | Eclosión balística de 5 orbes (4 rojos, 1 verde), atracción magnética fluida, curación (+15 HP), economía de orbes rojos (+20) en HUD, Caso M verificado. Bloque 4 completado al 100 %. | Ninguno. | [`planes/GOW8B-ORBS-01.md`](planes/GOW8B-ORBS-01.md) |
+| **Arte del Arquero No-Muerto** (`GOW8B-ENEMY2-ART`) | Cerrado y aprobado | Hoja de 8 poses completada y verificada (`archer.png` 512×54 px, 11 colores, $y=53$) y proyectil de flecha (`arrow.png` 16×8 px). | Ninguno. | [`planes/GOW8B-ENEMY2-ART.md`](planes/GOW8B-ENEMY2-ART.md) |
+| **Conducta e IA del Arquero No-Muerto** (`GOW8B-ENEMY2-AI`) | Activo | Máquina de estados a distancia: kiteo/posicionamiento, anticipación visual `aim` (24 ticks), disparo de proyectil flecha a 320 px/s, recuperación, daño/desvío y aturdimiento. | Ninguno. | [`planes/GOW8B-ENEMY2-AI.md`](planes/GOW8B-ENEMY2-AI.md) |
 | **Arte actual (maniquí procedural)** | Vigente pero rechazado visualmente | Sustituir por el hilo de arte de Kratos cuando reinicie la cuota. No invertir más en `gen-kratos-anim.py`. | Depende de la cuota del generador. | `scripts/gen-kratos-anim.py` |
-| **Bloque 5 en adelante: Hordas y zonas de combate** (`GOW8B-ENEMY2-ART`, etc.) | Pendiente de autorización | Bloques 1, 2, 3 y 4 completados al 100 % (13 casos A a M verificados en CDP). El siguiente bloque introduce al segundo enemigo (Arquero esqueleto), oleadas y delimitación de arenas de combate. | Requiere autorización de la usuaria para abrir Bloque 5. | [`verificacion.md`](verificacion.md) |
+| **Bloque 5 (Oleadas y Arenas)** (`GOW8B-WAVES-01`, `GOW8B-ARENA-01`) | En cola de desarrollo | Flujo de oleadas combinadas (legionarios cuerpo a cuerpo + arqueros en retaguardia) y delimitación de arenas de combate con barreras. | En secuencia tras IA del arquero. | [`verificacion.md`](verificacion.md) |
 
 ## 3. Decisiones
 

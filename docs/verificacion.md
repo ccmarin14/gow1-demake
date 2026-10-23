@@ -72,7 +72,7 @@ También el 2026-10-15, tras la aprobación de la etapa 6, la usuaria autorizó 
 
 | Orden | ID | Etapa | Estado |
 | --- | --- | --- | --- |
-| 15 | GOW8B-ENEMY2-ART | Arte del arquero: silueta y pose de ataque diferenciables | Pendiente; no activa. |
+| 15 | GOW8B-ENEMY2-ART | Arte del combatiente a distancia (segundo esbirro: Arquero No-Muerto de Ares): hoja de 8 fotogramas de 64×54 px en pixel art original (`idle`, `walk_1`, `walk_2`, `aim` con telegraph amatista, `shoot`, `hurt`, `juggle`, `death`), anclaje $y=53$, proyectil de flecha 16×8 px, paleta estricta de 11 colores, diferenciación espectral violeta y hoja de contacto de referencia. | **Aprobada** (2026-10-23) bajo el plan [`GOW8B-ENEMY2-ART`](planes/GOW8B-ENEMY2-ART.md) tras auditoría independiente de solo lectura. |
 | 16 | GOW8B-ENEMY2-AI | Conducta del arquero: posición, anticipación, trayectoria y recuperación | Pendiente; no activa. |
 | 17 | GOW8B-WAVES-01 | Flujo y ritmo de oleadas: aparición, barrera, despeje, liberación y cantidad (PR-03) | Pendiente; no activa. |
 | 18 | GOW8B-ARENA-01 **(nueva)** | Zonas de combate (delimitación y comportamiento del área de combate) | Pendiente; no activa. |
