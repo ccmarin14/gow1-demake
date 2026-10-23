@@ -507,6 +507,37 @@ async function run() {
     console.log('Case E skid frames observed:', skidFrames.map((l) => `t=${l.t}(skid=${l.skidTicks},vx=${l.playerVx.toFixed(0)},f=${l.poseFrame})`));
     console.log('Case E landing squash frames observed:', landingFrames.map((l) => `t=${l.t}(land=${l.landingTicks},s=(${l.scaleX.toFixed(2)},${l.scaleY.toFixed(2)}))`));
 
+    // CASE F: Extended Combo String J, J, J, J (light_1 -> light_2 -> light_3 -> light_4) (GOW1-COMBOS-EXT-01)
+    const caseF = await recordScenarioSequence({
+      caseId: 'combo_jjjj',
+      scenario: 'combat',
+      totalSteps: 48,
+      getActions: (t) => {
+        if (t === 1 || t === 11 || t === 21 || t === 33) return ['light-attack'];
+        return [];
+      },
+      cropW: 160,
+      cropH: 100,
+    });
+    const light4Observed = caseF.logs.find((l) => l.move === 'light_4' && l.phase === 'active');
+    console.log('Case F light_4 4-hit finisher active observed:', light4Observed ? `t=${light4Observed.t}` : 'NONE');
+
+    // CASE G: Ascension Launcher -> Air Grab / Orion's Harpoon (GOW1-COMBOS-EXT-01)
+    const caseG = await recordScenarioSequence({
+      caseId: 'ascension_air_harpoon',
+      scenario: 'combat',
+      totalSteps: 40,
+      getActions: (t) => {
+        if (t >= 1 && t <= 14) return ['heavy-attack'];
+        if (t === 22) return ['grab'];
+        return [];
+      },
+      cropW: 160,
+      cropH: 120,
+    });
+    const airGrabObserved = caseG.logs.find((l) => l.move === 'air_grab' && l.phase === 'active');
+    console.log('Case G air_grab (Orion Harpoon) active observed:', airGrabObserved ? `t=${airGrabObserved.t}` : 'NONE');
+
     console.log('\n=== ALL VERIFICATION TESTS COMPLETED SUCCESSFULLY ===');
     console.log('Artifacts in scripts/verification/output/:');
     console.log(' - combo_jjj_mosaic.png & combo_jjj.gif');
@@ -514,6 +545,8 @@ async function run() {
     console.log(' - ascension_air_dive_mosaic.png & ascension_air_dive.gif');
     console.log(' - chain_grab_mosaic.png & chain_grab.gif');
     console.log(' - loco_weight_turnaround_landing_mosaic.png & loco_weight_turnaround_landing.gif');
+    console.log(' - combo_jjjj_mosaic.png & combo_jjjj.gif');
+    console.log(' - ascension_air_harpoon_mosaic.png & ascension_air_harpoon.gif');
 
     ws.close();
   } finally {

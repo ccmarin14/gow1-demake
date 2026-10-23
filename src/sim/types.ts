@@ -60,13 +60,17 @@ export type AttackMoveId =
   | 'light_1'
   | 'light_2'
   | 'light_3'
+  | 'light_4'
+  | 'spirit_of_hercules'
   | 'plume_of_prometheus'
   | 'heavy_slam'
   | 'ascension'
   | 'air_light_1'
   | 'air_light_2'
   | 'air_heavy_slam'
-  | 'chain_grab';
+  | 'air_grab'
+  | 'chain_grab'
+  | 'dash_attack';
 
 export const PLAYER_ID = 'player';
 

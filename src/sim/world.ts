@@ -221,9 +221,16 @@ export class World {
         startRoll(player);
       }
       stepRoll(player);
-      const nowRolling = isRolling(player);
+      let nowRolling = isRolling(player);
 
-      // Attack blocked during roll
+      // Roll recovery cancellation into attack (after invulnerability window closes)
+      if (nowRolling && player.invulTicks === 0 && (lightAttackEdge || heavyAttackEdge || grabEdge)) {
+        player.rollPhase = 'none';
+        player.rollTicks = 0;
+        nowRolling = false;
+      }
+
+      // Attack blocked during active invulnerable roll
       if (!nowRolling) {
         const attackInput: AttackInput = {
           light: lightAttackEdge,

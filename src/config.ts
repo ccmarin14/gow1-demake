@@ -41,6 +41,16 @@ const MOVES = {
     arc: { startDeg: 55, endDeg: -35, radius: 96, width: 22, thickness: 18 },
     hitstop: 3, knockbackVx: 180, launchVy: 0, lungeVx: 90,
   },
+  light_4: {
+    chain: 3, startup: 4, active: 8, recovery: 10, poseFrame: 6,
+    arc: { startDeg: -40, endDeg: 45, radius: 98, width: 22, thickness: 18 },
+    hitstop: 3, knockbackVx: 160, launchVy: 0, lungeVx: 60,
+  },
+  spirit_of_hercules: {
+    chain: 3, startup: 6, active: 9, recovery: 14, poseFrame: 2,
+    arc: { startDeg: 30, endDeg: -45, radius: 105, width: 26, thickness: 22 },
+    hitstop: 4, knockbackVx: 220, launchVy: -120, lungeVx: 75, groundImpact: true,
+  },
   plume_of_prometheus: {
     chain: 2, startup: 5, active: 9, recovery: 12, poseFrame: 3,
     arc: { startDeg: 85, endDeg: -65, radius: 110, width: 24, thickness: 20 },
@@ -78,6 +88,16 @@ const MOVES = {
     arc: { startDeg: 0, endDeg: 0, radius: 135, width: 16, thickness: 14 },
     reach: { from: 20, to: 135 },
     hitstop: 4, knockbackVx: -150, launchVy: -140,
+  },
+  air_grab: {
+    chain: 0, startup: 3, active: 8, recovery: 8, poseFrame: 5,
+    arc: { startDeg: -10, endDeg: -55, radius: 120, width: 24, thickness: 20 },
+    hitstop: 4, knockbackVx: 50, launchVy: 480, groundImpact: true,
+  },
+  dash_attack: {
+    chain: 0, startup: 3, active: 8, recovery: 8, poseFrame: 1,
+    arc: { startDeg: -20, endDeg: 40, radius: 88, width: 22, thickness: 18 },
+    hitstop: 3, knockbackVx: 120, launchVy: 0, lungeVx: 110,
   },
 } as const;
 

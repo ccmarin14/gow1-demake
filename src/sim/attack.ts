@@ -268,12 +268,17 @@ function beginFromIdle(
   input: AttackInput,
   moves: AttackMoveSet,
 ): void {
-  if (input.grab && player.grounded) {
-    beginMove(player, moves.chain_grab);
+  if (input.grab) {
+    beginMove(player, player.grounded ? moves.chain_grab : moves.air_grab);
   } else if (input.heavy) {
     beginMove(player, player.grounded ? moves.heavy_slam : moves.air_heavy_slam);
   } else if (input.light) {
-    beginMove(player, player.grounded ? moves.light_1 : moves.air_light_1);
+    if (player.grounded) {
+      const isSprinting = Math.abs(player.vx) >= 110;
+      beginMove(player, isSprinting ? moves.dash_attack : moves.light_1);
+    } else {
+      beginMove(player, moves.air_light_1);
+    }
   }
 }
 
@@ -300,9 +305,12 @@ function nextMoveFor(
     if (open && input.light) {
       if (move === 'light_1') return moves.light_2;
       if (move === 'light_2') return moves.light_3;
+      if (move === 'light_3') return moves.light_4;
+      if (move === 'dash_attack') return moves.light_2;
     }
-    if (open && input.heavy && move === 'light_2') {
-      return moves.plume_of_prometheus;
+    if (open && input.heavy) {
+      if (move === 'light_2') return moves.plume_of_prometheus;
+      if (move === 'light_3') return moves.spirit_of_hercules;
     }
     return null;
   }
@@ -311,6 +319,7 @@ function nextMoveFor(
     move === 'air_light_2' ||
     (move === 'ascension' && phase === 'recovery');
   if (airChain && open) {
+    if (input.grab) return moves.air_grab;
     if (input.heavy) return moves.air_heavy_slam;
     if (input.light) {
       return move === 'air_light_1' ? moves.air_light_2 : moves.air_light_1;
