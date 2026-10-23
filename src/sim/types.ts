@@ -141,7 +141,8 @@ export interface EntityState {
     | 'death'
     | 'reposition'
     | 'aim'
-    | 'shoot';
+    | 'shoot'
+    | 'spawning';
   aiTicks: number;
   hp: number;
   maxHp: number;
@@ -174,12 +175,22 @@ export interface OrbState {
   absorbed: boolean;
 }
 
+export interface WaveState {
+  waveIndex: number;
+  totalWaves: number;
+  phase: 'spawning' | 'combat' | 'cleared' | 'complete';
+  phaseTicks: number;
+  enemiesRemaining: number;
+  totalKills: number;
+}
+
 export interface SimulationSnapshot {
   frame: number;
   timeMs: number;
   entities: EntityState[];
   orbs: OrbState[];
   arrows: ArrowState[];
+  wave?: WaveState;
   input: GameAction[];
   checksum: string;
 }

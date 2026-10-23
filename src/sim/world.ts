@@ -2,12 +2,13 @@ import { CONFIG } from '../config';
 import { checksumOf } from './checksum';
 import { stepHorizontal } from './movement';
 import type { Platform } from './scenarios';
-import { cloneEntities, DEFAULT_SCENARIO, getScenario } from './scenarios';
-import type { AttackMoveId, EntityState, GameAction, OrbState, ArrowState, SimulationSnapshot } from './types';
+import { cloneEntities, DEFAULT_SCENARIO, getScenario, archerAt, legionnaireAt } from './scenarios';
+import type { AttackMoveId, EntityState, GameAction, OrbState, ArrowState, WaveState, SimulationSnapshot } from './types';
 import { PLAYER_ID, sortActions } from './types';
 import { stepVertical, type VerticalParams } from './vertical';
 import { spawnOrbsFromDeath, stepOrbs } from './orbs';
 import { stepArcher, stepArrows } from './archer';
+import { WaveManager } from './waves';
 import {
   computeAttackHitbox,
   isEntityAttacking,
@@ -91,6 +92,8 @@ export class World {
   private orbIdCounter = 0;
   private arrows: ArrowState[] = [];
   private arrowIdCounter = 0;
+  private waveManager: WaveManager | null = null;
+  private waveEnemyIdCounter = 0;
 
   constructor() {
     this.loadScenario(DEFAULT_SCENARIO);
@@ -130,6 +133,25 @@ export class World {
 
   peekArrows(): readonly ArrowState[] {
     return this.arrows;
+  }
+
+  peekWave(): WaveState | null {
+    return this.waveManager ? this.waveManager.getState(this.targets) : null;
+  }
+
+  private spawnWaveEnemy(kind: 'legionnaire' | 'archer', x: number, facing: -1 | 1): EntityState {
+    const id = `wave-enemy-${this.waveEnemyIdCounter++}`;
+    const groundY = this.platforms[0]?.yTop ?? 236;
+    const enemy = kind === 'archer'
+      ? archerAt(id, x, groundY, facing)
+      : legionnaireAt(id, x, groundY, facing);
+    enemy.aiState = 'spawning';
+    enemy.aiTicks = 0;
+    enemy.vy = -160;
+    enemy.grounded = false;
+    this.entities.push(enemy);
+    this.targets.push(enemy);
+    return enemy;
   }
 
   spawnArrow(x: number, y: number, vx: number): ArrowState {
@@ -177,6 +199,12 @@ export class World {
     this.orbIdCounter = 0;
     this.arrows = [];
     this.arrowIdCounter = 0;
+    if (name === 'waves') {
+      this.waveManager = new WaveManager();
+      this.waveEnemyIdCounter = 0;
+    } else {
+      this.waveManager = null;
+    }
   }
 
   targetEntities(): EntityState[] {
@@ -407,6 +435,10 @@ export class World {
       }
     }
 
+    if (this.waveManager) {
+      this.waveManager.step(this.targets, this.spawnWaveEnemy.bind(this));
+    }
+
     if (this.targetPhysics) {
       const gravity = CONFIG.player.vertical.gravity;
       const maxFallSpeed = CONFIG.player.vertical.maxFallSpeed;
@@ -426,6 +458,9 @@ export class World {
               CONFIG.economy.orbs.dropPerLegionnaire.green,
             );
             target.aiTicks = 1;
+            if (this.waveManager) {
+              this.waveManager.recordKill();
+            }
           }
         } else if (target.kind === 'archer') {
           stepArcher(target, player, this.platforms, TICK_DT, this.spawnArrow.bind(this));
@@ -437,6 +472,9 @@ export class World {
               CONFIG.economy.orbs.dropPerArcher.green,
             );
             target.aiTicks = 1;
+            if (this.waveManager) {
+              this.waveManager.recordKill();
+            }
           }
         }
 
@@ -470,7 +508,10 @@ export class World {
                 target.y = platform.yTop;
                 target.vy = 0;
                 target.grounded = true;
-                if ((target.kind === 'legionnaire' || target.kind === 'archer') && target.aiState === 'juggle') {
+                if (target.aiState === 'spawning') {
+                  target.aiState = target.kind === 'archer' ? 'reposition' : 'approach';
+                  target.aiTicks = 0;
+                } else if ((target.kind === 'legionnaire' || target.kind === 'archer') && target.aiState === 'juggle') {
                   target.aiState = 'hitstun';
                   target.hitstunTicks = 12;
                   target.aiTicks = 0;
@@ -490,12 +531,14 @@ export class World {
   }
 
   snapshot(): SimulationSnapshot {
+    const waveState = this.waveManager ? this.waveManager.getState(this.targets) : undefined;
     const payload = {
       frame: this.tick,
       timeMs: this.timeMs,
       entities: this.entities.map((entity) => ({ ...entity })),
       orbs: this.orbs.map((orb) => ({ ...orb })),
       arrows: this.arrows.map((arrow) => ({ ...arrow })),
+      ...(waveState ? { wave: waveState } : {}),
       input: [...this.input],
     };
     return {

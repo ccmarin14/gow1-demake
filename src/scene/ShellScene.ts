@@ -39,6 +39,7 @@ export class ShellScene extends Phaser.Scene {
   private readonly orbSprites = new Map<string, { outer: Phaser.GameObjects.Arc; core: Phaser.GameObjects.Arc; highlight: Phaser.GameObjects.Arc }>();
   private readonly weaponLayer = new WeaponLayer();
   private defeatText: Phaser.GameObjects.Text | null = null;
+  private waveBannerText: Phaser.GameObjects.Text | null = null;
   hudLayer!: HudLayer;
 
   constructor(
@@ -130,6 +131,20 @@ export class ShellScene extends Phaser.Scene {
       .setDepth(20)
       .setVisible(false);
 
+    this.waveBannerText = this.add
+      .text(CONFIG.internal.width / 2, 40, '', {
+        color: '#facc15',
+        fontFamily: 'monospace',
+        fontSize: '11px',
+        fontStyle: 'bold',
+        backgroundColor: '#000000aa',
+        padding: { x: 8, y: 3 },
+      })
+      .setOrigin(0.5)
+      .setDepth(25)
+      .setScrollFactor(0)
+      .setVisible(false);
+
     if (import.meta.env.DEV) {
       this.lastDebugText = 'tick 0';
       this.debugText = this.add.text(155, 6, this.lastDebugText, {
@@ -172,6 +187,25 @@ export class ShellScene extends Phaser.Scene {
 
     if (this.defeatText) {
       this.defeatText.setVisible(Boolean(player && player.isDead));
+    }
+
+    if (this.waveBannerText) {
+      const wave = this.simulation.world.peekWave ? this.simulation.world.peekWave() : null;
+      if (!wave) {
+        this.waveBannerText.setVisible(false);
+      } else {
+        this.waveBannerText.setVisible(true);
+        if (wave.phase === 'complete') {
+          this.waveBannerText.setText('¡ZONA DESPEJADA!');
+          this.waveBannerText.setColor('#ffd700');
+        } else if (wave.phase === 'cleared') {
+          this.waveBannerText.setText(`OLEADA ${wave.waveIndex + 1}/${wave.totalWaves} DESPEJADA`);
+          this.waveBannerText.setColor('#4ade80');
+        } else {
+          this.waveBannerText.setText(`OLEADA ${wave.waveIndex + 1}/${wave.totalWaves} · ENEMIGOS: ${wave.enemiesRemaining}`);
+          this.waveBannerText.setColor('#facc15');
+        }
+      }
     }
 
     this.hudLayer.update(player ?? undefined, delta / 1000);
@@ -283,6 +317,7 @@ export class ShellScene extends Phaser.Scene {
         switch (target.aiState) {
           case 'idle':
           case 'patrol':
+          case 'spawning':
             frame = 0;
             break;
           case 'approach':
@@ -329,6 +364,7 @@ export class ShellScene extends Phaser.Scene {
         switch (target.aiState) {
           case 'idle':
           case 'recover':
+          case 'spawning':
             frame = 0;
             break;
           case 'reposition':

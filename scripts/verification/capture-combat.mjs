@@ -324,6 +324,7 @@ async function run() {
           const hudInfo = hm ? \` [Bar:\${hm.currentWidth}px Gst:\${hm.ghostWidth}px Orbs:\${hm.redOrbs}]\` : '';
           const arrowsLive = snap.arrows ? snap.arrows.filter((a) => a.active).length : 0;
           const arrowsInfo = arrowsLive > 0 ? \` 🏹Arr:\${arrowsLive}\` : '';
+          const waveInfo = snap.wave ? \` [W\${snap.wave.waveIndex + 1}:\${snap.wave.phase} Rem:\${snap.wave.enemiesRemaining} K:\${snap.wave.totalKills}]\` : '';
           const actionText = p.isDead
             ? 'DEAD'
             : (p.hitstunTicks > 0
@@ -343,7 +344,7 @@ async function run() {
               )
             );
           sctx.fillText(
-            \`t=\${t} HP:\${p.hp}\${hudInfo}\${arrowsInfo} \${actionText} \${isWeaponVisible ? '⚔️CHAIN' : ''}\`,
+            \`t=\${t} HP:\${p.hp}\${hudInfo}\${arrowsInfo}\${waveInfo} \${actionText} \${isWeaponVisible ? '⚔️CHAIN' : ''}\`,
             dx + 4,
             dy + 12
           );
@@ -376,6 +377,11 @@ async function run() {
             arrowsReflected: snap.arrows ? snap.arrows.filter((a) => a.reflected).length : 0,
             arrowX: snap.arrows && snap.arrows[0] ? snap.arrows[0].x : null,
             arrowVx: snap.arrows && snap.arrows[0] ? snap.arrows[0].vx : null,
+            wave: snap.wave ? { ...snap.wave } : null,
+            wavePhase: snap.wave ? snap.wave.phase : null,
+            waveIndex: snap.wave ? snap.wave.waveIndex : null,
+            waveRemaining: snap.wave ? snap.wave.enemiesRemaining : null,
+            waveKills: snap.wave ? snap.wave.totalKills : null,
             hurtInvulTicks: p.hurtInvulTicks,
             hitstunTicks: p.hitstunTicks,
             isDead: p.isDead,
@@ -895,6 +901,68 @@ async function run() {
     console.log('Case N Archer death & orb spawn (expected orbs=4, 3 red + 1 green):', archerDeathLog ? `orbs=${archerDeathLog.orbsLive},count=${archerDeathLog.orbsCount}` : 'NONE');
     console.log('Case N Settled state & orb absorption (expected redOrbs=15, liveOrbs=0):', archerOrbsAbsorbedLog ? `redOrbs=${archerOrbsAbsorbedLog.playerRedOrbs},live=${archerOrbsAbsorbedLog.orbsLive}` : 'NONE');
 
+    // CASE O: Combat Waves Flow & Pacing (GOW8B-WAVES-01)
+    // - t=1..16: Wave 1 (Vanguard) spawns (2 Legionnaires at x=320, 380).
+    // - t=17..24: Wave 1 combat phase (phase=combat, enemiesRemaining=2).
+    // - t=25: Wave 1 defeated (hp=0, aiState='death').
+    // - t=26..85: Pacing pause (phase=cleared, transitionDelayTicks=60, totalKills=2).
+    // - t=86..112: Wave 2 (Mixed Force) spawns (2 Legionnaires at x=120, 340 + 1 Archer at x=430).
+    // - t=113..119: Wave 2 combat phase (phase=combat, enemiesRemaining=3).
+    // - t=120: Wave 2 defeated (hp=0, aiState='death').
+    // - t=121..144: Encounter victory (phase=complete, totalKills=5).
+    const caseO = await recordScenarioSequence({
+      caseId: 'waves_flow_and_pacing',
+      scenario: 'waves',
+      totalSteps: 144,
+      cropW: 260,
+      cropH: 130,
+      fixedCropX: 110,
+      fixedCropY: 125,
+      getActions: (t) => {
+        const sc = window.__SHELL_SCENE;
+        // Defeat wave 1 at t=25
+        if (t === 25) {
+          const targets = sc.simulation.world.peekTargets();
+          for (const enemy of targets) {
+            if (enemy.aiState !== 'death') {
+              enemy.hp = 0;
+              enemy.aiState = 'death';
+              enemy.aiTicks = 0;
+            }
+          }
+        }
+
+        // Defeat wave 2 at t=120
+        if (t === 120) {
+          const targets = sc.simulation.world.peekTargets();
+          for (const enemy of targets) {
+            if (enemy.aiState !== 'death') {
+              enemy.hp = 0;
+              enemy.aiState = 'death';
+              enemy.aiTicks = 0;
+            }
+          }
+        }
+        return [];
+      },
+    });
+
+    const w1SpawnLog = caseO.logs.find((l) => l.t === 5);
+    const w1CombatLog = caseO.logs.find((l) => l.t === 18);
+    const w1ClearedLog = caseO.logs.find((l) => l.t === 30);
+    const w2SpawnLog = caseO.logs.find((l) => l.t === 95);
+    const w2CombatLog = caseO.logs.find((l) => l.t === 114);
+    const wCompleteLog = caseO.logs.find((l) => l.t === 125);
+    const wFinalLog = caseO.logs.find((l) => l.t === 140);
+
+    console.log('Case O Wave 1 spawning phase (expected w=0, ph=spawning, rem=2):', w1SpawnLog ? `w=${w1SpawnLog.waveIndex},ph=${w1SpawnLog.wavePhase},rem=${w1SpawnLog.waveRemaining}` : 'NONE');
+    console.log('Case O Wave 1 combat phase (expected w=0, ph=combat, rem=2):', w1CombatLog ? `w=${w1CombatLog.waveIndex},ph=${w1CombatLog.wavePhase},rem=${w1CombatLog.waveRemaining}` : 'NONE');
+    console.log('Case O Wave 1 cleared pause (expected w=0, ph=cleared, kills=2):', w1ClearedLog ? `w=${w1ClearedLog.waveIndex},ph=${w1ClearedLog.wavePhase},kills=${w1ClearedLog.waveKills}` : 'NONE');
+    console.log('Case O Wave 2 mixed spawn phase (expected w=1, ph=spawning, rem=3):', w2SpawnLog ? `w=${w2SpawnLog.waveIndex},ph=${w2SpawnLog.wavePhase},rem=${w2SpawnLog.waveRemaining}` : 'NONE');
+    console.log('Case O Wave 2 combat phase (expected w=1, ph=combat, rem=3):', w2CombatLog ? `w=${w2CombatLog.waveIndex},ph=${w2CombatLog.wavePhase},rem=${w2CombatLog.waveRemaining}` : 'NONE');
+    console.log('Case O Encounter complete (expected ph=complete, kills=5):', wCompleteLog ? `ph=${wCompleteLog.wavePhase},kills=${wCompleteLog.waveKills}` : 'NONE');
+    console.log('Case O Settled complete state (expected ph=complete, kills=5):', wFinalLog ? `ph=${wFinalLog.wavePhase},kills=${wFinalLog.waveKills}` : 'NONE');
+
     console.log('\n=== ALL VERIFICATION TESTS COMPLETED SUCCESSFULLY ===');
     console.log('Artifacts in scripts/verification/output/:');
     console.log(' - combo_jjj_mosaic.png & combo_jjj.gif');
@@ -911,6 +979,7 @@ async function run() {
     console.log(' - hud_health_bar_presentation_mosaic.png & hud_health_bar_presentation.gif');
     console.log(' - orbs_economy_and_healing_mosaic.png & orbs_economy_and_healing.gif');
     console.log(' - archer_combat_ai_mosaic.png & archer_combat_ai.gif');
+    console.log(' - waves_flow_and_pacing_mosaic.png & waves_flow_and_pacing.gif');
 
     ws.close();
   } finally {

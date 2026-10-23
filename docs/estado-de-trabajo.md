@@ -31,8 +31,8 @@ Ramas `tarea/GOW8B-{DJUMP,KRA-02,RES-01,ROLL-01,SCALE-01}`: eliminadas el 2026-1
 | **Arte del Arquero No-Muerto** (`GOW8B-ENEMY2-ART`) | Cerrado y aprobado | Hoja de 8 poses completada y verificada (`archer.png` 512×54 px, 11 colores, $y=53$) y proyectil de flecha (`arrow.png` 16×8 px). | Ninguno. | [`planes/GOW8B-ENEMY2-ART.md`](planes/GOW8B-ENEMY2-ART.md) |
 | **Conducta e IA del Arquero No-Muerto** (`GOW8B-ENEMY2-AI`) | Cerrado y aprobado | Máquina de estados completa (`reposition`, `aim` de 24 ticks, `shoot` a 280 px/s, `recover`, `hitstun`, `juggle`, `death`), reflejo Parry a 420 px/s contra el agresor, eclosión de 4 orbes, Caso N verificado en CDP. | Ninguno. | [`planes/GOW8B-ENEMY2-AI.md`](planes/GOW8B-ENEMY2-AI.md) |
 | **Arte actual (maniquí procedural)** | Vigente pero rechazado visualmente | Sustituir por el hilo de arte de Kratos cuando reinicie la cuota. No invertir más en `gen-kratos-anim.py`. | Depende de la cuota del generador. | `scripts/gen-kratos-anim.py` |
-| **Flujo y ritmo de oleadas** (`GOW8B-WAVES-01`) | Activo | Máquina de oleadas de combate (aparición de esbirros, conteo de bajas, progresión de oleadas mixtas, umbral de despeje). | Ninguno. | [`planes/GOW8B-WAVES-01.md`](planes/GOW8B-WAVES-01.md) |
-| **Zonas y delimitación de arenas** (`GOW8B-ARENA-01`) | En cola de desarrollo | Barrera mágica/puerta de niebla que confina a Kratos y la cámara durante el combate y se disipa al despejar la arena. | En secuencia tras oleadas. | [`verificacion.md`](verificacion.md) |
+| **Flujo y ritmo de oleadas** (`GOW8B-WAVES-01`) | Cerrado y aprobado | WaveManager formal (Oleada 1 vanguardia, pausa de respiro de 60 ticks, Oleada 2 mixta, victoria final con 5 bajas), spawn ascendente dinámico, banner centrado, Caso O verificado en CDP. | Ninguno. | [`planes/GOW8B-WAVES-01.md`](planes/GOW8B-WAVES-01.md) |
+| **Zonas y delimitación de arenas** (`GOW8B-ARENA-01`) | Activo | Barreras mágicas de combate (puertas de niebla/bloqueo de arena en límites izquierdo/derecho), confinamiento dinámico del jugador durante oleadas y disipación al despejar. | Ninguno. | [`planes/GOW8B-ARENA-01.md`](planes/GOW8B-ARENA-01.md) |
 
 ## 3. Decisiones
 

@@ -266,6 +266,29 @@ export const CONFIG = {
       parryStunTicks: 36,
     },
   },
+  combat: {
+    waves: {
+      transitionDelayTicks: 60,
+      spawnTelegraphTicks: 24,
+      encounters: [
+        {
+          name: 'Vanguardia',
+          spawns: [
+            { kind: 'legionnaire' as const, x: 320, delayTicks: 0, facing: -1 as const },
+            { kind: 'legionnaire' as const, x: 380, delayTicks: 15, facing: -1 as const },
+          ],
+        },
+        {
+          name: 'Fuerza Mixta',
+          spawns: [
+            { kind: 'legionnaire' as const, x: 120, delayTicks: 5, facing: 1 as const },
+            { kind: 'legionnaire' as const, x: 340, delayTicks: 15, facing: -1 as const },
+            { kind: 'archer' as const, x: 430, delayTicks: 25, facing: -1 as const },
+          ],
+        },
+      ],
+    },
+  },
   economy: {
     orbs: {
       greenOrbHeal: 15,
