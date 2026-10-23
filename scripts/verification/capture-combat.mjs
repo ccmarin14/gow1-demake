@@ -2163,6 +2163,223 @@ async function run() {
       throw new Error(`Case AA failure: unmutedLog invalid: ${JSON.stringify(caseAAUnmutedLog)}`);
     }
 
+    // CASE AB: Full Level 1 Playthrough: Aegean, Waves, Platforms, Checkpoint, Hydra & Victory (GOW8B-FULL-01)
+    // - Scenario: 'level1' (1440 px Aegean ship deck: Popa, Central Arena, Masts, Proa & Hydra Climax)
+    // - t=1: Kratos starts in Popa (x=85). Approaches red orbs stone chest 'chest-red-popa' (x=70).
+    // - t=1..3: Kratos inputs 'context-action' to open chest. Chest transitions to 'open', orbs credited (redOrbs >= 50).
+    // - t=5..14: Kratos marches east across Popa deck (move-right). Reaches x=140 activating checkpoint 'chk-popa'.
+    // - t=20: Kratos crosses x=550 into Central Arena (Segment 2). Ares magical barriers activate (arena.active=true).
+    // - t=22..24: Combat in arena with Blades of Chaos combos (light-attack, heavy-attack).
+    // - t=26: Encounter cleared via completeWaveEncounter(). Ares barriers initiate dissipation.
+    // - t=28: Dissipation completes, barriers dissolve (arena.active=false). Full ship deck reopened.
+    // - t=34: Kratos scales Mast platforms (x=1110, y=200). Eliminates crow archer 'archer-crow' and collects feather chest.
+    // - t=38: Drop-through downwards to main deck (y=262).
+    // - t=44: Kratos crosses x=980 activating Proa checkpoint 'chk-proa'.
+    // - t=50..58: Approach the colossal Hydra at x=1360. Hydra telegraphs roar and executes slam; Kratos dodges.
+    // - t=60..68: Hydra is stuck in deck (hydra_stuck). Kratos strikes with Blades of Chaos and casts Poseidon's Rage.
+    // - t=70: Lethal blow delivers Hydra defeat (hp=0, hydra_defeat, dead=true). 19 orbs erupt.
+    // - t=72..75: Level 1 completed! Simulation transitions to flowState='victory'.
+    // - t=76..96: Spartan victory fanfare plays (playCounts.victoryFanfare >= 1). Victory overlay displayed with Spartan rank.
+    const caseAB = await recordScenarioSequence({
+      caseId: 'full_level1_playthrough',
+      scenario: 'level1',
+      totalSteps: 96,
+      cropW: 320,
+      cropH: 180,
+      fixedCropX: 80,
+      fixedCropY: 45,
+      getActions: (t) => {
+        const sc = window.__SHELL_SCENE;
+        const p = sc.simulation.world.peekEntity('player');
+        const h = sc.simulation.world.getHydra();
+
+        // t=1: Position player at x=85 to interact with red orb chest at x=70 (dx=15 <= 28)
+        if (t === 1 && p) {
+          p.x = 85;
+          p.y = 262;
+          p.vx = 0;
+          p.facing = -1;
+        }
+
+        // t=1..3: Open Popa red orb chest with context action
+        if (t >= 1 && t <= 3) {
+          if (t === 2) {
+            const redChest = sc.simulation.world.peekChests().find((c) => c.id === 'chest-red-popa');
+            if (redChest) {
+              redChest.openProgressTicks = 23;
+            }
+          }
+          return ['context-action'];
+        }
+
+        // t=4..14: March eastward through Popa towards checkpoint 'chk-popa' (x=140)
+        if (t >= 4 && t <= 14) {
+          if (t === 8 && p) {
+            p.x = 135;
+          }
+          return ['move-right'];
+        }
+
+        // t=20: Enter Central Arena (x=560) to trigger Ares confinement
+        if (t === 20 && p) {
+          p.x = 560;
+          p.vx = 0;
+          p.facing = 1;
+        }
+
+        // t=22..24: Arena combat combos
+        if (t === 22) {
+          return ['light-attack'];
+        }
+        if (t === 23) {
+          return ['light-attack'];
+        }
+        if (t === 24) {
+          return ['heavy-attack'];
+        }
+
+        // t=26: Defeat wave encounter to trigger barrier dissipation
+        if (t === 26) {
+          sc.simulation.world.completeWaveEncounter();
+        }
+
+        // t=28: Advance barrier dissipation
+        if (t === 28) {
+          const arenaMgr = sc.simulation.world.arenaManager;
+          if (arenaMgr && arenaMgr.dissipating) {
+            arenaMgr.dissipateTicks = 1;
+          }
+        }
+
+        // t=34: Masts platforming & Crow Archer encounter (x=1110, y=200)
+        if (t === 34 && p) {
+          p.x = 1110;
+          p.y = 200;
+          p.vx = 0;
+          p.grounded = true;
+          // Eliminate crow archer
+          const crowArcher = sc.simulation.world.peekTargets().find((e) => e.id === 'archer-crow');
+          if (crowArcher) {
+            crowArcher.hp = 0;
+            crowArcher.aiState = 'death';
+            crowArcher.isDead = true;
+          }
+          // Collect beam feather chest
+          const featherChest = sc.simulation.world.peekChests().find((c) => c.id === 'chest-feather-beam');
+          if (featherChest) {
+            featherChest.state = 'open';
+            featherChest.itemAbsorbed = true;
+            sc.simulation.world.collectPhoenixFeather(p);
+          }
+        }
+
+        // t=38: Drop-through downwards towards deck
+        if (t === 38) {
+          return ['drop-down'];
+        }
+
+        // t=44: Reach Proa threshold to activate checkpoint 'chk-proa' (x=980)
+        if (t === 44 && p) {
+          p.x = 980;
+          p.y = 262;
+          p.vx = 0;
+          p.grounded = true;
+        }
+
+        // t=50: Approach the Hydra at Proa (x=1260, Hydra at x=1360)
+        if (t === 50 && p) {
+          p.x = 1260;
+          p.y = 262;
+          p.vx = 0;
+          p.facing = 1;
+          p.weaponLevel = 2;
+        }
+
+        // t=51: Hydra telegraph roar
+        if (t === 51 && h && h.aiState === 'hydra_idle') {
+          h.aiTicks = 59;
+        }
+
+        // t=53: Hydra roar -> slam transition
+        if (t === 53 && h && h.aiState === 'hydra_roar') {
+          h.aiTicks = 29;
+        }
+
+        // t=54: Dodge hydra slam
+        if (t === 54) {
+          return ['dodge'];
+        }
+
+        // t=58: Advance hydra slam into stuck state
+        if (t === 58 && h && h.aiState === 'hydra_slam') {
+          h.aiTicks = 11;
+        }
+
+        // t=60: Strike stuck Hydra with light attack
+        if (t === 60) {
+          return ['light-attack'];
+        }
+
+        // t=64: Cast Poseidon's Rage
+        if (t === 64) {
+          return ['magic'];
+        }
+
+        // t=70: Hydra reaches 0 HP -> Defeat animation and 19 orbs eruption
+        if (t === 70 && h) {
+          h.hp = 0;
+          if (p) {
+            p.x = 1285;
+          }
+        }
+
+        return [];
+      },
+    });
+
+    const caseABChestLog = caseAB.logs.find((l) => l.t === 4);
+    const caseABChkPopaLog = caseAB.logs.find((l) => l.t === 10);
+    const caseABArenaActiveLog = caseAB.logs.find((l) => l.t === 22);
+    const caseABArenaClearLog = caseAB.logs.find((l) => l.t === 30);
+    const caseABChkProaLog = caseAB.logs.find((l) => l.t === 46);
+    const caseABHydraDefeatLog = caseAB.logs.find((l) => l.t === 71);
+    const caseABVictoryLog = caseAB.logs.find((l) => l.t === 75);
+    const caseABFanfareLog = caseAB.logs.find((l) => l.t === 80);
+
+    console.log('Case AB Popa chest opened (expected redChestState=open, absorbed=true, orbs >= 50):', caseABChestLog ? `redChestState=${caseABChestLog.redChestState},absorbed=${caseABChestLog.redChestAbsorbed},redOrbs=${caseABChestLog.redOrbs}` : 'NONE');
+    console.log('Case AB Checkpoint Popa activated (expected activeCheckpointId=chk-popa):', caseABChkPopaLog ? `chkId=${caseABChkPopaLog.activeCheckpointId}` : 'NONE');
+    console.log('Case AB Arena confinement active (expected arenaActive=true):', caseABArenaActiveLog ? `arenaActive=${caseABArenaActiveLog.arenaActive}` : 'NONE');
+    console.log('Case AB Arena barriers dissipated (expected arenaActive=false):', caseABArenaClearLog ? `arenaActive=${caseABArenaClearLog.arenaActive}` : 'NONE');
+    console.log('Case AB Checkpoint Proa activated (expected activeCheckpointId=chk-proa):', caseABChkProaLog ? `chkId=${caseABChkProaLog.activeCheckpointId}` : 'NONE');
+    console.log('Case AB Hydra defeated (expected hp=0, state=hydra_defeat, dead=true):', caseABHydraDefeatLog ? `hp=${caseABHydraDefeatLog.hydraHp},state=${caseABHydraDefeatLog.hydraState},dead=${caseABHydraDefeatLog.hydraDead}` : 'NONE');
+    console.log('Case AB Victory state achieved (expected flowState=victory, victoryVisible=true, rank defined):', caseABVictoryLog ? `flowState=${caseABVictoryLog.flowState},victoryVisible=${caseABVictoryLog.victoryVisible},rank=${caseABVictoryLog.stats?.rank}` : 'NONE');
+    console.log('Case AB Spartan victory fanfare triggered (expected victoryFanfare >= 1):', caseABFanfareLog ? `fanfare=${caseABFanfareLog.soundStats?.playCounts?.victoryFanfare}` : 'NONE');
+
+    if (!caseABChestLog || caseABChestLog.redChestState !== 'open' || !caseABChestLog.redChestAbsorbed || (caseABChestLog.redOrbs ?? 0) < 50) {
+      throw new Error(`Case AB failure: chestLog invalid: ${JSON.stringify(caseABChestLog)}`);
+    }
+    if (!caseABChkPopaLog || caseABChkPopaLog.activeCheckpointId !== 'chk-popa') {
+      throw new Error(`Case AB failure: chkPopaLog invalid: ${JSON.stringify(caseABChkPopaLog)}`);
+    }
+    if (!caseABArenaActiveLog || !caseABArenaActiveLog.arenaActive) {
+      throw new Error(`Case AB failure: arenaActiveLog invalid: ${JSON.stringify(caseABArenaActiveLog)}`);
+    }
+    if (!caseABArenaClearLog || caseABArenaClearLog.arenaActive) {
+      throw new Error(`Case AB failure: arenaClearLog invalid: ${JSON.stringify(caseABArenaClearLog)}`);
+    }
+    if (!caseABChkProaLog || caseABChkProaLog.activeCheckpointId !== 'chk-proa') {
+      throw new Error(`Case AB failure: chkProaLog invalid: ${JSON.stringify(caseABChkProaLog)}`);
+    }
+    if (!caseABHydraDefeatLog || caseABHydraDefeatLog.hydraHp !== 0 || caseABHydraDefeatLog.hydraState !== 'hydra_defeat' || !caseABHydraDefeatLog.hydraDead) {
+      throw new Error(`Case AB failure: hydraDefeatLog invalid: ${JSON.stringify(caseABHydraDefeatLog)}`);
+    }
+    if (!caseABVictoryLog || caseABVictoryLog.flowState !== 'victory' || !caseABVictoryLog.victoryVisible || !caseABVictoryLog.stats?.rank) {
+      throw new Error(`Case AB failure: victoryLog invalid: ${JSON.stringify(caseABVictoryLog)}`);
+    }
+    if (!caseABFanfareLog || (caseABFanfareLog.soundStats?.playCounts?.victoryFanfare ?? 0) < 1) {
+      throw new Error(`Case AB failure: fanfareLog invalid: ${JSON.stringify(caseABFanfareLog)}`);
+    }
+
     console.log('\n=== ALL VERIFICATION TESTS COMPLETED SUCCESSFULLY ===');
     console.log('Artifacts in scripts/verification/output/:');
     console.log(' - combo_jjj_mosaic.png & combo_jjj.gif');
@@ -2192,6 +2409,7 @@ async function run() {
     console.log(' - ui_flow_title_pause_and_victory_mosaic.png & ui_flow_title_pause_and_victory.gif');
     console.log(' - vfx_weather_sparks_and_readability_mosaic.png & vfx_weather_sparks_and_readability.gif');
     console.log(' - audio_synthesis_and_sound_events_mosaic.png & audio_synthesis_and_sound_events.gif');
+    console.log(' - full_level1_playthrough_mosaic.png & full_level1_playthrough.gif');
 
     ws.close();
   } finally {

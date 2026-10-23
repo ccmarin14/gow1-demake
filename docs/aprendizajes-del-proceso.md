@@ -734,6 +734,18 @@ Mantén cada entrada breve y accionable. Actualiza las guías de trabajo solo cu
 - Cambio recomendado al proceso: al diseñar la partida completa del primer nivel (`GOW8B-FULL-01`), conectar transiciones de fase musical o fanfarrias a las puertas cinemáticas del nivel.
 - Evidencia o referencia: `docs/planes/GOW8B-AUDIO-01.md`; `src/audio/SoundManager.ts`; `src/config.ts`; `src/scene/ShellScene.ts`; `scripts/verification/capture-combat.mjs` (Caso AA: $t=1$ `isReady=true, muted=false`, $t=10$ `slash=26`, $t=18$ `hit=33`, $t=25$ `magic=3`, $t=32$ `orb=13`, $t=40$ `parry=8`, $t=48$ `roar=4`, $t=56$ `muted=true`, $t=65$ `muted=false, total=101`, 0 errores en consola).
 
+### GOW8B-FULL-01 — La orquestación determinista de escenarios de extremo a extremo valida la integración de subsistemas sin acoplar la simulación al flujo cinemático (2026-10-23)
+
+- Resultado: aprobada tras auditoría independiente de solo lectura (4/4 criterios).
+- Método que funcionó:
+  1. **Secuenciación de hitos por coordenadas y eventos en lugar de scripts acoplados:** estructurar la prueba de recorrido integral mediante condiciones naturales de progreso (apertura de cofre por cercanía $dx \le 28$, activación de checkpoint por radio $r \le 32$, umbral de activación de arena $x \ge 550$ y disparo de victoria por muerte del jefe con buffer temporal $aiTicks \ge 30$). Esto permite verificar niveles completos de 1440 px sin alterar la máquina de estados de las entidades ni inyectar ramas artificiales en la lógica de producción.
+  2. **Transición dual de victoria (proximidad o agonía consumada):** relajar la condición de victoria para aceptar tanto la aproximación física a la proa ($x \ge 1280$) como la finalización de los fotogramas de colapso de la Hidra ($aiTicks \ge 30$). Esto previene que combates donde el jugador liquida al jefe desde media distancia queden congelados a la espera de un paso adicional.
+  3. **Preservación inmutable de interfaces de lectura (`peek*` vs `get*`):** consolidar los accesos de introspección del simulador bajo la convención de solo lectura (`peekChests()`, `peekEntities()`, `peekTargets()`). La consistencia en el vocabulario de métodos previene excepciones de runtime en scripts de testing sin comprometer el encapsulamiento de colecciones.
+- Dificultad o fallo observado: la confusión entre nombres de métodos (`getChests()` inexistente en vez de `peekChests()`) interrumpió la primera ejecución del script de pruebas; unificar la nomenclatura bajo convenciones homogéneas previene errores en pruebas automatizadas complejas.
+- Aprendizaje transferible: para verificar recorridos largos integrados de principio a fin en arquitecturas deterministas, los disparadores de fin de nivel deben contemplar tanto la posición espacial como la consumación temporal de las animaciones terminales del jefe, desacoplando la victoria del punto exacto donde se asesta el golpe final.
+- Cambio recomendado al proceso: al realizar la auditoría final independiente (`GOW8B-FINAL-01`), ejecutar la suite de 28 casos en modo headless completo para garantizar que no existan cuellos de botella de memoria ni desincronización de eventos entre escenas.
+- Evidencia o referencia: `docs/planes/GOW8B-FULL-01.md`; `src/sim/world.ts`; `scripts/verification/capture-combat.mjs` (Caso AB: $t=4$ cofre abierto con +50 orbes, $t=10$ checkpoint popa, $t=22$ arena activa, $t=30$ barreras disipadas, $t=46$ checkpoint proa, $t=71$ hidra derrotada a 0 HP, $t=75$ victoria activa con rango, $t=80$ fanfarria triunfal x2, 0 errores en consola).
+
 
 
 

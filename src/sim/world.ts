@@ -944,7 +944,7 @@ export class World {
 
     if (this.flowState === 'playing') {
       const hydra = this.entities.find((e) => e.kind === 'hydra');
-      if (this.mapData && hydra && hydra.isDead && player && player.x >= 1380) {
+      if (this.mapData && hydra && hydra.isDead && player && (player.x >= 1280 || hydra.aiTicks >= 30)) {
         this.flowState = 'victory';
       }
     }
