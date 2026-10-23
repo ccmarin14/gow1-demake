@@ -10,7 +10,7 @@
 
 | Rama | Contenido | Estado |
 | --- | --- | --- |
-| `master` | Toda la línea aprobada del producto final integrado (34 etapas, 12 bloques completados al 100%, Sprite Maestro de Kratos en pixel art 16-bit de 12 colores con cuello visible, proporciones heroicas y manos con empuñaduras reales). | **Línea estable vigente (Versión Final Completa).** |
+| `master` | Toda la línea aprobada del producto final integrado (34 etapas completadas al 100%, Kratos en pixel art 16-bit de 12 colores con rostro espartano esculpido, Cuchillas del Caos y ciclo de carrera atlética de 8 cuadros con zancadas vivas y derrape en giro). | **Línea estable vigente (Versión Final Completa).** |
 | `tarea/KRATOS-SPRITE-MAESTRO-01` | Fase 1: Creación del Sprite Maestro de Kratos en pixel art 16-bit con cuello visible, manos reales y verificación en cubierta. | **Aprobada en reauditoría independiente — fusionada en `master`.** |
 | `arte/KRATOS-2D-SPRITE-GEN-01` | Hilo de arte; sincronizado con `master` conteniendo los sprites definitivos de Kratos. | **Cerrada y aprobada**. |
 | Etiqueta `respaldo/pre-merge-2026-10-22` | Punto de respaldo previo a la fusión y al borrado de ramas. | Conservar. |
