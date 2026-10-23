@@ -108,7 +108,7 @@ También el 2026-10-15, tras la aprobación de la etapa 6, la usuaria autorizó 
 
 | Orden | ID | Etapa | Estado |
 | --- | --- | --- | --- |
-| 26 | GOW8B-HYDRA-ART | Arte de la Hidra: cabeza, silueta y poses a escala del escenario | Pendiente; no activa. |
+| 26 | GOW8B-HYDRA-ART | Arte de la Hidra (primer gran jefe a escala naval): hoja de 8 fotogramas de $128 \times 112\text{ px}$ en pixel art original (`hydra.png` $1024 \times 112\text{ px}$: `idle_1`, `idle_2`, `roar_telegraph`, `slam_bite`, `sweep`, `hurt`, `stagger_vulnerable`, `defeat`), cuello segmentado y fauces colosales con colmillos de sable, anclaje estricto a ras de cubierta en $y=111$ en fotogramas de impacto y aturdimiento, paleta estricta de 14 colores abisales, canal alfa $100\%$ binario, hoja de contacto con silueta comparativa de Kratos e integración de animaciones en Phaser. | **Aprobada** (2026-10-23) bajo el plan [`GOW8B-HYDRA-ART`](planes/GOW8B-HYDRA-ART.md) tras auditoría independiente de solo lectura. |
 | 27 | GOW8B-HYDRA-COMBO **(nueva)** | Combate de la Hidra: avisos, patrones, daño, ventanas vulnerables y resultado | Pendiente; no activa. |
 
 ### Bloque 11 — Pulido de arte (diferido)

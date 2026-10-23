@@ -673,6 +673,19 @@ Mantén cada entrada breve y accionable. Actualiza las guías de trabajo solo cu
 - Cambio recomendado al proceso: al diseñar batallas de jefes (`GOW8B-HYDRA-COMBO`), colocar un punto de control justo en la antesala de la arena para que la derrota ante el jefe permita reintentos inmediatos sin repetir secciones previas del nivel.
 - Evidencia o referencia: `docs/planes/GOW8B-CHECK-01.md`; `src/sim/checkpoint.ts`; `src/sim/world.ts`; `src/scene/ShellScene.ts`; `scripts/verification/capture-combat.mjs` (Caso W: $t=1$ inactivo, $t=20$ activación $x \approx 180$, $t=26$ mejora arma Nivel 2, $t=32$ muerte inducida $hp=0, isDead=true$, $t=38$ reaparición en $x=180$ con $hp=100$ y `weaponLevel=2` preservado, $t=55$ métricas estables de HUD).
 
+### GOW8B-HYDRA-ART — La jerarquía de encuadre en entidades colosales, la compartimentación de anclajes de contacto y la polaridad cromática garantizan presencia monumental sin desbordar el lienzo (2026-10-23)
+
+- Resultado: aprobada tras auditoría independiente de solo lectura (4/4 criterios).
+- Método que funcionó:
+  1. **Jerarquía de escala controlada ($128 \times 112\text{ px}$ en lienzo $480 \times 270$):** dimensionar el cuadro de la criatura colosal a aproximadamente $2\times$ la escala del héroe ($128 \times 112\text{ px}$ frente a $64 \times 54\text{ px}$) permite que la cabeza y el cuello serpentino abarquen un área focal de 90-105 px de anchura y 75-90 px de altura. Esto confiere una presencia monumental e imponente sin invadir la zona superior de interfaz ($y \in [0..40]$) ni exceder los límites verticales del navío.
+  2. **Compartimentación de anclajes según naturaleza del fotograma:** en jefes colosales serpentinos, la línea de suelo no se aplica de manera uniforme: las poses de reposo, natación y rugido flotan orgánicamente a media altura, mientras que los fotogramas de impacto contra cubierta (`slam_bite`) y vulnerabilidad exhausta (`stagger_vulnerable`) deben obligatoriamente hacer contacto estricto en la base del cuadro ($y = 111$, `bbox[3] == 112`). Esto garantiza que la mordida se clave visualmente en las maderas sin dejar huecos flotantes.
+  3. **Polaridad cromática en puntos focales de peligro:** contrastar las escamas abisales frías y oscuras (`#162e34`, `#22444d`) con zonas calientes de alta saturación: fauces carmesí profundas (`#b91c1c`, `#ef4444`) e iris ámbar incandescente (`#facc15`). Esta diferenciación garantiza que el telegraph de rugido con apertura a 85° sea inmediatamente detectable por el jugador en visión periférica antes del impacto.
+- Dificultad o fallo observado: si los colmillos o mandíbulas en el mordisco en picado se quedan a 1 o 2 píxeles por encima del borde inferior, se percibe una molesta sensación de flotación sobre la madera; verificar matemáticamente en python `bbox[3] == 112` en los fotogramas de suelo previene discrepancias de anclaje.
+- Aprendizaje transferible: al generar sprites de jefes gigantes en pixel art, distinguir formalmente entre fotogramas aéreos/marinos y fotogramas de contacto terrestre fijando aserciones de bounding box en la suite de validación de assets.
+- Cambio recomendado al proceso: al implementar la lógica de combate de la Hidra (`GOW8B-HYDRA-COMBO`), acoplar los hitboxes de daño exactamente a las coordenadas y rotaciones de los fotogramas anclados en $y=111$.
+- Evidencia o referencia: `docs/planes/GOW8B-HYDRA-ART.md`; `scripts/gen-enemy-hydra.py`; `scripts/verify-enemy-hydra.py`; `public/assets/characters/hydra.png`; `docs/referencias/hydra-contact-sheet.png`; `src/scene/ShellScene.ts`.
+
+
 
 
 

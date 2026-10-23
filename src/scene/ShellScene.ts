@@ -92,6 +92,10 @@ export class ShellScene extends Phaser.Scene {
       frameHeight: 54,
     });
     this.load.image('arrow', 'assets/characters/arrow.png');
+    this.load.spritesheet('hydra', 'assets/characters/hydra.png', {
+      frameWidth: 128,
+      frameHeight: 112,
+    });
   }
 
   create(): void {
@@ -130,6 +134,7 @@ export class ShellScene extends Phaser.Scene {
     this.createLoopAnimation(IDLE_KEY, CONFIG.player.idle.frames, CONFIG.player.idle.frameRate);
     this.createLoopAnimation(AIR_KEY, CONFIG.player.air.frames, CONFIG.player.air.frameRate);
     this.createRollAnimation();
+    this.createHydraAnimations();
 
     const spawn = this.simulation.world.peekEntity(PLAYER_ID);
     const { anchorX, anchorY } = CONFIG.player.sprite;
@@ -756,6 +761,31 @@ export class ShellScene extends Phaser.Scene {
       frameRate,
       repeat: 0,
     });
+  }
+
+  private createHydraAnimations(): void {
+    if (!this.textures.exists('hydra')) {
+      return;
+    }
+    const defs: { key: string; frames: number[]; frameRate: number; repeat: number }[] = [
+      { key: 'hydra-idle', frames: [0, 1], frameRate: 3, repeat: -1 },
+      { key: 'hydra-roar', frames: [2], frameRate: 6, repeat: 0 },
+      { key: 'hydra-slam', frames: [3], frameRate: 6, repeat: 0 },
+      { key: 'hydra-sweep', frames: [4], frameRate: 6, repeat: 0 },
+      { key: 'hydra-hurt', frames: [5], frameRate: 6, repeat: 0 },
+      { key: 'hydra-stagger', frames: [6], frameRate: 6, repeat: -1 },
+      { key: 'hydra-defeat', frames: [7], frameRate: 6, repeat: 0 },
+    ];
+    for (const def of defs) {
+      if (!this.anims.exists(def.key)) {
+        this.anims.create({
+          key: def.key,
+          frames: this.anims.generateFrameNumbers('hydra', { frames: def.frames }),
+          frameRate: def.frameRate,
+          repeat: def.repeat,
+        });
+      }
+    }
   }
 
   private applyAnimation(simPlayer: Readonly<EntityState>): void {
