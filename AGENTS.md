@@ -18,6 +18,9 @@ Este repositorio contiene un juego de acción lateral 2D hecho con Phaser, TypeS
 
 ## Invariantes de Arte y Animación de Personajes (Anti-Regresión Visual)
 
+- **Uso obligatorio de skills del proyecto:**
+  * **`browser-testing-with-devtools` ([`.agents/skills/browser-testing-with-devtools/`](.agents/skills/browser-testing-with-devtools/)):** Obligatoria para toda verificación en navegador. Prohíbe validar cambios visuales o de jugabilidad sin inspección real en Chrome (captura de pantalla, estados de simulación tick a tick y consola limpia).
+  * **`pixel-art-character-consistency` ([`.agents/skills/pixel-art-character-consistency/`](.agents/skills/pixel-art-character-consistency/)):** Obligatoria para toda modificación o revisión de sprites. Hace cumplir los 4 invariantes siguientes:
 - **Prohibición de trazos vectoriales procedurales:** Queda terminantemente prohibido generar o modificar sprites de personajes humanoides mediante algoritmos de líneas (`draw_limb_segment`), polígonos matemáticos o fórmulas trigonométricas en Python. Los sprites deben ser arte pixel art rasterizado coherente, no maniquíes de alambre ni cañerías.
 - **Coherencia de Modelo Único (Cero mutaciones entre estados):** Todas las animaciones de un personaje (`idle`, `run`, `air`, `attack`, `roll`) deben derivar de la **MISMA** base anatómica y estilo visual. Si el sprite maestro tiene una cabeza, masa y armas definidas, la animación de carrera debe conservar exactamente esa misma cabeza, masa y armas. Está estrictamente prohibido que el personaje mute de estilo, proporciones o diseño al pasar de quieto a corriendo.
 - **Validación anatómica y de armas:** Verificar visualmente que cada extremidad tenga su arma correspondiente (exactamente una Cuchilla del Caos por mano, nunca dos en una sola mano) y que el rostro tenga rasgos reconocibles (ceño, perilla, nariz y tatuaje continuo de Ares).
