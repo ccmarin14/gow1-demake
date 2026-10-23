@@ -157,6 +157,8 @@ export interface EntityState {
   hurtInvulTicks: number;
   isDead: boolean;
   redOrbs: number;
+  gorgonEyes: number;
+  gorgonUpgrades: number;
 }
 
 export interface ArrowState {
@@ -199,12 +201,23 @@ export interface ArenaState {
   alpha: number;
 }
 
+export interface ChestState {
+  id: string;
+  type: 'gorgon_eye' | 'phoenix_feather' | 'red_orbs' | 'green_health';
+  x: number;
+  y: number;
+  state: 'closed' | 'opening' | 'open';
+  openProgressTicks: number;
+  itemAbsorbed: boolean;
+}
+
 export interface SimulationSnapshot {
   frame: number;
   timeMs: number;
   entities: EntityState[];
   orbs: OrbState[];
   arrows: ArrowState[];
+  chests: ChestState[];
   wave?: WaveState;
   arena?: ArenaState;
   cameraX?: number;

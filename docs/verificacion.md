@@ -94,7 +94,7 @@ También el 2026-10-15, tras la aprobación de la etapa 6, la usuaria autorizó 
 
 | Orden | ID | Etapa | Estado |
 | --- | --- | --- | --- |
-| 22 | GOW8B-PICK-01 **(nueva)** | Ojos de cíclope | Pendiente; no activa. |
+| 22 | GOW8B-PICK-01 **(nueva)** | Ojos de Górgona (cofres y expansión de vida): cofres de piedra griegos de $24 \times 18\text{ px}$ con interacción contextual `E` (`context-action`), inmovilidad determinista de 24 ticks ($v_x=0$), liberación y absorción del Ojo de Górgona, medidor de 6 casillas iluminadas en el HUD, y expansión permanente de la salud máxima de 100 a 120 HP con redimensionamiento dinámico del marco de piedra y bronce de 110 a 132 px, 5ª muesca segmentada en $x=\text{barX}+110$ y restauración completa de vida, verificado con Caso T en Chrome CDP. | **Aprobada** (2026-10-23) bajo el plan [`GOW8B-PICK-01`](planes/GOW8B-PICK-01.md) tras auditoría independiente de solo lectura. |
 | 23 | GOW8B-PICK-02 **(nueva)** | Plumas de fénix | Pendiente; no activa. |
 | 24 | GOW8B-UPGRADE-01 | Cofres y mejora de arma (H-3, resto) | Pendiente; no activa. |
 

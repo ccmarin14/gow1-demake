@@ -321,7 +321,9 @@ async function run() {
           sctx.font = 'bold 11px monospace';
           const dummyInfo = dummy ? (dummy.kind === 'legionnaire' || dummy.kind === 'archer' ? \` \${dummy.kind === 'archer' ? 'A' : 'L'}:(hp=\${dummy.hp},st=\${dummy.aiState})\` : \` D:(y=\${dummy.y.toFixed(0)},vy=\${dummy.vy.toFixed(0)})\`) : '';
           const hm = sc.hudLayer ? sc.hudLayer.getMetrics() : null;
-          const hudInfo = hm ? \` [Bar:\${hm.currentWidth}px Gst:\${hm.ghostWidth}px Orbs:\${hm.redOrbs}]\` : '';
+          const chestLive = snap.chests ? snap.chests[0] : null;
+          const chestInfo = chestLive ? \` [C:\${chestLive.state}:\${chestLive.openProgressTicks} Eyes:\${p.gorgonEyes}/6]\` : '';
+          const hudInfo = hm ? \` [Bar:\${hm.currentWidth}px Gst:\${hm.ghostWidth}px Orbs:\${hm.redOrbs}\${chestInfo}]\` : '';
           const arrowsLive = snap.arrows ? snap.arrows.filter((a) => a.active).length : 0;
           const arrowsInfo = arrowsLive > 0 ? \` 🏹Arr:\${arrowsLive}\` : '';
           const waveInfo = snap.wave ? \` [W\${snap.wave.waveIndex + 1}:\${snap.wave.phase} Rem:\${snap.wave.enemiesRemaining} K:\${snap.wave.totalKills}]\` : '';
@@ -429,6 +431,13 @@ async function run() {
             groundImpactY: p.groundImpactY,
             dropThroughTicks: p.dropThroughTicks ?? 0,
             grounded: p.grounded,
+            chests: snap.chests ? snap.chests.map((c) => ({ ...c })) : [],
+            chestState: snap.chests && snap.chests[0] ? snap.chests[0].state : null,
+            chestProgress: snap.chests && snap.chests[0] ? snap.chests[0].openProgressTicks : null,
+            chestAbsorbed: snap.chests && snap.chests[0] ? snap.chests[0].itemAbsorbed : null,
+            gorgonEyes: p.gorgonEyes ?? 0,
+            gorgonUpgrades: p.gorgonUpgrades ?? 0,
+            maxHp: p.maxHp,
           });
         }
 
@@ -1269,6 +1278,87 @@ async function run() {
     console.log('Case S Elevated archer defeat on beam (expected hp=0, state=death):', beamKillLog ? `hp=${beamKillLog.targetHp},st=${beamKillLog.targetState}` : 'NONE');
     console.log('Case S Beam shockwave impact (expected impactY=138, impact>0):', beamImpactLog ? `impY=${beamImpactLog.groundImpactY},impTicks=${beamImpactLog.groundImpact}` : 'NONE');
 
+    // CASE T: Gorgon Eye Stone Chest, Collection & Health Bar Expansion (GOW8B-PICK-01)
+    // - Scenario: 'chest' (Kratos at x=160, Stone Chest at x=190, y=262).
+    // - t=1: Kratos approached into interaction range (x=168, distance=22 px <= 28 px).
+    // - t=1..24: Kratos presses/holds 'context-action' (E).
+    //   - Chest state is 'opening' throughout ticks 1..24 with openProgressTicks incrementing 1..24.
+    //   - Kratos is firmly anchored in opening action (vx = 0).
+    // - t=25: Chest completes opening ('open'), Eye of Gorgon rises and is absorbed (itemAbsorbed = true, gorgonEyes = 1).
+    // - t=30: Simulates gaining 5 more Gorgon Eyes to complete the 6th eye upgrade:
+    //   - maxHp expands permanently (+20 HP: 100 -> 120 HP).
+    //   - hp restored fully: 120/120 HP.
+    //   - gorgonUpgrades = 1, gorgonEyes resets to 0.
+    // - t=35..60: HUD metrics verify dynamic health bar expansion:
+    //   - maxHp === 120, currentHp === 120.
+    //   - currentWidth === 132 (expanded from 110 px).
+    //   - 5th segment notch active at x = barX + 110 px.
+    const caseT = await recordScenarioSequence({
+      caseId: 'gorgon_eye_chest_and_health_upgrade',
+      scenario: 'chest',
+      totalSteps: 60,
+      cropW: 240,
+      cropH: 140,
+      fixedCropX: 60,
+      fixedCropY: 140,
+      getActions: (t) => {
+        const sc = window.__SHELL_SCENE;
+        const p = sc.simulation.world.peekEntity('player');
+
+        // t=1: Approach into interaction range (x=168, chest at x=190, dx=22 <= 28)
+        if (t === 1 && p) {
+          p.x = 168;
+          p.y = 262;
+          p.vx = 0;
+          p.vy = 0;
+        }
+
+        // t=1..24: Opening action (E)
+        if (t >= 1 && t <= 24) {
+          return ['context-action'];
+        }
+
+        // t=30: Simulate collecting 5 remaining eyes to trigger the 6th eye upgrade
+        if (t === 30 && p) {
+          for (let i = 0; i < 5; i += 1) {
+            sc.simulation.world.collectGorgonEye(p);
+          }
+        }
+
+        return [];
+      },
+    });
+
+    const chestStartLog = caseT.logs.find((l) => l.t === 1);
+    const chestMidLog = caseT.logs.find((l) => l.t === 12);
+    const chestLastOpeningLog = caseT.logs.find((l) => l.t === 24);
+    const chestOpenCompleteLog = caseT.logs.find((l) => l.t === 25);
+    const healthUpgradeLog = caseT.logs.find((l) => l.t === 35);
+    const finalHudLog = caseT.logs.find((l) => l.t === 60);
+
+    console.log('Case T Chest opening initiated (expected state=opening, prog=1, vx=0):', chestStartLog ? `state=${chestStartLog.chestState},prog=${chestStartLog.chestProgress},vx=${chestStartLog.playerVx.toFixed(1)}` : 'NONE');
+    console.log('Case T Chest opening mid-progress (expected state=opening, prog=12, vx=0):', chestMidLog ? `state=${chestMidLog.chestState},prog=${chestMidLog.chestProgress},vx=${chestMidLog.playerVx.toFixed(1)}` : 'NONE');
+    console.log('Case T Chest opening final tick (expected state=opening, prog=24, vx=0):', chestLastOpeningLog ? `state=${chestLastOpeningLog.chestState},prog=${chestLastOpeningLog.chestProgress},vx=${chestLastOpeningLog.playerVx.toFixed(1)}` : 'NONE');
+    console.log('Case T Chest fully open & eye absorbed (expected state=open, absorbed=true, eyes=1):', chestOpenCompleteLog ? `state=${chestOpenCompleteLog.chestState},abs=${chestOpenCompleteLog.chestAbsorbed},eyes=${chestOpenCompleteLog.gorgonEyes}` : 'NONE');
+    console.log('Case T 6th Gorgon Eye health upgrade (expected maxHp=120, hp=120, upgr=1, eyes=0):', healthUpgradeLog ? `maxHp=${healthUpgradeLog.maxHp},hp=${healthUpgradeLog.playerHp},upgr=${healthUpgradeLog.gorgonUpgrades},eyes=${healthUpgradeLog.gorgonEyes}` : 'NONE');
+    console.log('Case T HUD expanded health bar metrics (expected maxHp=120, width=132):', finalHudLog && finalHudLog.hud ? `maxHp=${finalHudLog.hud.maxHp},currentHp=${finalHudLog.hud.currentHp},width=${finalHudLog.hud.currentWidth}` : 'NONE');
+
+    if (!chestStartLog || chestStartLog.chestState !== 'opening' || chestStartLog.chestProgress !== 1) {
+      throw new Error(`Case T failure: chestStartLog invalid: ${JSON.stringify(chestStartLog)}`);
+    }
+    if (!chestLastOpeningLog || chestLastOpeningLog.chestState !== 'opening' || chestLastOpeningLog.chestProgress !== 24) {
+      throw new Error(`Case T failure: chestLastOpeningLog invalid: ${JSON.stringify(chestLastOpeningLog)}`);
+    }
+    if (!chestOpenCompleteLog || chestOpenCompleteLog.chestState !== 'open' || !chestOpenCompleteLog.chestAbsorbed || chestOpenCompleteLog.gorgonEyes !== 1) {
+      throw new Error(`Case T failure: chestOpenCompleteLog invalid: ${JSON.stringify(chestOpenCompleteLog)}`);
+    }
+    if (!healthUpgradeLog || healthUpgradeLog.maxHp !== 120 || healthUpgradeLog.playerHp !== 120 || healthUpgradeLog.gorgonUpgrades !== 1) {
+      throw new Error(`Case T failure: healthUpgradeLog invalid: ${JSON.stringify(healthUpgradeLog)}`);
+    }
+    if (!finalHudLog || !finalHudLog.hud || finalHudLog.hud.maxHp !== 120 || finalHudLog.hud.currentHp !== 120 || finalHudLog.hud.currentWidth !== 132) {
+      throw new Error(`Case T failure: finalHudLog invalid: ${JSON.stringify(finalHudLog)}`);
+    }
+
     console.log('\n=== ALL VERIFICATION TESTS COMPLETED SUCCESSFULLY ===');
     console.log('Artifacts in scripts/verification/output/:');
     console.log(' - combo_jjj_mosaic.png & combo_jjj.gif');
@@ -1290,6 +1380,7 @@ async function run() {
     console.log(' - poseidons_rage_magic_aoe_mosaic.png & poseidons_rage_magic_aoe.gif');
     console.log(' - map_scroll_and_segments_mosaic.png & map_scroll_and_segments.gif');
     console.log(' - platforming_verticality_and_drop_mosaic.png & platforming_verticality_and_drop.gif');
+    console.log(' - gorgon_eye_chest_and_health_upgrade_mosaic.png & gorgon_eye_chest_and_health_upgrade.gif');
 
     ws.close();
   } finally {

@@ -17,6 +17,8 @@ export interface HudMetrics {
   isDead: boolean;
   ghostPauseTimer: number;
   redOrbs: number;
+  gorgonEyes: number;
+  gorgonUpgrades: number;
 }
 
 /**
@@ -78,6 +80,10 @@ export class HudLayer {
   private readonly redOrbIconHighlight: Phaser.GameObjects.Arc;
   private readonly redOrbsText: Phaser.GameObjects.Text;
 
+  // Ranuras ornamentales de Ojos de Górgona bajo el medallón
+  private readonly gorgonEyeSlots: Phaser.GameObjects.Rectangle[] = [];
+  private readonly gorgonEyeGems: Phaser.GameObjects.Rectangle[] = [];
+
   // Estado del drenaje fantasma
   private prevHp = 100;
   private ghostHp = 100;
@@ -97,6 +103,8 @@ export class HudLayer {
     isDead: false,
     ghostPauseTimer: 0,
     redOrbs: 0,
+    gorgonEyes: 0,
+    gorgonUpgrades: 0,
   };
 
   constructor(scene: Phaser.Scene) {
@@ -182,8 +190,8 @@ export class HudLayer {
       .setDepth(depth + 2);
     this.elements.push(this.greenBarShadow);
 
-    // Notches clásicas de segmento (cada 22 px = 20 HP)
-    for (let s = 1; s <= 4; s += 1) {
+    // Notches clásicas de segmento (cada 22 px = 20 HP, 5 muescas para hasta 120 HP)
+    for (let s = 1; s <= 5; s += 1) {
       const notchX = barX + s * 22;
       const notch = scene.add
         .rectangle(notchX, barY, 1, barHeight, 0x0a2612, 0.75)
@@ -313,6 +321,28 @@ export class HudLayer {
       .setDepth(depth + 6)
       .setShadow(1, 1, '#000000', 1);
     this.elements.push(this.redOrbsText);
+
+    // 9. Ranuras ornamentales de Ojos de Górgona bajo el medallón (6 casillas)
+    const eyeSlotY = y + barHeight + 9;
+    const startSlotX = x - 10;
+    for (let i = 0; i < 6; i += 1) {
+      const sx = startSlotX + i * 4;
+      const slotBg = scene.add
+        .rectangle(sx, eyeSlotY, 3, 3, 0x18100c)
+        .setOrigin(0.5, 0.5)
+        .setScrollFactor(0)
+        .setDepth(depth + 6);
+      this.gorgonEyeSlots.push(slotBg);
+      this.elements.push(slotBg);
+
+      const gem = scene.add
+        .rectangle(sx, eyeSlotY, 2, 2, 0x064e3b, 0.35)
+        .setOrigin(0.5, 0.5)
+        .setScrollFactor(0)
+        .setDepth(depth + 7);
+      this.gorgonEyeGems.push(gem);
+      this.elements.push(gem);
+    }
   }
 
   update(player: EntityState | undefined, dt: number): void {
@@ -333,8 +363,20 @@ export class HudLayer {
 
     const maxHp = player.maxHp > 0 ? player.maxHp : 100;
     const currentHp = player.isDead ? 0 : Math.max(0, player.hp);
-    const { barWidth, barHeight, manaBarWidth, manaBarHeight, ghostDrainSpeed, ghostPauseMs, criticalHpThreshold } =
+    const { barHeight, manaBarWidth, manaBarHeight, ghostDrainSpeed, ghostPauseMs, criticalHpThreshold } =
       CONFIG.presentation.hud;
+    const targetBarWidth = maxHp >= 120 ? (CONFIG.presentation.hud.upgradedBarWidth ?? 132) : CONFIG.presentation.hud.barWidth;
+
+    // Redimensionamiento dinámico del marco exterior cuando maxHp se expande a 120 HP
+    const barX = CONFIG.presentation.hud.x + 10;
+    const barY = CONFIG.presentation.hud.y;
+    const frameW = targetBarWidth + 4;
+    const frameH = barHeight + 4;
+    this.frameBg.setSize(frameW, frameH);
+    this.frameTopBevel.setSize(frameW, 1);
+    this.frameBottomShadow.setSize(frameW, 1);
+    this.frameEndCap.setPosition(barX + targetBarWidth + 1, barY - 2);
+    this.channelTrough.setSize(targetBarWidth, barHeight);
 
     // Detección de reinicio, curación o daño
     if (currentHp > this.prevHp) {
@@ -366,8 +408,8 @@ export class HudLayer {
     // Cálculo de anchos en píxeles enteros
     const ratio = Math.max(0, Math.min(1, currentHp / maxHp));
     const ghostRatio = Math.max(0, Math.min(1, this.ghostHp / maxHp));
-    const currentWidth = Math.round(barWidth * ratio);
-    const ghostWidth = Math.round(barWidth * ghostRatio);
+    const currentWidth = Math.round(targetBarWidth * ratio);
+    const ghostWidth = Math.round(targetBarWidth * ghostRatio);
 
     // 1. Barra frontal verde
     if (currentWidth > 0) {
@@ -392,7 +434,9 @@ export class HudLayer {
     // 3. Notches de segmento
     for (let i = 0; i < this.segmentNotches.length; i += 1) {
       const notchOffset = (i + 1) * 22;
-      this.segmentNotches[i].setVisible(ghostWidth > notchOffset);
+      const notchHp = (i + 1) * 20;
+      const notchExists = notchHp < maxHp;
+      this.segmentNotches[i].setVisible(notchExists && ghostWidth > notchOffset);
     }
 
     // 4. Alerta de salud crítica
@@ -401,7 +445,7 @@ export class HudLayer {
       this.criticalPulseTimer += dt * 6;
       const pulseAlpha = 0.2 + 0.3 * Math.abs(Math.sin(this.criticalPulseTimer));
       this.criticalGlow
-        .setSize(currentWidth > 0 ? currentWidth : barWidth, barHeight)
+        .setSize(currentWidth > 0 ? currentWidth : targetBarWidth, barHeight)
         .setAlpha(pulseAlpha)
         .setVisible(true);
     } else {
@@ -431,6 +475,14 @@ export class HudLayer {
     const redOrbs = player.redOrbs ?? 0;
     this.redOrbsText.setText(`ORBES: ${redOrbs}`);
 
+    // 8. Iluminación de ranuras de Ojos de Górgona
+    const gorgonEyes = player.gorgonEyes ?? 0;
+    const gorgonUpgrades = player.gorgonUpgrades ?? 0;
+    for (let i = 0; i < 6; i += 1) {
+      const isLit = i < gorgonEyes;
+      this.gorgonEyeGems[i].setFillStyle(isLit ? 0x22c55e : 0x064e3b, isLit ? 1.0 : 0.35);
+    }
+
     // Registro de métricas para introspección y tests CDP
     this.lastMetrics = {
       currentHp,
@@ -447,6 +499,8 @@ export class HudLayer {
       isDead: Boolean(player.isDead),
       ghostPauseTimer: Number(this.ghostPauseTimer.toFixed(3)),
       redOrbs,
+      gorgonEyes,
+      gorgonUpgrades,
     };
   }
 
@@ -460,5 +514,7 @@ export class HudLayer {
     }
     this.elements.length = 0;
     this.segmentNotches.length = 0;
+    this.gorgonEyeSlots.length = 0;
+    this.gorgonEyeGems.length = 0;
   }
 }

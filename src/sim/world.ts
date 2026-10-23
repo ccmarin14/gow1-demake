@@ -2,12 +2,13 @@ import { CONFIG } from '../config';
 import { checksumOf } from './checksum';
 import { stepHorizontal } from './movement';
 import type { Platform } from './scenarios';
-import { cloneEntities, DEFAULT_SCENARIO, getScenario, archerAt, legionnaireAt } from './scenarios';
-import type { AttackMoveId, EntityState, GameAction, OrbState, ArrowState, WaveState, ArenaState, SimulationSnapshot } from './types';
+import { cloneChests, cloneEntities, DEFAULT_SCENARIO, getScenario, archerAt, legionnaireAt } from './scenarios';
+import type { AttackMoveId, ChestState, EntityState, GameAction, OrbState, ArrowState, WaveState, ArenaState, SimulationSnapshot } from './types';
 import { PLAYER_ID, sortActions } from './types';
 import { stepVertical, type VerticalParams } from './vertical';
 import { spawnOrbsFromDeath, stepOrbs } from './orbs';
 import { stepArcher, stepArrows } from './archer';
+import { stepChests, collectGorgonEye } from './chests';
 import { WaveManager } from './waves';
 import { ArenaManager } from './arena';
 import {
@@ -96,6 +97,7 @@ export class World {
   private orbIdCounter = 0;
   private arrows: ArrowState[] = [];
   private arrowIdCounter = 0;
+  private chests: ChestState[] = [];
   private waveManager: WaveManager | null = null;
   private waveEnemyIdCounter = 0;
   private arenaManager: ArenaManager | null = null;
@@ -141,6 +143,16 @@ export class World {
 
   peekArrows(): readonly ArrowState[] {
     return this.arrows;
+  }
+
+  peekChests(): readonly ChestState[] {
+    return this.chests;
+  }
+
+  collectGorgonEye(target?: EntityState): boolean {
+    const p = target ?? this.peekEntity(PLAYER_ID);
+    if (!p) return false;
+    return collectGorgonEye(p);
   }
 
   peekWave(): WaveState | null {
@@ -239,6 +251,7 @@ export class World {
     this.orbIdCounter = 0;
     this.arrows = [];
     this.arrowIdCounter = 0;
+    this.chests = cloneChests(scenario.chests ?? []);
     if (name === 'waves') {
       this.waveManager = new WaveManager();
       this.waveEnemyIdCounter = 0;
@@ -375,9 +388,10 @@ export class World {
         );
       } else {
         const inHitstun = player.hitstunTicks > 0;
+        const isOpeningChest = this.chests.some((c) => c.state === 'opening');
 
-        // Buffer attack inputs on new flanks (edges) even during startup, recovery or hitstop (unless in hitstun)
-        if (!inHitstun) {
+        // Buffer attack inputs on new flanks (edges) even during startup, recovery or hitstop (unless in hitstun or opening chest)
+        if (!inHitstun && !isOpeningChest) {
           if (lightAttackEdge) {
             player.attackBufferAction = 'light-attack';
             player.attackBufferTicks = CONFIG.player.attack.inputBufferTicks;
@@ -397,7 +411,7 @@ export class World {
         }
 
         // Invocación y ejecución de magia 'Ira de Poseidón'
-        if (magicEdge && player.grounded && !inHitstun) {
+        if (magicEdge && player.grounded && !inHitstun && !isOpeningChest) {
           stepMagic(player, true, this.targets);
         } else if (player.magicPhase !== 'none') {
           stepMagic(player, false, this.targets);
@@ -416,14 +430,14 @@ export class World {
         }
 
         // Dodge: only on ground, consume action on new flank (edge), uninterruptible while active
-        if (!rolling && !attacking && !nowCastingMagic && dodgeEdge && player.grounded && !inHitstun) {
+        if (!rolling && !attacking && !nowCastingMagic && !isOpeningChest && dodgeEdge && player.grounded && !inHitstun) {
           startRoll(player);
         }
         stepRoll(player);
         let nowRolling = isRolling(player);
 
         // Roll recovery cancellation into attack (after invulnerability window closes)
-        if (nowRolling && player.invulTicks === 0 && (lightAttackEdge || heavyAttackEdge || grabEdge) && !inHitstun) {
+        if (nowRolling && player.invulTicks === 0 && (lightAttackEdge || heavyAttackEdge || grabEdge) && !inHitstun && !isOpeningChest) {
           player.rollPhase = 'none';
           player.rollTicks = 0;
           nowRolling = false;
@@ -438,15 +452,15 @@ export class World {
           player.parryActive = false;
         }
 
-        // Guard: only on ground, not rolling, not attacking, not attacking on this tick, not in hitstun
-        if (!nowRolling && !attacking && !nowCastingMagic && !hasAttackEdge && wantsGuard && player.grounded && player.guardPhase === 'none' && !inHitstun) {
+        // Guard: only on ground, not rolling, not attacking, not attacking on this tick, not in hitstun, not opening chest
+        if (!nowRolling && !attacking && !nowCastingMagic && !isOpeningChest && !hasAttackEdge && wantsGuard && player.grounded && player.guardPhase === 'none' && !inHitstun) {
           startGuard(player);
         }
-        stepGuard(player, wantsGuard && !hasAttackEdge && !nowRolling && !nowCastingMagic && !inHitstun);
+        stepGuard(player, wantsGuard && !hasAttackEdge && !nowRolling && !nowCastingMagic && !inHitstun && !isOpeningChest);
         const nowGuarding = isGuarding(player);
 
-        // Attack blocked during active invulnerable roll, while actively guarding, during magic, or during hitstun
-        if (!nowRolling && !nowGuarding && !nowCastingMagic && !inHitstun) {
+        // Attack blocked during active invulnerable roll, while actively guarding, during magic, during hitstun, or while opening chest
+        if (!nowRolling && !nowGuarding && !nowCastingMagic && !inHitstun && !isOpeningChest) {
           const attackInput: AttackInput = {
             light: lightAttackEdge,
             heavy: heavyAttackEdge,
@@ -480,8 +494,8 @@ export class World {
           }
         }
 
-        // Lock horizontal control/facing during rolls, active attack slashes, guard, magic, and hitstun
-        if (nowGuarding || nowCastingMagic) {
+        // Lock horizontal control/facing during rolls, active attack slashes, guard, magic, hitstun, and chest opening
+        if (nowGuarding || nowCastingMagic || isOpeningChest) {
           player.vx = 0;
         }
         if (this.mapData && this.arenaManager && !this.arenaTriggered && !this.arenaManager.isActive()) {
@@ -490,7 +504,7 @@ export class World {
             this.arenaManager.activate();
           }
         }
-        const horizontalLocked = nowRolling || player.attackPhase === 'active' || nowGuarding || inHitstun || nowCastingMagic;
+        const horizontalLocked = nowRolling || player.attackPhase === 'active' || nowGuarding || inHitstun || nowCastingMagic || isOpeningChest;
         const marginX = this.mapData ? 16 : (CONFIG.player.sprite.width / 2);
         const playerMinX = (this.arenaManager && this.arenaManager.isActive())
           ? this.arenaManager.getMinX() + marginX
@@ -512,7 +526,7 @@ export class World {
           horizontalLocked,
         );
         const nowAttacking = isEntityAttacking(player);
-        const canJumpEdge = jumpEdge && !nowRolling && !nowAttacking && !nowGuarding && !inHitstun && !nowCastingMagic;
+        const canJumpEdge = jumpEdge && !nowRolling && !nowAttacking && !nowGuarding && !inHitstun && !nowCastingMagic && !isOpeningChest;
         // Air attack float: 30% gravity while active slashes slice through the air
         const isAirAttacking = !player.grounded && player.attackPhase === 'active';
         const gravityScale = isAirAttacking ? 0.3 : 1.0;
@@ -647,6 +661,7 @@ export class World {
       }
     }
     stepOrbs(this.orbs, player, TICK_DT);
+    stepChests(this.chests, player, this.input);
 
     if (this.arenaManager) {
       const waveState = this.waveManager ? this.waveManager.getState(this.targets) : null;
@@ -682,6 +697,7 @@ export class World {
       entities: this.entities.map((entity) => ({ ...entity })),
       orbs: this.orbs.map((orb) => ({ ...orb })),
       arrows: this.arrows.map((arrow) => ({ ...arrow })),
+      chests: this.chests.map((chest) => ({ ...chest })),
       ...(waveState ? { wave: waveState } : {}),
       ...(arenaState ? { arena: arenaState } : {}),
       ...(this.mapData

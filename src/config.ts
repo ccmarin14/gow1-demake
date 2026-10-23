@@ -322,6 +322,15 @@ export const CONFIG = {
       magnetSpeed: 320,
       burstImpulseVy: -110,
     },
+    chests: {
+      interactionRadius: 28,
+      verticalTolerance: 16,
+      openDurationTicks: 24,
+      gorgonEyesPerUpgrade: 6,
+      healthUpgradeBonus: 20,
+      eyeRiseSpeed: -80,
+      eyeMagnetSpeed: 260,
+    },
   },
   // Reference scale for map/level stages; every field is computed from the
   // values above (see `src/scale.ts`).
@@ -431,6 +440,7 @@ export const CONFIG = {
       x: 16,
       y: 14,
       barWidth: 110,
+      upgradedBarWidth: 132,
       barHeight: 8,
       manaBarWidth: 80,
       manaBarHeight: 5,
@@ -439,6 +449,18 @@ export const CONFIG = {
       ghostPauseMs: 200,
       criticalHpThreshold: 25,
       depth: 100,
+    },
+    chest: {
+      width: 24,
+      height: 18,
+      stoneColor: 0x57534e,
+      stoneHighlightColor: 0x78716c,
+      stoneShadowColor: 0x292524,
+      bronzeColor: 0x92662c,
+      bronzeHighlightColor: 0xc49a45,
+      emeraldColor: 0x22c55e,
+      emeraldGlowColor: 0x4ade80,
+      depth: 2,
     },
   },
 } as const;

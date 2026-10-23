@@ -1,5 +1,5 @@
 import { CONFIG } from '../config';
-import type { EntityState } from './types';
+import type { ChestState, EntityState } from './types';
 import { PLAYER_ID } from './types';
 
 export interface Platform {
@@ -14,6 +14,7 @@ export interface Scenario {
   platforms: Platform[];
   /** Targets integrate knockback/launch (gravity, friction, platforms). */
   targetPhysics?: boolean;
+  chests?: ChestState[];
 }
 
 const GROUND_Y = 262;
@@ -65,6 +66,8 @@ function playerAt(x: number, y: number): EntityState {
     hurtInvulTicks: 0,
     isDead: false,
     redOrbs: 0,
+    gorgonEyes: 0,
+    gorgonUpgrades: 0,
   };
 }
 
@@ -115,6 +118,8 @@ function dummyAt(id: string, x: number, y: number, facing: -1 | 1 = 1, grounded 
     hurtInvulTicks: 0,
     isDead: false,
     redOrbs: 0,
+    gorgonEyes: 0,
+    gorgonUpgrades: 0,
   };
 }
 
@@ -165,6 +170,8 @@ export function legionnaireAt(id: string, x: number, y: number, facing: -1 | 1 =
     hurtInvulTicks: 0,
     isDead: false,
     redOrbs: 0,
+    gorgonEyes: 0,
+    gorgonUpgrades: 0,
   };
 }
 
@@ -215,6 +222,25 @@ export function archerAt(id: string, x: number, y: number, facing: -1 | 1 = -1, 
     hurtInvulTicks: 0,
     isDead: false,
     redOrbs: 0,
+    gorgonEyes: 0,
+    gorgonUpgrades: 0,
+  };
+}
+
+export function chestAt(
+  id: string,
+  type: ChestState['type'],
+  x: number,
+  y: number,
+): ChestState {
+  return {
+    id,
+    type,
+    x,
+    y,
+    state: 'closed',
+    openProgressTicks: 0,
+    itemAbsorbed: false,
   };
 }
 
@@ -311,6 +337,14 @@ register({
 });
 
 register({
+  name: 'chest',
+  entities: [playerAt(160, GROUND_Y)],
+  platforms: [{ x1: 0, x2: 480, yTop: GROUND_Y }],
+  chests: [chestAt('chest-gorgon-1', 'gorgon_eye', 190, GROUND_Y)],
+  targetPhysics: true,
+});
+
+register({
   name: 'level1',
   entities: [
     playerAt(100, GROUND_Y),
@@ -322,6 +356,10 @@ register({
     { x1: 1040, x2: 1180, yTop: 200 },
     { x1: 1100, x2: 1240, yTop: 138 },
     { x1: 1310, x2: 1440, yTop: 218 },
+  ],
+  chests: [
+    chestAt('chest-popa', 'gorgon_eye', 240, 226),
+    chestAt('chest-proa', 'gorgon_eye', 1360, 218),
   ],
   targetPhysics: true,
 });
@@ -342,4 +380,8 @@ export function scenarioNames(): string[] {
 
 export function cloneEntities(entities: readonly EntityState[]): EntityState[] {
   return entities.map((entity) => ({ ...entity }));
+}
+
+export function cloneChests(chests: readonly ChestState[]): ChestState[] {
+  return chests.map((chest) => ({ ...chest }));
 }
