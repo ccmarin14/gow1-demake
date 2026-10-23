@@ -746,6 +746,18 @@ Mantén cada entrada breve y accionable. Actualiza las guías de trabajo solo cu
 - Cambio recomendado al proceso: al realizar la auditoría final independiente (`GOW8B-FINAL-01`), ejecutar la suite de 28 casos en modo headless completo para garantizar que no existan cuellos de botella de memoria ni desincronización de eventos entre escenas.
 - Evidencia o referencia: `docs/planes/GOW8B-FULL-01.md`; `src/sim/world.ts`; `scripts/verification/capture-combat.mjs` (Caso AB: $t=4$ cofre abierto con +50 orbes, $t=10$ checkpoint popa, $t=22$ arena activa, $t=30$ barreras disipadas, $t=46$ checkpoint proa, $t=71$ hidra derrotada a 0 HP, $t=75$ victoria activa con rango, $t=80$ fanfarria triunfal x2, 0 errores en consola).
 
+### GOW8B-ART-KRA — El pipeline de cuantización con paleta compartida y anclaje físico garantiza coherencia estilística en conjuntos multipose sin distorsión de escala ni conflictos con capas de armas procedurales (2026-10-23)
+
+- Resultado: aprobada tras auditoría independiente de solo lectura (5/5 criterios).
+- Método que funcionó:
+  1. **Downscaling con factor fijo y anclaje estricto a ras de suelo:** generar los fotogramas en alta resolución (1024×1024 px) sobre croma magenta plano (`#FF00FF`) y reducirlos con un factor de caja matemático idéntico (`56 / 870`). Para poses agachadas o en rodada (`roll_0` a `roll_3`), mantener la silueta en su escala anatómica proporcional sobre la línea inferior de contacto en lugar de rellenar el lienzo, asegurando que la figura no se infle desproporcionadamente al reducirla.
+  2. **Paleta compartida global con reserva de acentos de alta prioridad:** en vez de cuantizar cada fotograma o spritesheet de forma aislada (lo que dispersaba el conteo a más de 22 colores distintos), construir una paleta global unificada fijando un máximo de 12 colores y reservando explícitamente los acentos de baja frecuencia espacial pero máxima relevancia visual (tatuaje carmesí `#b03028` y runas naranjas `#ff8c1a`).
+  3. **Desacoplamiento entre manos en sprites y proyectiles/cadenas de WeaponLayer:** marcar en el contrato de animación las poses de ataque activas como `rear_only` u `rear_only_opposite` para que el sprite dibuje únicamente la hoja trasera o pasiva, delegando a la capa procedural de armas (`WeaponLayer`) el trazado dinámico de la cadena articulada y la Cuchilla del Caos en movimiento. Esto evita que aparezcan tres hojas simultáneas durante los combos.
+- Dificultad o fallo observado: poses de rodada escaladas para ocupar el lienzo completo en alta resolución provocaban que Kratos pareciera un gigante al rodar comparado con su pose erguida; ubicar los pies y el suelo en la línea basal inferior conservó la altura exacta de 59 px y el contacto físico en $y=58$.
+- Aprendizaje transferible: al integrar sprites 2D generados externamente en motores que superponen efectos o armas procedurales sobre los personajes, el contrato de poses debe especificar qué extremidades u objetos son puramente cosméticos en el sprite y cuáles se simulan en código, manteniendo además un factor de escala universal para no distorsionar las dimensiones anatómicas entre acciones erguidas y agachadas.
+- Cambio recomendado al proceso: al realizar la auditoría final independiente (`GOW8B-FINAL-01`), validar exhaustivamente que los 22 fotogramas de Kratos se sincronicen armónicamente con los 8 fotogramas del Legionario, los 8 del Arquero y los 8 de la Hidra de Lerna a 60 Hz.
+- Evidencia o referencia: `docs/planes/KRATOS-2D-SPRITE-GEN-01.md`; `scripts/sprite-gen/poses.json`; `scripts/sprite-gen/assemble.py`; `public/assets/characters/kratos-*.png`; `scripts/verification/capture-combat.mjs` (28 casos A a AB aprobados con 0 errores de consola en Chrome CDP).
+
 
 
 

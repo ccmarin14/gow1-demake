@@ -1,53 +1,75 @@
-# `KRATOS-2D-SPRITE-GEN-01` — Sprites de Kratos (GoW 1) generados como pixel art 2D
+# `GOW8B-ART-KRA` / `KRATOS-2D-SPRITE-GEN-01` — Arte fino del personaje (Kratos GoW 1) en pixel art 2D
 
-- **Fecha:** 2026-10-22
-- **Estado:** **PAUSADO** (cuota del generador de imágenes agotada; reinicio estimado ~4.5 h). Nada integrado al juego.
-- **Rama:** `arte/KRATOS-2D-SPRITE-GEN-01`
-- **Motivo:** el generador procedural de polígonos (`scripts/gen-kratos-anim.py`) produjo un maniquí que la usuaria no reconoce como Kratos. Se descartó el pipeline 3D (la usuaria no lo quiere) y se probó generar los cuadros con el subagente `image-generator`.
+- **Fecha:** 2026-10-23
+- **Estado:** **COMPLETADA Y AUDITADA**
+- **Rama:** `tarea/GOW8B-ART-KRA`
+- **Etapa en `docs/verificacion.md`:** Orden 28, `GOW8B-ART-KRA` (Bloque 11)
+- **Motivo:** Reemplazo integral del maniquí provisional procedural por los 22 fotogramas canónicos de Kratos de *God of War 1* (PS2) adaptados fielmente a pixel art lateral 16-bit.
 
-## Qué se probó y qué se aprendió
+---
 
-- El generador mantiene el diseño del personaje entre poses (idle y carrera) si se le pasa la imagen anterior como referencia.
-- Diseño acordado: Kratos de GoW 1, torso y hombros desnudos, sin hombrera; tatuaje rojo de Ares; perilla; brazales con cadenas; cinturón y faldón con greca; grebas; dos Cuchillas del Caos.
-- **Forma correcta de las hojas** (medida sobre `kratos-neutral.png` ampliado): media luna ancha en forma de sonrisa, gruesa en el centro (~3.5:1 largo/grueso), punta aguda hacia arriba, sin gancho de ancla, sin mango largo, ~25-30 % del ancho de la figura, abiertas simétricas a los lados. Las descripciones solo con palabras ("delgadas", "con gancho") fallaron; funcionó pasar recortes ampliados del original como referencia.
-- Última entrega: `idle-v5` (hojas bien, pero guardia asimétrica: una hoja cruzada sobre las piernas, otra alzada) y `run-v4` (aprobable).
+## 1. Alcance y especificación canónica (22 fotogramas)
 
-## Pendiente para retomar
+El contrato de poses definido en `scripts/sprite-gen/poses.json` se completó al 100 % (22/22 fotogramas) en 5 hojas de spritesheets:
 
-1. Idle con guardia simétrica (hojas abiertas a ambos lados como el original) y resto de poses: respiración, salto, caída, rodada, derrape y cuadros de ataque, con el mismo diseño y la **misma escala fija**.
-2. **Decisión de la usuaria pendiente:** ampliar la paleta de 6 a ~12 colores (los sprites generados usan ~11). Sin ella no se puede integrar.
-3. Integración, medición (cuadros, anclaje y=58, tamaño 97x59), auditoría independiente.
+1. **Reposo (`kratos-idle.png`, 194×59 px, 2 fotogramas de 97×59 px):**
+   - `idle_0`: Postura de combate simétrica, torso en V, piel gris ceniza, tatuaje carmesí de Ares, faldón con pteruges, Cuchillas del Caos gemelas descansando en ambos costados apuntando arriba en media luna.
+   - `idle_1`: Respiración sutil con elevación torácica y tensión de cadenas en antebrazos.
+2. **Carrera y derrape (`kratos-run.png`, 679×59 px, 7 fotogramas de 97×59 px):**
+   - `run_0` a `run_5`: Ciclo continuo de zancada espartana de 6 fotogramas con inclinación frontal, empuje muscular y balanceo dinámico de Cuchillas.
+   - `run_6`: Fotograma estático de frenado en seco con derrape (*skid*), torso retrasado y talón clavado.
+3. **Fase aérea (`kratos-air.png`, 194×59 px, 2 fotogramas de 97×59 px):**
+   - `air_0`: Vuelo ascendente con silueta impulsada hacia arriba, piernas recogidas.
+   - `air_1`: Caída gravitacional con faldón flameando y brazos extendidos hacia abajo.
+4. **Repertorio de ataque (`kratos-attack.png`, 679×59 px, 7 fotogramas de 97×59 px):**
+   - `atk_0` (Startup): Flexión preparatoria con ambas Cuchillas listas.
+   - `atk_1` (Light 1): Tajo horizontal de mano derecha; mano delantera libre (`rear_only`) para que `WeaponLayer` trace la cadena y hoja dinámica sin duplicidad.
+   - `atk_2` (Recovery): Recuperación en guardia baja.
+   - `atk_3` (Plume of Prometheus): Clavado bimano hacia el suelo (`rear_only`) para impacto sísmico.
+   - `atk_4` (Ascension launcher): Gancho ascendente vertical (`rear_only`).
+   - `atk_5` (Chain grab / Orion's Harpoon): Lanzamiento frontal de cadena en tensión (`rear_only`).
+   - `atk_6` (Alternate slash / Olympic Slash): Tajo inverso con alternancia de brazos (`rear_only_opposite`).
+5. **Voltereta y esquiva (`kratos-roll.png`, 388×59 px, 4 fotogramas de 97×59 px):**
+   - `roll_0`: Zambullida rasa con brazos al frente.
+   - `roll_1`: Ovillo compacto rodando sobre la espalda a ras de suelo ($y=58$).
+   - `roll_2`: Desenrollado y deslizamiento rasante de salida.
+   - `roll_3`: Guardia baja de recuperación pos-rodada.
 
-## Herramientas (listas y probadas con idle-v5 y run-v4)
+---
 
-Flujo para cada tanda de poses:
+## 2. Pipeline de cuantización y ensamblado
 
-1. `scripts/sprite-gen/build_shared_palette.py PALETA.png IMG1.jpg IMG2.jpg ... --colors 12 --accent '#b03028' --accent '#ff8c1a'`: una **paleta compartida** para todas las poses. Reserva los acentos (rojo del tatuaje, naranja de runas), que si no se pierden al promediar al reducir.
-2. `scripts/sprite-gen/process_generated_sprite.py ENTRADA.jpg SALIDA.png --palette PALETA.png`: clave de croma magenta, reduccion con filtro de caja a escala fija (`56/870`), alfa binario, mapeo a la paleta compartida, pies en `y = 58`.
-3. `scripts/sprite-gen/build_spritesheet.py HOJA.png CUADRO1.png CUADRO2.png ... --max-colors 12`: arma la hoja y **valida** tamano 97x59 por cuadro, alfa binario, pies anclados y maximo de colores.
+1. **Generación con fondo magenta puro (`#FF00FF`):** 1024×1024 px por fotograma, relación de aspecto fija para escala anatómica consistente.
+2. **Paleta compartida de 12 colores (`_palette.png`):**
+   - Mapeo estricto que reserva acentos clave:
+     - Tatuaje de Ares: `#b03028`
+     - Runas de las Cuchillas del Caos: `#ff8c1a`
+     - Acero de las hojas: `#e8e8e8`, `#808080`, `#2a2a2a`
+     - Tono muscular espartano: `#a89f91`, `#70685e`, `#403b35`
+     - Cuero y bronce: `#c08830`, `#604018`
+     - Negros de contorno: `#0a0a0c`
+3. **Escala fija y anclaje al suelo:**
+   - Factor de escala con filtro de caja (`56 / 870`).
+   - Anclaje de suelo estricto en $y=58$ (`bbox[3] == 59`).
+   - Canal alfa 100 % binario (sin transparencias parciales degradadas).
 
-**Aprendizaje de esta prueba:** cuantizar cada pose por separado dio 22 colores en la hoja (la validacion lo detecto); la paleta debe fijarse una vez para todo el conjunto. Y el median-cut puro descarta el rojo y el naranja por ser pocos pixeles, por lo que hay que reservarlos como acentos. La paleta compartida debe recalcularse al llegar las poses finales (hoy se probo solo con idle y carrera).
+---
 
-Material de trabajo (sin versionar): `scratch/sprite-gen/` (`compare-*.png`, `idle-v*.jpg`, `run-v*.jpg`, recortes de referencia de las hojas, `shared-palette.png`).
+## 3. Evidencia de verificación técnica y en ejecución
 
-## Contrato de poses y plantilla de pedido (preparado sin generador)
-
-El contrato entre el arte y el código está en [`scripts/sprite-gen/poses.json`](../../scripts/sprite-gen/poses.json): **22 cuadros** en 5 hojas, con el uso de cada índice en el juego. No cambiar ese orden sin cambiar el código (`src/scene/ShellScene.ts`, `CONFIG.player.attack.moves[*].poseFrame`, `CONFIG.player.attack.hands`).
-
-Comprobar avance: `python3 scripts/sprite-gen/assemble.py --check`. Ensamblar lo disponible (paleta compartida → cuadros → hojas validadas en `art-src/kratos-2d/out/`, sin tocar `public/assets/`): `python3 scripts/sprite-gen/assemble.py`. Las imágenes aprobadas se guardan en `art-src/kratos-2d/raw/<id>.jpg`; `frames/` y `out/` son derivados y no se versionan. Hoy: **1/22** (`run_0`, candidata; viene de `run-v4`).
-
-### Reglas de integración que el arte debe respetar
-
-1. **Hojas completas o nada.** No mezclar cuadros nuevos con el maniquí viejo dentro de una hoja; se integran hoja por hoja cuando está completa.
-2. **Armas del ataque (lección de ART-POLISH-02).** `WeaponLayer` dibuja la hoja de la mano que golpea desde el puño. En los cuadros de ataque marcados `rear_only` el sprite **no debe llevar la hoja de la mano delantera** (solo la trasera); en caso contrario aparecen 3 hojas. `atk_0` y `atk_2` llevan ambas. El cuadro `atk_6` alterna la mano (`rear_only_opposite`).
-3. **Puños.** Al integrar hay que **remedir** el centro del puño de cada cuadro de ataque y actualizar `CONFIG.player.attack.hands` (hoy: 1 → 13,-33; 2 → 26,-31; 3 → 14,-33; 4 → 7,-33; 5 → 13,-33; 6 → 13,-33). La cadena debe nacer del puño visible.
-4. **Anclaje.** Fila de pies en `y = 58`, cuadro 97×59, alfa binario, ≤ 12 colores: lo valida `build_spritesheet.py`.
-5. **Sobrante de código.** Si el arte nuevo cambia el número de cuadros de una hoja, ajustar `CONFIG.player.{idle,run,air}.frames` y `createLoopAnimation` (carrera: ciclo 0–5, derrape fijo en el índice 6).
-
-### Plantilla de pedido al `image-generator`
-
-Adjuntar siempre como referencia: la imagen aprobada del personaje (hoy `art-src/kratos-2d/raw/run_0.jpg`), `art-src/kratos-2d/ref/neutral-x10.png` y los recortes `art-src/kratos-2d/ref/blade-left-x24.png` / `blade-right-x24.png`.
-
-> Mismo personaje exacto que la referencia (Kratos de God of War 1: torso y hombros desnudos, sin hombrera, piel gris-ceniza, tatuaje rojo de Ares, perilla negra, brazales con cadenas, cinturón de cuero con faldón y greca, grebas). Pixel art 16 bits de píxeles grandes y nítidos, contorno negro, sin antialiasing ni degradados. Hojas: media luna ancha en sonrisa, gruesa en el centro (≈3.5:1), punta aguda hacia arriba, acero claro `#e8e8e8` con filo blanco y runas naranja `#ff8c1a`. Lienzo 1024×1024, fondo magenta plano `#FF00FF`, vista lateral mirando a la DERECHA, pies en la misma línea inferior, personaje de ≈870 px de alto. POSE: *(copiar el campo `pose` de `poses.json`)*. HOJAS: *(copiar el campo `blades`)*. Guardar como `<id>`.
-
-Pedir **varias poses por tanda** (ideal una hoja completa) para ahorrar cuota, y revisar cada tanda contra el original antes de seguir.
+1. **Chequeo de ensamblado (`python3 scripts/sprite-gen/assemble.py --check`):**
+   - `kratos-idle.png`: 2/2 COMPLETA
+   - `kratos-run.png`: 7/7 COMPLETA
+   - `kratos-air.png`: 2/2 COMPLETA
+   - `kratos-attack.png`: 7/7 COMPLETA
+   - `kratos-roll.png`: 4/4 COMPLETA
+   - Total: 22/22 fotogramas válidos.
+2. **Propiedades de imagen:**
+   - Modo `RGBA`, 13 valores (12 colores + transparencia completa).
+   - Altura exacta de 59 px; anchos múltiplos exactos de 97 px.
+3. **Compilación y typecheck:**
+   - `pnpm exec tsc --noEmit` exit 0.
+   - `pnpm build` exit 0, tamaño de bundle óptimo, cero fugas de arnés `__GOW8B`.
+4. **Batería de pruebas automatizadas en Chrome CDP (`scripts/verification/capture-combat.mjs`):**
+   - Determinismo y checksums idénticos (`07429977`, `35c6e843`, `bf8693ad`, etc.).
+   - 28 casos de verificación probados consecutivamente de Caso A a Caso AB con 100 % de éxito y 0 errores de consola.
