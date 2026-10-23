@@ -806,6 +806,18 @@ Mantén cada entrada breve y accionable. Actualiza las guías de trabajo solo cu
 - Cambio recomendado al proceso: ante cualquier reporte de usuario sobre una parte anatómica específica, aplicar una compuerta de no-regresión por máscara de área ($y_{min}..y_{max}$) para asegurar que las demás partes aprobadas del cuerpo no sufran variaciones involuntarias.
 - Evidencia o referencia: `docs/planes/KRATOS-FACE-POLISH-01.md`; `scripts/gen-kratos-anim.py`; `public/assets/characters/kratos-*.png`; `docs/referencias/kratos-anim-contact-sheet.png`; suite Chrome CDP (28 casos A a AB aprobados al 100%, 0 errores en consola).
 
+### KRATOS-SPRITE-MAESTRO-01 — El ensamblado de sprites por capas de masa anatómica con captura en entorno real elimina los falsos positivos visuales y la ilusión de métricas ciegas (2026-10-23)
+
+- Resultado: aprobada tras auditoría de plan y reauditoría independiente de solo lectura (100% de criterios cumplidos).
+- Método que funcionó:
+  1. **Espacio negativo explícito para cuello y extremidades:** para evitar que la cabeza se perciba incrustada en el hombro (efecto jorobado), no basta con dibujar una columna de cuello; es mandatorio dejar 2-3 filas de espacio libre ($\alpha=0$) lateral a la mandíbula antes de que comience la clavícula y los deltoides.
+  2. **Empuñaduras en manos antes que hojas de combate:** en vez de estampar cuchillas flotantes que parecen prótesis o bumeranes pegados a muñones, el sprite maestro debe definir primero el puño cerrado con piel cenicienta y sombra, luego la cruceta y pomo de bronce que cruzan la mano, y finalmente la hoja naciendo desde la guarda. Esto restituye la lectura de un guerrero empuñando armas.
+  3. **Compuerta de inspección obligatoria en el entorno real del juego (CDP):** sustituir las pruebas en el vacío o sobre lienzos negros por scripts automatizados que levanten el motor del juego y capturen al personaje en su escenario nativo (la cubierta del barco egeo) a resolución 1x y escala 4x nearest neighbor. Si el ojo humano detecta una aberración en la captura del juego, ninguna métrica numérica puede validar la tarea.
+- Dificultad o fallo observado: confiar exclusivamente en deltas de píxeles (`ImageChops.difference`) y comprobaciones booleanas de caja delimitadora permitió que aberraciones visuales graves (un Kratos jorobado y un monigote de alambre) fueran auto-aprobadas en auditorías anteriores. La captura visual directa en el motor es el único antídoto real.
+- Aprendizaje transferible: en proyectos de pixel art, las compuertas de auditoría deben exigir siempre capturas renderizadas del motor real en resolución nativa y ampliada sobre el fondo jugable. Las matemáticas verifican la integración técnica, pero solo la inspección visual directa sobre el lienzo real valida el arte.
+- Cambio recomendado al proceso: incorporar como requisito formal de compuerta en toda tarea visual la generación automática de capturas de escena real vía CDP antes de solicitar revisión al orquestador o la usuaria.
+- Evidencia o referencia: `docs/planes/KRATOS-SPRITE-MAESTRO-01.md`; `scripts/build-kratos-master.py`; `scripts/verification/capture-deck-preview.mjs`; `scripts/verification/output/kratos_deck_preview_1x.png`; `scripts/verification/output/kratos_deck_closeup_4x.png`; `public/assets/characters/kratos-neutral.png`.
+
 
 
 

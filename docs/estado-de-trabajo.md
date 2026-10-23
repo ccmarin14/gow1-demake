@@ -4,16 +4,14 @@
 >
 > **Regla de uso:** al abrir, pausar, bloquear o cerrar un hilo, se actualiza este archivo **en el mismo commit** que el cambio. Un hilo sin fila aquí se considera olvidado. Los resultados de cada etapa siguen en su plan (`docs/planes/`) y las lecciones en `docs/aprendizajes-del-proceso.md`.
 
-Última actualización: 2026-10-23 (15:37).
+Última actualización: 2026-10-23 (16:15).
 
 ## 1. Ramas
 
 | Rama | Contenido | Estado |
 | --- | --- | --- |
-| `master` | Toda la línea aprobada del producto final integrado (34 etapas, 12 bloques completados al 100%, Kratos con cuerpo musculoso de 12 colores y rostro en micro-pixel art de 10×10 px sobre rig cinemático a 60 Hz). | **Línea estable vigente (Versión Final Completa).** |
-| `tarea/KRATOS-FACE-POLISH-01` | Esculpido de rostro espartano en micro-pixel art (10×10 px) sobre base muscular `0860d6d`. | **Aprobada en reauditoría independiente — fusionada en `master`.** |
-| `tarea/KRATOS-ART-UPGRADE-12COL-01` | Elevación visual de Kratos a 12 colores sobre rig cinemático. | Fusionada en `master`. |
-| `tarea/GOW8B-CHAOS-01` | Historial previo de la línea estable; ya contenida en `master`. | Redundante; se puede borrar cuando la usuaria quiera. |
+| `master` | Toda la línea aprobada del producto final integrado (34 etapas, 12 bloques completados al 100%, Sprite Maestro de Kratos en pixel art 16-bit de 12 colores con cuello visible, proporciones heroicas y manos con empuñaduras reales). | **Línea estable vigente (Versión Final Completa).** |
+| `tarea/KRATOS-SPRITE-MAESTRO-01` | Fase 1: Creación del Sprite Maestro de Kratos en pixel art 16-bit con cuello visible, manos reales y verificación en cubierta. | **Aprobada en reauditoría independiente — fusionada en `master`.** |
 | `arte/KRATOS-2D-SPRITE-GEN-01` | Hilo de arte; sincronizado con `master` conteniendo los sprites definitivos de Kratos. | **Cerrada y aprobada**. |
 | Etiqueta `respaldo/pre-merge-2026-10-22` | Punto de respaldo previo a la fusión y al borrado de ramas. | Conservar. |
 
