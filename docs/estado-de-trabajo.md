@@ -4,31 +4,37 @@
 >
 > **Regla de uso:** al abrir, pausar, bloquear o cerrar un hilo, se actualiza este archivo **en el mismo commit** que el cambio. Un hilo sin fila aquí se considera olvidado. Los resultados de cada etapa siguen en su plan (`docs/planes/`) y las lecciones en `docs/aprendizajes-del-proceso.md`.
 
-Última actualización: 2026-10-22.
+Última actualización: 2026-10-22 (21:48).
 
 ## 1. Ramas
 
 | Rama | Contenido | Estado |
 | --- | --- | --- |
-| `master` | Solo `first commit`. **No contiene nada del trabajo actual.** | Desactualizada; decidir con la usuaria cuándo integrar. |
-| `tarea/GOW8B-CHAOS-01` | Toda la línea aprobada: combate GoW 1 PS2, rediseño anatómico, peso de locomoción, lunge y combos extendidos (commits `33f776f`, `4d95639`, `b68648d`, `4571b85`). | **Línea estable vigente.** No se ha fusionado a `master`. |
-| `arte/KRATOS-2D-SPRITE-GEN-01` | Parte de la línea estable. Añade el script de reducción de sprites y la documentación del hilo de arte. No toca el juego. | **Pausada** por cuota del generador de imágenes. |
-| `tarea/GOW8B-{DJUMP,KRA-02,RES-01,ROLL-01,SCALE-01}` | Ramas antiguas, todas en `e6f9013`. | Obsoletas; candidatas a borrar con permiso de la usuaria. |
+| `master` | Toda la línea aprobada (combate GoW 1 PS2, rediseño anatómico, peso de locomoción, lunge, combos extendidos) más el registro de hilos y el script de arte. Fusionada por avance directo el 2026-10-22. | **Línea estable vigente.** |
+| `tarea/GOW8B-CHAOS-01` | Historial previo de la línea estable; ya contenida en `master`. | Redundante; se puede borrar cuando la usuaria quiera. |
+| `arte/KRATOS-2D-SPRITE-GEN-01` | Hilo de arte; hoy apunta al mismo commit que `master`. Aquí continúa el trabajo de sprites. | **Pausada** por cuota del generador de imágenes. |
+| Etiqueta `respaldo/pre-merge-2026-10-22` | Punto de respaldo previo a la fusión y al borrado de ramas. | Conservar. |
+
+Ramas `tarea/GOW8B-{DJUMP,KRA-02,RES-01,ROLL-01,SCALE-01}`: eliminadas el 2026-10-22 (apuntaban a `e6f9013`, ancestro de `master`; sin trabajo propio).
 
 ## 2. Hilos abiertos
 
 | Hilo | Estado | Siguiente paso | Bloqueo / decisión pendiente | Documento |
 | --- | --- | --- | --- | --- |
-| **Arte de Kratos GoW 1** (sprites 2D generados) | Pausado | Pedir idle con guardia simétrica y resto de poses (respiración, salto, caída, rodada, derrape, ataques) con escala fija; integrar y auditar. | Cuota del `image-generator` (reinicio ~4.5 h desde 21:40). **Decisión de la usuaria:** ampliar la paleta de 6 a ~12 colores. | [`planes/KRATOS-2D-SPRITE-GEN-01.md`](planes/KRATOS-2D-SPRITE-GEN-01.md) |
+| **Arte de Kratos GoW 1** (sprites 2D generados) | Pausado | Pedir idle con guardia simétrica y resto de poses (respiración, salto, caída, rodada, derrape, ataques) con escala fija; integrar y auditar. | Cuota del `image-generator` (reinicio ~4.5 h desde 21:40). Paleta ampliada a ≤12 colores (ver §3). | [`planes/KRATOS-2D-SPRITE-GEN-01.md`](planes/KRATOS-2D-SPRITE-GEN-01.md) |
 | **Combate PS2 y locomoción** (4 niveles) | Cerrado y aprobado | Ninguno. El juego usa todavía el arte anterior (maniquí del generador procedural). | Validación humana de sensación: ver registro de pendientes. | [`verificacion.md`](verificacion.md) |
 | **Arte actual (maniquí procedural)** | Vigente pero rechazado visualmente | Sustituir por el hilo de arte anterior. No invertir más en `gen-kratos-anim.py`. | Depende del hilo de arte. | `scripts/gen-kratos-anim.py` |
 | **Bloque 4 en adelante** (enemigos, daño, HUD, orbes, oleadas, magia, mapa, Hidra) | Sin iniciar | Según `verificacion.md`; requiere autorización de la usuaria. | Sin etapa activa. | [`verificacion.md`](verificacion.md) |
 
-## 3. Decisiones pendientes de la usuaria
+## 3. Decisiones
 
-1. Ampliar la paleta del proyecto de 6 a ~12 colores (necesario para integrar los sprites generados).
-2. Cuándo y cómo fusionar `tarea/GOW8B-CHAOS-01` en `master`.
-3. Borrar las ramas antiguas obsoletas.
+**Tomadas (delegadas por la usuaria el 2026-10-22):**
+
+1. `master` se fusiona con la línea estable (hecho, avance directo).
+2. Se borran las ramas antiguas sin trabajo propio (hecho).
+3. **Paleta:** se amplía de 6 a un máximo de **12 colores** para los sprites de Kratos, porque los sprites generados con el diseño de GoW 1 usan ~11 (rojo del tatuaje, naranja de runas, acero claro). Se aplica al integrar, con aserción de máximo 12 colores en lugar de la paleta exacta de 6, y se actualizará `AGENTS.md`/`verificacion.md` en esa etapa. Si la usuaria prefiere otra cosa, se revierte antes de integrar.
+
+**Pendientes de la usuaria:** ninguna por ahora.
 
 ## 4. Cómo se retoma una pausa
 
