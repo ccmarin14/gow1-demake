@@ -244,85 +244,51 @@ def draw_greave_and_boot(d, knee, foot, w, squash, is_near):
         rect(d, toe_x + 1, by, 1, 1, C_ASH_HI)
 
 
+_ = None
+
+KRATOS_HEAD_GRID = [
+    # dy = -5: Boveda craneal calva espartana (contorno superior curvado)
+    [_, _, C_BLACK, C_BLACK, C_BLACK, C_BLACK, _, _, _, _],
+    # dy = -4: Brillo ceniciento de coronilla y tatuaje carmesi de Ares entrando
+    [_, C_BLACK, C_ASH_MD, C_ASH_HI, C_ASH_HI, C_TATTOO_HI, C_BLACK, _, _, _],
+    # dy = -3: Frente amplia, relieve oseo y franja canonica del tatuaje
+    [C_BLACK, C_ASH_DK, C_ASH_MD, C_ASH_HI, C_TATTOO_HI, C_TATTOO_HI, C_ASH_MD, C_BLACK, _, _],
+    # dy = -2: Ceno fruncido espartano, ceja saliente y sombra profunda
+    [C_BLACK, C_ASH_DK, C_ASH_MD, C_ASH_MD, C_TATTOO_DK, C_TATTOO_HI, C_BLACK, C_BLACK, C_BLACK, _],
+    # dy = -1: Cuenca orbitaria con destello de mirada fiera y puente nasal aguileno
+    [C_BLACK, C_ASH_DK, C_ASH_MD, C_ASH_MD, C_TATTOO_DK, C_TATTOO_HI, C_ASH_HI, C_BLACK, C_ASH_HI, C_BLACK],
+    # dy =  0: Mejilla, tatuaje carmesi descendente y punta de la nariz espartana
+    [C_BLACK, C_ASH_DK, C_ASH_MD, C_ASH_MD, C_TATTOO_DK, C_TATTOO_HI, C_ASH_MD, C_BLACK, C_BLACK, _],
+    # dy = +1: Labio superior severo, bigote y arranque de la barba
+    [_, C_BLACK, C_ASH_DK, C_ASH_MD, C_TATTOO_DK, C_TATTOO_HI, C_BLACK, C_BLACK, _, _],
+    # dy = +2: Mandibula angular y arranque de la perilla espartana en cuna
+    [_, C_BLACK, C_ASH_DK, C_ASH_MD, C_TATTOO_DK, C_ASH_DK, C_BLACK, C_BLACK, C_BLACK, _],
+    # dy = +3: Cuerpo de la perilla recortada en cuna proyectada al frente
+    [_, _, C_BLACK, C_ASH_DK, C_BLACK, C_ASH_DK, C_BLACK, C_BLACK, _, _],
+    # dy = +4: Punta angular de la perilla espartana
+    [_, _, _, C_BLACK, C_BLACK, C_BLACK, _, _, _, _],
+]
+
+
 def draw_head(d, hx, hy, hr, squash=1.0):
-    """Cabeza y cuello espartano en postura agresiva/depredadora, con
-    mandibula angular, barba recortada (C_BLACK + C_ASH_DK), ceno fruncido bajo
-    sombra profunda, mirada frontal penetrante y tatuaje carmesi de Ares."""
-    ox = hx + 1.2 * squash
-    oy = hy
+    """Rostro espartano esculpido en micro-pixel art nitido (caja 10x10 px).
 
-    # 1. Contorno de la silueta cefalica (C_BLACK)
-    head_poly_out = [
-        (ox - 3 * squash - 1, oy - hr - 1),
-        (ox + 2 * squash + 1, oy - hr - 1),
-        (ox + hr + 1, oy - 2 * squash),
-        (ox + hr + 2, oy),              # ceno prominente
-        (ox + hr + 2, oy + 2 * squash),  # puente nasal
-        (ox + hr + 1, oy + 3 * squash),  # labio superior
-        (ox + hr + 1.5, oy + 5 * squash), # barba espartana en cuna
-        (ox + 1.5 * squash, oy + hr + 2), # punta inferior de la barba
-        (ox - 2 * squash - 1, oy + hr),  # mandibula bajo la oreja
-        (ox - hr - 1, oy + 2 * squash),  # nuca y cuello posterior
-        (ox - hr - 1, oy - 2 * squash),  # curvatura occipital
-    ]
-    d.polygon(head_poly_out, fill=C_BLACK)
+    Reemplaza la rasterizacion poligonal borrosa previa por una definicion
+    anatomica precisa: craneo calvo con brillo ceniciento superior (C_ASH_HI),
+    sombra occipital (C_ASH_DK), ceno fruncido feroz bajo sombra profunda,
+    destello ocular penetrante, perfil de nariz aguilena saliente al frente (1-2 px),
+    mandibula angular con perilla espartana en cuna y tatuaje carmesi de Ares
+    (C_TATTOO_HI con base C_TATTOO_DK) recorriendo la coronilla, ojo y cuello.
+    """
+    ox = int(round(hx + 1.2 * squash))
+    oy = int(round(hy))
 
-    # 2. Relleno carnoso base en tono ceniza (C_ASH_MD)
-    head_poly_in = [
-        (ox - 3 * squash, oy - hr),
-        (ox + 2 * squash, oy - hr),
-        (ox + hr, oy - 2 * squash),
-        (ox + hr + 1, oy),
-        (ox + hr + 1, oy + 2 * squash),
-        (ox + hr, oy + 3 * squash),
-        (ox + hr + 0.5, oy + 5 * squash - 0.5),
-        (ox + 1.5 * squash, oy + hr + 1),
-        (ox - 2 * squash, oy + hr - 1),
-        (ox - hr, oy + 2 * squash),
-        (ox - hr, oy - 2 * squash),
-    ]
-    d.polygon(head_poly_in, fill=C_ASH_MD)
-
-    # 3. Brillo de la boveda craneal calva (C_ASH_HI)
-    rect(d, ox - 1 * squash, oy - hr, max(2, 4 * squash), max(1, 2 * squash), C_ASH_HI)
-    rect(d, ox, oy - hr + 1, max(2, 3 * squash), max(1, 2 * squash), C_ASH_HI)
-
-    # 4. Tatuaje carmesi de Ares en cabeza (C_TATTOO_DK sombra, C_TATTOO_HI carmesi puro):
-    rect(d, ox - 3 * squash, oy - hr, max(1, 2 * squash), max(1, 1 * squash), C_TATTOO_DK)
-    rect(d, ox - 2 * squash, oy - hr + 1, max(1, 2 * squash), max(1, 2 * squash), C_TATTOO_HI)
-    rect(d, ox - 0.5 * squash, oy - hr + 1.5, max(1, 1.5 * squash), max(1, 2 * squash), C_TATTOO_HI)
-    rect(d, ox + 0.5 * squash, oy - 2 * squash, max(1, 1.5 * squash), max(1, 3 * squash), C_TATTOO_HI)
-    rect(d, ox + 0.5 * squash, oy + 1 * squash, max(1, 1.2 * squash), max(1, 2 * squash), C_TATTOO_DK)
-
-    # 5. Sombra occipital posterior y oreja
-    rect(d, ox - hr, oy - 1 * squash, max(1, 2 * squash), max(2, 4 * squash), C_ASH_DK)
-    rect(d, ox - 2.5 * squash, oy, 1 * squash, max(1, 2 * squash), C_LEATHER_DK)
-
-    # 6. Ceno fruncido, cuenca orbitaria profunda y mirada frontal intensa
-    rect(d, ox + 1 * squash, oy - 1 * squash, max(2, 3 * squash), 1, C_ASH_DK)
-    rect(d, ox + 2 * squash, oy - 1 * squash, max(1, 2 * squash), 1, C_BLACK)
-    rect(d, ox + 2.5 * squash, oy, 1, 1, C_ASH_HI)
-    rect(d, ox + 1.5 * squash, oy, 1, 1, C_BLACK)
-
-    # 7. Nariz espartana aguilena
-    rect(d, ox + 2.5 * squash, oy + 1 * squash, max(1, 1.5 * squash), 1, C_ASH_HI)
-    rect(d, ox + 3.5 * squash, oy + 2 * squash, 1, 1, C_BLACK)
-
-    # 8. Boca severa y cerrada
-    rect(d, ox + 1.5 * squash, oy + 2.5 * squash, max(2, 2.5 * squash), 1, C_BLACK)
-
-    # 9. Barba espartana prominente y angular (C_BLACK + C_ASH_DK)
-    beard_poly = [
-        (ox - 1 * squash, oy + 3 * squash),
-        (ox + 3 * squash, oy + 3 * squash),
-        (ox + hr + 1, oy + 4 * squash),
-        (ox + hr + 0.5, oy + 5 * squash),
-        (ox + 1.5 * squash, oy + hr + 1),
-        (ox - 1 * squash, oy + hr),
-    ]
-    d.polygon(beard_poly, fill=C_BLACK)
-    rect(d, ox + 2 * squash, oy + 4 * squash, max(1, 2 * squash), 1, C_ASH_DK)
-    rect(d, ox + 0.5 * squash, oy + hr, max(1, 2 * squash), 1, C_BLACK)
+    for r_idx, row in enumerate(KRATOS_HEAD_GRID):
+        py = oy + (r_idx - 5)
+        for c_idx, col in enumerate(row):
+            if col is not None:
+                px = ox + (c_idx - 4)
+                d.point((px, py), fill=col)
 
 
 def draw_skirt(d, pelvis, squash):

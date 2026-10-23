@@ -794,6 +794,18 @@ Mantén cada entrada breve y accionable. Actualiza las guías de trabajo solo cu
 - Cambio recomendado al proceso: definir las paletas de personajes principales con al menos 10–12 colores desde el inicio del pipeline cinemático (3 tonos de piel, 2 tonos de atuendo primario, acentos de arma y runas), evitando prototipos monocromáticos que luego requieran re-escalado cromático.
 - Evidencia o referencia: `docs/planes/KRATOS-ART-UPGRADE-12COL-01.md`; `scripts/gen-kratos-anim.py`; `public/assets/characters/kratos-*.png`; `docs/referencias/kratos-anim-contact-sheet.png`; suite Chrome CDP (28 casos A a AB aprobados al 100%, 0 errores en consola).
 
+### KRATOS-FACE-POLISH-01 — El reemplazo de rasterización poligonal continua por matrices de micro-pixel art resuelve la legibilidad facial en sprites de baja resolución sin alterar el cuerpo ni la animación (2026-10-23)
+
+- Resultado: aprobada tras auditoría de plan y reauditoría independiente de solo lectura (100% de criterios cumplidos).
+- Método que funcionó:
+  1. **Aislamiento anatómico estricto del cambio:** cuando la usuaria señala un defecto visual localizado (p. ej. "el rostro no parece un rostro") pero el resto del cuerpo y la cinemática funcionan bien, nunca reescribir la silueta global ni adelgazar el esqueleto. Acotar el cambio al 100% en la subrutina del rostro (`draw_head`), verificando mediante un diff píxel a píxel que el resto del cuerpo ($y \ge 17$) permanezca inalterado.
+  2. **Matrices deterministas de micro-pixel art vs. polígonos vectoriales:** en resoluciones internas pequeñas (97×59 px), primitivas como `ImageDraw.polygon` con coordenadas flotantes producen bloques amorfos y bordes difusos que destruyen los micro-rasgos. Definir una matriz de píxeles discreta de $10\times 10\text{ px}$ (`KRATOS_HEAD_GRID`) con valores semánticos explícitos permite controlar individualmente cada rasgo humano: punta nasal de 1 px saliente al frente, ceño fruncido con sombra, destello ocular, perilla espartana angular y arco del tatuaje de Ares.
+  3. **Verificación de diff vertical:** confirmar que los deltas entre la versión aprobada previa y la corregida estén acotados exclusivamente a la franja de altura de la cabeza, garantizando inmunidad total contra regresiones de masa corporal.
+- Dificultad o fallo observado: intentar arreglar la anatomía completa alterando el grosor de las líneas vectoriales llevó previamente al extremo de un muñeco de alambre con patas de insecto; la solución real consistió en restaurar el cuerpo musculoso previo y trabajar con precisión de relojero únicamente en la cabeza.
+- Aprendizaje transferible: en pixel art procedural, las facciones faciales no deben calcularse mediante polígonos de punto flotante ni curvas bezier, sino mediante matrices de micro-píxeles diseñadas a nivel de celda individual. Esto dota de identidad y humanidad al personaje conservando intacta su masa física y cinemática en el motor.
+- Cambio recomendado al proceso: ante cualquier reporte de usuario sobre una parte anatómica específica, aplicar una compuerta de no-regresión por máscara de área ($y_{min}..y_{max}$) para asegurar que las demás partes aprobadas del cuerpo no sufran variaciones involuntarias.
+- Evidencia o referencia: `docs/planes/KRATOS-FACE-POLISH-01.md`; `scripts/gen-kratos-anim.py`; `public/assets/characters/kratos-*.png`; `docs/referencias/kratos-anim-contact-sheet.png`; suite Chrome CDP (28 casos A a AB aprobados al 100%, 0 errores en consola).
+
 
 
 
