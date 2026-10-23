@@ -342,6 +342,16 @@ export const CONFIG = {
       redOrbsChestValue: 50,
     },
   },
+  checkpoints: {
+    activationRadius: 32,
+    respawnDelayTicks: 45,
+    lightPillarWidth: 28,
+    lightPillarHeight: 270,
+    level1: [
+      { id: 'chk-popa', x: 140, y: 262, name: 'Popa de la Nave' },
+      { id: 'chk-proa', x: 980, y: 262, name: 'Umbral de Proa' },
+    ],
+  },
   // Reference scale for map/level stages; every field is computed from the
   // values above (see `src/scale.ts`).
   scale: deriveScaleReference({
@@ -480,6 +490,14 @@ export const CONFIG = {
       depth: 2,
     },
     weaponChainLevel2Color: 0xf59e0b,
+    checkpoint: {
+      pillarColor: 0xfde047,
+      glowColor: 0xfacc15,
+      coreColor: 0xffffff,
+      baseRuneColor: 0xca8a04,
+      baseRuneGlow: 0x78350f,
+      depth: 1,
+    },
   },
 } as const;
 

@@ -102,7 +102,7 @@ También el 2026-10-15, tras la aprobación de la etapa 6, la usuaria autorizó 
 
 | Orden | ID | Etapa | Estado |
 | --- | --- | --- | --- |
-| 25 | GOW8B-CHECK-01 | Checkpoint (activación, estado guardado y reintento) | Pendiente; no activa. |
+| 25 | GOW8B-CHECK-01 | Checkpoint (activación, estado guardado y reaparición): columnas divinas de luz sagrada dorada de los Dioses con runas en la cubierta, activación determinista por proximidad ($\le 32\text{ px}$), captura atómica de instantánea del jugador (`SavedPlayerData`) y cofres abiertos, reaparición en $(x_{chk}, y_{chk})$ tras derrota con tecla `R` o temporizador, restauración de salud y maná completos y preservación monótona de mejoras (`maxHp`, `maxMp`, `weaponLevel`, `redOrbs`, `gorgonEyes`, `phoenixFeathers`), checkpoints en Popa ($x=140$) y Umbral de Proa ($x=980$), banner animado de punto alcanzado y aviso de derrota adaptativo, verificado con Caso W en Chrome CDP. Bloque 9 completado al 100 %. | **Aprobada** (2026-10-23) bajo el plan [`GOW8B-CHECK-01`](planes/GOW8B-CHECK-01.md) tras auditoría independiente de solo lectura. Bloque 9 completado al 100 %. |
 
 ### Bloque 10 — Jefes (Hidra)
 

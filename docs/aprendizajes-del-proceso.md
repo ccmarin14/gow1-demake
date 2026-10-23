@@ -661,5 +661,18 @@ Mantén cada entrada breve y accionable. Actualiza las guías de trabajo solo cu
 - Cambio recomendado al proceso: al diseñar puntos de control y reaparición (`GOW8B-CHECK-01`), asegurar que el snapshot de guardado capture el estado íntegro de la progresión acumulada (`maxHp`, `maxMp`, `weaponLevel`, `redOrbs`).
 - Evidencia o referencia: `docs/planes/GOW8B-UPGRADE-01.md`; `src/sim/chests.ts`; `src/sim/attack.ts`; `src/sim/world.ts`; `src/ui/HudLayer.ts`; `src/entities/WeaponLayer.ts`; `src/scene/ShellScene.ts`; `scripts/verification/capture-combat.mjs` (Caso V: $t=1$ inicio opening $v_x=0$, $t=12$ mitad $v_x=0$, $t=24$ fin $v_x=0$, $t=25$ apertura y +50 orbes, $t=31$ mejora a Nivel 2 `weaponLevel=2, orbs=0`, $t=48$ daño potenciado a 16 sobre legionario $HP=44$, $t=70$ HUD `weaponLevel=2`).
 
+### GOW8B-CHECK-01 — La persistencia monótona en instantáneas de checkpoint y el desacoplamiento entre reaparición física y reseteo de mundo (2026-10-23)
+
+- Resultado: aprobada tras auditoría independiente de solo lectura (4/4 criterios). Bloque 9 completado al 100 %.
+- Método que funcionó:
+  1. **Preservación monótona de inventario y estadísticas de progresión:** al morir y reaparecer en un punto de control, los recursos y mejoras acumuladas (`maxHp`, `maxMp`, `weaponLevel`, `redOrbs`, `gorgonEyes`, `phoenixFeathers`) no deben retroceder al estado exacto del fotograma en que se activó el checkpoint. Sincronizar de forma atómica y monótona (`Math.max`) cada mejora posterior hacia `savedPlayerData` garantiza que los logros obtenidos entre la activación del checkpoint y la muerte se conserven íntegros.
+  2. **Reaparición cinemática determinista sin recarga de escena:** reponer al personaje en $(x_{chk}, y_{chk})$, restablecer `hp = maxHp` y otorgar una ventana de gracia de invulnerabilidad temporal (60 ticks) en un solo tick de simulación, eliminando pantallas de carga o reinicios pesados del árbol de Phaser. El bucle de derrota y reintento resulta instantáneo, limpio y libre de frustración.
+  3. **Persistencia idempotente de entidades del entorno:** registrar los IDs de cofres abiertos (`openedChestIds`) en la instantánea para que los cofres ya saqueados permanezcan abiertos y los cofres intactos sigan disponibles tras el reintento, evitando duplicaciones de economía o desvanecimiento accidental de recompensas.
+- Dificultad o fallo observado: si la reaparición simplemente restaura el estado congelado al pisar el checkpoint, cualquier mejora o cofre abierto posteriormente se pierde tras morir, generando una penalización excesiva; actualizar la instantánea ante cada evento de mejora permanente resuelve la inconsistencia y premia la exploración.
+- Aprendizaje transferible: en arquitecturas de checkpoints y guardado para juegos de acción, el bucle de reaparición debe disociar la reubicación espacial (que vuelve al ancla segura del checkpoint) de la progresión de estadísticas y desbloqueos (que debe conservarse de forma estrictamente monótona para no devaluar el progreso del jugador).
+- Cambio recomendado al proceso: al diseñar batallas de jefes (`GOW8B-HYDRA-COMBO`), colocar un punto de control justo en la antesala de la arena para que la derrota ante el jefe permita reintentos inmediatos sin repetir secciones previas del nivel.
+- Evidencia o referencia: `docs/planes/GOW8B-CHECK-01.md`; `src/sim/checkpoint.ts`; `src/sim/world.ts`; `src/scene/ShellScene.ts`; `scripts/verification/capture-combat.mjs` (Caso W: $t=1$ inactivo, $t=20$ activación $x \approx 180$, $t=26$ mejora arma Nivel 2, $t=32$ muerte inducida $hp=0, isDead=true$, $t=38$ reaparición en $x=180$ con $hp=100$ y `weaponLevel=2` preservado, $t=55$ métricas estables de HUD).
+
+
 
 

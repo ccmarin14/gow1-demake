@@ -2,13 +2,14 @@ import { CONFIG } from '../config';
 import { checksumOf } from './checksum';
 import { stepHorizontal } from './movement';
 import type { Platform } from './scenarios';
-import { cloneChests, cloneEntities, DEFAULT_SCENARIO, getScenario, archerAt, legionnaireAt } from './scenarios';
-import type { AttackMoveId, ChestState, EntityState, GameAction, OrbState, ArrowState, WaveState, ArenaState, SimulationSnapshot } from './types';
+import { cloneCheckpoints, cloneChests, cloneEntities, DEFAULT_SCENARIO, getScenario, archerAt, legionnaireAt } from './scenarios';
+import type { AttackMoveId, CheckpointState, ChestState, EntityState, GameAction, OrbState, ArrowState, SavedPlayerData, WaveState, ArenaState, SimulationSnapshot } from './types';
 import { PLAYER_ID, sortActions } from './types';
 import { stepVertical, type VerticalParams } from './vertical';
 import { spawnOrbsFromDeath, stepOrbs } from './orbs';
 import { stepArcher, stepArrows } from './archer';
 import { stepChests, collectGorgonEye, collectPhoenixFeather, upgradeWeapon } from './chests';
+import { capturePlayerData, respawnAtCheckpoint, stepCheckpoints } from './checkpoint';
 import { WaveManager } from './waves';
 import { ArenaManager } from './arena';
 import {
@@ -98,6 +99,11 @@ export class World {
   private arrows: ArrowState[] = [];
   private arrowIdCounter = 0;
   private chests: ChestState[] = [];
+  private checkpoints: CheckpointState[] = [];
+  private activeCheckpointId: string | null = null;
+  private savedPlayerData: SavedPlayerData | null = null;
+  private savedOpenedChestIds: Set<string> = new Set();
+  private checkpointActivatedNotice: string | null = null;
   private waveManager: WaveManager | null = null;
   private waveEnemyIdCounter = 0;
   private arenaManager: ArenaManager | null = null;
@@ -152,23 +158,99 @@ export class World {
   collectGorgonEye(target?: EntityState): boolean {
     const p = target ?? this.peekEntity(PLAYER_ID);
     if (!p) return false;
-    return collectGorgonEye(p);
+    const ok = collectGorgonEye(p);
+    if (this.activeCheckpointId) {
+      this.savedPlayerData = capturePlayerData(p);
+    }
+    return ok;
   }
 
   collectPhoenixFeather(target?: EntityState): boolean {
     const p = target ?? this.peekEntity(PLAYER_ID);
     if (!p) return false;
-    return collectPhoenixFeather(p);
+    const ok = collectPhoenixFeather(p);
+    if (this.activeCheckpointId) {
+      this.savedPlayerData = capturePlayerData(p);
+    }
+    return ok;
   }
 
   upgradeWeapon(target?: EntityState): boolean {
     const p = target ?? this.peekEntity(PLAYER_ID);
     if (!p) return false;
-    return upgradeWeapon(p);
+    const ok = upgradeWeapon(p);
+    if (ok && this.activeCheckpointId) {
+      this.savedPlayerData = capturePlayerData(p);
+    }
+    return ok;
   }
 
   spawnEnemy(kind: 'legionnaire' | 'archer', x: number, facing: -1 | 1 = -1): EntityState {
     return this.spawnWaveEnemy(kind, x, facing);
+  }
+
+  peekCheckpoints(): readonly CheckpointState[] {
+    return this.checkpoints;
+  }
+
+  getActiveCheckpoint(): CheckpointState | undefined {
+    return this.checkpoints.find((c) => c.id === this.activeCheckpointId);
+  }
+
+  consumeCheckpointNotice(): string | null {
+    const notice = this.checkpointActivatedNotice;
+    this.checkpointActivatedNotice = null;
+    return notice;
+  }
+
+  activateCheckpoint(id: string): boolean {
+    const chk = this.checkpoints.find((c) => c.id === id);
+    if (!chk) return false;
+    chk.active = true;
+    this.activeCheckpointId = id;
+    const player = this.peekEntity(PLAYER_ID);
+    if (player) {
+      this.savedPlayerData = capturePlayerData(player);
+    }
+    for (const chest of this.chests) {
+      if (chest.state === 'open') {
+        this.savedOpenedChestIds.add(chest.id);
+      }
+    }
+    this.checkpointActivatedNotice = chk.name;
+    return true;
+  }
+
+  respawnAtCheckpoint(): boolean {
+    const player = this.entities.find((e) => e.id === PLAYER_ID);
+    const checkpoint = this.checkpoints.find((c) => c.id === this.activeCheckpointId);
+    if (!player || !checkpoint) {
+      return false;
+    }
+
+    respawnAtCheckpoint(player, checkpoint, this.savedPlayerData);
+
+    // Restore opened chests state
+    for (const chest of this.chests) {
+      if (this.savedOpenedChestIds.has(chest.id)) {
+        chest.state = 'open';
+        chest.itemAbsorbed = true;
+        chest.openProgressTicks = CONFIG.economy.chests.openDurationTicks;
+      }
+    }
+
+    // Refocus camera if in map scenario
+    if (this.mapData) {
+      this.cameraX = computeCameraScrollX(
+        player.x,
+        this.cameraX,
+        false,
+        this.mapData.segments[1]?.arenaScrollX ?? 480,
+        this.mapData.camera,
+      );
+    }
+
+    return true;
   }
 
   peekWave(): WaveState | null {
@@ -268,6 +350,11 @@ export class World {
     this.arrows = [];
     this.arrowIdCounter = 0;
     this.chests = cloneChests(scenario.chests ?? []);
+    this.checkpoints = cloneCheckpoints(scenario.checkpoints ?? []);
+    this.activeCheckpointId = null;
+    this.savedPlayerData = null;
+    this.savedOpenedChestIds.clear();
+    this.checkpointActivatedNotice = null;
     if (name === 'waves') {
       this.waveManager = new WaveManager();
       this.waveEnemyIdCounter = 0;
@@ -335,6 +422,11 @@ export class World {
   step(actions: readonly GameAction[] = []): void {
     this.input = sortActions(actions);
     if (this.input.includes('restart')) {
+      const p = this.entities.find((entity) => entity.id === PLAYER_ID);
+      if (p && p.isDead && this.activeCheckpointId) {
+        this.respawnAtCheckpoint();
+        return;
+      }
       this.reset();
       return;
     }
@@ -685,6 +777,20 @@ export class World {
     stepOrbs(this.orbs, player, TICK_DT);
     stepChests(this.chests, player, this.input);
 
+    const activatedChk = stepCheckpoints(this.checkpoints, player, this.activeCheckpointId);
+    if (activatedChk) {
+      this.activeCheckpointId = activatedChk.id;
+      if (player) {
+        this.savedPlayerData = capturePlayerData(player);
+      }
+      for (const chest of this.chests) {
+        if (chest.state === 'open') {
+          this.savedOpenedChestIds.add(chest.id);
+        }
+      }
+      this.checkpointActivatedNotice = activatedChk.name;
+    }
+
     if (this.arenaManager) {
       const waveState = this.waveManager ? this.waveManager.getState(this.targets) : null;
       this.arenaManager.step(waveState);
@@ -720,6 +826,8 @@ export class World {
       orbs: this.orbs.map((orb) => ({ ...orb })),
       arrows: this.arrows.map((arrow) => ({ ...arrow })),
       chests: this.chests.map((chest) => ({ ...chest })),
+      checkpoints: this.checkpoints.map((chk) => ({ ...chk })),
+      activeCheckpointId: this.activeCheckpointId,
       ...(waveState ? { wave: waveState } : {}),
       ...(arenaState ? { arena: arenaState } : {}),
       ...(this.mapData

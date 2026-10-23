@@ -447,6 +447,8 @@ async function run() {
             phoenixUpgrades: p.phoenixUpgrades ?? 0,
             redOrbs: p.redOrbs ?? 0,
             weaponLevel: p.weaponLevel ?? 1,
+            checkpointActive: snap.checkpoints && snap.checkpoints[0] ? snap.checkpoints[0].active : false,
+            activeCheckpointId: snap.activeCheckpointId ?? null,
             maxHp: p.maxHp,
             maxMp: p.maxMp ?? 100,
           });
@@ -1549,6 +1551,98 @@ async function run() {
       throw new Error(`Case V failure: finalWeaponHudLog invalid: ${JSON.stringify(finalWeaponHudLog)}`);
     }
 
+    // CASE W: Checkpoint Activation, Death & State-Preserving Respawn (GOW8B-CHECK-01)
+    // - Scenario: 'checkpoint' (Kratos at x=100, y=262, Checkpoint at x=180, y=262).
+    // - t=1..18: Kratos moves right towards checkpoint.
+    // - t=20: Kratos crosses into activation radius (x=180), activating checkpoint (checkpointActive=true, activeCheckpointId='chk-test').
+    // - t=25: Kratos upgrades weapon to Level 2 (weaponLevel=2).
+    // - t=30: Fatal damage induced (hp=0, isDead=true).
+    // - t=35: Player inputs 'restart' (R) -> respawns at active checkpoint.
+    // - t=36..40: Player successfully respawned at (180, 262):
+    //   - isDead === false
+    //   - hp === 100, mp === 100
+    //   - weaponLevel === 2 (Blades of Chaos Level 2 preserved!)
+    //   - hud.weaponLevel === 2
+    const caseW = await recordScenarioSequence({
+      caseId: 'checkpoint_activation_death_and_respawn',
+      scenario: 'checkpoint',
+      totalSteps: 60,
+      cropW: 240,
+      cropH: 140,
+      fixedCropX: 80,
+      fixedCropY: 140,
+      getActions: (t) => {
+        const sc = window.__SHELL_SCENE;
+        const p = sc.simulation.world.peekEntity('player');
+
+        // t=1: Position at x=140 (distance 40 px > 32 px from checkpoint at x=180)
+        if (t === 1 && p) {
+          p.x = 140;
+          p.y = 262;
+          p.vx = 0;
+          p.vy = 0;
+          p.facing = 1;
+        }
+
+        // t=1..15: Move right towards checkpoint (x=180)
+        if (t >= 1 && t <= 15) {
+          return ['move-right'];
+        }
+
+        // t=25: Upgrade weapon to Level 2 to test progression preservation across respawn
+        if (t === 25 && p) {
+          p.redOrbs = 100;
+          sc.simulation.world.upgradeWeapon(p);
+        }
+
+        // t=30: Induce defeat
+        if (t === 30 && p) {
+          p.hp = 0;
+          p.isDead = true;
+        }
+
+        // t=35: Press 'restart' (R) to trigger respawn at checkpoint
+        if (t === 35) {
+          return ['restart'];
+        }
+
+        return [];
+      },
+    });
+
+    const chkStartLog = caseW.logs.find((l) => l.t === 1);
+    const chkActiveLog = caseW.logs.find((l) => l.t === 20);
+    const preDeathLog = caseW.logs.find((l) => l.t === 26);
+    const deathLog = caseW.logs.find((l) => l.t === 32);
+    const respawnLog = caseW.logs.find((l) => l.t === 38);
+    const finalRespawnHudLog = caseW.logs.find((l) => l.t === 55);
+
+    console.log('Case W Checkpoint initial state (expected active=false):', chkStartLog ? `active=${chkStartLog.checkpointActive},chkId=${chkStartLog.activeCheckpointId}` : 'NONE');
+    console.log('Case W Checkpoint activated (expected active=true, chkId=chk-test):', chkActiveLog ? `active=${chkActiveLog.checkpointActive},chkId=${chkActiveLog.activeCheckpointId}` : 'NONE');
+    console.log('Case W Weapon Level 2 before defeat (expected weaponLevel=2, dead=false):', preDeathLog ? `weaponLevel=${preDeathLog.weaponLevel},dead=${preDeathLog.isDead}` : 'NONE');
+    console.log('Case W Player defeat induced (expected dead=true, hp=0):', deathLog ? `dead=${deathLog.isDead},hp=${deathLog.playerHp}` : 'NONE');
+    console.log('Case W Respawn at checkpoint (expected dead=false, hp=100, x=180, weaponLevel=2):', respawnLog ? `dead=${respawnLog.isDead},hp=${respawnLog.playerHp},x=${respawnLog.playerX},weaponLevel=${respawnLog.weaponLevel}` : 'NONE');
+    console.log('Case W HUD metrics post-respawn (expected weaponLevel=2, hp=100):', finalRespawnHudLog && finalRespawnHudLog.hud ? `weaponLevel=${finalRespawnHudLog.hud.weaponLevel},hp=${finalRespawnHudLog.hud.currentHp}` : 'NONE');
+
+    if (!chkStartLog || chkStartLog.checkpointActive !== false) {
+      throw new Error(`Case W failure: chkStartLog invalid: ${JSON.stringify(chkStartLog)}`);
+    }
+    if (!chkActiveLog || chkActiveLog.checkpointActive !== true || chkActiveLog.activeCheckpointId !== 'chk-test') {
+      throw new Error(`Case W failure: chkActiveLog invalid: ${JSON.stringify(chkActiveLog)}`);
+    }
+    if (!preDeathLog || preDeathLog.weaponLevel !== 2 || preDeathLog.isDead !== false) {
+      throw new Error(`Case W failure: preDeathLog invalid: ${JSON.stringify(preDeathLog)}`);
+    }
+    if (!deathLog || deathLog.isDead !== true || deathLog.playerHp !== 0) {
+      throw new Error(`Case W failure: deathLog invalid: ${JSON.stringify(deathLog)}`);
+    }
+    if (!respawnLog || respawnLog.isDead !== false || respawnLog.playerHp !== 100 || respawnLog.playerX !== 180 || respawnLog.weaponLevel !== 2) {
+      throw new Error(`Case W failure: respawnLog invalid: ${JSON.stringify(respawnLog)}`);
+    }
+    if (!finalRespawnHudLog || !finalRespawnHudLog.hud || finalRespawnHudLog.hud.weaponLevel !== 2 || finalRespawnHudLog.hud.currentHp !== 100) {
+      throw new Error(`Case W failure: finalRespawnHudLog invalid: ${JSON.stringify(finalRespawnHudLog)}`);
+    }
+
     console.log('\n=== ALL VERIFICATION TESTS COMPLETED SUCCESSFULLY ===');
     console.log('Artifacts in scripts/verification/output/:');
     console.log(' - combo_jjj_mosaic.png & combo_jjj.gif');
@@ -1573,6 +1667,7 @@ async function run() {
     console.log(' - gorgon_eye_chest_and_health_upgrade_mosaic.png & gorgon_eye_chest_and_health_upgrade.gif');
     console.log(' - phoenix_feather_chest_and_mana_upgrade_mosaic.png & phoenix_feather_chest_and_mana_upgrade.gif');
     console.log(' - red_orbs_chest_and_weapon_upgrade_mosaic.png & red_orbs_chest_and_weapon_upgrade.gif');
+    console.log(' - checkpoint_activation_death_and_respawn_mosaic.png & checkpoint_activation_death_and_respawn.gif');
 
     ws.close();
   } finally {

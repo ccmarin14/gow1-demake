@@ -216,6 +216,27 @@ export interface ChestState {
   itemAbsorbed: boolean;
 }
 
+export interface CheckpointState {
+  id: string;
+  x: number;
+  y: number;
+  name: string;
+  active: boolean;
+}
+
+export interface SavedPlayerData {
+  maxHp: number;
+  hp: number;
+  maxMp: number;
+  mp: number;
+  weaponLevel: number;
+  redOrbs: number;
+  gorgonEyes: number;
+  gorgonUpgrades: number;
+  phoenixFeathers: number;
+  phoenixUpgrades: number;
+}
+
 export interface SimulationSnapshot {
   frame: number;
   timeMs: number;
@@ -223,6 +244,8 @@ export interface SimulationSnapshot {
   orbs: OrbState[];
   arrows: ArrowState[];
   chests: ChestState[];
+  checkpoints?: CheckpointState[];
+  activeCheckpointId?: string | null;
   wave?: WaveState;
   arena?: ArenaState;
   cameraX?: number;

@@ -54,9 +54,12 @@ export class ShellScene extends Phaser.Scene {
   private defeatText: Phaser.GameObjects.Text | null = null;
   private waveBannerText: Phaser.GameObjects.Text | null = null;
   private upgradeBannerText: Phaser.GameObjects.Text | null = null;
+  private checkpointBannerText: Phaser.GameObjects.Text | null = null;
+  private checkpointBannerTimer: number = 0;
   private prevWeaponLevel: number = 1;
   private upgradeBannerTimer: number = 0;
   private barrierGraphics: Phaser.GameObjects.Graphics | null = null;
+  private checkpointGraphics: Phaser.GameObjects.Graphics | null = null;
   private magicGraphics: Phaser.GameObjects.Graphics | null = null;
   hudLayer!: HudLayer;
 
@@ -189,6 +192,23 @@ export class ShellScene extends Phaser.Scene {
       .setAlpha(0)
       .setVisible(true);
 
+    this.checkpointBannerText = this.add
+      .text(CONFIG.internal.width / 2, 45, 'PUNTO DE CONTROL ALCANZADO', {
+        color: '#fef08a',
+        fontFamily: 'monospace',
+        fontSize: '11px',
+        fontStyle: 'bold',
+        backgroundColor: '#000000cc',
+        padding: { x: 10, y: 3 },
+      })
+      .setOrigin(0.5)
+      .setDepth(27)
+      .setScrollFactor(0)
+      .setAlpha(0)
+      .setVisible(true);
+
+    this.checkpointGraphics = this.add.graphics().setDepth(CONFIG.presentation.checkpoint.depth ?? 1);
+
     if (import.meta.env.DEV) {
       this.lastDebugText = 'tick 0';
       this.debugText = this.add.text(155, 6, this.lastDebugText, {
@@ -230,7 +250,16 @@ export class ShellScene extends Phaser.Scene {
     }
 
     if (this.defeatText) {
-      this.defeatText.setVisible(Boolean(player && player.isDead));
+      const isDead = Boolean(player && player.isDead);
+      this.defeatText.setVisible(isDead);
+      if (isDead) {
+        const hasChk = Boolean(this.simulation.world.getActiveCheckpoint());
+        this.defeatText.setText(
+          hasChk
+            ? 'HAS MUERTO - PULSA R PARA REAPARECER'
+            : 'DERROTA - PULSA R PARA REINTENTAR',
+        );
+      }
     }
 
     if (this.waveBannerText) {
@@ -298,6 +327,7 @@ export class ShellScene extends Phaser.Scene {
     this.updateArenaBarriers();
     this.updateMagic(player);
     this.updateChests(player);
+    this.updateCheckpoints();
     if (player && player.groundImpactTicks > 0) {
       const shakePx = CONFIG.player.attack.groundImpact.shakePx;
       const dy = player.groundImpactTicks % 2 === 1 ? shakePx : -shakePx;
@@ -319,6 +349,20 @@ export class ShellScene extends Phaser.Scene {
       this.upgradeBannerText?.setAlpha(alpha);
     } else {
       this.upgradeBannerText?.setAlpha(0);
+    }
+
+    // Banner de punto de control alcanzado
+    const chkNotice = this.simulation.world.consumeCheckpointNotice();
+    if (chkNotice) {
+      this.checkpointBannerTimer = 2.0;
+      this.checkpointBannerText?.setText('PUNTO DE CONTROL ALCANZADO');
+    }
+    if (this.checkpointBannerTimer > 0) {
+      this.checkpointBannerTimer = Math.max(0, this.checkpointBannerTimer - delta / 1000);
+      const alpha = Math.min(1.0, this.checkpointBannerTimer);
+      this.checkpointBannerText?.setAlpha(alpha);
+    } else {
+      this.checkpointBannerText?.setAlpha(0);
     }
     // `import.meta.env.DEV` is statically false in a production build, so the
     // overlay module is dropped from the shipped bundle.
@@ -521,6 +565,11 @@ export class ShellScene extends Phaser.Scene {
     this.prevWeaponLevel = 1;
     this.upgradeBannerTimer = 0;
     this.upgradeBannerText?.setAlpha(0);
+    this.checkpointBannerTimer = 0;
+    this.checkpointBannerText?.setAlpha(0);
+    if (this.checkpointGraphics) {
+      this.checkpointGraphics.clear();
+    }
     if (this.barrierGraphics) {
       this.barrierGraphics.clear();
     }
@@ -1272,6 +1321,66 @@ export class ShellScene extends Phaser.Scene {
     }
   }
 
+  private updateCheckpoints(): void {
+    if (!this.checkpointGraphics) {
+      return;
+    }
+    this.checkpointGraphics.clear();
+
+    const checkpoints = this.simulation.world.peekCheckpoints();
+    if (checkpoints.length === 0) {
+      return;
+    }
+
+    const {
+      pillarColor,
+      glowColor,
+      coreColor,
+      baseRuneColor,
+      baseRuneGlow,
+    } = CONFIG.presentation.checkpoint;
+
+    const pillarW = CONFIG.checkpoints.lightPillarWidth;
+    const pillarH = CONFIG.checkpoints.lightPillarHeight;
+    const time = this.simulation.world.frame * 0.08;
+
+    for (let i = 0; i < checkpoints.length; i += 1) {
+      const chk = checkpoints[i];
+      const cx = chk.x;
+      const cy = chk.y; // deck line
+
+      const pulse = 0.8 + 0.2 * Math.sin(time + i * 2);
+      const baseAlpha = chk.active ? 0.45 : 0.28;
+
+      // 1. Runas concéntricas en la madera de la cubierta
+      this.checkpointGraphics.fillStyle(baseRuneGlow, (baseAlpha + 0.1) * pulse);
+      this.checkpointGraphics.fillEllipse(cx, cy, pillarW + 8, 8);
+
+      this.checkpointGraphics.fillStyle(baseRuneColor, (baseAlpha + 0.25) * pulse);
+      this.checkpointGraphics.fillEllipse(cx, cy, pillarW - 4, 5);
+
+      this.checkpointGraphics.fillStyle(chk.active ? glowColor : 0x78350f, 0.8 * pulse);
+      this.checkpointGraphics.fillEllipse(cx, cy, 8, 3);
+
+      // 2. Columna vertical de luz sagrada
+      const halfW = pillarW / 2;
+      const xLeft = cx - halfW;
+      const yTop = cy - pillarH;
+
+      // Halo exterior
+      this.checkpointGraphics.fillStyle(glowColor, 0.12 * pulse);
+      this.checkpointGraphics.fillRect(xLeft - 4, yTop, pillarW + 8, pillarH);
+
+      // Columna principal
+      this.checkpointGraphics.fillStyle(pillarColor, (chk.active ? 0.28 : 0.18) * pulse);
+      this.checkpointGraphics.fillRect(xLeft, yTop, pillarW, pillarH);
+
+      // Filamento central incandescente
+      this.checkpointGraphics.fillStyle(coreColor, (chk.active ? 0.45 : 0.25) * pulse);
+      this.checkpointGraphics.fillRect(cx - 2, yTop, 4, pillarH);
+    }
+  }
+
   shutdown(): void {
     this.hudLayer?.destroy();
     for (const gfx of this.orbSprites.values()) {
@@ -1299,6 +1408,11 @@ export class ShellScene extends Phaser.Scene {
     this.prevWeaponLevel = 1;
     this.upgradeBannerTimer = 0;
     this.upgradeBannerText?.setAlpha(0);
+    this.checkpointBannerTimer = 0;
+    this.checkpointBannerText?.setAlpha(0);
+    if (this.checkpointGraphics) {
+      this.checkpointGraphics.clear();
+    }
     if (this.barrierGraphics) {
       this.barrierGraphics.destroy();
       this.barrierGraphics = null;
@@ -1309,5 +1423,9 @@ export class ShellScene extends Phaser.Scene {
     }
     this.upgradeBannerText?.destroy();
     this.upgradeBannerText = null;
+    this.checkpointBannerText?.destroy();
+    this.checkpointBannerText = null;
+    this.checkpointGraphics?.destroy();
+    this.checkpointGraphics = null;
   }
 }

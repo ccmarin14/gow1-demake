@@ -1,5 +1,5 @@
 import { CONFIG } from '../config';
-import type { ChestState, EntityState } from './types';
+import type { CheckpointState, ChestState, EntityState } from './types';
 import { PLAYER_ID } from './types';
 
 export interface Platform {
@@ -15,6 +15,7 @@ export interface Scenario {
   /** Targets integrate knockback/launch (gravity, friction, platforms). */
   targetPhysics?: boolean;
   chests?: ChestState[];
+  checkpoints?: CheckpointState[];
 }
 
 const GROUND_Y = 262;
@@ -256,6 +257,21 @@ export function chestAt(
   };
 }
 
+export function checkpointAt(
+  id: string,
+  x: number,
+  y: number,
+  name: string,
+): CheckpointState {
+  return {
+    id,
+    x,
+    y,
+    name,
+    active: false,
+  };
+}
+
 const scenarios = new Map<string, Scenario>();
 
 function register(scenario: Scenario): void {
@@ -379,6 +395,20 @@ register({
     chestAt('chest-feather-beam', 'phoenix_feather', 1110, 200),
     chestAt('chest-proa', 'gorgon_eye', 1360, 218),
   ],
+  checkpoints: [
+    checkpointAt('chk-popa', 140, 262, 'Popa de la Nave'),
+    checkpointAt('chk-proa', 980, 262, 'Umbral de Proa'),
+  ],
+  targetPhysics: true,
+});
+
+register({
+  name: 'checkpoint',
+  entities: [playerAt(100, GROUND_Y)],
+  platforms: [{ x1: 0, x2: 480, yTop: GROUND_Y }],
+  checkpoints: [
+    checkpointAt('chk-test', 180, GROUND_Y, 'Punto de Prueba'),
+  ],
   targetPhysics: true,
 });
 
@@ -402,4 +432,8 @@ export function cloneEntities(entities: readonly EntityState[]): EntityState[] {
 
 export function cloneChests(chests: readonly ChestState[]): ChestState[] {
   return chests.map((chest) => ({ ...chest }));
+}
+
+export function cloneCheckpoints(checkpoints: readonly CheckpointState[]): CheckpointState[] {
+  return checkpoints.map((chk) => ({ ...chk }));
 }
