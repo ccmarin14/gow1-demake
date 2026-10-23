@@ -115,7 +115,7 @@ También el 2026-10-15, tras la aprobación de la etapa 6, la usuaria autorizó 
 
 | Orden | ID | Etapa | Estado |
 | --- | --- | --- | --- |
-| 28 | GOW8B-ART-KRA | Arte fino del personaje (Kratos): modelo articulado cinemático a 60 Hz en pixel art (reposo con respiración de 377 px, zancada con deltas > 900 px y promedio de 1223 px/cuadro, fase aérea y voltereta en suelo de 4 etapas), dimensiones exactas de 97×59 px, contacto en $y=58$, canal alfa binario y paleta canónica de 6 colores. | **Aprobada** (2026-10-23) bajo el plan de corrección [`CORRECCION-ANIMACION-KRATOS-01`](planes/CORRECCION-ANIMACION-KRATOS-01.md) tras reauditoría independiente de solo lectura. |
+| 28 | GOW8B-ART-KRA | Arte fino del personaje (Kratos): modelo articulado cinemático a 60 Hz en pixel art 16-bit de 12 colores de alto contraste (tatuaje carmesí de Ares, runas de fuego en hojas, filo de acero plateado, piel de ceniza en 3 tonos y correaje de bronce/cuero), reposo con respiración de 410 px, zancada viva con deltas de 1,013 a 1,626 px (promedio 1,251.7 px/cuadro), fase aérea y voltereta en suelo de 4 etapas, dimensiones exactas de 97×59 px, contacto en $y=58$ y canal alfa 100% binario. | **Aprobada** (2026-10-23) bajo los planes [`CORRECCION-ANIMACION-KRATOS-01`](planes/CORRECCION-ANIMACION-KRATOS-01.md) y [`KRATOS-ART-UPGRADE-12COL-01`](planes/KRATOS-ART-UPGRADE-12COL-01.md) tras reauditorías independientes de solo lectura. |
 | 29 | GOW8B-ART-ENEMY | Arte fino de esbirros y enemigos: integración y coherencia artística del elenco hostil completo del Egeo (Legionario No-Muerto `GOW8B-ENEMY1-ART`, Arquero No-Muerto `GOW8B-ENEMY2-ART` y la monumental Hidra de Lerna `GOW8B-HYDRA-ART`), paletas abisales y espectrales diferenciadas, canal alfa 100% binario y anclajes milimétricos a cubierta. Bloque 11 completado al 100 %. | **Aprobada** (2026-10-23) por consolidación de las etapas aprobadas [`GOW8B-ENEMY1-ART`](planes/GOW8B-ENEMY1-ART.md), [`GOW8B-ENEMY2-ART`](planes/GOW8B-ENEMY2-ART.md) y [`GOW8B-HYDRA-ART`](planes/GOW8B-HYDRA-ART.md) tras auditoría independiente de solo lectura. Bloque 11 completado al 100 %. |
 
 ### Bloque 12 — Presentación y cierre
@@ -1196,3 +1196,38 @@ La etapa está **cerrada y auditada** (APROBADA CON OBSERVACIONES) y **verificad
   - **No regresión física:** Salto simple `69.056 px`, doble salto `138.111 px`, rodada `82.33 px` en 19 ticks con 13 de invulnerabilidad. Casos A a E intactos.
   - **Determinismo estricto:** `deterministic: true` en todas las ejecuciones.
   - **Build y consola:** `tsc --noEmit && pnpm build` exit 0 en 6.81s; `__GOW8B` ausente en `dist/`; 0 errores y 0 advertencias de consola.
+
+## KRATOS-ART-UPGRADE-12COL-01 — Elevación visual de Kratos a pixel art 16-bit de 12 colores sobre rig cinemático a 60 Hz (2026-10-23)
+
+**Estado:** **APROBADA** tras auditoría independiente de solo lectura (2026-10-23). Plan y criterios en [`docs/planes/KRATOS-ART-UPGRADE-12COL-01.md`](planes/KRATOS-ART-UPGRADE-12COL-01.md).
+
+- **Subagentes y modelos:**
+  - **Auditor del plan (solo lectura):** subagente `self` (`01acf36e-053e-4f48-b4d9-de32dea2e091`, runtime Antigravity, modelo `inherit` / Gemini 4 Argon Medium). Dictamen: Plan Aprobado.
+  - **Implementador:** subagente `self` (`fe4b68ad-846c-4e1a-a931-fac862b33ce6`, runtime Antigravity, modelo `inherit` / Gemini 4 Argon Medium).
+  - **Auditor independiente de reauditoría (solo lectura):** subagente `self` distinto (`9bf6a9d4-70f7-4e9f-9238-b78d23c111b1`, runtime Antigravity, modelo `inherit` / Gemini 4 Argon Medium). Dictamen: **APROBADA**.
+- **Cambios aplicados:**
+  1. **Paleta canónica de 12 colores de alto contraste (`scripts/gen-kratos-anim.py`):**
+     - Sombra y contorno profundo: `C_BLACK` `(18, 14, 16)`.
+     - Piel de ceniza en 3 tonos anatómicos: `C_ASH_DK` `(64, 56, 52)`, `C_ASH_MD` `(144, 136, 128)`, `C_ASH_HI` `(222, 216, 210)`.
+     - Tatuaje carmesí puro de Ares en 2 tonos: `C_TATTOO_DK` `(130, 24, 20)` y `C_TATTOO_HI` `(220, 40, 32)` de alto brillo y contraste visual.
+     - Atuendo de cuero y armadura de bronce: `C_LEATHER_DK` `(48, 32, 22)`, `C_LEATHER_MD` `(96, 64, 40)` y `C_BRONZE` `(180, 136, 56)`.
+     - Metalurgia de las Cuchillas del Caos y runas de fuego: `C_STEEL_DK` `(42, 48, 56)`, filo plateado `C_STEEL_HI` `(216, 224, 232)` y fuego rúnico incandescente `C_RUNE_FIRE` `(255, 136, 24)`.
+  2. **Esculpido de silueta y sombreado muscular en spritesheets (`public/assets/characters/`):**
+     - Pectorales y *six-pack* espartano tallados en micro-sombras de 1 px.
+     - Cadenas de hierro en antebrazos con reflejos plateados y anillas tridimensionales.
+     - Faldón (*pteruges*) con hebilla de bronce dorado y tiras de cuero con caída natural.
+     - Regeneración de las 5 hojas (`kratos-idle.png`, `kratos-run.png`, `kratos-air.png`, `kratos-attack.png`, `kratos-roll.png`), el sprite maestro `kratos-neutral.png` y la hoja de contacto a 2x `docs/referencias/kratos-anim-contact-sheet.png`.
+- **Evidencia medida y verificada por el auditor independiente (`9bf6a9d4-70f7-4e9f-9238-b78d23c111b1`):**
+  - **Deltas cinemáticos vivos (`ImageChops.difference`):**
+    - Ciclo de carrera (`kratos-run.png`): $0 \to 1 = 1,194\text{ px}$, $1 \to 2 = 1,626\text{ px}$, $2 \to 3 = 1,013\text{ px}$, $3 \to 4 = 1,172\text{ px}$, $4 \to 5 = 1,332\text{ px}$, $5 \to 0 = 1,173\text{ px}$. Promedio: **1,251.7 px/cuadro** (todos $>1,000\text{ px}$, zancada plena confirmada).
+    - Reposo (`kratos-idle.png`): $0 \to 1 = 410\text{ px}$ ($\ge 370\text{ px}$).
+  - **Invariantes geométricas y técnicas:**
+    - Dimensiones por cuadro: exactamente $97 \times 59\text{ px}$ en las 6 hojas.
+    - Anclaje al suelo estricto: contacto continuo en la línea inferior $y=58$ (`bbox[3] == 59`) en todos los cuadros terrestres.
+    - Canal alfa $100\%$ binario ($a \in \{0, 255\}$).
+    - Paleta contenida: exactamente 12 colores (`assert len(colors) == 12`).
+  - **Determinismo y suite de pruebas:**
+    - Batería completa de 28 casos en Chrome CDP (`capture-combat.mjs`) aprobada con éxito al 100%.
+    - Cero errores y cero advertencias de consola.
+    - `pnpm exec tsc --noEmit && pnpm build` exit 0; 0 apariciones de `__GOW8B` en `dist/`.
+

@@ -4,15 +4,16 @@
 >
 > **Regla de uso:** al abrir, pausar, bloquear o cerrar un hilo, se actualiza este archivo **en el mismo commit** que el cambio. Un hilo sin fila aquí se considera olvidado. Los resultados de cada etapa siguen en su plan (`docs/planes/`) y las lecciones en `docs/aprendizajes-del-proceso.md`.
 
-Última actualización: 2026-10-23 (13:05).
+Última actualización: 2026-10-23 (14:20).
 
 ## 1. Ramas
 
 | Rama | Contenido | Estado |
 | --- | --- | --- |
-| `master` | Toda la línea aprobada del producto final integrado (34 etapas, 12 bloques completados al 100%). | **Línea estable vigente (Versión Final Completa).** |
+| `master` | Toda la línea aprobada del producto final integrado (34 etapas, 12 bloques completados al 100%, Kratos en pixel art de 12 colores con rig cinemático a 60 Hz). | **Línea estable vigente (Versión Final Completa).** |
+| `tarea/KRATOS-ART-UPGRADE-12COL-01` | Elevación visual de Kratos a 12 colores sobre rig cinemático (aprobada por auditor independiente). | Fusionada en `master`. |
 | `tarea/GOW8B-CHAOS-01` | Historial previo de la línea estable; ya contenida en `master`. | Redundante; se puede borrar cuando la usuaria quiera. |
-| `arte/KRATOS-2D-SPRITE-GEN-01` | Hilo de arte; sincronizado con `master` conteniendo los 22 sprites auténticos de Kratos. | **Cerrada y aprobada**. |
+| `arte/KRATOS-2D-SPRITE-GEN-01` | Hilo de arte; sincronizado con `master` conteniendo los sprites de 12 colores de Kratos. | **Cerrada y aprobada**. |
 | Etiqueta `respaldo/pre-merge-2026-10-22` | Punto de respaldo previo a la fusión y al borrado de ramas. | Conservar. |
 
 Ramas `tarea/GOW8B-{DJUMP,KRA-02,RES-01,ROLL-01,SCALE-01}`: eliminadas el 2026-10-22 (apuntaban a `e6f9013`, ancestro de `master`; sin trabajo propio).
@@ -21,7 +22,7 @@ Ramas `tarea/GOW8B-{DJUMP,KRA-02,RES-01,ROLL-01,SCALE-01}`: eliminadas el 2026-1
 
 | Hilo | Estado | Siguiente paso | Bloqueo / decisión pendiente | Documento |
 | --- | --- | --- | --- | --- |
-| **Arte y animación de Kratos** (`GOW8B-ART-KRA`) | Cerrado y aprobado | Modelo cinemático articulado a 60 Hz en pixel art (zancada completa con deltas de 972 a 1598 px, respiración viva de 377 px, anclaje $y=58$, alfa binario y 6 colores canónicos), reauditado y aprobado tras corrección. | Ninguno. | [`planes/CORRECCION-ANIMACION-KRATOS-01.md`](planes/CORRECCION-ANIMACION-KRATOS-01.md) |
+| **Arte y animación de Kratos** (`GOW8B-ART-KRA`) | Cerrado y aprobado | Modelo cinemático articulado a 60 Hz en pixel art 16-bit de 12 colores de alto contraste (zancada completa con deltas de 1,013 a 1,626 px, respiración viva de 410 px, anclaje $y=58$, alfa binario, tatuaje carmesí de Ares, filo plateado, runas de fuego y 3 tonos de piel de ceniza), reauditado y aprobado tras elevación visual. | Ninguno. | [`planes/KRATOS-ART-UPGRADE-12COL-01.md`](planes/KRATOS-ART-UPGRADE-12COL-01.md) |
 | **Combate PS2, Bloqueo/Parry y locomoción** (Bloque 3 100 %) | Cerrado y aprobado | Ninguno. Bloque 3 completado y verificado (Casos A a I en CDP). | Validación humana de sensación: ver registro de pendientes. | [`verificacion.md`](verificacion.md) |
 | **Arte del Legionario No-Muerto** (`GOW8B-ENEMY1-ART`) | Cerrado y aprobado | Hoja de 8 poses completada y verificada (`legionnaire.png` 512×54 px, 12 colores, $y=53$). | Ninguno. | [`planes/GOW8B-ENEMY1-ART.md`](planes/GOW8B-ENEMY1-ART.md) |
 | **Conducta e IA del Legionario No-Muerto** (`GOW8B-ENEMY1-AI`) | Cerrado y aprobado | Máquina de estados completa (`approach`, `windup`, `slash`, `recover`, `hitstun`, `juggle`, `death`), interacción con Parry y Ascensión, Caso J en CDP verificado. | Ninguno. | [`planes/GOW8B-ENEMY1-AI.md`](planes/GOW8B-ENEMY1-AI.md) |

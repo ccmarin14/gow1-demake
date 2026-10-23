@@ -782,6 +782,18 @@ Mantén cada entrada breve y accionable. Actualiza las guías de trabajo solo cu
 - Cambio recomendado al proceso: incorporar en el script de verificación automatizada una aserción de delta mínimo entre fotogramas para cada clip cargado en el motor.
 - Evidencia o referencia: `docs/planes/CORRECCION-ANIMACION-KRATOS-01.md`; `scratch/audit/run_cycle_audit_comparison.png`; `AUDITORIA_CRITERIO_ANIMACION_KRATOS.md`; `kratos-run.png` (deltas entre 972 y 1598 px; promedio 1223.3 px/cuadro).
 
+### KRATOS-ART-UPGRADE-12COL-01 — La elevación de generadores cinemáticos a paletas de 12 colores con jerarquía tonal resuelve la brecha visual sin degradar la animación viva a 60 Hz (2026-10-23)
+
+- Resultado: aprobada tras auditoría independiente de solo lectura (4/4 criterios).
+- Método que funcionó:
+  1. **Expansión armónica de paleta estructurada en 4 capas semánticas de 3 tonos:** en lugar de saltar a texturas hiper-detalladas o modelos de difusión estáticos, elevar el renderizador procedural paramétrico (`scripts/gen-kratos-anim.py`) de 6 a exactamente 12 colores divididos en: piel de ceniza espartana en 3 tonos (`C_ASH_DK`, `C_ASH_MD`, `C_ASH_HI`), tatuaje carmesí de Ares en 2 tonos (`C_TATTOO_DK`, `C_TATTOO_HI`), correajes y faldón en cuero y bronce (`C_LEATHER_DK`, `C_LEATHER_MD`, `C_BRONZE`), y metalúrgica de las Cuchillas del Caos (`C_STEEL_DK`, `C_STEEL_HI`, `C_RUNE_FIRE`, `C_BLACK`).
+  2. **Esculpido anatómico sub-pixel sobre esqueleto cinemático intacto:** preservar las fórmulas de interpolación biomecánica (ángulos de muslos, pantorrillas, torso y balanceo de brazos) mientras se sustituyen los polígonos planos por volumen muscular sombreado (pectorales, six-pack de 1 px, ceño pronunciado, perilla espartana angular y runas de fuego en el lomo de las hojas).
+  3. **Verificación dual (cuantitativa + cinemática):** validar que la elevación de textura no reduzca el desplazamiento inter-cuadro (`ImageChops.difference` entre 1,013 y 1,626 px/cuadro, con promedio de 1,251.7 px/cuadro) y cumpla rigurosamente las invariantes técnicas (97×59 px, $y=58$, alfa 100% binario, assert `len(colors) == 12`).
+- Dificultad o fallo observado: intentar mejorar el aspecto visual usando modelos generativos de difusión sacrificó por completo la zancada y cinemática (clonando poses rígidas con deltas $<200\text{ px}$); la solución fue elevar la riqueza cromática y el sombreado directamente dentro del generador cinemático determinista.
+- Aprendizaje transferible: para sprites animados en juegos de acción lateral retro, cuando el maniquí cinemático funciona a la perfección en física y timing pero carece de contraste estético, la solución óptima no es reemplazar el pipeline por generación de imágenes externas, sino enriquecer la paleta tonal y el micro-sombreado del propio generador cinemático. Esto preserva el 100% del determinismo a 60 Hz y el *game feel*, alcanzando la calidad de un pixel art de 16 bits auténtico.
+- Cambio recomendado al proceso: definir las paletas de personajes principales con al menos 10–12 colores desde el inicio del pipeline cinemático (3 tonos de piel, 2 tonos de atuendo primario, acentos de arma y runas), evitando prototipos monocromáticos que luego requieran re-escalado cromático.
+- Evidencia o referencia: `docs/planes/KRATOS-ART-UPGRADE-12COL-01.md`; `scripts/gen-kratos-anim.py`; `public/assets/characters/kratos-*.png`; `docs/referencias/kratos-anim-contact-sheet.png`; suite Chrome CDP (28 casos A a AB aprobados al 100%, 0 errores en consola).
+
 
 
 
