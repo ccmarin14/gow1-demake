@@ -373,6 +373,9 @@ async function run() {
             playerMp: p.mp ?? 100,
             magicPhase: p.magicPhase,
             magicTicks: p.magicTicks,
+            cameraX: snap.cameraX !== undefined ? snap.cameraX : (sc.cameras.main.scrollX ?? 0),
+            segmentId: snap.segmentId ?? null,
+            segmentName: snap.segmentName ?? null,
             legionnaireHp: snap.entities.find((e) => e.kind === 'legionnaire')?.hp ?? null,
             archerHp: snap.entities.find((e) => e.kind === 'archer')?.hp ?? null,
             archerDead: snap.entities.find((e) => e.kind === 'archer')?.isDead ?? null,
@@ -1122,6 +1125,74 @@ async function run() {
     console.log('Case Q Blue orb mana recovery (expected mp=85):', blueOrbAbsorbedLog ? `mp=${blueOrbAbsorbedLog.playerMp},hudMp=${blueOrbAbsorbedLog.hud?.currentMp}` : 'NONE');
     console.log('Case Q Insufficient MP blocked (expected mp=20, phase=none):', insufficientMpLog ? `mp=${insufficientMpLog.playerMp},ph=${insufficientMpLog.magicPhase}` : 'NONE');
 
+    // CASE R: Level 1 Map Structure, Segments and Camera Scroll (GOW8B-MAP-01)
+    // - Scenario: 'level1' (Continuous deck of 1440 px: Popa [0..480], Arena [480..960], Proa [960..1440])
+    // - t=1: Initial state at Popa (x=100, cameraX=0, segmentName='Popa').
+    // - t=15: Position Kratos at x=300 (Popa) -> camera starts scrolling (cameraX > 0).
+    // - t=25: Kratos enters Segment 2 at x=650 -> arena triggers (active=true), camera locks at scrollX=480.
+    // - t=26..40: Confinement in arena (barriers at x=550 and x=890).
+    // - t=45: Wave victory / complete encounter -> dissipation begins (30 ticks).
+    // - t=75: Barriers completely dissipated (active=false) -> camera unlocks.
+    // - t=80: Kratos advances to Proa at x=1250 (>1200) -> camera reaches rightmost scroll (cameraX >= 900).
+    // - t=90: Settled state at Proa.
+    const caseR = await recordScenarioSequence({
+      caseId: 'map_scroll_and_segments',
+      scenario: 'level1',
+      totalSteps: 90,
+      cropW: 240,
+      cropH: 140,
+      fixedCropX: 0,
+      fixedCropY: 60,
+      getActions: (t) => {
+        const sc = window.__SHELL_SCENE;
+        const p = sc.simulation.world.peekEntity('player');
+
+        // t=15: Position Kratos at x=300 in Popa to test camera deadzone trigger
+        if (t === 15 && p) {
+          p.x = 300;
+          p.vx = 0;
+        }
+
+        // t=25: Position Kratos at x=650 in Segment 2 to trigger arena
+        if (t === 25 && p) {
+          p.x = 650;
+          p.vx = 0;
+        }
+
+        // t=45: Complete encounter to trigger barrier dissipation
+        if (t === 45) {
+          sc.simulation.world.completeWaveEncounter();
+        }
+
+        // t=80: Position Kratos at Proa (x=1250) to test forward scroll and right clamp
+        if (t === 80 && p) {
+          p.x = 1250;
+          p.vx = 0;
+        }
+
+        // Movement pulses
+        if ((t >= 15 && t <= 20) || (t >= 26 && t <= 35) || (t >= 81 && t <= 88)) {
+          return ['move-right'];
+        }
+
+        return [];
+      },
+    });
+
+    const mapInitLog = caseR.logs.find((l) => l.t === 1);
+    const popaScrollLog = caseR.logs.find((l) => l.t === 16);
+    const arenaLockLog = caseR.logs.find((l) => l.t === 26);
+    const dissipateStartLogR = caseR.logs.find((l) => l.t === 46);
+    const arenaUnlockLog = caseR.logs.find((l) => l.t === 76);
+    const proaScrollLog = caseR.logs.find((l) => l.t === 85);
+
+    console.log('Case R Initial state at Popa (expected x=100, camX=0, seg=Popa):', mapInitLog ? `x=${mapInitLog.playerX.toFixed(1)},camX=${mapInitLog.cameraX.toFixed(1)},seg=${mapInitLog.segmentName}` : 'NONE');
+    console.log('Case R Popa camera scroll initiated (expected x~300, camX>0, seg=Popa):', popaScrollLog ? `x=${popaScrollLog.playerX.toFixed(1)},camX=${popaScrollLog.cameraX.toFixed(1)},seg=${popaScrollLog.segmentName}` : 'NONE');
+    console.log('Case R Segment 2 arena trigger & camera lock (expected camX=480, arena=true):', arenaLockLog ? `x=${arenaLockLog.playerX.toFixed(1)},camX=${arenaLockLog.cameraX.toFixed(1)},act=${arenaLockLog.arenaActive}` : 'NONE');
+    console.log('Case R Arena dissipation initiated (expected dTicks=29, act=true):', dissipateStartLogR ? `act=${dissipateStartLogR.arenaActive},dTicks=${dissipateStartLogR.arenaDissipate}` : 'NONE');
+    console.log('Case R Arena unlocked post-dissipation (expected act=false):', arenaUnlockLog ? `act=${arenaUnlockLog.arenaActive},camX=${arenaUnlockLog.cameraX.toFixed(1)}` : 'NONE');
+    console.log('Case R Proa advance and rightmost camera scroll (expected x>1200, camX>=900, seg=Proa):', proaScrollLog ? `x=${proaScrollLog.playerX.toFixed(1)},camX=${proaScrollLog.cameraX.toFixed(1)},seg=${proaScrollLog.segmentName}` : 'NONE');
+
     console.log('\n=== ALL VERIFICATION TESTS COMPLETED SUCCESSFULLY ===');
     console.log('Artifacts in scripts/verification/output/:');
     console.log(' - combo_jjj_mosaic.png & combo_jjj.gif');
@@ -1141,6 +1212,7 @@ async function run() {
     console.log(' - waves_flow_and_pacing_mosaic.png & waves_flow_and_pacing.gif');
     console.log(' - arena_confinement_and_barriers_mosaic.png & arena_confinement_and_barriers.gif');
     console.log(' - poseidons_rage_magic_aoe_mosaic.png & poseidons_rage_magic_aoe.gif');
+    console.log(' - map_scroll_and_segments_mosaic.png & map_scroll_and_segments.gif');
 
     ws.close();
   } finally {

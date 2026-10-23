@@ -87,7 +87,7 @@ También el 2026-10-15, tras la aprobación de la etapa 6, la usuaria autorizó 
 
 | Orden | ID | Etapa | Estado |
 | --- | --- | --- | --- |
-| 20 | GOW8B-MAP-01 **(nueva)** | Mapa del primer nivel (estructura lateral y segmentos) | Pendiente; no activa. |
+| 20 | GOW8B-MAP-01 **(nueva)** | Mapa del primer nivel (cubierta de 1440 px): tres segmentos continuos transitables (Popa, Arena Central con barreras, Proa), cámara 2D con zona muerta ($\pm 32\text{ px}$) y bloqueo estricto en arena ($scrollX = 480\text{ px}$), fondo marino con parallax horizontal desacoplado ($0.25\times$) e invariante de HUD inmóvil, verificado con Caso R en Chrome CDP. | **Aprobada** (2026-10-23) bajo el plan [`GOW8B-MAP-01`](planes/GOW8B-MAP-01.md) tras auditoría independiente de solo lectura. |
 | 21 | GOW8B-PLATFORM-01 **(nueva)** | Plataformeo del nivel: extiende la etapa 8 a la geometría real | Pendiente; no activa. |
 
 ### Bloque 8 — Recogibles y cofres

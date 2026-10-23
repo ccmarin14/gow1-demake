@@ -337,6 +337,42 @@ export const CONFIG = {
       combo: PLAYER.attack.combo,
     },
   }),
+  map: {
+    level1: {
+      width: 1440,
+      height: 270,
+      groundY: 262,
+      segments: {
+        poopDeck: {
+          id: 1,
+          name: 'Popa',
+          xStart: 0,
+          xEnd: 480,
+        },
+        centralArena: {
+          id: 2,
+          name: 'Arena Central',
+          xStart: 480,
+          xEnd: 960,
+          barrierLeftX: 550,
+          barrierRightX: 890,
+          arenaScrollX: 480,
+        },
+        bowDeck: {
+          id: 3,
+          name: 'Proa',
+          xStart: 960,
+          xEnd: 1440,
+        },
+      },
+      camera: {
+        deadzoneX: 32,
+        scrollMinX: 0,
+        scrollMaxX: 960,
+        parallaxFactor: 0.25,
+      },
+    },
+  },
   presentation: {
     background: '#111827',
     debugText: '#d1d5db',

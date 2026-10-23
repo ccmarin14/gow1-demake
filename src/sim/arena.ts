@@ -16,14 +16,28 @@ export class ArenaManager {
   private dissipating = false;
   private dissipateTicks = 0;
   private alpha: number = CONFIG.combat.arena.barrierAlpha;
-  private readonly minX: number = CONFIG.combat.arena.minX;
-  private readonly maxX: number = CONFIG.combat.arena.maxX;
+  private readonly minX: number;
+  private readonly maxX: number;
 
-  constructor() {
-    this.reset();
+  constructor(
+    minX: number = CONFIG.combat.arena.minX,
+    maxX: number = CONFIG.combat.arena.maxX,
+    startActive: boolean = true,
+  ) {
+    this.minX = minX;
+    this.maxX = maxX;
+    this.active = startActive;
+    this.alpha = startActive ? CONFIG.combat.arena.barrierAlpha : 0;
   }
 
   reset(): void {
+    this.active = true;
+    this.dissipating = false;
+    this.dissipateTicks = 0;
+    this.alpha = CONFIG.combat.arena.barrierAlpha;
+  }
+
+  activate(): void {
     this.active = true;
     this.dissipating = false;
     this.dissipateTicks = 0;

@@ -306,6 +306,13 @@ register({
   targetPhysics: true,
 });
 
+register({
+  name: 'level1',
+  entities: [playerAt(100, GROUND_Y)],
+  platforms: [{ x1: 0, x2: 1440, yTop: GROUND_Y }],
+  targetPhysics: true,
+});
+
 export const DEFAULT_SCENARIO = 'platforms';
 
 export function getScenario(name: string): Scenario {

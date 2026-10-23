@@ -24,6 +24,7 @@ import { isRolling, startRoll, stepRoll } from './roll';
 import { isGuarding, startGuard, stepGuard } from './guard';
 import { stepLegionnaire } from './legionnaire';
 import { isCastingMagic, stepMagic } from './magic';
+import { buildLevel1Map, computeCameraScrollX, getSegmentAtX, type LevelMapData } from './map';
 
 const TICK_DT = 1 / CONFIG.sim.tickRate;
 
@@ -98,6 +99,9 @@ export class World {
   private waveManager: WaveManager | null = null;
   private waveEnemyIdCounter = 0;
   private arenaManager: ArenaManager | null = null;
+  private mapData: LevelMapData | null = null;
+  private cameraX = 0;
+  private arenaTriggered = false;
 
   constructor() {
     this.loadScenario(DEFAULT_SCENARIO);
@@ -151,6 +155,21 @@ export class World {
     if (this.waveManager) {
       this.waveManager.completeEncounter();
     }
+  }
+
+  triggerArena(): void {
+    if (this.arenaManager && !this.arenaManager.isActive()) {
+      this.arenaTriggered = true;
+      this.arenaManager.activate();
+    }
+  }
+
+  get cameraScrollX(): number {
+    return this.cameraX;
+  }
+
+  get currentMap(): LevelMapData | null {
+    return this.mapData;
   }
 
   private spawnWaveEnemy(kind: 'legionnaire' | 'archer', x: number, facing: -1 | 1): EntityState {
@@ -224,13 +243,29 @@ export class World {
       this.waveManager = new WaveManager();
       this.waveEnemyIdCounter = 0;
       this.arenaManager = null;
+      this.mapData = null;
+      this.cameraX = 0;
+      this.arenaTriggered = false;
     } else if (name === 'arena') {
       this.waveManager = new WaveManager();
       this.waveEnemyIdCounter = 0;
       this.arenaManager = new ArenaManager();
+      this.mapData = null;
+      this.cameraX = 0;
+      this.arenaTriggered = false;
+    } else if (name === 'level1') {
+      this.mapData = buildLevel1Map();
+      this.cameraX = 0;
+      this.arenaTriggered = false;
+      this.waveManager = new WaveManager();
+      this.waveEnemyIdCounter = 0;
+      this.arenaManager = new ArenaManager(550, 890, false);
     } else {
       this.waveManager = null;
       this.arenaManager = null;
+      this.mapData = null;
+      this.cameraX = 0;
+      this.arenaTriggered = false;
     }
   }
 
@@ -449,13 +484,20 @@ export class World {
         if (nowGuarding || nowCastingMagic) {
           player.vx = 0;
         }
+        if (this.mapData && this.arenaManager && !this.arenaTriggered && !this.arenaManager.isActive()) {
+          if (player.x >= 550) {
+            this.arenaTriggered = true;
+            this.arenaManager.activate();
+          }
+        }
         const horizontalLocked = nowRolling || player.attackPhase === 'active' || nowGuarding || inHitstun || nowCastingMagic;
+        const marginX = this.mapData ? 16 : (CONFIG.player.sprite.width / 2);
         const playerMinX = (this.arenaManager && this.arenaManager.isActive())
-          ? this.arenaManager.getMinX() + (CONFIG.player.sprite.width / 2)
-          : CONFIG.player.minX;
+          ? this.arenaManager.getMinX() + marginX
+          : (this.mapData ? 16 : CONFIG.player.minX);
         const playerMaxX = (this.arenaManager && this.arenaManager.isActive())
-          ? this.arenaManager.getMaxX() - (CONFIG.player.sprite.width / 2)
-          : CONFIG.player.maxX;
+          ? this.arenaManager.getMaxX() - marginX
+          : (this.mapData ? this.mapData.width - 16 : CONFIG.player.maxX);
         const playerMovementParams = {
           ...CONFIG.player,
           minX: playerMinX,
@@ -503,12 +545,13 @@ export class World {
       const gravity = CONFIG.player.vertical.gravity;
       const maxFallSpeed = CONFIG.player.vertical.maxFallSpeed;
       const friction = CONFIG.player.attack.target.groundFriction;
+      const targetMargin = this.mapData ? 16 : CONFIG.player.attack.targetHalfWidth;
       const minX = (this.arenaManager && this.arenaManager.isActive())
-        ? this.arenaManager.getMinX() + CONFIG.player.attack.targetHalfWidth
-        : CONFIG.player.attack.target.minX;
+        ? this.arenaManager.getMinX() + targetMargin
+        : (this.mapData ? 16 : CONFIG.player.attack.target.minX);
       const maxX = (this.arenaManager && this.arenaManager.isActive())
-        ? this.arenaManager.getMaxX() - CONFIG.player.attack.targetHalfWidth
-        : CONFIG.player.attack.target.maxX;
+        ? this.arenaManager.getMaxX() - targetMargin
+        : (this.mapData ? this.mapData.width - 16 : CONFIG.player.attack.target.maxX);
 
       for (let i = 0; i < this.targets.length; i += 1) {
         const target = this.targets[i];
@@ -608,12 +651,29 @@ export class World {
       this.arenaManager.step(waveState);
     }
 
+    if (this.mapData && player) {
+      const isArenaActive = Boolean(this.arenaManager && this.arenaManager.isActive());
+      const arenaScrollX = this.mapData.segments[1]?.arenaScrollX ?? 480;
+      this.cameraX = computeCameraScrollX(
+        player.x,
+        this.cameraX,
+        isArenaActive,
+        arenaScrollX,
+        this.mapData.camera,
+      );
+    } else {
+      this.cameraX = 0;
+    }
+
     this.tick += 1;
   }
 
   snapshot(): SimulationSnapshot {
     const waveState = this.waveManager ? this.waveManager.getState(this.targets) : undefined;
     const arenaState = this.arenaManager ? this.arenaManager.getState() : undefined;
+    const currentSegment = this.mapData
+      ? getSegmentAtX(this.mapData, this.peekEntity(PLAYER_ID)?.x ?? 0)
+      : undefined;
     const payload = {
       frame: this.tick,
       timeMs: this.timeMs,
@@ -622,6 +682,13 @@ export class World {
       arrows: this.arrows.map((arrow) => ({ ...arrow })),
       ...(waveState ? { wave: waveState } : {}),
       ...(arenaState ? { arena: arenaState } : {}),
+      ...(this.mapData
+        ? {
+            cameraX: this.cameraX,
+            segmentId: currentSegment?.id,
+            segmentName: currentSegment?.name,
+          }
+        : {}),
       input: [...this.input],
     };
     return {

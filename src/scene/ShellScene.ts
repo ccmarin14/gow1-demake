@@ -26,6 +26,7 @@ import { PLAYER_ID } from '../sim/types';
 
 export class ShellScene extends Phaser.Scene {
   private inputManager!: InputManager;
+  private bg: Phaser.GameObjects.TileSprite | null = null;
   private debugText: Phaser.GameObjects.Text | null = null;
   private lastDebugText = '';
   private player: Phaser.GameObjects.Sprite | null = null;
@@ -77,9 +78,18 @@ export class ShellScene extends Phaser.Scene {
 
   create(): void {
     this.cameras.main.setBackgroundColor(CONFIG.presentation.background);
+    if (this.simulation.world.scenarioName === 'level1') {
+      this.cameras.main.setBounds(0, 0, CONFIG.map.level1.width, CONFIG.map.level1.height);
+    } else {
+      this.cameras.main.setBounds(0, 0, CONFIG.internal.width, CONFIG.internal.height);
+    }
     this.inputManager = new InputManager(this);
 
-    this.add.image(0, 0, BACKGROUND_KEY).setOrigin(0, 0).setDepth(-3);
+    this.bg = this.add
+      .tileSprite(0, 0, CONFIG.internal.width, CONFIG.internal.height, BACKGROUND_KEY)
+      .setOrigin(0, 0)
+      .setScrollFactor(0)
+      .setDepth(-3);
 
     this.redrawPlatforms();
 
@@ -95,7 +105,8 @@ export class ShellScene extends Phaser.Scene {
         },
       )
       .setOrigin(0.5)
-      .setDepth(-1);
+      .setDepth(-1)
+      .setScrollFactor(0);
 
     this.createLoopAnimation(RUN_KEY, CONFIG.player.run.frames, CONFIG.player.run.frameRate);
     this.createLoopAnimation(IDLE_KEY, CONFIG.player.idle.frames, CONFIG.player.idle.frameRate);
@@ -131,6 +142,7 @@ export class ShellScene extends Phaser.Scene {
       )
       .setOrigin(0.5)
       .setDepth(20)
+      .setScrollFactor(0)
       .setVisible(false);
 
     this.waveBannerText = this.add
@@ -154,7 +166,7 @@ export class ShellScene extends Phaser.Scene {
         fontFamily: 'monospace',
         fontSize: '8px',
       });
-      this.debugText.setDepth(10);
+      this.debugText.setDepth(10).setScrollFactor(0);
       attachScaleReferenceOverlay(this);
     }
   }
@@ -211,6 +223,16 @@ export class ShellScene extends Phaser.Scene {
     }
 
     this.hudLayer.update(player ?? undefined, delta / 1000);
+
+    if (this.simulation.world.scenarioName === 'level1') {
+      this.cameras.main.scrollX = this.simulation.world.cameraScrollX;
+    } else {
+      this.cameras.main.scrollX = 0;
+    }
+
+    if (this.bg) {
+      this.bg.tilePositionX = this.cameras.main.scrollX * (CONFIG.map.level1.camera.parallaxFactor ?? 0.25);
+    }
 
     const hitbox = this.simulation.world.playerAttackHitbox();
     const chain = player ? player.attackChain : 0;
@@ -416,6 +438,12 @@ export class ShellScene extends Phaser.Scene {
   }
 
   private redrawPlatforms(): void {
+    if (this.simulation.world.scenarioName === 'level1') {
+      this.cameras.main.setBounds(0, 0, CONFIG.map.level1.width, CONFIG.map.level1.height);
+    } else {
+      this.cameras.main.setBounds(0, 0, CONFIG.internal.width, CONFIG.internal.height);
+      this.cameras.main.scrollX = 0;
+    }
     for (const rect of this.platformRects) {
       rect.destroy();
     }

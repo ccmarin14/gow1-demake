@@ -204,6 +204,9 @@ export interface SimulationSnapshot {
   arrows: ArrowState[];
   wave?: WaveState;
   arena?: ArenaState;
+  cameraX?: number;
+  segmentId?: number;
+  segmentName?: string;
   input: GameAction[];
   checksum: string;
 }
