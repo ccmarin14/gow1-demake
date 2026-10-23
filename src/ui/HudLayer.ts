@@ -6,6 +6,9 @@ export interface HudMetrics {
   currentHp: number;
   ghostHp: number;
   maxHp: number;
+  currentMp: number;
+  maxMp: number;
+  manaWidth: number;
   currentWidth: number;
   ghostWidth: number;
   ratio: number;
@@ -56,6 +59,13 @@ export class HudLayer {
   private readonly greenBarShadow: Phaser.GameObjects.Rectangle;
   private readonly segmentNotches: Phaser.GameObjects.Rectangle[] = [];
 
+  // Barra de maná (Ira de Poseidón)
+  private readonly manaFrameBg: Phaser.GameObjects.Rectangle;
+  private readonly manaChannelTrough: Phaser.GameObjects.Rectangle;
+  private readonly manaBarBase: Phaser.GameObjects.Rectangle;
+  private readonly manaBarHighlight: Phaser.GameObjects.Rectangle;
+  private readonly manaBarShadow: Phaser.GameObjects.Rectangle;
+
   // Alerta de salud crítica
   private readonly criticalGlow: Phaser.GameObjects.Rectangle;
   private criticalPulseTimer = 0;
@@ -76,6 +86,9 @@ export class HudLayer {
     currentHp: 100,
     ghostHp: 100,
     maxHp: 100,
+    currentMp: 100,
+    maxMp: 100,
+    manaWidth: 80,
     currentWidth: 110,
     ghostWidth: 110,
     ratio: 1,
@@ -181,7 +194,47 @@ export class HudLayer {
       this.elements.push(notch);
     }
 
-    // 4. Alerta de salud crítica
+    // 4. Barra de maná azul zafiro (Ira de Poseidón)
+    const { manaBarWidth, manaBarHeight, manaBarYOffset } = CONFIG.presentation.hud;
+    const manaX = barX;
+    const manaY = barY + manaBarYOffset;
+
+    this.manaFrameBg = scene.add
+      .rectangle(manaX - 1, manaY - 1, manaBarWidth + 2, manaBarHeight + 2, 0x0f172a)
+      .setOrigin(0, 0)
+      .setScrollFactor(0)
+      .setDepth(depth);
+    this.elements.push(this.manaFrameBg);
+
+    this.manaChannelTrough = scene.add
+      .rectangle(manaX, manaY, manaBarWidth, manaBarHeight, 0x030712)
+      .setOrigin(0, 0)
+      .setScrollFactor(0)
+      .setDepth(depth);
+    this.elements.push(this.manaChannelTrough);
+
+    this.manaBarBase = scene.add
+      .rectangle(manaX, manaY, manaBarWidth, manaBarHeight, 0x1e60ff)
+      .setOrigin(0, 0)
+      .setScrollFactor(0)
+      .setDepth(depth + 2);
+    this.elements.push(this.manaBarBase);
+
+    this.manaBarHighlight = scene.add
+      .rectangle(manaX, manaY, manaBarWidth, 1, 0x60b0ff)
+      .setOrigin(0, 0)
+      .setScrollFactor(0)
+      .setDepth(depth + 2);
+    this.elements.push(this.manaBarHighlight);
+
+    this.manaBarShadow = scene.add
+      .rectangle(manaX, manaY + manaBarHeight - 1, manaBarWidth, 1, 0x0f3b8c)
+      .setOrigin(0, 0)
+      .setScrollFactor(0)
+      .setDepth(depth + 2);
+    this.elements.push(this.manaBarShadow);
+
+    // 5. Alerta de salud crítica
     this.criticalGlow = scene.add
       .rectangle(barX, barY, barWidth, barHeight, 0xef4444, 0.4)
       .setOrigin(0, 0)
@@ -190,7 +243,7 @@ export class HudLayer {
       .setVisible(false);
     this.elements.push(this.criticalGlow);
 
-    // 5. Medallón circular a la izquierda
+    // 6. Medallón circular a la izquierda
     const medX = x;
     const medY = y + barHeight / 2;
 
@@ -219,9 +272,9 @@ export class HudLayer {
       .setDepth(depth + 8);
     this.elements.push(this.medallionHighlight);
 
-    // 6. Texto numérico pixel-art
+    // 7. Texto numérico pixel-art
     this.hpText = scene.add
-      .text(barX, barY + barHeight + 3, 'HP: 100/100', {
+      .text(barX, manaY + manaBarHeight + 3, 'HP: 100/100', {
         fontFamily: 'monospace',
         fontSize: '7px',
         color: '#cbd5e1',
@@ -232,9 +285,9 @@ export class HudLayer {
       .setShadow(1, 1, '#000000', 1);
     this.elements.push(this.hpText);
 
-    // 7. Icono y saldo de orbes rojos
+    // 8. Icono y saldo de orbes rojos
     const orbIconX = x;
-    const orbIconY = barY + barHeight + 11;
+    const orbIconY = manaY + manaBarHeight + 13;
 
     this.redOrbIconOuter = scene.add
       .circle(orbIconX, orbIconY, 3.5, 0xef4444)
@@ -269,6 +322,9 @@ export class HudLayer {
       this.greenBarShadow.setVisible(false);
       this.ghostBar.setVisible(false);
       this.ghostBarHighlight.setVisible(false);
+      this.manaBarBase.setVisible(false);
+      this.manaBarHighlight.setVisible(false);
+      this.manaBarShadow.setVisible(false);
       this.criticalGlow.setVisible(false);
       this.hpText.setText('HP: -/-');
       this.redOrbsText.setText('ORBES: -');
@@ -277,7 +333,7 @@ export class HudLayer {
 
     const maxHp = player.maxHp > 0 ? player.maxHp : 100;
     const currentHp = player.isDead ? 0 : Math.max(0, player.hp);
-    const { barWidth, barHeight, ghostDrainSpeed, ghostPauseMs, criticalHpThreshold } =
+    const { barWidth, barHeight, manaBarWidth, manaBarHeight, ghostDrainSpeed, ghostPauseMs, criticalHpThreshold } =
       CONFIG.presentation.hud;
 
     // Detección de reinicio, curación o daño
@@ -352,10 +408,26 @@ export class HudLayer {
       this.criticalGlow.setVisible(false);
     }
 
-    // 5. Texto numérico
-    this.hpText.setText(`HP: ${currentHp}/${maxHp}`);
+    // 5. Barra de maná azul
+    const maxMp = player.maxMp > 0 ? player.maxMp : 100;
+    const currentMp = Math.max(0, player.mp ?? 100);
+    const manaRatio = Math.max(0, Math.min(1, currentMp / maxMp));
+    const manaWidth = Math.round(manaBarWidth * manaRatio);
 
-    // 6. Saldo de orbes rojos
+    if (manaWidth > 0) {
+      this.manaBarBase.setSize(manaWidth, manaBarHeight).setVisible(true);
+      this.manaBarHighlight.setSize(manaWidth, 1).setVisible(true);
+      this.manaBarShadow.setSize(manaWidth, 1).setVisible(true);
+    } else {
+      this.manaBarBase.setVisible(false);
+      this.manaBarHighlight.setVisible(false);
+      this.manaBarShadow.setVisible(false);
+    }
+
+    // 6. Texto numérico
+    this.hpText.setText(`HP: ${currentHp}/${maxHp}  MP: ${currentMp}/${maxMp}`);
+
+    // 7. Saldo de orbes rojos
     const redOrbs = player.redOrbs ?? 0;
     this.redOrbsText.setText(`ORBES: ${redOrbs}`);
 
@@ -364,6 +436,9 @@ export class HudLayer {
       currentHp,
       ghostHp: Number(this.ghostHp.toFixed(2)),
       maxHp,
+      currentMp,
+      maxMp,
+      manaWidth,
       currentWidth,
       ghostWidth,
       ratio: Number(ratio.toFixed(3)),

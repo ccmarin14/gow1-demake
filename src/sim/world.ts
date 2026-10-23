@@ -23,6 +23,7 @@ import {
 import { isRolling, startRoll, stepRoll } from './roll';
 import { isGuarding, startGuard, stepGuard } from './guard';
 import { stepLegionnaire } from './legionnaire';
+import { isCastingMagic, stepMagic } from './magic';
 
 const TICK_DT = 1 / CONFIG.sim.tickRate;
 
@@ -86,6 +87,7 @@ export class World {
   private heavyAttackHeld = false;
   private grabHeld = false;
   private dodgeHeld = false;
+  private magicHeld = false;
   private activeScenario: string = DEFAULT_SCENARIO;
   private targetPhysics = false;
   private readonly moveSet: AttackMoveSet = buildAttackMoveSet();
@@ -187,8 +189,8 @@ export class World {
     return arrow;
   }
 
-  spawnOrbs(x: number, y: number, redCount: number, greenCount: number): OrbState[] {
-    const newOrbs = spawnOrbsFromDeath(x, y, redCount, greenCount, this.orbIdCounter);
+  spawnOrbs(x: number, y: number, redCount: number, greenCount: number, blueCount: number = 0): OrbState[] {
+    const newOrbs = spawnOrbsFromDeath(x, y, redCount, greenCount, blueCount, this.orbIdCounter);
     this.orbIdCounter += newOrbs.length;
     this.orbs.push(...newOrbs);
     return newOrbs;
@@ -209,6 +211,7 @@ export class World {
     this.heavyAttackHeld = false;
     this.grabHeld = false;
     this.dodgeHeld = false;
+    this.magicHeld = false;
     this.platforms = scenario.platforms;
     this.targetPhysics = Boolean(scenario.targetPhysics);
     this.entities = cloneEntities(scenario.entities);
@@ -296,6 +299,9 @@ export class World {
     this.dodgeHeld = wantsDodge;
 
     const wantsGuard = this.input.includes('guard');
+    const wantsMagic = this.input.includes('magic');
+    const magicEdge = wantsMagic && !this.magicHeld;
+    this.magicHeld = wantsMagic;
 
     const player = this.entities.find((entity) => entity.id === PLAYER_ID);
     if (player) {
@@ -320,6 +326,8 @@ export class World {
         player.rollPhase = 'none';
         player.rollTicks = 0;
         player.invulTicks = 0;
+        player.magicPhase = 'none';
+        player.magicTicks = 0;
 
         stepVertical(
           player,
@@ -353,6 +361,14 @@ export class World {
           return;
         }
 
+        // Invocación y ejecución de magia 'Ira de Poseidón'
+        if (magicEdge && player.grounded && !inHitstun) {
+          stepMagic(player, true, this.targets);
+        } else if (player.magicPhase !== 'none') {
+          stepMagic(player, false, this.targets);
+        }
+        const nowCastingMagic = isCastingMagic(player);
+
         const rolling = isRolling(player);
         const attacking = isEntityAttacking(player);
         const guarding = isGuarding(player);
@@ -365,7 +381,7 @@ export class World {
         }
 
         // Dodge: only on ground, consume action on new flank (edge), uninterruptible while active
-        if (!rolling && !attacking && dodgeEdge && player.grounded && !inHitstun) {
+        if (!rolling && !attacking && !nowCastingMagic && dodgeEdge && player.grounded && !inHitstun) {
           startRoll(player);
         }
         stepRoll(player);
@@ -388,14 +404,14 @@ export class World {
         }
 
         // Guard: only on ground, not rolling, not attacking, not attacking on this tick, not in hitstun
-        if (!nowRolling && !attacking && !hasAttackEdge && wantsGuard && player.grounded && player.guardPhase === 'none' && !inHitstun) {
+        if (!nowRolling && !attacking && !nowCastingMagic && !hasAttackEdge && wantsGuard && player.grounded && player.guardPhase === 'none' && !inHitstun) {
           startGuard(player);
         }
-        stepGuard(player, wantsGuard && !hasAttackEdge && !nowRolling && !inHitstun);
+        stepGuard(player, wantsGuard && !hasAttackEdge && !nowRolling && !nowCastingMagic && !inHitstun);
         const nowGuarding = isGuarding(player);
 
-        // Attack blocked during active invulnerable roll, while actively guarding, or during hitstun
-        if (!nowRolling && !nowGuarding && !inHitstun) {
+        // Attack blocked during active invulnerable roll, while actively guarding, during magic, or during hitstun
+        if (!nowRolling && !nowGuarding && !nowCastingMagic && !inHitstun) {
           const attackInput: AttackInput = {
             light: lightAttackEdge,
             heavy: heavyAttackEdge,
@@ -429,11 +445,11 @@ export class World {
           }
         }
 
-        // Lock horizontal control/facing during rolls, active attack slashes, guard, and hitstun
-        if (nowGuarding) {
+        // Lock horizontal control/facing during rolls, active attack slashes, guard, magic, and hitstun
+        if (nowGuarding || nowCastingMagic) {
           player.vx = 0;
         }
-        const horizontalLocked = nowRolling || player.attackPhase === 'active' || nowGuarding || inHitstun;
+        const horizontalLocked = nowRolling || player.attackPhase === 'active' || nowGuarding || inHitstun || nowCastingMagic;
         const playerMinX = (this.arenaManager && this.arenaManager.isActive())
           ? this.arenaManager.getMinX() + (CONFIG.player.sprite.width / 2)
           : CONFIG.player.minX;
@@ -454,7 +470,7 @@ export class World {
           horizontalLocked,
         );
         const nowAttacking = isEntityAttacking(player);
-        const canJumpEdge = jumpEdge && !nowRolling && !nowAttacking && !nowGuarding && !inHitstun;
+        const canJumpEdge = jumpEdge && !nowRolling && !nowAttacking && !nowGuarding && !inHitstun && !nowCastingMagic;
         // Air attack float: 30% gravity while active slashes slice through the air
         const isAirAttacking = !player.grounded && player.attackPhase === 'active';
         const gravityScale = isAirAttacking ? 0.3 : 1.0;
@@ -504,6 +520,7 @@ export class World {
               target.y - 18,
               CONFIG.economy.orbs.dropPerLegionnaire.red,
               CONFIG.economy.orbs.dropPerLegionnaire.green,
+              CONFIG.economy.orbs.dropPerLegionnaire.blue,
             );
             target.aiTicks = 1;
             if (this.waveManager) {
@@ -518,6 +535,7 @@ export class World {
               target.y - 18,
               CONFIG.economy.orbs.dropPerArcher.red,
               CONFIG.economy.orbs.dropPerArcher.green,
+              CONFIG.economy.orbs.dropPerArcher.blue,
             );
             target.aiTicks = 1;
             if (this.waveManager) {

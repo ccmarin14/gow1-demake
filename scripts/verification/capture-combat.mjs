@@ -326,6 +326,7 @@ async function run() {
           const arrowsInfo = arrowsLive > 0 ? \` 🏹Arr:\${arrowsLive}\` : '';
           const waveInfo = snap.wave ? \` [W\${snap.wave.waveIndex + 1}:\${snap.wave.phase} Rem:\${snap.wave.enemiesRemaining} K:\${snap.wave.totalKills}]\` : '';
           const arenaInfo = snap.arena ? \` [Ar:\${snap.arena.active ? 'LK' : 'OP'} a=\${snap.arena.alpha.toFixed(1)}]\` : '';
+          const magicInfo = p.magicPhase !== 'none' ? \` [MAG:\${p.magicPhase}:\${p.magicTicks}]\` : '';
           const actionText = p.isDead
             ? 'DEAD'
             : (p.hitstunTicks > 0
@@ -345,7 +346,7 @@ async function run() {
               )
             );
           sctx.fillText(
-            \`t=\${t} HP:\${p.hp}\${hudInfo}\${arrowsInfo}\${waveInfo}\${arenaInfo} \${actionText} \${isWeaponVisible ? '⚔️CHAIN' : ''}\`,
+            \`t=\${t} HP:\${p.hp}\${hudInfo}\${arrowsInfo}\${waveInfo}\${arenaInfo}\${magicInfo} \${actionText} \${isWeaponVisible ? '⚔️CHAIN' : ''}\`,
             dx + 4,
             dy + 12
           );
@@ -362,13 +363,19 @@ async function run() {
           singleCtx.fillRect(2, 2, cropW * scale - 4, 18);
           singleCtx.fillStyle = '#f9fafb';
           singleCtx.font = 'bold 11px monospace';
-          singleCtx.fillText(\`t=\${t} HP:\${p.hp}\${hudInfo}\${arenaInfo} \${actionText} Pose:\${sc.player.frame.name}\`, 4, 14);
+          singleCtx.fillText(\`t=\${t} HP:\${p.hp}\${hudInfo}\${arenaInfo}\${magicInfo} \${actionText} Pose:\${sc.player.frame.name}\`, 4, 14);
 
           frames.push(single.toDataURL('image/png'));
 
           logs.push({
             t,
             playerHp: p.hp,
+            playerMp: p.mp ?? 100,
+            magicPhase: p.magicPhase,
+            magicTicks: p.magicTicks,
+            legionnaireHp: snap.entities.find((e) => e.kind === 'legionnaire')?.hp ?? null,
+            archerHp: snap.entities.find((e) => e.kind === 'archer')?.hp ?? null,
+            archerDead: snap.entities.find((e) => e.kind === 'archer')?.isDead ?? null,
             playerRedOrbs: p.redOrbs ?? 0,
             orbsCount: snap.orbs ? snap.orbs.length : 0,
             orbsLive: snap.orbs ? snap.orbs.filter((o) => !o.absorbed).length : 0,
@@ -1056,6 +1063,65 @@ async function run() {
     console.log('Case P Barriers disabled post-dissipation (expected active=false, alpha=0):', dissipateEndLog ? `act=${dissipateEndLog.arenaActive},a=${dissipateEndLog.arenaAlpha?.toFixed(2)}` : 'NONE');
     console.log('Case P Player liberated advancing past barrier (expected x > 410.0):', liberatedLog ? `x=${liberatedLog.playerX.toFixed(1)},vx=${liberatedLog.playerVx},act=${liberatedLog.arenaActive}` : 'NONE');
 
+    // CASE Q: Poseidon's Rage Magic & Mana Economy (GOW8B-MAGIC-01)
+    // - Scenario: 'magic' (Kratos at x=200, Legionnaire at x=245, Archer at x=150)
+    // - t=1: Initial state (mp=100, Legionnaire hp=60, Archer hp=40)
+    // - t=2: Kratos invokes 'magic' -> MP drops 100 -> 65 (-35 MP cost). magicPhase enters 'startup'.
+    // - t=10: Startup completes (8 ticks), magicPhase enters 'active' (40 ticks).
+    //         AoE storm strikes every 8 ticks in radius 90 px, hitting both enemies simultaneously.
+    // - t=43: 5th electrical hit lands -> Archer takes cumulative 40 damage and dies (hp=0, aiState='death').
+    //         Archer drops 3 red, 1 green, 1 blue orb.
+    // - t=44..62: Blue orb is magnetized towards Kratos.
+    // - t=63..64: Blue orb absorbed -> restores +20 MP (65 -> 85 MP).
+    // - t=62: Spell recovery finishes (12 ticks), magicPhase returns to 'none'.
+    // - t=68: Force player.mp = 20 (< 35 cost).
+    // - t=69: Kratos inputs 'magic' with insufficient mana -> invocation blocked, mp remains 20, magicPhase remains 'none'.
+    // - t=84: Settled state.
+    const caseQ = await recordScenarioSequence({
+      caseId: 'poseidons_rage_magic_aoe',
+      scenario: 'magic',
+      totalSteps: 84,
+      cropW: 260,
+      cropH: 130,
+      fixedCropX: 80,
+      fixedCropY: 130,
+      getActions: (t) => {
+        const sc = window.__SHELL_SCENE;
+        const p = sc.simulation.world.peekEntity('player');
+
+        // t=2: Invoke Poseidon's Rage
+        if (t === 2) {
+          return ['magic'];
+        }
+
+        // t=68: Simulate low mana condition (< 35) to test insufficiency guard
+        if (t === 68 && p) {
+          p.mp = 20;
+        }
+
+        // t=69: Attempt to invoke magic with insufficient MP (20 < 35)
+        if (t === 69) {
+          return ['magic'];
+        }
+
+        return [];
+      },
+    });
+
+    const magicInitLog = caseQ.logs.find((l) => l.t === 1);
+    const magicCastLog = caseQ.logs.find((l) => l.t === 2);
+    const magicActiveLog = caseQ.logs.find((l) => l.t === 10);
+    const magicAoeDamageLog = caseQ.logs.find((l) => l.t === 43);
+    const blueOrbAbsorbedLog = caseQ.logs.find((l) => l.t === 64);
+    const insufficientMpLog = caseQ.logs.find((l) => l.t === 70);
+
+    console.log('Case Q Magic initial state (expected mp=100, phase=none):', magicInitLog ? `mp=${magicInitLog.playerMp},ph=${magicInitLog.magicPhase}` : 'NONE');
+    console.log('Case Q Magic cast & MP deduction (expected mp=65, phase=startup):', magicCastLog ? `mp=${magicCastLog.playerMp},ph=${magicCastLog.magicPhase}` : 'NONE');
+    console.log('Case Q Magic storm active (expected phase=active):', magicActiveLog ? `ph=${magicActiveLog.magicPhase},ticks=${magicActiveLog.magicTicks}` : 'NONE');
+    console.log('Case Q Multi-hit AoE damage (expected L hp=20, A dead, orbs>=1):', magicAoeDamageLog ? `legHp=${magicAoeDamageLog.legionnaireHp},arcHp=${magicAoeDamageLog.archerHp},arcDead=${magicAoeDamageLog.archerDead},orbsLive=${magicAoeDamageLog.orbsLive}` : 'NONE');
+    console.log('Case Q Blue orb mana recovery (expected mp=85):', blueOrbAbsorbedLog ? `mp=${blueOrbAbsorbedLog.playerMp},hudMp=${blueOrbAbsorbedLog.hud?.currentMp}` : 'NONE');
+    console.log('Case Q Insufficient MP blocked (expected mp=20, phase=none):', insufficientMpLog ? `mp=${insufficientMpLog.playerMp},ph=${insufficientMpLog.magicPhase}` : 'NONE');
+
     console.log('\n=== ALL VERIFICATION TESTS COMPLETED SUCCESSFULLY ===');
     console.log('Artifacts in scripts/verification/output/:');
     console.log(' - combo_jjj_mosaic.png & combo_jjj.gif');
@@ -1074,6 +1140,7 @@ async function run() {
     console.log(' - archer_combat_ai_mosaic.png & archer_combat_ai.gif');
     console.log(' - waves_flow_and_pacing_mosaic.png & waves_flow_and_pacing.gif');
     console.log(' - arena_confinement_and_barriers_mosaic.png & arena_confinement_and_barriers.gif');
+    console.log(' - poseidons_rage_magic_aoe_mosaic.png & poseidons_rage_magic_aoe.gif');
 
     ws.close();
   } finally {

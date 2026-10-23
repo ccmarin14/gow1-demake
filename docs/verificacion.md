@@ -81,7 +81,7 @@ También el 2026-10-15, tras la aprobación de la etapa 6, la usuaria autorizó 
 
 | Orden | ID | Etapa | Estado |
 | --- | --- | --- | --- |
-| 19 | GOW8B-MAGIC-01 **(nueva)** | Ira de Poseidón (única magia por ahora; economía de magia) | Pendiente; no activa. |
+| 19 | GOW8B-MAGIC-01 **(nueva)** | Ira de Poseidón (Poseidon's Rage): activación canónica (`U` / `I`), deducción de 35 MP de la reserva máxima de 100, super-armadura e invulnerabilidad en casteo, daño circular en área multi-hit (radio 90 px, 5 impactos de 8 de daño cada 8 ticks, aturdimiento eléctrico), barra de maná azul zafiro en HUD, orbes azules (+20 MP) y bloqueo por maná insuficiente ($< 35$), verificado con Caso Q en Chrome CDP. Bloque 6 completado al 100 %. | **Aprobada** (2026-10-23) bajo el plan [`GOW8B-MAGIC-01`](planes/GOW8B-MAGIC-01.md) tras auditoría independiente de solo lectura. Bloque 6 completado al 100 %. |
 
 ### Bloque 7 — Mapa y plataformeo
 

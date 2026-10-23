@@ -15,6 +15,7 @@ export function spawnOrbsFromDeath(
   sourceY: number,
   countRed: number,
   countGreen: number,
+  countBlue: number = 0,
   startIdIndex: number = 0,
 ): OrbState[] {
   const orbs: OrbState[] = [];
@@ -53,6 +54,24 @@ export function spawnOrbsFromDeath(
       vx,
       vy,
       value: CONFIG.economy.orbs.redOrbValue,
+      ageTicks: 0,
+      absorbed: false,
+    });
+  }
+
+  // 3. Orbes azules de magia / maná (Ira de Poseidón)
+  const blueSpread = [-24, 24, 0];
+  for (let i = 0; i < countBlue; i += 1) {
+    const vx = blueSpread[i % blueSpread.length];
+    const vy = burstVy - 22 - (i % 2) * 8;
+    orbs.push({
+      id: `orb-blue-${idCounter++}`,
+      type: 'blue',
+      x: sourceX,
+      y: sourceY,
+      vx,
+      vy,
+      value: CONFIG.economy.orbs.blueOrbMana,
       ageTicks: 0,
       absorbed: false,
     });
@@ -111,6 +130,8 @@ export function stepOrbs(
         } else if (orb.type === 'red') {
           player.redOrbs += orb.value;
           redCollected += orb.value;
+        } else if (orb.type === 'blue') {
+          player.mp = Math.min(player.maxMp, player.mp + orb.value);
         }
         continue;
       }

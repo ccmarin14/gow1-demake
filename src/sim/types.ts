@@ -146,6 +146,10 @@ export interface EntityState {
   aiTicks: number;
   hp: number;
   maxHp: number;
+  mp: number;
+  maxMp: number;
+  magicPhase: 'none' | 'startup' | 'active' | 'recovery';
+  magicTicks: number;
   attackCooldownTicks: number;
   hurtInvulTicks: number;
   isDead: boolean;
@@ -165,7 +169,7 @@ export interface ArrowState {
 
 export interface OrbState {
   id: string;
-  type: 'red' | 'green';
+  type: 'red' | 'green' | 'blue';
   x: number;
   y: number;
   vx: number;

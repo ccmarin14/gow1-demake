@@ -41,6 +41,7 @@ export class ShellScene extends Phaser.Scene {
   private defeatText: Phaser.GameObjects.Text | null = null;
   private waveBannerText: Phaser.GameObjects.Text | null = null;
   private barrierGraphics: Phaser.GameObjects.Graphics | null = null;
+  private magicGraphics: Phaser.GameObjects.Graphics | null = null;
   hudLayer!: HudLayer;
 
   constructor(
@@ -243,6 +244,7 @@ export class ShellScene extends Phaser.Scene {
     this.updateOrbs();
     this.updateArrows();
     this.updateArenaBarriers();
+    this.updateMagic(player);
     if (player && player.groundImpactTicks > 0) {
       const shakePx = CONFIG.player.attack.groundImpact.shakePx;
       const dy = player.groundImpactTicks % 2 === 1 ? shakePx : -shakePx;
@@ -346,7 +348,7 @@ export class ShellScene extends Phaser.Scene {
         }
         sprite.setFrame(frame);
         if (target.hitstunTicks > 0) {
-          sprite.setTint(0xff7777);
+          sprite.setTint(player && player.magicPhase === 'active' ? 0x67e8f9 : 0xff7777);
         } else {
           sprite.clearTint();
         }
@@ -391,7 +393,7 @@ export class ShellScene extends Phaser.Scene {
         }
         sprite.setFrame(frame);
         if (target.hitstunTicks > 0) {
-          sprite.setTint(0xff7777);
+          sprite.setTint(player && player.magicPhase === 'active' ? 0x67e8f9 : 0xff7777);
         } else {
           sprite.clearTint();
         }
@@ -436,6 +438,9 @@ export class ShellScene extends Phaser.Scene {
     this.arrowSprites.clear();
     if (this.barrierGraphics) {
       this.barrierGraphics.clear();
+    }
+    if (this.magicGraphics) {
+      this.magicGraphics.clear();
     }
     const {
       platformColor,
@@ -699,11 +704,12 @@ export class ShellScene extends Phaser.Scene {
       const orb = simOrbs[i];
       let gfx = this.orbSprites.get(orb.id);
       const isGreen = orb.type === 'green';
+      const isBlue = orb.type === 'blue';
 
       if (!gfx) {
-        const outerColor = isGreen ? 0x22c55e : 0xef4444;
-        const coreColor = isGreen ? 0x4ade80 : 0xf87171;
-        const hlColor = isGreen ? 0xdcfce7 : 0xfef2f2;
+        const outerColor = isGreen ? 0x22c55e : (isBlue ? 0x2563eb : 0xef4444);
+        const coreColor = isGreen ? 0x4ade80 : (isBlue ? 0x60a5fa : 0xf87171);
+        const hlColor = isGreen ? 0xdcfce7 : (isBlue ? 0xeff6ff : 0xfef2f2);
 
         const outer = this.add.circle(orb.x, orb.y, 5, outerColor, 0.45).setDepth(50);
         const core = this.add.circle(orb.x, orb.y, 3, coreColor, 0.95).setDepth(51);
@@ -811,6 +817,79 @@ export class ShellScene extends Phaser.Scene {
     drawBarrierPillar(maxX);
   }
 
+  private updateMagic(player: Readonly<EntityState> | null): void {
+    if (!player || player.magicPhase === 'none') {
+      if (this.magicGraphics) {
+        this.magicGraphics.clear();
+        this.magicGraphics.setVisible(false);
+      }
+      return;
+    }
+
+    if (!this.magicGraphics) {
+      this.magicGraphics = this.add.graphics().setDepth(15);
+    }
+
+    this.magicGraphics.clear();
+    this.magicGraphics.setVisible(true);
+
+    const cx = player.x;
+    const cy = player.y - 18;
+    const radius = CONFIG.player.magic.poseidonsRage.radius;
+    const frame = this.simulation.world.frame;
+
+    if (player.magicPhase === 'startup') {
+      // 1. Círculo de invocación rúnica en el suelo y carga celestial
+      const progress = player.magicTicks / CONFIG.player.magic.poseidonsRage.startupTicks;
+      const r = radius * progress;
+      this.magicGraphics.lineStyle(1.5, 0x38bdf8, 0.7);
+      this.magicGraphics.strokeCircle(cx, cy, r);
+      this.magicGraphics.fillStyle(0x0284c7, 0.15 * progress);
+      this.magicGraphics.fillCircle(cx, cy, r);
+    } else if (player.magicPhase === 'active') {
+      // 2. Tormenta eléctrica activa (Poseidon's Rage): disco de energía + relámpagos
+      const pulse = 0.85 + 0.15 * Math.sin(frame * 0.4);
+      this.magicGraphics.fillStyle(0x0284c7, 0.16 * pulse);
+      this.magicGraphics.fillCircle(cx, cy, radius);
+
+      this.magicGraphics.lineStyle(2, 0x38bdf8, 0.8 * pulse);
+      this.magicGraphics.strokeCircle(cx, cy, radius);
+
+      // Relámpagos ramificados procedurales celestes y blancos
+      const boltCount = 4;
+      for (let b = 0; b < boltCount; b += 1) {
+        const seedAngle = frame * 0.35 + (b * Math.PI * 2) / boltCount;
+        const targetDist = radius * (0.6 + (0.4 * ((frame + b * 7) % 5)) / 5);
+        const tx = cx + Math.cos(seedAngle) * targetDist;
+        const ty = cy + Math.sin(seedAngle) * targetDist;
+
+        // Trazar relámpago con zigzag
+        this.magicGraphics.lineStyle(1.5, 0xbae6fd, 0.9);
+        this.magicGraphics.beginPath();
+        this.magicGraphics.moveTo(cx, cy - 6);
+
+        const midX = (cx + tx) / 2 + (((frame * 13 + b * 23) % 17) - 8);
+        const midY = (cy + ty) / 2 + (((frame * 19 + b * 29) % 17) - 8);
+        this.magicGraphics.lineTo(midX, midY);
+        this.magicGraphics.lineTo(tx, ty);
+        this.magicGraphics.strokePath();
+
+        // Núcleo blanco caliente
+        this.magicGraphics.lineStyle(1, 0xffffff, 1.0);
+        this.magicGraphics.beginPath();
+        this.magicGraphics.moveTo(cx, cy - 6);
+        this.magicGraphics.lineTo(midX, midY);
+        this.magicGraphics.lineTo(tx, ty);
+        this.magicGraphics.strokePath();
+      }
+    } else if (player.magicPhase === 'recovery') {
+      // 3. Chispas residuales extinguiéndose
+      const rem = 1 - player.magicTicks / CONFIG.player.magic.poseidonsRage.recoveryTicks;
+      this.magicGraphics.lineStyle(1, 0x38bdf8, rem * 0.5);
+      this.magicGraphics.strokeCircle(cx, cy, radius * rem);
+    }
+  }
+
   shutdown(): void {
     this.hudLayer?.destroy();
     for (const gfx of this.orbSprites.values()) {
@@ -830,6 +909,10 @@ export class ShellScene extends Phaser.Scene {
     if (this.barrierGraphics) {
       this.barrierGraphics.destroy();
       this.barrierGraphics = null;
+    }
+    if (this.magicGraphics) {
+      this.magicGraphics.destroy();
+      this.magicGraphics = null;
     }
   }
 }

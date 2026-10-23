@@ -220,6 +220,19 @@ damage: {
   knockbackVx: 140,
   guardMitigationRatio: 0.85,
 },
+magic: {
+  maxMp: 100,
+  poseidonsRage: {
+    cost: 35,
+    startupTicks: 8,
+    activeTicks: 40,
+    recoveryTicks: 12,
+    radius: 90,
+    hitIntervalTicks: 8,
+    damagePerHit: 8,
+    stunTicksPerHit: 24,
+  },
+},
 } as const;
 
 export const CONFIG = {
@@ -302,8 +315,9 @@ export const CONFIG = {
     orbs: {
       greenOrbHeal: 15,
       redOrbValue: 5,
-      dropPerLegionnaire: { red: 4, green: 1 },
-      dropPerArcher: { red: 3, green: 1 },
+      blueOrbMana: 20,
+      dropPerLegionnaire: { red: 4, green: 1, blue: 1 },
+      dropPerArcher: { red: 3, green: 1, blue: 1 },
       magnetRadius: 180,
       magnetSpeed: 320,
       burstImpulseVy: -110,
@@ -375,6 +389,9 @@ export const CONFIG = {
       y: 14,
       barWidth: 110,
       barHeight: 8,
+      manaBarWidth: 80,
+      manaBarHeight: 5,
+      manaBarYOffset: 12,
       ghostDrainSpeed: 45,
       ghostPauseMs: 200,
       criticalHpThreshold: 25,

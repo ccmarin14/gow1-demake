@@ -11,7 +11,7 @@ const KEY_BINDINGS: Record<GameAction, number[]> = {
   'light-attack': [KeyCodes.J],
   'heavy-attack': [KeyCodes.K],
   grab: [KeyCodes.L],
-  magic: [KeyCodes.U],
+  magic: [KeyCodes.U, KeyCodes.I],
   dodge: [KeyCodes.SHIFT],
   guard: [KeyCodes.Q],
   'context-action': [KeyCodes.E],
