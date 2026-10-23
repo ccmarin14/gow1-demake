@@ -23,8 +23,9 @@ Ramas `tarea/GOW8B-{DJUMP,KRA-02,RES-01,ROLL-01,SCALE-01}`: eliminadas el 2026-1
 | --- | --- | --- | --- | --- |
 | **Arte de Kratos GoW 1** (sprites 2D generados) | Pausado | Pedir idle con guardia simétrica y resto de poses (respiración, salto, caída, rodada, derrape, ataques) con escala fija; luego paleta compartida → cuadros → hoja validada (herramientas y contrato de 22 poses ya listos; avance con `python3 scripts/sprite-gen/assemble.py --check`, hoy 1/22); integrar y auditar. | Cuota del `image-generator` (reinicio ~4.5 h desde 21:40). Paleta ampliada a ≤12 colores (ver §3). | [`planes/KRATOS-2D-SPRITE-GEN-01.md`](planes/KRATOS-2D-SPRITE-GEN-01.md) |
 | **Combate PS2, Bloqueo/Parry y locomoción** (Bloque 3 100 %) | Cerrado y aprobado | Ninguno. Bloque 3 completado y verificado (Casos A a I en CDP). | Validación humana de sensación: ver registro de pendientes. | [`verificacion.md`](verificacion.md) |
-| **Arte actual (maniquí procedural)** | Vigente pero rechazado visualmente | Sustituir por el hilo de arte anterior. No invertir más en `gen-kratos-anim.py`. | Depende del hilo de arte. | `scripts/gen-kratos-anim.py` |
-| **Bloque 4: Primer esbirro, vida y daño** (`GOW8B-ENEMY1-COMBAT-01`) | Autorizado por usuaria / En preparación | Implementar primer combatiente (Legionario No-Muerto) con IA, hitboxes, daño a Kratos, hitstun, barra de salud verde en HUD y orbes verdes de recuperación. | En definición de plan técnico. | [`verificacion.md`](verificacion.md) |
+| **Arte del Legionario No-Muerto** (`GOW8B-ENEMY1-ART`) | Cerrado y aprobado | Hoja de 8 poses completada y verificada (`legionnaire.png` 512×54 px, 12 colores, $y=53$). | Ninguno. | [`planes/GOW8B-ENEMY1-ART.md`](planes/GOW8B-ENEMY1-ART.md) |
+| **Arte actual (maniquí procedural)** | Vigente pero rechazado visualmente | Sustituir por el hilo de arte de Kratos cuando reinicie la cuota. No invertir más en `gen-kratos-anim.py`. | Depende de la cuota del generador. | `scripts/gen-kratos-anim.py` |
+| **Bloque 4: Conducta del combatiente** (`GOW8B-ENEMY1-AI`) | Activo / En preparación | Implementar la IA del Legionario No-Muerto: patrulla, persecución, telegraph de ataque (`windup`), tajo (`attack`), reacción a impactos (`hurt`), suspensión aérea (`juggle`) y colapso (`death`). | En definición de plan técnico. | [`verificacion.md`](verificacion.md) |
 
 ## 3. Decisiones
 

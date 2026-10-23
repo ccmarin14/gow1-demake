@@ -54,6 +54,10 @@ export class ShellScene extends Phaser.Scene {
         }
       }
     }
+    this.load.spritesheet('legionnaire', 'assets/characters/legionnaire.png', {
+      frameWidth: 64,
+      frameHeight: 54,
+    });
   }
 
   create(): void {
