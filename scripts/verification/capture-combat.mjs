@@ -325,6 +325,7 @@ async function run() {
           const arrowsLive = snap.arrows ? snap.arrows.filter((a) => a.active).length : 0;
           const arrowsInfo = arrowsLive > 0 ? \` 🏹Arr:\${arrowsLive}\` : '';
           const waveInfo = snap.wave ? \` [W\${snap.wave.waveIndex + 1}:\${snap.wave.phase} Rem:\${snap.wave.enemiesRemaining} K:\${snap.wave.totalKills}]\` : '';
+          const arenaInfo = snap.arena ? \` [Ar:\${snap.arena.active ? 'LK' : 'OP'} a=\${snap.arena.alpha.toFixed(1)}]\` : '';
           const actionText = p.isDead
             ? 'DEAD'
             : (p.hitstunTicks > 0
@@ -344,7 +345,7 @@ async function run() {
               )
             );
           sctx.fillText(
-            \`t=\${t} HP:\${p.hp}\${hudInfo}\${arrowsInfo}\${waveInfo} \${actionText} \${isWeaponVisible ? '⚔️CHAIN' : ''}\`,
+            \`t=\${t} HP:\${p.hp}\${hudInfo}\${arrowsInfo}\${waveInfo}\${arenaInfo} \${actionText} \${isWeaponVisible ? '⚔️CHAIN' : ''}\`,
             dx + 4,
             dy + 12
           );
@@ -361,7 +362,7 @@ async function run() {
           singleCtx.fillRect(2, 2, cropW * scale - 4, 18);
           singleCtx.fillStyle = '#f9fafb';
           singleCtx.font = 'bold 11px monospace';
-          singleCtx.fillText(\`t=\${t} HP:\${p.hp}\${hudInfo} \${actionText} Pose:\${sc.player.frame.name}\`, 4, 14);
+          singleCtx.fillText(\`t=\${t} HP:\${p.hp}\${hudInfo}\${arenaInfo} \${actionText} Pose:\${sc.player.frame.name}\`, 4, 14);
 
           frames.push(single.toDataURL('image/png'));
 
@@ -382,6 +383,10 @@ async function run() {
             waveIndex: snap.wave ? snap.wave.waveIndex : null,
             waveRemaining: snap.wave ? snap.wave.enemiesRemaining : null,
             waveKills: snap.wave ? snap.wave.totalKills : null,
+            arena: snap.arena ? { ...snap.arena } : null,
+            arenaActive: snap.arena ? snap.arena.active : null,
+            arenaAlpha: snap.arena ? snap.arena.alpha : null,
+            arenaDissipate: snap.arena ? snap.arena.dissipateTicks : null,
             hurtInvulTicks: p.hurtInvulTicks,
             hitstunTicks: p.hitstunTicks,
             isDead: p.isDead,
@@ -963,6 +968,94 @@ async function run() {
     console.log('Case O Encounter complete (expected ph=complete, kills=5):', wCompleteLog ? `ph=${wCompleteLog.wavePhase},kills=${wCompleteLog.waveKills}` : 'NONE');
     console.log('Case O Settled complete state (expected ph=complete, kills=5):', wFinalLog ? `ph=${wFinalLog.wavePhase},kills=${wFinalLog.waveKills}` : 'NONE');
 
+    // CASE P: Arena Confinement & Magical Barriers (GOW8B-ARENA-01)
+    // - Scenario: 'arena' (Oleadas + Ares blood barriers at minX=70, maxX=410)
+    // - Player starts at x=120
+    // - t=1..16: Kratos moves left against left barrier. Clamped at x >= 86 px (70 + 16). vx = 0.
+    // - t=18: Wave 1 defeated (hp=0, aiState='death').
+    // - t=19: Position Kratos at x=375 for right barrier testing.
+    // - t=20..35: Kratos moves right into right barrier (410 - 16 = 394).
+    //             Clamped at x <= 394 px. vx = 0.
+    // - t=36: Wave 2 defeated / encounter completed -> wave.phase === 'complete'.
+    // - t=37..66: Arena barrier dissipation (dissipateTicks counts 30 -> 0, alpha fades 0.8 -> 0).
+    // - t=67: Barrier disabled (active = false, alpha = 0). Full ship deck opened.
+    // - t=68..96: Kratos continues moving right unimpeded, passing beyond x > 410 px (reaching ~455 px).
+    const caseP = await recordScenarioSequence({
+      caseId: 'arena_confinement_and_barriers',
+      scenario: 'arena',
+      totalSteps: 96,
+      cropW: 280,
+      cropH: 140,
+      fixedCropX: 100,
+      fixedCropY: 110,
+      getActions: (t) => {
+        const sc = window.__SHELL_SCENE;
+        const p = sc.simulation.world.peekEntity('player');
+
+        // t=1..16: Move left against left barrier
+        if (t >= 1 && t <= 16) {
+          return ['move-left'];
+        }
+
+        // t=18: Defeat wave 1
+        if (t === 18) {
+          const targets = sc.simulation.world.peekTargets();
+          for (const enemy of targets) {
+            if (enemy.aiState !== 'death') {
+              enemy.hp = 0;
+              enemy.aiState = 'death';
+              enemy.aiTicks = 0;
+            }
+          }
+        }
+
+        // t=19: Position Kratos near right barrier to test right confinement
+        if (t === 19 && p) {
+          p.x = 375;
+          p.vx = 0;
+        }
+
+        // t=20..35: Move right against right barrier
+        if (t >= 20 && t <= 35) {
+          return ['move-right'];
+        }
+
+        // t=36: Complete encounter
+        if (t === 36) {
+          const targets = sc.simulation.world.peekTargets();
+          for (const enemy of targets) {
+            if (enemy.aiState !== 'death') {
+              enemy.hp = 0;
+              enemy.aiState = 'death';
+              enemy.aiTicks = 0;
+            }
+          }
+          sc.simulation.world.completeWaveEncounter();
+        }
+
+        // t=37..96: Keep moving right through dissipation and after liberation
+        if (t >= 37 && t <= 96) {
+          return ['move-right'];
+        }
+
+        return [];
+      },
+    });
+
+    const leftBarrierLog = caseP.logs.find((l) => l.t === 16);
+    const rightBarrierLog = caseP.logs.find((l) => l.t === 35);
+    const dissipateStartLog = caseP.logs.find((l) => l.t === 36);
+    const dissipateMidLog = caseP.logs.find((l) => l.t === 51);
+    const dissipateEndLog = caseP.logs.find((l) => l.t === 67);
+    const liberatedLog = caseP.logs.find((l) => l.t === 95);
+
+    console.log('Case P Left barrier confinement (expected x >= 86, clamped at 118.5, vx=0):', leftBarrierLog ? `x=${leftBarrierLog.playerX.toFixed(1)},vx=${leftBarrierLog.playerVx},act=${leftBarrierLog.arenaActive}` : 'NONE');
+    console.log('Case P Right barrier confinement (expected x <= 394, clamped at 361.5, vx=0):', rightBarrierLog ? `x=${rightBarrierLog.playerX.toFixed(1)},vx=${rightBarrierLog.playerVx},act=${rightBarrierLog.arenaActive}` : 'NONE');
+    console.log('Case P Dissipation start (expected phase=complete, dTicks=30, alpha=0.8):', dissipateStartLog ? `phase=${dissipateStartLog.wavePhase},dTicks=${dissipateStartLog.arenaDissipate},a=${dissipateStartLog.arenaAlpha?.toFixed(2)}` : 'NONE');
+    console.log('Case P Dissipation midpoint (expected dTicks ~15, alpha ~0.4):', dissipateMidLog ? `dTicks=${dissipateMidLog.arenaDissipate},a=${dissipateMidLog.arenaAlpha?.toFixed(2)}` : 'NONE');
+    console.log('Case P Barriers disabled post-dissipation (expected active=false, alpha=0):', dissipateEndLog ? `act=${dissipateEndLog.arenaActive},a=${dissipateEndLog.arenaAlpha?.toFixed(2)}` : 'NONE');
+    console.log('Case P Player liberated advancing past barrier (expected x > 410.0):', liberatedLog ? `x=${liberatedLog.playerX.toFixed(1)},vx=${liberatedLog.playerVx},act=${liberatedLog.arenaActive}` : 'NONE');
+
     console.log('\n=== ALL VERIFICATION TESTS COMPLETED SUCCESSFULLY ===');
     console.log('Artifacts in scripts/verification/output/:');
     console.log(' - combo_jjj_mosaic.png & combo_jjj.gif');
@@ -980,6 +1073,7 @@ async function run() {
     console.log(' - orbs_economy_and_healing_mosaic.png & orbs_economy_and_healing.gif');
     console.log(' - archer_combat_ai_mosaic.png & archer_combat_ai.gif');
     console.log(' - waves_flow_and_pacing_mosaic.png & waves_flow_and_pacing.gif');
+    console.log(' - arena_confinement_and_barriers_mosaic.png & arena_confinement_and_barriers.gif');
 
     ws.close();
   } finally {

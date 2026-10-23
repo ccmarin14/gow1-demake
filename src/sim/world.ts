@@ -3,12 +3,13 @@ import { checksumOf } from './checksum';
 import { stepHorizontal } from './movement';
 import type { Platform } from './scenarios';
 import { cloneEntities, DEFAULT_SCENARIO, getScenario, archerAt, legionnaireAt } from './scenarios';
-import type { AttackMoveId, EntityState, GameAction, OrbState, ArrowState, WaveState, SimulationSnapshot } from './types';
+import type { AttackMoveId, EntityState, GameAction, OrbState, ArrowState, WaveState, ArenaState, SimulationSnapshot } from './types';
 import { PLAYER_ID, sortActions } from './types';
 import { stepVertical, type VerticalParams } from './vertical';
 import { spawnOrbsFromDeath, stepOrbs } from './orbs';
 import { stepArcher, stepArrows } from './archer';
 import { WaveManager } from './waves';
+import { ArenaManager } from './arena';
 import {
   computeAttackHitbox,
   isEntityAttacking,
@@ -94,6 +95,7 @@ export class World {
   private arrowIdCounter = 0;
   private waveManager: WaveManager | null = null;
   private waveEnemyIdCounter = 0;
+  private arenaManager: ArenaManager | null = null;
 
   constructor() {
     this.loadScenario(DEFAULT_SCENARIO);
@@ -139,12 +141,28 @@ export class World {
     return this.waveManager ? this.waveManager.getState(this.targets) : null;
   }
 
+  peekArena(): ArenaState | null {
+    return this.arenaManager ? this.arenaManager.getState() : null;
+  }
+
+  completeWaveEncounter(): void {
+    if (this.waveManager) {
+      this.waveManager.completeEncounter();
+    }
+  }
+
   private spawnWaveEnemy(kind: 'legionnaire' | 'archer', x: number, facing: -1 | 1): EntityState {
     const id = `wave-enemy-${this.waveEnemyIdCounter++}`;
     const groundY = this.platforms[0]?.yTop ?? 236;
+    let spawnX = x;
+    if (this.arenaManager && this.arenaManager.isActive()) {
+      const minX = this.arenaManager.getMinX() + CONFIG.player.attack.targetHalfWidth;
+      const maxX = this.arenaManager.getMaxX() - CONFIG.player.attack.targetHalfWidth;
+      spawnX = Math.max(minX, Math.min(maxX, x));
+    }
     const enemy = kind === 'archer'
-      ? archerAt(id, x, groundY, facing)
-      : legionnaireAt(id, x, groundY, facing);
+      ? archerAt(id, spawnX, groundY, facing)
+      : legionnaireAt(id, spawnX, groundY, facing);
     enemy.aiState = 'spawning';
     enemy.aiTicks = 0;
     enemy.vy = -160;
@@ -202,8 +220,14 @@ export class World {
     if (name === 'waves') {
       this.waveManager = new WaveManager();
       this.waveEnemyIdCounter = 0;
+      this.arenaManager = null;
+    } else if (name === 'arena') {
+      this.waveManager = new WaveManager();
+      this.waveEnemyIdCounter = 0;
+      this.arenaManager = new ArenaManager();
     } else {
       this.waveManager = null;
+      this.arenaManager = null;
     }
   }
 
@@ -410,12 +434,23 @@ export class World {
           player.vx = 0;
         }
         const horizontalLocked = nowRolling || player.attackPhase === 'active' || nowGuarding || inHitstun;
+        const playerMinX = (this.arenaManager && this.arenaManager.isActive())
+          ? this.arenaManager.getMinX() + (CONFIG.player.sprite.width / 2)
+          : CONFIG.player.minX;
+        const playerMaxX = (this.arenaManager && this.arenaManager.isActive())
+          ? this.arenaManager.getMaxX() - (CONFIG.player.sprite.width / 2)
+          : CONFIG.player.maxX;
+        const playerMovementParams = {
+          ...CONFIG.player,
+          minX: playerMinX,
+          maxX: playerMaxX,
+        };
         stepHorizontal(
           player,
           this.input.includes('move-left'),
           this.input.includes('move-right'),
           TICK_DT,
-          CONFIG.player,
+          playerMovementParams,
           horizontalLocked,
         );
         const nowAttacking = isEntityAttacking(player);
@@ -432,6 +467,15 @@ export class World {
           nowRolling,
           gravityScale,
         );
+        if (this.arenaManager && this.arenaManager.isActive()) {
+          if (player.x < playerMinX) {
+            player.x = playerMinX;
+            player.vx = 0;
+          } else if (player.x > playerMaxX) {
+            player.x = playerMaxX;
+            player.vx = 0;
+          }
+        }
       }
     }
 
@@ -443,8 +487,12 @@ export class World {
       const gravity = CONFIG.player.vertical.gravity;
       const maxFallSpeed = CONFIG.player.vertical.maxFallSpeed;
       const friction = CONFIG.player.attack.target.groundFriction;
-      const minX = CONFIG.player.attack.target.minX;
-      const maxX = CONFIG.player.attack.target.maxX;
+      const minX = (this.arenaManager && this.arenaManager.isActive())
+        ? this.arenaManager.getMinX() + CONFIG.player.attack.targetHalfWidth
+        : CONFIG.player.attack.target.minX;
+      const maxX = (this.arenaManager && this.arenaManager.isActive())
+        ? this.arenaManager.getMaxX() - CONFIG.player.attack.targetHalfWidth
+        : CONFIG.player.attack.target.maxX;
 
       for (let i = 0; i < this.targets.length; i += 1) {
         const target = this.targets[i];
@@ -525,13 +573,29 @@ export class World {
     }
 
     stepArrows(this.arrows, player, this.targets, TICK_DT);
+    if (this.arenaManager && this.arenaManager.isActive()) {
+      const minX = this.arenaManager.getMinX();
+      const maxX = this.arenaManager.getMaxX();
+      for (let i = 0; i < this.arrows.length; i += 1) {
+        const arrow = this.arrows[i];
+        if (arrow.active && (arrow.x <= minX || arrow.x >= maxX)) {
+          arrow.active = false;
+        }
+      }
+    }
     stepOrbs(this.orbs, player, TICK_DT);
+
+    if (this.arenaManager) {
+      const waveState = this.waveManager ? this.waveManager.getState(this.targets) : null;
+      this.arenaManager.step(waveState);
+    }
 
     this.tick += 1;
   }
 
   snapshot(): SimulationSnapshot {
     const waveState = this.waveManager ? this.waveManager.getState(this.targets) : undefined;
+    const arenaState = this.arenaManager ? this.arenaManager.getState() : undefined;
     const payload = {
       frame: this.tick,
       timeMs: this.timeMs,
@@ -539,6 +603,7 @@ export class World {
       orbs: this.orbs.map((orb) => ({ ...orb })),
       arrows: this.arrows.map((arrow) => ({ ...arrow })),
       ...(waveState ? { wave: waveState } : {}),
+      ...(arenaState ? { arena: arenaState } : {}),
       input: [...this.input],
     };
     return {

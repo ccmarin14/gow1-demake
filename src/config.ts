@@ -267,6 +267,15 @@ export const CONFIG = {
     },
   },
   combat: {
+    arena: {
+      minX: 70,
+      maxX: 410,
+      barrierWidth: 8,
+      barrierColor: 0xff2020,
+      barrierGlowColor: 0xff6644,
+      barrierAlpha: 0.8,
+      dissipateDurationTicks: 30,
+    },
     waves: {
       transitionDelayTicks: 60,
       spawnTelegraphTicks: 24,

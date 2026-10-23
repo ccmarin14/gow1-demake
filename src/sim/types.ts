@@ -184,6 +184,14 @@ export interface WaveState {
   totalKills: number;
 }
 
+export interface ArenaState {
+  active: boolean;
+  minX: number;
+  maxX: number;
+  dissipateTicks: number;
+  alpha: number;
+}
+
 export interface SimulationSnapshot {
   frame: number;
   timeMs: number;
@@ -191,6 +199,7 @@ export interface SimulationSnapshot {
   orbs: OrbState[];
   arrows: ArrowState[];
   wave?: WaveState;
+  arena?: ArenaState;
   input: GameAction[];
   checksum: string;
 }

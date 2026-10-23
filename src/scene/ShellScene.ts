@@ -40,6 +40,7 @@ export class ShellScene extends Phaser.Scene {
   private readonly weaponLayer = new WeaponLayer();
   private defeatText: Phaser.GameObjects.Text | null = null;
   private waveBannerText: Phaser.GameObjects.Text | null = null;
+  private barrierGraphics: Phaser.GameObjects.Graphics | null = null;
   hudLayer!: HudLayer;
 
   constructor(
@@ -241,6 +242,7 @@ export class ShellScene extends Phaser.Scene {
     this.updateTargets(player);
     this.updateOrbs();
     this.updateArrows();
+    this.updateArenaBarriers();
     if (player && player.groundImpactTicks > 0) {
       const shakePx = CONFIG.player.attack.groundImpact.shakePx;
       const dy = player.groundImpactTicks % 2 === 1 ? shakePx : -shakePx;
@@ -432,6 +434,9 @@ export class ShellScene extends Phaser.Scene {
       sprite.destroy();
     }
     this.arrowSprites.clear();
+    if (this.barrierGraphics) {
+      this.barrierGraphics.clear();
+    }
     const {
       platformColor,
       platformHighlightColor,
@@ -757,6 +762,55 @@ export class ShellScene extends Phaser.Scene {
     }
   }
 
+  private updateArenaBarriers(): void {
+    const arena = this.simulation.world.peekArena ? this.simulation.world.peekArena() : null;
+    if (!arena || arena.alpha <= 0) {
+      if (this.barrierGraphics) {
+        this.barrierGraphics.clear();
+        this.barrierGraphics.setVisible(false);
+      }
+      return;
+    }
+
+    if (!this.barrierGraphics) {
+      this.barrierGraphics = this.add.graphics().setDepth(4);
+    }
+
+    this.barrierGraphics.clear();
+    this.barrierGraphics.setVisible(true);
+
+    const { minX, maxX, alpha } = arena;
+    const groundY = 220; // desde y=0 hasta la plataforma en y=220
+    const width = CONFIG.combat.arena.barrierWidth;
+    const color = CONFIG.combat.arena.barrierColor;
+    const glowColor = CONFIG.combat.arena.barrierGlowColor;
+
+    // Sutil oscilación ígnea / pulsación de niebla mágica
+    const pulse = 0.9 + 0.1 * Math.sin(this.simulation.world.frame * 0.25);
+    const effAlpha = alpha * pulse;
+
+    const drawBarrierPillar = (x: number) => {
+      // 1. Halo difuso exterior (niebla de sangre de Ares)
+      this.barrierGraphics!.fillStyle(glowColor, effAlpha * 0.3);
+      this.barrierGraphics!.fillRect(x - width * 1.5, 0, width * 3, groundY);
+
+      // 2. Columna mágica intermedia
+      this.barrierGraphics!.fillStyle(glowColor, effAlpha * 0.55);
+      this.barrierGraphics!.fillRect(x - width, 0, width * 2, groundY);
+
+      // 3. Núcleo denso de la barrera
+      this.barrierGraphics!.fillStyle(color, effAlpha * 0.85);
+      this.barrierGraphics!.fillRect(x - width / 2, 0, width, groundY);
+
+      // 4. Filamento ígneo incandescente central
+      this.barrierGraphics!.fillStyle(0xfff0f0, effAlpha * 0.95);
+      this.barrierGraphics!.fillRect(x - 1, 0, 2, groundY);
+    };
+
+    drawBarrierPillar(minX);
+    drawBarrierPillar(maxX);
+  }
+
   shutdown(): void {
     this.hudLayer?.destroy();
     for (const gfx of this.orbSprites.values()) {
@@ -773,5 +827,9 @@ export class ShellScene extends Phaser.Scene {
       sprite.destroy();
     }
     this.arrowSprites.clear();
+    if (this.barrierGraphics) {
+      this.barrierGraphics.destroy();
+      this.barrierGraphics = null;
+    }
   }
 }

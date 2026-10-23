@@ -272,6 +272,13 @@ register({
   targetPhysics: true,
 });
 
+register({
+  name: 'arena',
+  entities: [playerAt(120, GROUND_Y)],
+  platforms: [{ x1: 0, x2: 480, yTop: GROUND_Y }],
+  targetPhysics: true,
+});
+
 export const DEFAULT_SCENARIO = 'platforms';
 
 export function getScenario(name: string): Scenario {

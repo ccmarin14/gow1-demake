@@ -65,6 +65,11 @@ export class WaveManager {
     this.totalKills += 1;
   }
 
+  completeEncounter(): void {
+    this.phase = 'complete';
+    this.phaseTicks = 0;
+  }
+
   step(
     activeTargets: readonly EntityState[],
     spawnEnemy: (kind: 'legionnaire' | 'archer', x: number, facing: -1 | 1) => EntityState,
