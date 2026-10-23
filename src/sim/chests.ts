@@ -36,6 +36,27 @@ export function collectGorgonEye(player: EntityState): boolean {
 }
 
 /**
+ * Collects a Phoenix Feather into player progression.
+ * When reaching 6 feathers:
+ * - maxMp expands permanently (+20 MP: 100 -> 120 MP)
+ * - mp is fully restored to maxMp
+ * - phoenixFeathers resets to 0
+ * - phoenixUpgrades increments by 1
+ * Returns true if an upgrade was triggered.
+ */
+export function collectPhoenixFeather(player: EntityState): boolean {
+  player.phoenixFeathers += 1;
+  if (player.phoenixFeathers >= CONFIG.economy.chests.phoenixFeathersPerUpgrade) {
+    player.maxMp += CONFIG.economy.chests.manaUpgradeBonus;
+    player.mp = player.maxMp;
+    player.phoenixFeathers = 0;
+    player.phoenixUpgrades += 1;
+    return true;
+  }
+  return false;
+}
+
+/**
  * Deterministic simulation step for chests.
  * - If chest is closed: pressing context-action ('E') while in proximity begins opening.
  * - If chest is opening: anchors Kratos (vx = 0) while openProgressTicks advances 1..24.
@@ -71,6 +92,8 @@ export function stepChests(
         chest.itemAbsorbed = true;
         if (chest.type === 'gorgon_eye') {
           collectGorgonEye(player);
+        } else if (chest.type === 'phoenix_feather') {
+          collectPhoenixFeather(player);
         }
       }
     }

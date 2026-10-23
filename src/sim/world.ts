@@ -8,7 +8,7 @@ import { PLAYER_ID, sortActions } from './types';
 import { stepVertical, type VerticalParams } from './vertical';
 import { spawnOrbsFromDeath, stepOrbs } from './orbs';
 import { stepArcher, stepArrows } from './archer';
-import { stepChests, collectGorgonEye } from './chests';
+import { stepChests, collectGorgonEye, collectPhoenixFeather } from './chests';
 import { WaveManager } from './waves';
 import { ArenaManager } from './arena';
 import {
@@ -153,6 +153,12 @@ export class World {
     const p = target ?? this.peekEntity(PLAYER_ID);
     if (!p) return false;
     return collectGorgonEye(p);
+  }
+
+  collectPhoenixFeather(target?: EntityState): boolean {
+    const p = target ?? this.peekEntity(PLAYER_ID);
+    if (!p) return false;
+    return collectPhoenixFeather(p);
   }
 
   peekWave(): WaveState | null {

@@ -19,6 +19,8 @@ export interface HudMetrics {
   redOrbs: number;
   gorgonEyes: number;
   gorgonUpgrades: number;
+  phoenixFeathers: number;
+  phoenixUpgrades: number;
 }
 
 /**
@@ -84,6 +86,10 @@ export class HudLayer {
   private readonly gorgonEyeSlots: Phaser.GameObjects.Rectangle[] = [];
   private readonly gorgonEyeGems: Phaser.GameObjects.Rectangle[] = [];
 
+  // Ranuras ornamentales de Plumas de Fénix bajo los ojos
+  private readonly phoenixFeatherSlots: Phaser.GameObjects.Rectangle[] = [];
+  private readonly phoenixFeatherGems: Phaser.GameObjects.Rectangle[] = [];
+
   // Estado del drenaje fantasma
   private prevHp = 100;
   private ghostHp = 100;
@@ -105,6 +111,8 @@ export class HudLayer {
     redOrbs: 0,
     gorgonEyes: 0,
     gorgonUpgrades: 0,
+    phoenixFeathers: 0,
+    phoenixUpgrades: 0,
   };
 
   constructor(scene: Phaser.Scene) {
@@ -343,6 +351,27 @@ export class HudLayer {
       this.gorgonEyeGems.push(gem);
       this.elements.push(gem);
     }
+
+    // 10. Ranuras ornamentales de Plumas de Fénix bajo los ojos (6 casillas zafiro)
+    const featherSlotY = eyeSlotY + 5;
+    for (let i = 0; i < 6; i += 1) {
+      const sx = startSlotX + i * 4;
+      const slotBg = scene.add
+        .rectangle(sx, featherSlotY, 3, 3, 0x18100c)
+        .setOrigin(0.5, 0.5)
+        .setScrollFactor(0)
+        .setDepth(depth + 6);
+      this.phoenixFeatherSlots.push(slotBg);
+      this.elements.push(slotBg);
+
+      const gem = scene.add
+        .rectangle(sx, featherSlotY, 2, 2, 0x0c4a6e, 0.35)
+        .setOrigin(0.5, 0.5)
+        .setScrollFactor(0)
+        .setDepth(depth + 7);
+      this.phoenixFeatherGems.push(gem);
+      this.elements.push(gem);
+    }
   }
 
   update(player: EntityState | undefined, dt: number): void {
@@ -363,7 +392,7 @@ export class HudLayer {
 
     const maxHp = player.maxHp > 0 ? player.maxHp : 100;
     const currentHp = player.isDead ? 0 : Math.max(0, player.hp);
-    const { barHeight, manaBarWidth, manaBarHeight, ghostDrainSpeed, ghostPauseMs, criticalHpThreshold } =
+    const { barHeight, manaBarHeight, ghostDrainSpeed, ghostPauseMs, criticalHpThreshold } =
       CONFIG.presentation.hud;
     const targetBarWidth = maxHp >= 120 ? (CONFIG.presentation.hud.upgradedBarWidth ?? 132) : CONFIG.presentation.hud.barWidth;
 
@@ -455,8 +484,12 @@ export class HudLayer {
     // 5. Barra de maná azul
     const maxMp = player.maxMp > 0 ? player.maxMp : 100;
     const currentMp = Math.max(0, player.mp ?? 100);
+    const targetManaBarWidth = maxMp >= 120 ? (CONFIG.presentation.hud.upgradedManaBarWidth ?? 96) : CONFIG.presentation.hud.manaBarWidth;
+    this.manaFrameBg.setSize(targetManaBarWidth + 2, manaBarHeight + 2);
+    this.manaChannelTrough.setSize(targetManaBarWidth, manaBarHeight);
+
     const manaRatio = Math.max(0, Math.min(1, currentMp / maxMp));
-    const manaWidth = Math.round(manaBarWidth * manaRatio);
+    const manaWidth = Math.round(targetManaBarWidth * manaRatio);
 
     if (manaWidth > 0) {
       this.manaBarBase.setSize(manaWidth, manaBarHeight).setVisible(true);
@@ -483,6 +516,14 @@ export class HudLayer {
       this.gorgonEyeGems[i].setFillStyle(isLit ? 0x22c55e : 0x064e3b, isLit ? 1.0 : 0.35);
     }
 
+    // 9. Iluminación de ranuras de Plumas de Fénix (azul zafiro)
+    const phoenixFeathers = player.phoenixFeathers ?? 0;
+    const phoenixUpgrades = player.phoenixUpgrades ?? 0;
+    for (let i = 0; i < 6; i += 1) {
+      const isLit = i < phoenixFeathers;
+      this.phoenixFeatherGems[i].setFillStyle(isLit ? 0x38bdf8 : 0x0c4a6e, isLit ? 1.0 : 0.35);
+    }
+
     // Registro de métricas para introspección y tests CDP
     this.lastMetrics = {
       currentHp,
@@ -501,6 +542,8 @@ export class HudLayer {
       redOrbs,
       gorgonEyes,
       gorgonUpgrades,
+      phoenixFeathers,
+      phoenixUpgrades,
     };
   }
 
@@ -516,5 +559,7 @@ export class HudLayer {
     this.segmentNotches.length = 0;
     this.gorgonEyeSlots.length = 0;
     this.gorgonEyeGems.length = 0;
+    this.phoenixFeatherSlots.length = 0;
+    this.phoenixFeatherGems.length = 0;
   }
 }

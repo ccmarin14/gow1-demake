@@ -95,7 +95,7 @@ También el 2026-10-15, tras la aprobación de la etapa 6, la usuaria autorizó 
 | Orden | ID | Etapa | Estado |
 | --- | --- | --- | --- |
 | 22 | GOW8B-PICK-01 **(nueva)** | Ojos de Górgona (cofres y expansión de vida): cofres de piedra griegos de $24 \times 18\text{ px}$ con interacción contextual `E` (`context-action`), inmovilidad determinista de 24 ticks ($v_x=0$), liberación y absorción del Ojo de Górgona, medidor de 6 casillas iluminadas en el HUD, y expansión permanente de la salud máxima de 100 a 120 HP con redimensionamiento dinámico del marco de piedra y bronce de 110 a 132 px, 5ª muesca segmentada en $x=\text{barX}+110$ y restauración completa de vida, verificado con Caso T en Chrome CDP. | **Aprobada** (2026-10-23) bajo el plan [`GOW8B-PICK-01`](planes/GOW8B-PICK-01.md) tras auditoría independiente de solo lectura. |
-| 23 | GOW8B-PICK-02 **(nueva)** | Plumas de fénix | Pendiente; no activa. |
+| 23 | GOW8B-PICK-02 **(nueva)** | Plumas de Fénix (cofres y expansión de maná): cofres de piedra griegos de $24 \times 18\text{ px}$ con emblema zafiro, interacción contextual `E` (`context-action`), inmovilidad de 24 ticks ($v_x=0$), liberación y absorción magnética de la Pluma de Fénix, medidor de 6 casillas zafiro en el HUD, y expansión permanente de maná máximo de 100 a 120 MP con redimensionamiento dinámico del marco de la barra de maná de 80 a 96 px y restauración completa de maná, verificado con Caso U en Chrome CDP. | **Aprobada** (2026-10-23) bajo el plan [`GOW8B-PICK-02`](planes/GOW8B-PICK-02.md) tras auditoría independiente de solo lectura. |
 | 24 | GOW8B-UPGRADE-01 | Cofres y mejora de arma (H-3, resto) | Pendiente; no activa. |
 
 ### Bloque 9 — Checkpoint

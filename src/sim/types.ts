@@ -159,6 +159,8 @@ export interface EntityState {
   redOrbs: number;
   gorgonEyes: number;
   gorgonUpgrades: number;
+  phoenixFeathers: number;
+  phoenixUpgrades: number;
 }
 
 export interface ArrowState {

@@ -435,9 +435,15 @@ async function run() {
             chestState: snap.chests && snap.chests[0] ? snap.chests[0].state : null,
             chestProgress: snap.chests && snap.chests[0] ? snap.chests[0].openProgressTicks : null,
             chestAbsorbed: snap.chests && snap.chests[0] ? snap.chests[0].itemAbsorbed : null,
+            featherChestState: snap.chests && snap.chests.find((c) => c.type === 'phoenix_feather') ? snap.chests.find((c) => c.type === 'phoenix_feather').state : null,
+            featherChestProgress: snap.chests && snap.chests.find((c) => c.type === 'phoenix_feather') ? snap.chests.find((c) => c.type === 'phoenix_feather').openProgressTicks : null,
+            featherChestAbsorbed: snap.chests && snap.chests.find((c) => c.type === 'phoenix_feather') ? snap.chests.find((c) => c.type === 'phoenix_feather').itemAbsorbed : null,
             gorgonEyes: p.gorgonEyes ?? 0,
             gorgonUpgrades: p.gorgonUpgrades ?? 0,
+            phoenixFeathers: p.phoenixFeathers ?? 0,
+            phoenixUpgrades: p.phoenixUpgrades ?? 0,
             maxHp: p.maxHp,
+            maxMp: p.maxMp ?? 100,
           });
         }
 
@@ -1359,6 +1365,86 @@ async function run() {
       throw new Error(`Case T failure: finalHudLog invalid: ${JSON.stringify(finalHudLog)}`);
     }
 
+    // CASE U: Phoenix Feather Stone Chest, Collection & Mana Bar Expansion (GOW8B-PICK-02)
+    // - Scenario: 'chest' (Kratos at x=160, Phoenix Feather Stone Chest at x=300, y=262).
+    // - t=1: Kratos approached into interaction range of Phoenix Feather Chest (x=278, distance=22 px <= 28 px).
+    // - t=1..24: Kratos presses/holds 'context-action' (E).
+    //   - Feather chest state is 'opening' throughout ticks 1..24 with openProgressTicks incrementing 1..24.
+    //   - Kratos is firmly anchored in opening action (vx = 0).
+    // - t=25: Chest completes opening ('open'), Phoenix Feather rises and is absorbed (itemAbsorbed = true, phoenixFeathers = 1).
+    // - t=30: Simulates gaining 5 more Phoenix Feathers to complete the 6th feather upgrade:
+    //   - maxMp expands permanently (+20 MP: 100 -> 120 MP).
+    //   - mp restored fully: 120/120 MP.
+    //   - phoenixUpgrades = 1, phoenixFeathers resets to 0.
+    // - t=35..60: HUD metrics verify dynamic mana bar expansion:
+    //   - maxMp === 120, currentMp === 120.
+    //   - manaWidth === 96 (expanded from 80 px).
+    const caseU = await recordScenarioSequence({
+      caseId: 'phoenix_feather_chest_and_mana_upgrade',
+      scenario: 'chest',
+      totalSteps: 60,
+      cropW: 240,
+      cropH: 140,
+      fixedCropX: 160,
+      fixedCropY: 140,
+      getActions: (t) => {
+        const sc = window.__SHELL_SCENE;
+        const p = sc.simulation.world.peekEntity('player');
+
+        // t=1: Approach into interaction range of feather chest (x=278, chest at x=300, dx=22 <= 28)
+        if (t === 1 && p) {
+          p.x = 278;
+          p.y = 262;
+          p.vx = 0;
+          p.vy = 0;
+        }
+
+        // t=1..24: Opening action (E)
+        if (t >= 1 && t <= 24) {
+          return ['context-action'];
+        }
+
+        // t=30: Simulate collecting 5 remaining feathers to trigger the 6th feather upgrade
+        if (t === 30 && p) {
+          for (let i = 0; i < 5; i += 1) {
+            sc.simulation.world.collectPhoenixFeather(p);
+          }
+        }
+
+        return [];
+      },
+    });
+
+    const featherStartLog = caseU.logs.find((l) => l.t === 1);
+    const featherMidLog = caseU.logs.find((l) => l.t === 12);
+    const featherLastOpeningLog = caseU.logs.find((l) => l.t === 24);
+    const featherOpenCompleteLog = caseU.logs.find((l) => l.t === 25);
+    const manaUpgradeLog = caseU.logs.find((l) => l.t === 35);
+    const finalManaHudLog = caseU.logs.find((l) => l.t === 60);
+
+    console.log('Case U Feather chest opening initiated (expected state=opening, prog=1, vx=0):', featherStartLog ? `state=${featherStartLog.featherChestState},prog=${featherStartLog.featherChestProgress},vx=${featherStartLog.playerVx.toFixed(1)}` : 'NONE');
+    console.log('Case U Feather chest opening mid-progress (expected state=opening, prog=12, vx=0):', featherMidLog ? `state=${featherMidLog.featherChestState},prog=${featherMidLog.featherChestProgress},vx=${featherMidLog.playerVx.toFixed(1)}` : 'NONE');
+    console.log('Case U Feather chest opening final tick (expected state=opening, prog=24, vx=0):', featherLastOpeningLog ? `state=${featherLastOpeningLog.featherChestState},prog=${featherLastOpeningLog.featherChestProgress},vx=${featherLastOpeningLog.playerVx.toFixed(1)}` : 'NONE');
+    console.log('Case U Feather chest fully open & feather absorbed (expected state=open, absorbed=true, feathers=1):', featherOpenCompleteLog ? `state=${featherOpenCompleteLog.featherChestState},abs=${featherOpenCompleteLog.featherChestAbsorbed},feathers=${featherOpenCompleteLog.phoenixFeathers}` : 'NONE');
+    console.log('Case U 6th Phoenix Feather mana upgrade (expected maxMp=120, mp=120, upgr=1, feathers=0):', manaUpgradeLog ? `maxMp=${manaUpgradeLog.maxMp},mp=${manaUpgradeLog.playerMp},upgr=${manaUpgradeLog.phoenixUpgrades},feathers=${manaUpgradeLog.phoenixFeathers}` : 'NONE');
+    console.log('Case U HUD expanded mana bar metrics (expected maxMp=120, width=96):', finalManaHudLog && finalManaHudLog.hud ? `maxMp=${finalManaHudLog.hud.maxMp},currentMp=${finalManaHudLog.hud.currentMp},manaWidth=${finalManaHudLog.hud.manaWidth}` : 'NONE');
+
+    if (!featherStartLog || featherStartLog.featherChestState !== 'opening' || featherStartLog.featherChestProgress !== 1) {
+      throw new Error(`Case U failure: featherStartLog invalid: ${JSON.stringify(featherStartLog)}`);
+    }
+    if (!featherLastOpeningLog || featherLastOpeningLog.featherChestState !== 'opening' || featherLastOpeningLog.featherChestProgress !== 24) {
+      throw new Error(`Case U failure: featherLastOpeningLog invalid: ${JSON.stringify(featherLastOpeningLog)}`);
+    }
+    if (!featherOpenCompleteLog || featherOpenCompleteLog.featherChestState !== 'open' || !featherOpenCompleteLog.featherChestAbsorbed || featherOpenCompleteLog.phoenixFeathers !== 1) {
+      throw new Error(`Case U failure: featherOpenCompleteLog invalid: ${JSON.stringify(featherOpenCompleteLog)}`);
+    }
+    if (!manaUpgradeLog || manaUpgradeLog.maxMp !== 120 || manaUpgradeLog.playerMp !== 120 || manaUpgradeLog.phoenixUpgrades !== 1) {
+      throw new Error(`Case U failure: manaUpgradeLog invalid: ${JSON.stringify(manaUpgradeLog)}`);
+    }
+    if (!finalManaHudLog || !finalManaHudLog.hud || finalManaHudLog.hud.maxMp !== 120 || finalManaHudLog.hud.currentMp !== 120 || finalManaHudLog.hud.manaWidth !== 96) {
+      throw new Error(`Case U failure: finalManaHudLog invalid: ${JSON.stringify(finalManaHudLog)}`);
+    }
+
     console.log('\n=== ALL VERIFICATION TESTS COMPLETED SUCCESSFULLY ===');
     console.log('Artifacts in scripts/verification/output/:');
     console.log(' - combo_jjj_mosaic.png & combo_jjj.gif');
@@ -1381,6 +1467,7 @@ async function run() {
     console.log(' - map_scroll_and_segments_mosaic.png & map_scroll_and_segments.gif');
     console.log(' - platforming_verticality_and_drop_mosaic.png & platforming_verticality_and_drop.gif');
     console.log(' - gorgon_eye_chest_and_health_upgrade_mosaic.png & gorgon_eye_chest_and_health_upgrade.gif');
+    console.log(' - phoenix_feather_chest_and_mana_upgrade_mosaic.png & phoenix_feather_chest_and_mana_upgrade.gif');
 
     ws.close();
   } finally {

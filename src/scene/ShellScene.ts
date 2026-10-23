@@ -1059,6 +1059,8 @@ export class ShellScene extends Phaser.Scene {
       bronzeHighlightColor,
       emeraldColor,
       emeraldGlowColor,
+      sapphireColor,
+      sapphireGlowColor,
       depth,
     } = CONFIG.presentation.chest;
 
@@ -1068,6 +1070,11 @@ export class ShellScene extends Phaser.Scene {
     for (let i = 0; i < simChests.length; i += 1) {
       const chest = simChests[i];
       let gfx = this.chestGfx.get(chest.id);
+      const isFeather = chest.type === 'phoenix_feather';
+      const gemColor = isFeather ? sapphireColor : emeraldColor;
+      const gemGlow = isFeather ? sapphireGlowColor : emeraldGlowColor;
+      const hlColor = isFeather ? 0xe0f2fe : 0xdcfce7;
+      const magnetSpeed = isFeather ? CONFIG.economy.chests.featherMagnetSpeed : CONFIG.economy.chests.eyeMagnetSpeed;
 
       if (!gfx) {
         const body = this.add.graphics().setDepth(depth);
@@ -1130,11 +1137,11 @@ export class ShellScene extends Phaser.Scene {
       g.fillStyle(bronzeColor, 1.0);
       g.strokeRect(cx - 3, yBodyTop + 3, 6, 6);
 
-      // Ojo de Górgona místico central (gema esmeralda con pulsación mística)
+      // Emblema místico central (ojo esmeralda o pluma zafiro con pulsación)
       const pulse = 0.75 + 0.25 * Math.sin(this.simulation.world.frame * 0.2);
-      g.fillStyle(emeraldColor, pulse);
+      g.fillStyle(gemColor, pulse);
       g.fillRect(cx - 2, yBodyTop + 4, 4, 4);
-      g.fillStyle(emeraldGlowColor, 1.0);
+      g.fillStyle(gemGlow, 1.0);
       g.fillRect(cx - 1, yBodyTop + 5, 2, 2);
 
       // 2. Tapa del cofre y animación de apertura
@@ -1155,8 +1162,8 @@ export class ShellScene extends Phaser.Scene {
         const lidLift = Math.round(progress * 8);
         const yLidTop = yBodyTop - 6 - lidLift;
 
-        // Haz de luz esmeralda brotando de la hendidura
-        g.fillStyle(emeraldGlowColor, 0.45 * progress);
+        // Haz de luz brotando de la hendidura (esmeralda o zafiro)
+        g.fillStyle(gemGlow, 0.45 * progress);
         g.fillRect(xLeft, yBodyTop - lidLift, width, lidLift);
         g.fillStyle(0xffffff, 0.75 * progress);
         g.fillRect(xLeft + 4, yBodyTop - Math.round(lidLift / 2), width - 8, 2);
@@ -1181,11 +1188,11 @@ export class ShellScene extends Phaser.Scene {
         g.fillRect(xLeft + 2, yLidTop, 3, 4);
         g.fillRect(xLeft + width - 5, yLidTop, 3, 4);
 
-        // Ojo de Górgona ascendente y atraído magnéticamente hacia Kratos
+        // Ítem místico (Ojo de Górgona o Pluma de Fénix) ascendente y atraído magnéticamente hacia Kratos
         if (!gfx.eyeOuter) {
-          const eyeOuter = this.add.circle(cx, cy - 14, 5, emeraldColor, 0.5).setDepth(depth + 20);
-          const eyeCore = this.add.circle(cx, cy - 14, 3, emeraldGlowColor, 0.95).setDepth(depth + 21);
-          const eyeHighlight = this.add.circle(cx - 1, cy - 15, 1.2, 0xdcfce7, 1.0).setDepth(depth + 22);
+          const eyeOuter = this.add.circle(cx, cy - 14, 5, gemColor, 0.5).setDepth(depth + 20);
+          const eyeCore = this.add.circle(cx, cy - 14, 3, gemGlow, 0.95).setDepth(depth + 21);
+          const eyeHighlight = this.add.circle(cx - 1, cy - 15, 1.2, hlColor, 1.0).setDepth(depth + 22);
           gfx.eyeOuter = eyeOuter;
           gfx.eyeCore = eyeCore;
           gfx.eyeHighlight = eyeHighlight;
@@ -1201,14 +1208,14 @@ export class ShellScene extends Phaser.Scene {
           const dist = Math.hypot(dx, dy);
 
           if (dist > 3) {
-            const speed = CONFIG.economy.chests.eyeMagnetSpeed / 60;
+            const speed = magnetSpeed / 60;
             gfx.eyeX += (dx / dist) * Math.min(speed, dist);
             gfx.eyeY += (dy / dist) * Math.min(speed, dist);
             gfx.eyeOuter.setPosition(gfx.eyeX, gfx.eyeY);
             gfx.eyeCore.setPosition(gfx.eyeX, gfx.eyeY);
             gfx.eyeHighlight.setPosition(gfx.eyeX - 1, gfx.eyeY - 1);
           } else {
-            // Absorbido en el pecho de Kratos
+            // Absorbido en el torso de Kratos
             gfx.eyeOuter.setVisible(false);
             gfx.eyeCore.setVisible(false);
             gfx.eyeHighlight.setVisible(false);
