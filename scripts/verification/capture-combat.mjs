@@ -438,10 +438,15 @@ async function run() {
             featherChestState: snap.chests && snap.chests.find((c) => c.type === 'phoenix_feather') ? snap.chests.find((c) => c.type === 'phoenix_feather').state : null,
             featherChestProgress: snap.chests && snap.chests.find((c) => c.type === 'phoenix_feather') ? snap.chests.find((c) => c.type === 'phoenix_feather').openProgressTicks : null,
             featherChestAbsorbed: snap.chests && snap.chests.find((c) => c.type === 'phoenix_feather') ? snap.chests.find((c) => c.type === 'phoenix_feather').itemAbsorbed : null,
+            redChestState: snap.chests && snap.chests.find((c) => c.type === 'red_orbs') ? snap.chests.find((c) => c.type === 'red_orbs').state : null,
+            redChestProgress: snap.chests && snap.chests.find((c) => c.type === 'red_orbs') ? snap.chests.find((c) => c.type === 'red_orbs').openProgressTicks : null,
+            redChestAbsorbed: snap.chests && snap.chests.find((c) => c.type === 'red_orbs') ? snap.chests.find((c) => c.type === 'red_orbs').itemAbsorbed : null,
             gorgonEyes: p.gorgonEyes ?? 0,
             gorgonUpgrades: p.gorgonUpgrades ?? 0,
             phoenixFeathers: p.phoenixFeathers ?? 0,
             phoenixUpgrades: p.phoenixUpgrades ?? 0,
+            redOrbs: p.redOrbs ?? 0,
+            weaponLevel: p.weaponLevel ?? 1,
             maxHp: p.maxHp,
             maxMp: p.maxMp ?? 100,
           });
@@ -1445,6 +1450,105 @@ async function run() {
       throw new Error(`Case U failure: finalManaHudLog invalid: ${JSON.stringify(finalManaHudLog)}`);
     }
 
+    // CASE V: Red Orbs Stone Chest, Collection & Weapon Upgrade to Level 2 (GOW8B-UPGRADE-01)
+    // - Scenario: 'chest' (Kratos at x=160, Red Orbs Stone Chest at x=410, y=262).
+    // - t=1: Kratos approached into interaction range of Red Orbs Chest (x=388, distance=22 px <= 28 px).
+    // - t=1..24: Kratos presses/holds 'context-action' (E).
+    //   - Red chest state is 'opening' throughout ticks 1..24 with openProgressTicks incrementing 1..24.
+    //   - Kratos is firmly anchored in opening action (vx = 0).
+    // - t=25: Chest completes opening ('open'), 50 Red Orbs emitted & credited (redChestAbsorbed = true, redOrbs = 50).
+    // - t=28: Simulates player with 100 Red Orbs available for weapon upgrade.
+    // - t=30: Kratos presses 'upgrade' (P).
+    // - t=31: Weapon upgraded to Level 2 (weaponLevel = 2, redOrbs = 0, 100 deducted).
+    // - t=35: Spawns a legionnaire enemy directly in front of Kratos (x=430, y=262).
+    // - t=36..48: Kratos attacks with light attack (J) using Level 2 Blades of Chaos.
+    // - t=48: Hit connects, dealing 16 damage (12 * 1.3), reducing legionnaire HP from 60 to 44.
+    // - t=70: HUD metrics verify weaponLevel === 2.
+    const caseV = await recordScenarioSequence({
+      caseId: 'red_orbs_chest_and_weapon_upgrade',
+      scenario: 'chest',
+      totalSteps: 75,
+      cropW: 240,
+      cropH: 140,
+      fixedCropX: 250,
+      fixedCropY: 140,
+      getActions: (t) => {
+        const sc = window.__SHELL_SCENE;
+        const p = sc.simulation.world.peekEntity('player');
+
+        // t=1: Approach into interaction range of red chest (x=388, chest at x=410, dx=22 <= 28)
+        if (t === 1 && p) {
+          p.x = 388;
+          p.y = 262;
+          p.vx = 0;
+          p.vy = 0;
+          p.facing = 1;
+        }
+
+        // t=1..24: Opening action (E)
+        if (t >= 1 && t <= 24) {
+          return ['context-action'];
+        }
+
+        // t=28: Provide remaining 50 red orbs so balance reaches 100
+        if (t === 28 && p) {
+          p.redOrbs = 100;
+        }
+
+        // t=30: Trigger weapon upgrade (P)
+        if (t === 30) {
+          return ['upgrade'];
+        }
+
+        // t=35: Spawn legionnaire enemy in front of Kratos to test Level 2 combat damage
+        if (t === 35) {
+          sc.simulation.world.spawnEnemy('legionnaire', 430, -1);
+        }
+
+        // t=36..48: Light attack chain to hit legionnaire
+        if (t >= 36 && t <= 48) {
+          return ['light-attack'];
+        }
+
+        return [];
+      },
+    });
+
+    const redStartLog = caseV.logs.find((l) => l.t === 1);
+    const redMidLog = caseV.logs.find((l) => l.t === 12);
+    const redLastOpeningLog = caseV.logs.find((l) => l.t === 24);
+    const redOpenCompleteLog = caseV.logs.find((l) => l.t === 25);
+    const weaponUpgradeLog = caseV.logs.find((l) => l.t === 31);
+    const combatHitLog = caseV.logs.find((l) => l.t === 48);
+    const finalWeaponHudLog = caseV.logs.find((l) => l.t === 70);
+
+    console.log('Case V Red Orbs chest opening initiated (expected state=opening, prog=1, vx=0):', redStartLog ? `state=${redStartLog.redChestState},prog=${redStartLog.redChestProgress},vx=${redStartLog.playerVx.toFixed(1)}` : 'NONE');
+    console.log('Case V Red Orbs chest opening mid-progress (expected state=opening, prog=12, vx=0):', redMidLog ? `state=${redMidLog.redChestState},prog=${redMidLog.redChestProgress},vx=${redMidLog.playerVx.toFixed(1)}` : 'NONE');
+    console.log('Case V Red Orbs chest opening final tick (expected state=opening, prog=24, vx=0):', redLastOpeningLog ? `state=${redLastOpeningLog.redChestState},prog=${redLastOpeningLog.redChestProgress},vx=${redLastOpeningLog.playerVx.toFixed(1)}` : 'NONE');
+    console.log('Case V Red Orbs chest fully open & orbs credited (expected state=open, absorbed=true, orbs=50):', redOpenCompleteLog ? `state=${redOpenCompleteLog.redChestState},abs=${redOpenCompleteLog.redChestAbsorbed},orbs=${redOpenCompleteLog.redOrbs}` : 'NONE');
+    console.log('Case V Weapon upgrade to Level 2 (expected weaponLevel=2, redOrbs=0):', weaponUpgradeLog ? `weaponLevel=${weaponUpgradeLog.weaponLevel},orbs=${weaponUpgradeLog.redOrbs}` : 'NONE');
+    console.log('Case V Level 2 Blades combat hit damage (expected targetHp=44 [60-16]):', combatHitLog ? `targetHp=${combatHitLog.targetHp},targetState=${combatHitLog.targetState}` : 'NONE');
+    console.log('Case V HUD weaponLevel metrics (expected weaponLevel=2):', finalWeaponHudLog && finalWeaponHudLog.hud ? `weaponLevel=${finalWeaponHudLog.hud.weaponLevel}` : 'NONE');
+
+    if (!redStartLog || redStartLog.redChestState !== 'opening' || redStartLog.redChestProgress !== 1) {
+      throw new Error(`Case V failure: redStartLog invalid: ${JSON.stringify(redStartLog)}`);
+    }
+    if (!redLastOpeningLog || redLastOpeningLog.redChestState !== 'opening' || redLastOpeningLog.redChestProgress !== 24) {
+      throw new Error(`Case V failure: redLastOpeningLog invalid: ${JSON.stringify(redLastOpeningLog)}`);
+    }
+    if (!redOpenCompleteLog || redOpenCompleteLog.redChestState !== 'open' || !redOpenCompleteLog.redChestAbsorbed || redOpenCompleteLog.redOrbs !== 50) {
+      throw new Error(`Case V failure: redOpenCompleteLog invalid: ${JSON.stringify(redOpenCompleteLog)}`);
+    }
+    if (!weaponUpgradeLog || weaponUpgradeLog.weaponLevel !== 2 || weaponUpgradeLog.redOrbs !== 0) {
+      throw new Error(`Case V failure: weaponUpgradeLog invalid: ${JSON.stringify(weaponUpgradeLog)}`);
+    }
+    if (!combatHitLog || combatHitLog.targetHp !== 44) {
+      throw new Error(`Case V failure: combatHitLog invalid: ${JSON.stringify(combatHitLog)}`);
+    }
+    if (!finalWeaponHudLog || !finalWeaponHudLog.hud || finalWeaponHudLog.hud.weaponLevel !== 2) {
+      throw new Error(`Case V failure: finalWeaponHudLog invalid: ${JSON.stringify(finalWeaponHudLog)}`);
+    }
+
     console.log('\n=== ALL VERIFICATION TESTS COMPLETED SUCCESSFULLY ===');
     console.log('Artifacts in scripts/verification/output/:');
     console.log(' - combo_jjj_mosaic.png & combo_jjj.gif');
@@ -1468,6 +1572,7 @@ async function run() {
     console.log(' - platforming_verticality_and_drop_mosaic.png & platforming_verticality_and_drop.gif');
     console.log(' - gorgon_eye_chest_and_health_upgrade_mosaic.png & gorgon_eye_chest_and_health_upgrade.gif');
     console.log(' - phoenix_feather_chest_and_mana_upgrade_mosaic.png & phoenix_feather_chest_and_mana_upgrade.gif');
+    console.log(' - red_orbs_chest_and_weapon_upgrade_mosaic.png & red_orbs_chest_and_weapon_upgrade.gif');
 
     ws.close();
   } finally {

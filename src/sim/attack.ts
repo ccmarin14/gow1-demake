@@ -1,3 +1,4 @@
+import { CONFIG } from '../config';
 import type { Platform } from './scenarios';
 import type { AttackMoveId, EntityState } from './types';
 
@@ -350,7 +351,7 @@ function applyHit(
     if (target.aiState === 'death') {
       return;
     }
-    const damage =
+    const baseDamage =
       params.moveId === 'plume_of_prometheus' ? 30 :
       params.moveId === 'spirit_of_hercules' ? 25 :
       params.moveId === 'heavy_slam' || params.moveId === 'air_heavy_slam' ? 22 :
@@ -359,6 +360,11 @@ function applyHit(
       params.moveId === 'light_4' ? 18 :
       params.moveId === 'light_3' ? 15 :
       params.moveId === 'dash_attack' ? 14 : 12;
+
+    const damageMultiplier = player.weaponLevel === 2
+      ? (CONFIG.player.weapon.upgrades?.level2DamageMultiplier ?? 1.3)
+      : 1.0;
+    const damage = Math.round(baseDamage * damageMultiplier);
 
     target.hp = Math.max(0, target.hp - damage);
     if (target.hp <= 0) {

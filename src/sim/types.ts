@@ -10,6 +10,7 @@ export type GameAction =
   | 'dodge'
   | 'guard'
   | 'context-action'
+  | 'upgrade'
   | 'pause'
   | 'restart';
 
@@ -25,6 +26,7 @@ export const DOMAIN_ACTIONS: readonly GameAction[] = [
   'dodge',
   'guard',
   'context-action',
+  'upgrade',
   'pause',
   'restart',
 ];
@@ -161,6 +163,7 @@ export interface EntityState {
   gorgonUpgrades: number;
   phoenixFeathers: number;
   phoenixUpgrades: number;
+  weaponLevel: number;
 }
 
 export interface ArrowState {

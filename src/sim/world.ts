@@ -8,7 +8,7 @@ import { PLAYER_ID, sortActions } from './types';
 import { stepVertical, type VerticalParams } from './vertical';
 import { spawnOrbsFromDeath, stepOrbs } from './orbs';
 import { stepArcher, stepArrows } from './archer';
-import { stepChests, collectGorgonEye, collectPhoenixFeather } from './chests';
+import { stepChests, collectGorgonEye, collectPhoenixFeather, upgradeWeapon } from './chests';
 import { WaveManager } from './waves';
 import { ArenaManager } from './arena';
 import {
@@ -159,6 +159,16 @@ export class World {
     const p = target ?? this.peekEntity(PLAYER_ID);
     if (!p) return false;
     return collectPhoenixFeather(p);
+  }
+
+  upgradeWeapon(target?: EntityState): boolean {
+    const p = target ?? this.peekEntity(PLAYER_ID);
+    if (!p) return false;
+    return upgradeWeapon(p);
+  }
+
+  spawnEnemy(kind: 'legionnaire' | 'archer', x: number, facing: -1 | 1 = -1): EntityState {
+    return this.spawnWaveEnemy(kind, x, facing);
   }
 
   peekWave(): WaveState | null {
@@ -357,6 +367,8 @@ export class World {
     const magicEdge = wantsMagic && !this.magicHeld;
     this.magicHeld = wantsMagic;
 
+    const wantsUpgrade = this.input.includes('upgrade');
+
     const player = this.entities.find((entity) => entity.id === PLAYER_ID);
     if (player) {
       if (player.hurtInvulTicks > 0) {
@@ -423,6 +435,10 @@ export class World {
           stepMagic(player, false, this.targets);
         }
         const nowCastingMagic = isCastingMagic(player);
+
+        if (wantsUpgrade && !inHitstun && !isOpeningChest) {
+          this.upgradeWeapon(player);
+        }
 
         const rolling = isRolling(player);
         const attacking = isEntityAttacking(player);

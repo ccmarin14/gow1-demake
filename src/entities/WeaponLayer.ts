@@ -276,6 +276,10 @@ export class WeaponLayer {
       return;
     }
 
+    const chainColor = player.weaponLevel === 2
+      ? (CONFIG.presentation.weaponChainLevel2Color ?? 0xf59e0b)
+      : CONFIG.presentation.weaponChainColor;
+
     // Defensive stance: chains and blades held protecting the chest
     if (player.guardPhase !== 'none' && player.attackPhase === 'none') {
       const facing = player.facing === -1 ? -1 : 1;
@@ -291,7 +295,7 @@ export class WeaponLayer {
         const x = Math.round(handX + (bladeX - handX) * s);
         const y = Math.round(handY + (bladeY - handY) * s);
         this.weaponChainBorderRects[i].setPosition(x, y).setVisible(true);
-        this.weaponChainRects[i].setPosition(x, y).setVisible(true);
+        this.weaponChainRects[i].setFillStyle(chainColor, 1.0).setPosition(x, y).setVisible(true);
       }
 
       this.weaponBladeCoreRect
@@ -354,7 +358,7 @@ export class WeaponLayer {
       }
 
       this.weaponChainBorderRects[i].setPosition(x, y).setVisible(true);
-      this.weaponChainRects[i].setPosition(x, y).setVisible(true);
+      this.weaponChainRects[i].setFillStyle(chainColor, 1.0).setPosition(x, y).setVisible(true);
     }
 
     const bladeX = Math.round(pose.bladeCenterX);

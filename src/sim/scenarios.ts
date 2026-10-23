@@ -70,6 +70,7 @@ function playerAt(x: number, y: number): EntityState {
     gorgonUpgrades: 0,
     phoenixFeathers: 0,
     phoenixUpgrades: 0,
+    weaponLevel: 1,
   };
 }
 
@@ -124,6 +125,7 @@ function dummyAt(id: string, x: number, y: number, facing: -1 | 1 = 1, grounded 
     gorgonUpgrades: 0,
     phoenixFeathers: 0,
     phoenixUpgrades: 0,
+    weaponLevel: 1,
   };
 }
 
@@ -178,6 +180,7 @@ export function legionnaireAt(id: string, x: number, y: number, facing: -1 | 1 =
     gorgonUpgrades: 0,
     phoenixFeathers: 0,
     phoenixUpgrades: 0,
+    weaponLevel: 1,
   };
 }
 
@@ -232,6 +235,7 @@ export function archerAt(id: string, x: number, y: number, facing: -1 | 1 = -1, 
     gorgonUpgrades: 0,
     phoenixFeathers: 0,
     phoenixUpgrades: 0,
+    weaponLevel: 1,
   };
 }
 
@@ -351,6 +355,7 @@ register({
   chests: [
     chestAt('chest-gorgon-1', 'gorgon_eye', 190, GROUND_Y),
     chestAt('chest-feather-1', 'phoenix_feather', 300, GROUND_Y),
+    chestAt('chest-red-1', 'red_orbs', 410, GROUND_Y),
   ],
   targetPhysics: true,
 });
@@ -369,6 +374,7 @@ register({
     { x1: 1310, x2: 1440, yTop: 218 },
   ],
   chests: [
+    chestAt('chest-red-popa', 'red_orbs', 70, 262),
     chestAt('chest-popa', 'gorgon_eye', 240, 226),
     chestAt('chest-feather-beam', 'phoenix_feather', 1110, 200),
     chestAt('chest-proa', 'gorgon_eye', 1360, 218),

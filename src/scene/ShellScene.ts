@@ -53,6 +53,9 @@ export class ShellScene extends Phaser.Scene {
   private readonly weaponLayer = new WeaponLayer();
   private defeatText: Phaser.GameObjects.Text | null = null;
   private waveBannerText: Phaser.GameObjects.Text | null = null;
+  private upgradeBannerText: Phaser.GameObjects.Text | null = null;
+  private prevWeaponLevel: number = 1;
+  private upgradeBannerTimer: number = 0;
   private barrierGraphics: Phaser.GameObjects.Graphics | null = null;
   private magicGraphics: Phaser.GameObjects.Graphics | null = null;
   hudLayer!: HudLayer;
@@ -171,6 +174,21 @@ export class ShellScene extends Phaser.Scene {
       .setScrollFactor(0)
       .setVisible(false);
 
+    this.upgradeBannerText = this.add
+      .text(CONFIG.internal.width / 2, 75, '¡CUCHILLAS DEL CAOS NIVEL 2!', {
+        color: '#facc15',
+        fontFamily: 'monospace',
+        fontSize: '11px',
+        fontStyle: 'bold',
+        backgroundColor: '#000000bb',
+        padding: { x: 8, y: 3 },
+      })
+      .setOrigin(0.5)
+      .setDepth(26)
+      .setScrollFactor(0)
+      .setAlpha(0)
+      .setVisible(true);
+
     if (import.meta.env.DEV) {
       this.lastDebugText = 'tick 0';
       this.debugText = this.add.text(155, 6, this.lastDebugText, {
@@ -286,6 +304,21 @@ export class ShellScene extends Phaser.Scene {
       this.cameras.main.setScroll(0, dy);
     } else {
       this.cameras.main.setScroll(0, 0);
+    }
+
+    // Banner de mejora de arma a Nivel 2
+    if (player) {
+      if (player.weaponLevel === 2 && this.prevWeaponLevel === 1) {
+        this.upgradeBannerTimer = 2.0;
+      }
+      this.prevWeaponLevel = player.weaponLevel;
+    }
+    if (this.upgradeBannerTimer > 0) {
+      this.upgradeBannerTimer = Math.max(0, this.upgradeBannerTimer - delta / 1000);
+      const alpha = Math.min(1.0, this.upgradeBannerTimer);
+      this.upgradeBannerText?.setAlpha(alpha);
+    } else {
+      this.upgradeBannerText?.setAlpha(0);
     }
     // `import.meta.env.DEV` is statically false in a production build, so the
     // overlay module is dropped from the shipped bundle.
@@ -485,6 +518,9 @@ export class ShellScene extends Phaser.Scene {
       gfx.eyeHighlight?.destroy();
     }
     this.chestGfx.clear();
+    this.prevWeaponLevel = 1;
+    this.upgradeBannerTimer = 0;
+    this.upgradeBannerText?.setAlpha(0);
     if (this.barrierGraphics) {
       this.barrierGraphics.clear();
     }
@@ -1061,6 +1097,8 @@ export class ShellScene extends Phaser.Scene {
       emeraldGlowColor,
       sapphireColor,
       sapphireGlowColor,
+      redOrbsColor,
+      redOrbsGlowColor,
       depth,
     } = CONFIG.presentation.chest;
 
@@ -1071,9 +1109,18 @@ export class ShellScene extends Phaser.Scene {
       const chest = simChests[i];
       let gfx = this.chestGfx.get(chest.id);
       const isFeather = chest.type === 'phoenix_feather';
-      const gemColor = isFeather ? sapphireColor : emeraldColor;
-      const gemGlow = isFeather ? sapphireGlowColor : emeraldGlowColor;
-      const hlColor = isFeather ? 0xe0f2fe : 0xdcfce7;
+      const isRedOrbs = chest.type === 'red_orbs';
+      const gemColor = isFeather
+        ? sapphireColor
+        : isRedOrbs
+          ? redOrbsColor
+          : emeraldColor;
+      const gemGlow = isFeather
+        ? sapphireGlowColor
+        : isRedOrbs
+          ? redOrbsGlowColor
+          : emeraldGlowColor;
+      const hlColor = isFeather ? 0xe0f2fe : isRedOrbs ? 0xfecaca : 0xdcfce7;
       const magnetSpeed = isFeather ? CONFIG.economy.chests.featherMagnetSpeed : CONFIG.economy.chests.eyeMagnetSpeed;
 
       if (!gfx) {
@@ -1249,6 +1296,9 @@ export class ShellScene extends Phaser.Scene {
       gfx.eyeHighlight?.destroy();
     }
     this.chestGfx.clear();
+    this.prevWeaponLevel = 1;
+    this.upgradeBannerTimer = 0;
+    this.upgradeBannerText?.setAlpha(0);
     if (this.barrierGraphics) {
       this.barrierGraphics.destroy();
       this.barrierGraphics = null;
@@ -1257,5 +1307,7 @@ export class ShellScene extends Phaser.Scene {
       this.magicGraphics.destroy();
       this.magicGraphics = null;
     }
+    this.upgradeBannerText?.destroy();
+    this.upgradeBannerText = null;
   }
 }

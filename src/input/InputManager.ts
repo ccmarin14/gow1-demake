@@ -16,6 +16,7 @@ const KEY_BINDINGS: Record<GameAction, number[]> = {
   dodge: [KeyCodes.SHIFT],
   guard: [KeyCodes.Q],
   'context-action': [KeyCodes.E],
+  upgrade: [KeyCodes.P],
   pause: [KeyCodes.ESC],
   restart: [KeyCodes.R],
 };

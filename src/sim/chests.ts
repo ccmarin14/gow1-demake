@@ -57,6 +57,21 @@ export function collectPhoenixFeather(player: EntityState): boolean {
 }
 
 /**
+ * Upgrades Kratos' weapon (Blades of Chaos) from Level 1 to Level 2.
+ * Costs 100 Red Orbs.
+ * Returns true if the upgrade succeeded, false if insufficient orbs or already upgraded.
+ */
+export function upgradeWeapon(player: EntityState): boolean {
+  const cost = CONFIG.player.weapon.upgrades.level2Cost;
+  if (player.weaponLevel === 1 && player.redOrbs >= cost) {
+    player.redOrbs -= cost;
+    player.weaponLevel = 2;
+    return true;
+  }
+  return false;
+}
+
+/**
  * Deterministic simulation step for chests.
  * - If chest is closed: pressing context-action ('E') while in proximity begins opening.
  * - If chest is opening: anchors Kratos (vx = 0) while openProgressTicks advances 1..24.
@@ -94,6 +109,8 @@ export function stepChests(
           collectGorgonEye(player);
         } else if (chest.type === 'phoenix_feather') {
           collectPhoenixFeather(player);
+        } else if (chest.type === 'red_orbs') {
+          player.redOrbs += CONFIG.economy.chests.redOrbsChestValue;
         }
       }
     }

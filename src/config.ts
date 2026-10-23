@@ -151,6 +151,11 @@ weapon: {
   name: 'Cuchillas del Caos',
   /** Height above the feet line where the chains leave the hands. */
   gripOffsetY: 30,
+  upgrades: {
+    level2Cost: 100,
+    level2DamageMultiplier: 1.3,
+    level2Name: 'Cuchillas del Caos Nv. 2',
+  },
 },
 attack: {
   targetHalfWidth: 14,
@@ -334,6 +339,7 @@ export const CONFIG = {
       manaUpgradeBonus: 20,
       featherRiseSpeed: -80,
       featherMagnetSpeed: 260,
+      redOrbsChestValue: 50,
     },
   },
   // Reference scale for map/level stages; every field is computed from the
@@ -468,8 +474,12 @@ export const CONFIG = {
       sapphireColor: 0x38bdf8,
       sapphireGlowColor: 0x60a5fa,
       sapphireShadowColor: 0x1e40af,
+      redOrbsColor: 0xef4444,
+      redOrbsGlowColor: 0xf87171,
+      redOrbsShadowColor: 0x991b1b,
       depth: 2,
     },
+    weaponChainLevel2Color: 0xf59e0b,
   },
 } as const;
 

@@ -21,6 +21,7 @@ export interface HudMetrics {
   gorgonUpgrades: number;
   phoenixFeathers: number;
   phoenixUpgrades: number;
+  weaponLevel: number;
 }
 
 /**
@@ -81,6 +82,8 @@ export class HudLayer {
   private readonly redOrbIconOuter: Phaser.GameObjects.Arc;
   private readonly redOrbIconHighlight: Phaser.GameObjects.Arc;
   private readonly redOrbsText: Phaser.GameObjects.Text;
+  private readonly weaponLevelText: Phaser.GameObjects.Text;
+  private readonly upgradePromptText: Phaser.GameObjects.Text;
 
   // Ranuras ornamentales de Ojos de Górgona bajo el medallón
   private readonly gorgonEyeSlots: Phaser.GameObjects.Rectangle[] = [];
@@ -113,6 +116,7 @@ export class HudLayer {
     gorgonUpgrades: 0,
     phoenixFeathers: 0,
     phoenixUpgrades: 0,
+    weaponLevel: 1,
   };
 
   constructor(scene: Phaser.Scene) {
@@ -330,6 +334,31 @@ export class HudLayer {
       .setShadow(1, 1, '#000000', 1);
     this.elements.push(this.redOrbsText);
 
+    this.weaponLevelText = scene.add
+      .text(barX + 58, orbIconY - 4, 'NV. 1', {
+        fontFamily: 'monospace',
+        fontSize: '7px',
+        color: '#cbd5e1',
+      })
+      .setOrigin(0, 0)
+      .setScrollFactor(0)
+      .setDepth(depth + 6)
+      .setShadow(1, 1, '#000000', 1);
+    this.elements.push(this.weaponLevelText);
+
+    this.upgradePromptText = scene.add
+      .text(barX + 86, orbIconY - 4, '[P] MEJORAR', {
+        fontFamily: 'monospace',
+        fontSize: '7px',
+        color: '#facc15',
+      })
+      .setOrigin(0, 0)
+      .setScrollFactor(0)
+      .setDepth(depth + 6)
+      .setShadow(1, 1, '#000000', 1)
+      .setVisible(false);
+    this.elements.push(this.upgradePromptText);
+
     // 9. Ranuras ornamentales de Ojos de Górgona bajo el medallón (6 casillas)
     const eyeSlotY = y + barHeight + 9;
     const startSlotX = x - 10;
@@ -387,6 +416,8 @@ export class HudLayer {
       this.criticalGlow.setVisible(false);
       this.hpText.setText('HP: -/-');
       this.redOrbsText.setText('ORBES: -');
+      this.weaponLevelText.setText('NV. -');
+      this.upgradePromptText.setVisible(false);
       return;
     }
 
@@ -504,9 +535,16 @@ export class HudLayer {
     // 6. Texto numérico
     this.hpText.setText(`HP: ${currentHp}/${maxHp}  MP: ${currentMp}/${maxMp}`);
 
-    // 7. Saldo de orbes rojos
+    // 7. Saldo de orbes rojos y nivel de arma
     const redOrbs = player.redOrbs ?? 0;
     this.redOrbsText.setText(`ORBES: ${redOrbs}`);
+
+    const weaponLevel = player.weaponLevel ?? 1;
+    const canUpgrade = weaponLevel === 1 && redOrbs >= CONFIG.player.weapon.upgrades.level2Cost;
+    this.weaponLevelText
+      .setText(weaponLevel === 2 ? 'NV. 2' : 'NV. 1')
+      .setColor(weaponLevel === 2 ? '#facc15' : '#cbd5e1');
+    this.upgradePromptText.setVisible(canUpgrade);
 
     // 8. Iluminación de ranuras de Ojos de Górgona
     const gorgonEyes = player.gorgonEyes ?? 0;
@@ -544,6 +582,7 @@ export class HudLayer {
       gorgonUpgrades,
       phoenixFeathers,
       phoenixUpgrades,
+      weaponLevel,
     };
   }
 
