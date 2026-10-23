@@ -249,6 +249,16 @@ export const CONFIG = {
       parryStunTicks: 32,
     },
   },
+  economy: {
+    orbs: {
+      greenOrbHeal: 15,
+      redOrbValue: 5,
+      dropPerLegionnaire: { red: 4, green: 1 },
+      magnetRadius: 180,
+      magnetSpeed: 320,
+      burstImpulseVy: -110,
+    },
+  },
   // Reference scale for map/level stages; every field is computed from the
   // values above (see `src/scale.ts`).
   scale: deriveScaleReference({

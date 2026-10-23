@@ -13,6 +13,7 @@ export interface HudMetrics {
   isCritical: boolean;
   isDead: boolean;
   ghostPauseTimer: number;
+  redOrbs: number;
 }
 
 /**
@@ -62,6 +63,11 @@ export class HudLayer {
   // Texto numérico
   private readonly hpText: Phaser.GameObjects.Text;
 
+  // Icono y contador de orbes rojos
+  private readonly redOrbIconOuter: Phaser.GameObjects.Arc;
+  private readonly redOrbIconHighlight: Phaser.GameObjects.Arc;
+  private readonly redOrbsText: Phaser.GameObjects.Text;
+
   // Estado del drenaje fantasma
   private prevHp = 100;
   private ghostHp = 100;
@@ -77,6 +83,7 @@ export class HudLayer {
     isCritical: false,
     isDead: false,
     ghostPauseTimer: 0,
+    redOrbs: 0,
   };
 
   constructor(scene: Phaser.Scene) {
@@ -224,6 +231,35 @@ export class HudLayer {
       .setDepth(depth + 6)
       .setShadow(1, 1, '#000000', 1);
     this.elements.push(this.hpText);
+
+    // 7. Icono y saldo de orbes rojos
+    const orbIconX = x;
+    const orbIconY = barY + barHeight + 11;
+
+    this.redOrbIconOuter = scene.add
+      .circle(orbIconX, orbIconY, 3.5, 0xef4444)
+      .setStrokeStyle(1, 0xb91c1c)
+      .setScrollFactor(0)
+      .setDepth(depth + 6);
+    this.elements.push(this.redOrbIconOuter);
+
+    this.redOrbIconHighlight = scene.add
+      .circle(orbIconX - 1, orbIconY - 1, 1.2, 0xfca5a5)
+      .setScrollFactor(0)
+      .setDepth(depth + 7);
+    this.elements.push(this.redOrbIconHighlight);
+
+    this.redOrbsText = scene.add
+      .text(barX, orbIconY - 4, 'ORBES: 0', {
+        fontFamily: 'monospace',
+        fontSize: '7px',
+        color: '#fca5a5',
+      })
+      .setOrigin(0, 0)
+      .setScrollFactor(0)
+      .setDepth(depth + 6)
+      .setShadow(1, 1, '#000000', 1);
+    this.elements.push(this.redOrbsText);
   }
 
   update(player: EntityState | undefined, dt: number): void {
@@ -235,6 +271,7 @@ export class HudLayer {
       this.ghostBarHighlight.setVisible(false);
       this.criticalGlow.setVisible(false);
       this.hpText.setText('HP: -/-');
+      this.redOrbsText.setText('ORBES: -');
       return;
     }
 
@@ -318,6 +355,10 @@ export class HudLayer {
     // 5. Texto numérico
     this.hpText.setText(`HP: ${currentHp}/${maxHp}`);
 
+    // 6. Saldo de orbes rojos
+    const redOrbs = player.redOrbs ?? 0;
+    this.redOrbsText.setText(`ORBES: ${redOrbs}`);
+
     // Registro de métricas para introspección y tests CDP
     this.lastMetrics = {
       currentHp,
@@ -330,6 +371,7 @@ export class HudLayer {
       isCritical,
       isDead: Boolean(player.isDead),
       ghostPauseTimer: Number(this.ghostPauseTimer.toFixed(3)),
+      redOrbs,
     };
   }
 

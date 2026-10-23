@@ -34,6 +34,7 @@ export class ShellScene extends Phaser.Scene {
   private attackHitboxRect: Phaser.GameObjects.Rectangle | null = null;
   private targetRects = new Map<string, Phaser.GameObjects.Rectangle>();
   private legionnaireSprites = new Map<string, Phaser.GameObjects.Sprite>();
+  private readonly orbSprites = new Map<string, { outer: Phaser.GameObjects.Arc; core: Phaser.GameObjects.Arc; highlight: Phaser.GameObjects.Arc }>();
   private readonly weaponLayer = new WeaponLayer();
   private defeatText: Phaser.GameObjects.Text | null = null;
   hudLayer!: HudLayer;
@@ -197,6 +198,7 @@ export class ShellScene extends Phaser.Scene {
     const attackParams = isPlayerAlive ? this.simulation.world.playerAttackParams() : null;
     this.weaponLayer.update(isPlayerAlive ? player : null, attackParams, this.simulation.world.surfacePlatforms);
     this.updateTargets(player);
+    this.updateOrbs();
     if (player && player.groundImpactTicks > 0) {
       const shakePx = CONFIG.player.attack.groundImpact.shakePx;
       const dy = player.groundImpactTicks % 2 === 1 ? shakePx : -shakePx;
@@ -571,7 +573,60 @@ export class ShellScene extends Phaser.Scene {
     this.player.anims.timeScale = rate / frameRate;
   }
 
+  private updateOrbs(): void {
+    const simOrbs = this.simulation.world.peekOrbs();
+    const activeIds = new Set(simOrbs.map((o) => o.id));
+
+    // Eliminar orbes que ya no existen en la simulación
+    for (const [id, gfx] of this.orbSprites.entries()) {
+      if (!activeIds.has(id)) {
+        gfx.outer.destroy();
+        gfx.core.destroy();
+        gfx.highlight.destroy();
+        this.orbSprites.delete(id);
+      }
+    }
+
+    // Renderizar o actualizar cada orbe activo
+    for (let i = 0; i < simOrbs.length; i += 1) {
+      const orb = simOrbs[i];
+      let gfx = this.orbSprites.get(orb.id);
+      const isGreen = orb.type === 'green';
+
+      if (!gfx) {
+        const outerColor = isGreen ? 0x22c55e : 0xef4444;
+        const coreColor = isGreen ? 0x4ade80 : 0xf87171;
+        const hlColor = isGreen ? 0xdcfce7 : 0xfef2f2;
+
+        const outer = this.add.circle(orb.x, orb.y, 5, outerColor, 0.45).setDepth(50);
+        const core = this.add.circle(orb.x, orb.y, 3, coreColor, 0.95).setDepth(51);
+        const highlight = this.add.circle(orb.x - 1, orb.y - 1, 1.2, hlColor, 1.0).setDepth(52);
+
+        gfx = { outer, core, highlight };
+        this.orbSprites.set(orb.id, gfx);
+      }
+
+      if (orb.absorbed) {
+        // Destello de absorción en el frame de contacto
+        gfx.outer.setPosition(orb.x, orb.y).setRadius(7).setAlpha(0.85);
+        gfx.core.setPosition(orb.x, orb.y).setRadius(4).setAlpha(1.0);
+        gfx.highlight.setPosition(orb.x, orb.y).setRadius(2);
+      } else {
+        const pulse = 0.85 + 0.15 * Math.sin(orb.ageTicks * 0.4);
+        gfx.outer.setPosition(orb.x, orb.y).setRadius(5 * pulse).setAlpha(0.45);
+        gfx.core.setPosition(orb.x, orb.y).setRadius(3 * pulse).setAlpha(0.95);
+        gfx.highlight.setPosition(orb.x - 1, orb.y - 1);
+      }
+    }
+  }
+
   shutdown(): void {
     this.hudLayer?.destroy();
+    for (const gfx of this.orbSprites.values()) {
+      gfx.outer.destroy();
+      gfx.core.destroy();
+      gfx.highlight.destroy();
+    }
+    this.orbSprites.clear();
   }
 }

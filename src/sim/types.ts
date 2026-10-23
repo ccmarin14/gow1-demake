@@ -136,12 +136,26 @@ export interface EntityState {
   attackCooldownTicks: number;
   hurtInvulTicks: number;
   isDead: boolean;
+  redOrbs: number;
+}
+
+export interface OrbState {
+  id: string;
+  type: 'red' | 'green';
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  value: number;
+  ageTicks: number;
+  absorbed: boolean;
 }
 
 export interface SimulationSnapshot {
   frame: number;
   timeMs: number;
   entities: EntityState[];
+  orbs: OrbState[];
   input: GameAction[];
   checksum: string;
 }

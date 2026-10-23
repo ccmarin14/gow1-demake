@@ -3,9 +3,10 @@ import { checksumOf } from './checksum';
 import { stepHorizontal } from './movement';
 import type { Platform } from './scenarios';
 import { cloneEntities, DEFAULT_SCENARIO, getScenario } from './scenarios';
-import type { AttackMoveId, EntityState, GameAction, SimulationSnapshot } from './types';
+import type { AttackMoveId, EntityState, GameAction, OrbState, SimulationSnapshot } from './types';
 import { PLAYER_ID, sortActions } from './types';
 import { stepVertical, type VerticalParams } from './vertical';
+import { spawnOrbsFromDeath, stepOrbs } from './orbs';
 import {
   computeAttackHitbox,
   isEntityAttacking,
@@ -85,6 +86,8 @@ export class World {
   private activeScenario: string = DEFAULT_SCENARIO;
   private targetPhysics = false;
   private readonly moveSet: AttackMoveSet = buildAttackMoveSet();
+  private orbs: OrbState[] = [];
+  private orbIdCounter = 0;
 
   constructor() {
     this.loadScenario(DEFAULT_SCENARIO);
@@ -118,6 +121,17 @@ export class World {
     return this.targets;
   }
 
+  peekOrbs(): readonly OrbState[] {
+    return this.orbs;
+  }
+
+  spawnOrbs(x: number, y: number, redCount: number, greenCount: number): OrbState[] {
+    const newOrbs = spawnOrbsFromDeath(x, y, redCount, greenCount, this.orbIdCounter);
+    this.orbIdCounter += newOrbs.length;
+    this.orbs.push(...newOrbs);
+    return newOrbs;
+  }
+
   getEntity(id: string): EntityState | undefined {
     const entity = this.peekEntity(id);
     return entity ? { ...entity } : undefined;
@@ -137,6 +151,8 @@ export class World {
     this.targetPhysics = Boolean(scenario.targetPhysics);
     this.entities = cloneEntities(scenario.entities);
     this.targets = this.entities.filter((entity) => entity.id !== PLAYER_ID);
+    this.orbs = [];
+    this.orbIdCounter = 0;
   }
 
   targetEntities(): EntityState[] {
@@ -179,6 +195,8 @@ export class World {
       this.reset();
       return;
     }
+
+    this.orbs = this.orbs.filter((orb) => !orb.absorbed);
 
     const wantsJump = this.input.includes('jump');
     const jumpEdge = wantsJump && !this.jumpHeld;
@@ -375,6 +393,15 @@ export class World {
         const target = this.targets[i];
         if (target.kind === 'legionnaire') {
           stepLegionnaire(target, player, this.platforms, TICK_DT);
+          if (target.aiState === 'death' && target.aiTicks === 0) {
+            this.spawnOrbs(
+              target.x,
+              target.y - 18,
+              CONFIG.economy.orbs.dropPerLegionnaire.red,
+              CONFIG.economy.orbs.dropPerLegionnaire.green,
+            );
+            target.aiTicks = 1;
+          }
         }
 
         if (target.hitstunTicks > 0) {
@@ -420,6 +447,8 @@ export class World {
       }
     }
 
+    stepOrbs(this.orbs, player, TICK_DT);
+
     this.tick += 1;
   }
 
@@ -428,6 +457,7 @@ export class World {
       frame: this.tick,
       timeMs: this.timeMs,
       entities: this.entities.map((entity) => ({ ...entity })),
+      orbs: this.orbs.map((orb) => ({ ...orb })),
       input: [...this.input],
     };
     return {

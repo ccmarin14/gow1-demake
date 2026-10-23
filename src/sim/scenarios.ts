@@ -59,6 +59,7 @@ function playerAt(x: number, y: number): EntityState {
     attackCooldownTicks: 0,
     hurtInvulTicks: 0,
     isDead: false,
+    redOrbs: 0,
   };
 }
 
@@ -103,6 +104,7 @@ function dummyAt(id: string, x: number, y: number, facing: -1 | 1 = 1, grounded 
     attackCooldownTicks: 0,
     hurtInvulTicks: 0,
     isDead: false,
+    redOrbs: 0,
   };
 }
 
@@ -147,6 +149,7 @@ export function legionnaireAt(id: string, x: number, y: number, facing: -1 | 1 =
     attackCooldownTicks: 0,
     hurtInvulTicks: 0,
     isDead: false,
+    redOrbs: 0,
   };
 }
 

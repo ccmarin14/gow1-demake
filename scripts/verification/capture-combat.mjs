@@ -321,7 +321,7 @@ async function run() {
           sctx.font = 'bold 11px monospace';
           const dummyInfo = dummy ? (dummy.kind === 'legionnaire' ? \` L:(hp=\${dummy.hp},st=\${dummy.aiState})\` : \` D:(y=\${dummy.y.toFixed(0)},vy=\${dummy.vy.toFixed(0)})\`) : '';
           const hm = sc.hudLayer ? sc.hudLayer.getMetrics() : null;
-          const hudInfo = hm ? \` [Bar:\${hm.currentWidth}px Gst:\${hm.ghostWidth}px]\` : '';
+          const hudInfo = hm ? \` [Bar:\${hm.currentWidth}px Gst:\${hm.ghostWidth}px Orbs:\${hm.redOrbs}]\` : '';
           const actionText = p.isDead
             ? 'DEAD'
             : (p.hitstunTicks > 0
@@ -365,6 +365,10 @@ async function run() {
           logs.push({
             t,
             playerHp: p.hp,
+            playerRedOrbs: p.redOrbs ?? 0,
+            orbsCount: snap.orbs ? snap.orbs.length : 0,
+            orbsLive: snap.orbs ? snap.orbs.filter((o) => !o.absorbed).length : 0,
+            orbsAbsorbed: snap.orbs ? snap.orbs.filter((o) => o.absorbed).length : 0,
             hurtInvulTicks: p.hurtInvulTicks,
             hitstunTicks: p.hitstunTicks,
             isDead: p.isDead,
@@ -788,6 +792,50 @@ async function run() {
     console.log('Case L HUD defeat empty bar (expected bar=0, dead=true):', hudDefeat ? `bar=${hudDefeat.currentWidth}px,dead=${hudDefeat.isDead}` : 'NONE');
     console.log('Case L HUD restart 100% reset (expected bar=110, ghost=110):', hudRestart ? `bar=${hudRestart.currentWidth}px,ghost=${hudRestart.ghostWidth}px,hp=${hudRestart.currentHp}` : 'NONE');
 
+    // CASE M: Orbs Economy & Combat Recovery (GOW8B-ORBS-01)
+    // - t=1..48: Kratos faces Legionnaire, Legionnaire approaches
+    // - t=49: Legionnaire strikes Kratos -> HP drops 100 -> 88
+    // - t=50: Legionnaire defeated (hp=0, aiState='death', aiTicks=0) -> spawns 4 red orbs & 1 green orb
+    // - t=51: Verify 5 orbs spawned (4 red, 1 green) bursting upward with fan velocities
+    // - t=52..70: Orbs experience ballistic curve and magnetic acceleration towards Kratos chest (y-26)
+    // - t=75..85: Orbs absorbed upon reaching <= 12 px:
+    //             Green orb restores +15 HP (88 -> 100)
+    //             4 Red orbs grant +5 each (0 -> 20 red orbs)
+    //             HUD reflects 100 HP bar and ORBES: 20 text
+    const caseM = await recordScenarioSequence({
+      caseId: 'orbs_economy_and_healing',
+      scenario: 'legionnaire',
+      totalSteps: 96,
+      cropW: 180,
+      cropH: 120,
+      getActions: (t) => {
+        const sc = window.__SHELL_SCENE;
+        if (t === 50) {
+          const enemy = sc.simulation.world.peekTargets()[0];
+          if (enemy) {
+            enemy.hp = 0;
+            enemy.aiState = 'death';
+            enemy.aiTicks = 0;
+          }
+        }
+        return [];
+      },
+    });
+
+    const orbInitialLog = caseM.logs.find((l) => l.t === 48);
+    const orbDamageLog = caseM.logs.find((l) => l.t === 49);
+    const orbSpawnLog = caseM.logs.find((l) => l.t === 51);
+    const orbFlightLog = caseM.logs.find((l) => l.t === 60);
+    const orbRecoveryLog = caseM.logs.find((l) => l.t === 85);
+    const orbFinalLog = caseM.logs.find((l) => l.t === 95);
+
+    console.log('Case M Initial state (expected hp=100, redOrbs=0, orbs=0):', orbInitialLog ? `hp=${orbInitialLog.playerHp},orbs=${orbInitialLog.playerRedOrbs},live=${orbInitialLog.orbsLive}` : 'NONE');
+    console.log('Case M Damage before death (expected hp=88):', orbDamageLog ? `hp=${orbDamageLog.playerHp}` : 'NONE');
+    console.log('Case M Spawn on enemy death (expected orbs=5, 4 red + 1 green):', orbSpawnLog ? `live=${orbSpawnLog.orbsLive},count=${orbSpawnLog.orbsCount}` : 'NONE');
+    console.log('Case M Magnetic flight in progress (expected orbs=5 in flight):', orbFlightLog ? `live=${orbFlightLog.orbsLive},count=${orbFlightLog.orbsCount}` : 'NONE');
+    console.log('Case M Absorption & Recovery (expected hp=100, redOrbs=20, orbsLive=0):', orbRecoveryLog ? `hp=${orbRecoveryLog.playerHp},redOrbs=${orbRecoveryLog.playerRedOrbs},live=${orbRecoveryLog.orbsLive},hudHp=${orbRecoveryLog.hud?.currentHp},hudOrbs=${orbRecoveryLog.hud?.redOrbs}` : 'NONE');
+    console.log('Case M Settled state (expected hp=100, redOrbs=20):', orbFinalLog ? `hp=${orbFinalLog.playerHp},redOrbs=${orbFinalLog.playerRedOrbs},live=${orbFinalLog.orbsLive}` : 'NONE');
+
     console.log('\n=== ALL VERIFICATION TESTS COMPLETED SUCCESSFULLY ===');
     console.log('Artifacts in scripts/verification/output/:');
     console.log(' - combo_jjj_mosaic.png & combo_jjj.gif');
@@ -802,6 +850,7 @@ async function run() {
     console.log(' - legionnaire_combat_ai_mosaic.png & legionnaire_combat_ai.gif');
     console.log(' - player_damage_and_defeat_mosaic.png & player_damage_and_defeat.gif');
     console.log(' - hud_health_bar_presentation_mosaic.png & hud_health_bar_presentation.gif');
+    console.log(' - orbs_economy_and_healing_mosaic.png & orbs_economy_and_healing.gif');
 
     ws.close();
   } finally {
