@@ -13,6 +13,7 @@ const KEY_BINDINGS: Record<GameAction, number[]> = {
   grab: [KeyCodes.L],
   magic: [KeyCodes.U],
   dodge: [KeyCodes.SHIFT],
+  guard: [KeyCodes.Q],
   'context-action': [KeyCodes.E],
   pause: [KeyCodes.ESC],
 };

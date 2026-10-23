@@ -17,6 +17,7 @@ import {
   type AttackRules,
 } from './attack';
 import { isRolling, startRoll, stepRoll } from './roll';
+import { isGuarding, startGuard, stepGuard } from './guard';
 
 const TICK_DT = 1 / CONFIG.sim.tickRate;
 
@@ -193,6 +194,8 @@ export class World {
     const dodgeEdge = wantsDodge && !this.dodgeHeld;
     this.dodgeHeld = wantsDodge;
 
+    const wantsGuard = this.input.includes('guard');
+
     const player = this.entities.find((entity) => entity.id === PLAYER_ID);
     if (player) {
       // Buffer attack inputs on new flanks (edges) even during startup, recovery or hitstop
@@ -215,6 +218,14 @@ export class World {
 
       const rolling = isRolling(player);
       const attacking = isEntityAttacking(player);
+      const guarding = isGuarding(player);
+
+      // Dodge cancels guard immediately
+      if (guarding && dodgeEdge && player.grounded) {
+        player.guardPhase = 'none';
+        player.guardTicks = 0;
+        player.parryActive = false;
+      }
 
       // Dodge: only on ground, consume action on new flank (edge), uninterruptible while active
       if (!rolling && !attacking && dodgeEdge && player.grounded) {
@@ -230,8 +241,24 @@ export class World {
         nowRolling = false;
       }
 
-      // Attack blocked during active invulnerable roll
-      if (!nowRolling) {
+      const hasAttackEdge = lightAttackEdge || heavyAttackEdge || grabEdge;
+
+      // Attack or jump cancels guard (allowing agile counterattack or jump out of guard)
+      if (isGuarding(player) && (hasAttackEdge || jumpEdge)) {
+        player.guardPhase = 'none';
+        player.guardTicks = 0;
+        player.parryActive = false;
+      }
+
+      // Guard: only on ground, not rolling, not attacking, not attacking on this tick
+      if (!nowRolling && !attacking && !hasAttackEdge && wantsGuard && player.grounded && player.guardPhase === 'none') {
+        startGuard(player);
+      }
+      stepGuard(player, wantsGuard && !hasAttackEdge && !nowRolling);
+      const nowGuarding = isGuarding(player);
+
+      // Attack blocked during active invulnerable roll or while actively guarding (unless cancelled above)
+      if (!nowRolling && !nowGuarding) {
         const attackInput: AttackInput = {
           light: lightAttackEdge,
           heavy: heavyAttackEdge,
@@ -255,8 +282,11 @@ export class World {
         );
       }
 
-      // Lock horizontal control/facing during rolls and active attack slashes (preserves lunge momentum)
-      const horizontalLocked = nowRolling || player.attackPhase === 'active';
+      // Lock horizontal control/facing during rolls, active attack slashes, and guard
+      if (nowGuarding) {
+        player.vx = 0;
+      }
+      const horizontalLocked = nowRolling || player.attackPhase === 'active' || nowGuarding;
       stepHorizontal(
         player,
         this.input.includes('move-left'),
@@ -266,7 +296,7 @@ export class World {
         horizontalLocked,
       );
       const nowAttacking = isEntityAttacking(player);
-      const canJumpEdge = jumpEdge && !nowRolling && !nowAttacking;
+      const canJumpEdge = jumpEdge && !nowRolling && !nowAttacking && !nowGuarding;
       // Air attack float: 30% gravity while active slashes slice through the air
       const isAirAttacking = !player.grounded && player.attackPhase === 'active';
       const gravityScale = isAirAttacking ? 0.3 : 1.0;

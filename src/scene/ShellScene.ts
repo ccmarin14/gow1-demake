@@ -162,7 +162,8 @@ export class ShellScene extends Phaser.Scene {
     }
     if (this.debugText) {
       const phase = player ? player.attackPhase : '-';
-      const nextText = `tick ${this.simulation.world.frame} x=${player ? player.x.toFixed(1) : '-'} atk=${phase} chain=${chain}`;
+      const grd = player && player.guardPhase !== 'none' ? ` grd=${player.guardPhase}:${player.guardTicks}${player.parryActive ? '(P)' : ''}` : '';
+      const nextText = `tick ${this.simulation.world.frame} x=${player ? player.x.toFixed(1) : '-'} atk=${phase} chain=${chain}${grd}`;
       if (nextText !== this.lastDebugText) {
         this.lastDebugText = nextText;
         this.debugText.setText(nextText);
@@ -351,6 +352,21 @@ export class ShellScene extends Phaser.Scene {
       player.anims.timeScale = 1;
       player.setAlpha(1);
       player.setRotation(0);
+      return;
+    }
+    if (simPlayer.guardPhase !== 'none' && !rolling) {
+      this.stopLoop();
+      // Defensive stance (compact crouch with blades ready in ATTACK_KEY frame 0)
+      const frame = 0;
+      if (player.texture.key !== ATTACK_KEY) {
+        player.setTexture(ATTACK_KEY, frame);
+      } else {
+        player.setFrame(frame);
+      }
+      player.setFlipX(facing === -1);
+      player.setRotation(0);
+      player.setAlpha(1);
+      player.anims.timeScale = 1;
       return;
     }
     if (rolling && this.anims.exists(ROLL_KEY)) {

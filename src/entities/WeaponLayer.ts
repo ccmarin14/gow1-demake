@@ -271,7 +271,50 @@ export class WeaponLayer {
       }
     }
 
-    if (!player || !params || player.attackPhase === 'none') {
+    if (!player) {
+      this.hideWeapon();
+      return;
+    }
+
+    // Defensive stance: chains and blades held protecting the chest
+    if (player.guardPhase !== 'none' && player.attackPhase === 'none') {
+      const facing = player.facing === -1 ? -1 : 1;
+      const handX = player.x + facing * 8;
+      const handY = player.y - 28;
+      const bladeX = player.x + facing * 18;
+      const bladeY = player.y - 32;
+      const chainAngle = facing === 1 ? -0.35 : Math.PI + 0.35;
+
+      const segments = this.weaponChainRects.length;
+      for (let i = 0; i < segments; i += 1) {
+        const s = (i + 1) / (segments + 1);
+        const x = Math.round(handX + (bladeX - handX) * s);
+        const y = Math.round(handY + (bladeY - handY) * s);
+        this.weaponChainBorderRects[i].setPosition(x, y).setVisible(true);
+        this.weaponChainRects[i].setPosition(x, y).setVisible(true);
+      }
+
+      this.weaponBladeCoreRect
+        ?.setPosition(bladeX, bladeY)
+        .setRotation(chainAngle)
+        .setVisible(true);
+
+      this.weaponBladeImage
+        ?.setPosition(bladeX, bladeY)
+        .setFlipY(facing === -1)
+        .setRotation(chainAngle)
+        .setVisible(true);
+
+      for (let k = 0; k < this.weaponTrailOuter.length; k += 1) {
+        this.weaponTrailOuter[k].setVisible(false);
+      }
+      for (let k = 0; k < this.weaponTrailInner.length; k += 1) {
+        this.weaponTrailInner[k].setVisible(false);
+      }
+      return;
+    }
+
+    if (!params || player.attackPhase === 'none') {
       this.hideWeapon();
       return;
     }

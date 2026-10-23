@@ -208,6 +208,11 @@ dodge: {
   // the roll feel like a teleport; raising both makes it a free escape.
   rollSpeed: 260,
 },
+guard: {
+  startupTicks: 2,
+  parryWindowTicks: 6,
+  recoveryTicks: 4,
+},
 } as const;
 
 export const CONFIG = {

@@ -318,7 +318,7 @@ async function run() {
           sctx.fillStyle = '#f9fafb';
           sctx.font = 'bold 11px monospace';
           const dummyInfo = dummy ? \` D:(y=\${dummy.y.toFixed(0)},vy=\${dummy.vy.toFixed(0)})\` : '';
-          const actionText = p.skidTicks > 0 ? \`SKID:\${p.skidTicks}\` : (p.landingTicks > 0 ? \`LANDING:\${p.landingTicks}\` : \`\${p.attackMove} \${p.attackPhase}:\${p.attackTicks}\`);
+          const actionText = p.skidTicks > 0 ? \`SKID:\${p.skidTicks}\` : (p.landingTicks > 0 ? \`LANDING:\${p.landingTicks}\` : (p.guardPhase !== 'none' ? \`GUARD:\${p.guardPhase}:\${p.guardTicks}\${p.parryActive ? ' PARRY' : ''}\` : \`\${p.attackMove} \${p.attackPhase}:\${p.attackTicks}\`));
           sctx.fillText(
             \`t=\${t} \${actionText} \${isWeaponVisible ? '⚔️CHAIN' : ''}\`,
             dx + 4,
@@ -346,6 +346,10 @@ async function run() {
             move: p.attackMove,
             phase: p.attackPhase,
             ticks: p.attackTicks,
+            guardPhase: p.guardPhase,
+            guardTicks: p.guardTicks,
+            parryActive: p.parryActive,
+            rollPhase: p.rollPhase,
             poseFrame: sc.player.frame.name,
             weaponVisible: isWeaponVisible,
             playerX: p.x,
@@ -538,6 +542,51 @@ async function run() {
     const airGrabObserved = caseG.logs.find((l) => l.move === 'air_grab' && l.phase === 'active');
     console.log('Case G air_grab (Orion Harpoon) active observed:', airGrabObserved ? `t=${airGrabObserved.t}` : 'NONE');
 
+    // CASE H: Guard & Parry Window (GOW8B-GUARD-01)
+    // Hold guard from t=1 to t=14 (covers startup:2, parry:6, active:6), release at t=15 (recovery:4, none at t=19)
+    const caseH = await recordScenarioSequence({
+      caseId: 'guard_parry_window',
+      scenario: 'movement',
+      totalSteps: 24,
+      getActions: (t) => {
+        if (t >= 1 && t <= 14) return ['guard'];
+        return [];
+      },
+      cropW: 160,
+      cropH: 100,
+    });
+    const guardStartup = caseH.logs.filter((l) => l.guardPhase === 'startup');
+    const guardParry = caseH.logs.filter((l) => l.parryActive);
+    const guardActiveLate = caseH.logs.filter((l) => l.guardPhase === 'active' && !l.parryActive);
+    const guardRecovery = caseH.logs.filter((l) => l.guardPhase === 'recovery');
+    const guardMovementDuringGuard = caseH.logs.filter((l) => l.guardPhase !== 'none' && l.playerVx !== 0);
+    console.log('Case H guard startup frames:', guardStartup.map((l) => `t=${l.t}(ticks=${l.guardTicks})`));
+    console.log('Case H parryActive window frames (expected 6):', guardParry.map((l) => `t=${l.t}(ticks=${l.guardTicks})`));
+    console.log('Case H guard active (post-parry) frames:', guardActiveLate.map((l) => `t=${l.t}(ticks=${l.guardTicks})`));
+    console.log('Case H guard recovery frames (expected 4):', guardRecovery.map((l) => `t=${l.t}(ticks=${l.guardTicks})`));
+    console.log('Case H movement violations during guard (expected 0):', guardMovementDuringGuard.length);
+
+    // CASE I: Guard Cancellations (Dodge and Counterattack) (GOW8B-GUARD-01)
+    // Guard t=1..5 -> Dodge at t=6 -> Roll t=6..25 -> Guard t=26..30 -> Light Attack at t=31 (Counterattack)
+    const caseI = await recordScenarioSequence({
+      caseId: 'guard_cancel_actions',
+      scenario: 'combat',
+      totalSteps: 44,
+      getActions: (t) => {
+        if (t >= 1 && t <= 5) return ['guard'];
+        if (t === 6) return ['dodge'];
+        if (t >= 26 && t <= 30) return ['guard'];
+        if (t === 31) return ['light-attack'];
+        return [];
+      },
+      cropW: 160,
+      cropH: 100,
+    });
+    const dodgeCancelLog = caseI.logs.find((l) => l.t === 6);
+    const counterattackLog = caseI.logs.find((l) => l.t === 31);
+    console.log('Case I t=6 Dodge cancel rollPhase:', dodgeCancelLog ? dodgeCancelLog.rollPhase : 'NONE');
+    console.log('Case I t=31 Counterattack move/phase:', counterattackLog ? `${counterattackLog.move}:${counterattackLog.phase}` : 'NONE');
+
     console.log('\n=== ALL VERIFICATION TESTS COMPLETED SUCCESSFULLY ===');
     console.log('Artifacts in scripts/verification/output/:');
     console.log(' - combo_jjj_mosaic.png & combo_jjj.gif');
@@ -547,6 +596,8 @@ async function run() {
     console.log(' - loco_weight_turnaround_landing_mosaic.png & loco_weight_turnaround_landing.gif');
     console.log(' - combo_jjjj_mosaic.png & combo_jjjj.gif');
     console.log(' - ascension_air_harpoon_mosaic.png & ascension_air_harpoon.gif');
+    console.log(' - guard_parry_window_mosaic.png & guard_parry_window.gif');
+    console.log(' - guard_cancel_actions_mosaic.png & guard_cancel_actions.gif');
 
     ws.close();
   } finally {

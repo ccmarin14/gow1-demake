@@ -7,6 +7,7 @@ export type GameAction =
   | 'grab'
   | 'magic'
   | 'dodge'
+  | 'guard'
   | 'context-action'
   | 'pause';
 
@@ -19,6 +20,7 @@ export const DOMAIN_ACTIONS: readonly GameAction[] = [
   'grab',
   'magic',
   'dodge',
+  'guard',
   'context-action',
   'pause',
 ];
@@ -117,6 +119,9 @@ export interface EntityState {
   rollPhase: 'none' | 'active' | 'recovery';
   rollTicks: number;
   invulTicks: number;
+  guardPhase: 'none' | 'startup' | 'active' | 'recovery';
+  guardTicks: number;
+  parryActive: boolean;
   /** Ticks left of skid / turnaround braking state; 0 = normal movement. */
   skidTicks: number;
   /** Ticks left of elastic landing impact absorption; 0 = normal presentation. */
