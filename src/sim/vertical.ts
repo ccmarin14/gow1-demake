@@ -19,6 +19,7 @@ export function stepVertical(
   platforms: readonly Platform[],
   locked: boolean = false,
   gravityScale: number = 1.0,
+  wantsDown: boolean = false,
 ): void {
   const wasGrounded = entity.grounded;
 
@@ -26,28 +27,43 @@ export function stepVertical(
     entity.landingTicks -= 1;
   }
 
-  if (jumpPressedEdge) {
-    entity.jumpBufferTicks = params.jumpBufferTicks;
+  if (entity.dropThroughTicks > 0) {
+    entity.dropThroughTicks -= 1;
   }
 
-  if (wasGrounded) {
-    entity.coyoteTicks = params.coyoteTicks;
-  } else if (entity.coyoteTicks > 0) {
-    entity.coyoteTicks -= 1;
+  // Descenso voluntario (drop-through): Kratos sobre plataforma elevada pulsa abajo + salto
+  const canDropThrough = !locked && wasGrounded && entity.y < 262 && wantsDown && jumpPressedEdge;
+  if (canDropThrough) {
+    entity.dropThroughTicks = 14;
+    entity.grounded = false;
+    entity.vy = 60;
+    entity.jumpBufferTicks = 0;
+    entity.coyoteTicks = 0;
+    entity.landingTicks = 0;
+  } else {
+    if (jumpPressedEdge) {
+      entity.jumpBufferTicks = params.jumpBufferTicks;
+    }
+
+    if (wasGrounded) {
+      entity.coyoteTicks = params.coyoteTicks;
+    } else if (entity.coyoteTicks > 0) {
+      entity.coyoteTicks -= 1;
+    }
   }
 
+  const isDroppingThrough = entity.dropThroughTicks > 0;
   const canGroundJump =
+    !isDroppingThrough &&
     entity.jumpBufferTicks > 0 && (wasGrounded || entity.coyoteTicks > 0);
-  // The air jump needs a fresh press (never the held key) and is rejected
-  // inside the coyote window, so a coyote jump stays a ground jump and keeps
-  // the air jump available.
   const canAirJump =
+    !isDroppingThrough &&
     jumpPressedEdge &&
     !wasGrounded &&
     entity.coyoteTicks <= 0 &&
     entity.jumpsUsed < params.maxJumps;
 
-  if (!locked) {
+  if (!locked && !canDropThrough) {
     if (canGroundJump) {
       entity.vy = -params.jumpSpeed;
       entity.grounded = false;
@@ -79,6 +95,10 @@ export function stepVertical(
   let landed = false;
   if (entity.vy >= 0) {
     for (const platform of platforms) {
+      // Si está en drop-through, ignora plataformas elevadas (yTop < 262)
+      if (entity.dropThroughTicks > 0 && platform.yTop < 262) {
+        continue;
+      }
       if (
         entity.x >= platform.x1 &&
         entity.x <= platform.x2 &&

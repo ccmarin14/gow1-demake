@@ -7,6 +7,7 @@ const { KeyCodes } = Phaser.Input.Keyboard;
 const KEY_BINDINGS: Record<GameAction, number[]> = {
   'move-left': [KeyCodes.A, KeyCodes.LEFT],
   'move-right': [KeyCodes.D, KeyCodes.RIGHT],
+  'move-down': [KeyCodes.S, KeyCodes.DOWN],
   jump: [KeyCodes.SPACE],
   'light-attack': [KeyCodes.J],
   'heavy-attack': [KeyCodes.K],

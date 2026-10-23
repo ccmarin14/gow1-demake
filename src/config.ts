@@ -371,6 +371,13 @@ export const CONFIG = {
         scrollMaxX: 960,
         parallaxFactor: 0.25,
       },
+      platforms: [
+        { x1: 0, x2: 1440, yTop: 262 },
+        { x1: 200, x2: 290, yTop: 226 },
+        { x1: 1040, x2: 1180, yTop: 200 },
+        { x1: 1100, x2: 1240, yTop: 138 },
+        { x1: 1310, x2: 1440, yTop: 218 },
+      ],
     },
   },
   presentation: {

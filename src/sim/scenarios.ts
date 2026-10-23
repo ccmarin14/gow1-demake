@@ -60,6 +60,7 @@ function playerAt(x: number, y: number): EntityState {
     maxMp: 100,
     magicPhase: 'none',
     magicTicks: 0,
+    dropThroughTicks: 0,
     attackCooldownTicks: 0,
     hurtInvulTicks: 0,
     isDead: false,
@@ -109,6 +110,7 @@ function dummyAt(id: string, x: number, y: number, facing: -1 | 1 = 1, grounded 
     maxMp: 0,
     magicPhase: 'none',
     magicTicks: 0,
+    dropThroughTicks: 0,
     attackCooldownTicks: 0,
     hurtInvulTicks: 0,
     isDead: false,
@@ -158,6 +160,7 @@ export function legionnaireAt(id: string, x: number, y: number, facing: -1 | 1 =
     maxMp: 0,
     magicPhase: 'none',
     magicTicks: 0,
+    dropThroughTicks: 0,
     attackCooldownTicks: 0,
     hurtInvulTicks: 0,
     isDead: false,
@@ -165,7 +168,7 @@ export function legionnaireAt(id: string, x: number, y: number, facing: -1 | 1 =
   };
 }
 
-export function archerAt(id: string, x: number, y: number, facing: -1 | 1 = -1): EntityState {
+export function archerAt(id: string, x: number, y: number, facing: -1 | 1 = -1, grounded = true): EntityState {
   return {
     id,
     kind: 'archer',
@@ -174,7 +177,7 @@ export function archerAt(id: string, x: number, y: number, facing: -1 | 1 = -1):
     vx: 0,
     vy: 0,
     facing,
-    grounded: y >= GROUND_Y,
+    grounded,
     coyoteTicks: 0,
     jumpBufferTicks: 0,
     jumpsUsed: 0,
@@ -207,6 +210,7 @@ export function archerAt(id: string, x: number, y: number, facing: -1 | 1 = -1):
     maxMp: 0,
     magicPhase: 'none',
     magicTicks: 0,
+    dropThroughTicks: 0,
     attackCooldownTicks: 0,
     hurtInvulTicks: 0,
     isDead: false,
@@ -308,8 +312,17 @@ register({
 
 register({
   name: 'level1',
-  entities: [playerAt(100, GROUND_Y)],
-  platforms: [{ x1: 0, x2: 1440, yTop: GROUND_Y }],
+  entities: [
+    playerAt(100, GROUND_Y),
+    archerAt('archer-crow', 1170, 138, -1),
+  ],
+  platforms: [
+    { x1: 0, x2: 1440, yTop: 262 },
+    { x1: 200, x2: 290, yTop: 226 },
+    { x1: 1040, x2: 1180, yTop: 200 },
+    { x1: 1100, x2: 1240, yTop: 138 },
+    { x1: 1310, x2: 1440, yTop: 218 },
+  ],
   targetPhysics: true,
 });
 

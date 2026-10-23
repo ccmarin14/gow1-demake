@@ -88,7 +88,7 @@ También el 2026-10-15, tras la aprobación de la etapa 6, la usuaria autorizó 
 | Orden | ID | Etapa | Estado |
 | --- | --- | --- | --- |
 | 20 | GOW8B-MAP-01 **(nueva)** | Mapa del primer nivel (cubierta de 1440 px): tres segmentos continuos transitables (Popa, Arena Central con barreras, Proa), cámara 2D con zona muerta ($\pm 32\text{ px}$) y bloqueo estricto en arena ($scrollX = 480\text{ px}$), fondo marino con parallax horizontal desacoplado ($0.25\times$) e invariante de HUD inmóvil, verificado con Caso R en Chrome CDP. | **Aprobada** (2026-10-23) bajo el plan [`GOW8B-MAP-01`](planes/GOW8B-MAP-01.md) tras auditoría independiente de solo lectura. |
-| 21 | GOW8B-PLATFORM-01 **(nueva)** | Plataformeo del nivel: extiende la etapa 8 a la geometría real | Pendiente; no activa. |
+| 21 | GOW8B-PLATFORM-01 **(nueva)** | Plataformeo del nivel y geometría naval: plataformas unidireccionales (*one-way*) en Popa ($y=226$), mástiles de Proa ($y=200$ y $y=138$) y castillo ($y=218$), descenso voluntario (*drop-through*) mediante abajo + salto con temporizador determinista de 14 ticks, colisión y ondas sísmicas de Cuchillas del Caos a cotas elevadas, y combate vertical contra arquero en nido de cuervos, verificado con Caso S en Chrome CDP. Bloque 7 completado al 100 %. | **Aprobada** (2026-10-23) bajo el plan [`GOW8B-PLATFORM-01`](planes/GOW8B-PLATFORM-01.md) tras auditoría independiente de solo lectura. Bloque 7 completado al 100 %. |
 
 ### Bloque 8 — Recogibles y cofres
 

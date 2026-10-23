@@ -30,7 +30,7 @@ export class ShellScene extends Phaser.Scene {
   private debugText: Phaser.GameObjects.Text | null = null;
   private lastDebugText = '';
   private player: Phaser.GameObjects.Sprite | null = null;
-  private platformRects: Phaser.GameObjects.Rectangle[] = [];
+  private platformRects: (Phaser.GameObjects.Rectangle | Phaser.GameObjects.Graphics)[] = [];
   private renderedScenario = '';
   private attackHitboxRect: Phaser.GameObjects.Rectangle | null = null;
   private targetRects = new Map<string, Phaser.GameObjects.Rectangle>();
@@ -529,6 +529,84 @@ export class ShellScene extends Phaser.Scene {
         );
       }
     }
+
+    if (this.simulation.world.scenarioName === 'level1') {
+      const g = this.add.graphics().setDepth(-2);
+      this.platformRects.push(g);
+
+      // 1. Cajas de pertrechos de Popa (x: 200..290, y: 226..262)
+      g.fillStyle(0x4a3219, 1.0);
+      g.fillRect(200, 226, 90, 36);
+      g.lineStyle(1, 0x2e1f0e, 1.0);
+      g.strokeRect(200, 226, 90, 36);
+      // Tablas y tablones verticales/horizontales
+      g.lineBetween(245, 226, 245, 262);
+      g.lineBetween(200, 244, 290, 244);
+      // Sogas / cinchas en aspa (X)
+      g.lineStyle(1, 0x8c6d46, 0.8);
+      g.lineBetween(204, 228, 241, 260);
+      g.lineBetween(241, 228, 204, 260);
+      g.lineBetween(249, 228, 286, 260);
+      g.lineBetween(286, 228, 249, 260);
+      // Refuerzos de esquinas
+      g.fillStyle(0x734d26, 1.0);
+      g.fillRect(200, 226, 4, 4);
+      g.fillRect(286, 226, 4, 4);
+      g.fillRect(200, 258, 4, 4);
+      g.fillRect(286, 258, 4, 4);
+
+      // 2. Mástil y vigas de Proa (centro en x=1170)
+      // Mástil vertical de pino (x=1163..1177, y=110..262)
+      g.fillStyle(0x3e2b14, 1.0);
+      g.fillRect(1163, 110, 14, 152);
+      g.fillStyle(0x614420, 1.0);
+      g.fillRect(1165, 110, 3, 152); // Brillo/hilera de luz
+      g.fillStyle(0x2a1c0c, 1.0);
+      g.fillRect(1175, 110, 2, 152); // Sombra lateral
+      // Abrazaderas de bronce en el mástil
+      g.fillStyle(0x8c673a, 1.0);
+      g.fillRect(1162, 134, 16, 4);
+      g.fillRect(1162, 196, 16, 4);
+      g.fillRect(1162, 256, 16, 6);
+
+      // Puntales diagonales de la viga inferior (y=200, x=1040..1180)
+      g.lineStyle(2, 0x3e2b14, 1.0);
+      g.lineBetween(1163, 230, 1080, 204);
+      g.lineBetween(1177, 230, 1150, 204);
+
+      // Barandilla del nido de cuervos (y=138, x=1100..1240)
+      g.lineStyle(1, 0x614420, 1.0);
+      g.lineBetween(1100, 126, 1240, 126); // pasamanos superior
+      for (let bx = 1104; bx <= 1236; bx += 12) {
+        g.lineBetween(bx, 126, bx, 138); // balaustres
+      }
+
+      // Jarcias / cabos tensores hacia la cubierta
+      g.lineStyle(1, 0x221a10, 0.6);
+      g.lineBetween(1163, 120, 1000, 262);
+      g.lineBetween(1163, 120, 1030, 262);
+      g.lineBetween(1177, 120, 1280, 262);
+      g.lineBetween(1177, 120, 1300, 262);
+
+      // 3. Castillo elevado de Proa (x=1310..1440, y=218..262)
+      g.fillStyle(0x3e2b14, 1.0);
+      g.fillRect(1310, 218, 130, 44);
+      // Entablado horizontal del mamparo de proa
+      g.lineStyle(1, 0x2a1c0c, 1.0);
+      for (let py = 226; py <= 258; py += 8) {
+        g.lineBetween(1310, py, 1440, py);
+      }
+      // Rampa / puntal angular en el mamparo
+      g.lineStyle(2, 0x5c401f, 1.0);
+      g.lineBetween(1310, 262, 1310, 218);
+      // Barandilla de proa
+      g.lineStyle(1, 0x8c673a, 1.0);
+      g.lineBetween(1310, 210, 1440, 210);
+      for (let rx = 1320; rx < 1440; rx += 16) {
+        g.lineBetween(rx, 210, rx, 218);
+      }
+    }
+
     this.renderedScenario = this.simulation.world.scenarioName;
   }
 

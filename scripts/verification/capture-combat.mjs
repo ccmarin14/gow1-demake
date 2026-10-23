@@ -426,6 +426,9 @@ async function run() {
             targetState: dummy ? dummy.aiState : null,
             targetHp: dummy ? dummy.hp : null,
             groundImpact: p.groundImpactTicks,
+            groundImpactY: p.groundImpactY,
+            dropThroughTicks: p.dropThroughTicks ?? 0,
+            grounded: p.grounded,
           });
         }
 
@@ -1193,6 +1196,79 @@ async function run() {
     console.log('Case R Arena unlocked post-dissipation (expected act=false):', arenaUnlockLog ? `act=${arenaUnlockLog.arenaActive},camX=${arenaUnlockLog.cameraX.toFixed(1)}` : 'NONE');
     console.log('Case R Proa advance and rightmost camera scroll (expected x>1200, camX>=900, seg=Proa):', proaScrollLog ? `x=${proaScrollLog.playerX.toFixed(1)},camX=${proaScrollLog.cameraX.toFixed(1)},seg=${proaScrollLog.segmentName}` : 'NONE');
 
+    // CASE S: Level Platforming, Verticality, Drop-Through and Elevated Combat (GOW8B-PLATFORM-01)
+    // - Scenario: 'level1'
+    // - t=1: Kratos at Popa (x=240, y=262).
+    // - t=2: Jump towards Popa crate (x1=200, x2=290, yTop=226).
+    // - t=39: Firm landing on Popa crate (y=226.0, vy=0, grounded=true).
+    // - t=41: Drop-through input ['move-down', 'jump'] -> dropThroughTicks=14, grounded=false, vy>0.
+    // - t=53: Soft landing back on base deck (y=262.0, vy=0, grounded=true).
+    // - t=60: Position Kratos at Proa beneath crow's nest beam (x=1140, y=262).
+    // - t=61: Ground jump 1 (vy=-363.3).
+    // - t=78: Coordinated air jump 2 (jumps=2, reaching peak above y=138).
+    // - t=108: Firm landing on crow's nest beam (y=138.0, vy=0, grounded=true).
+    // - t=109..135: Plume of Prometheus combo on elevated beam:
+    //   t=130: plume_of_prometheus active.
+    //   t=135: Elevated archer defeated on beam (hp=0, aiState='death').
+    //   t=143: Ground impact shockwave collides on beam surface (groundImpactY=138).
+    const caseS = await recordScenarioSequence({
+      caseId: 'platforming_verticality_and_drop',
+      scenario: 'level1',
+      totalSteps: 150,
+      cropW: 240,
+      cropH: 140,
+      fixedCropX: 0,
+      fixedCropY: 50,
+      getActions: (t) => {
+        const sc = window.__SHELL_SCENE;
+        const p = sc.simulation.world.peekEntity('player');
+
+        // t=1: Place at Popa crate base
+        if (t === 1 && p) {
+          p.x = 240;
+          p.y = 262;
+          p.vx = 0;
+          p.vy = 0;
+        }
+
+        // t=60: Position at Proa under mast
+        if (t === 60 && p) {
+          p.x = 1140;
+          p.y = 262;
+          p.vx = 0;
+          p.vy = 0;
+        }
+
+        // t=2: Jump to Popa crate
+        if (t === 2) return ['jump'];
+        // t=41: Drop through from crate
+        if (t === 41) return ['move-down', 'jump'];
+        // t=61: Ground jump 1
+        if (t === 61) return ['jump'];
+        // t=78: Air jump 2
+        if (t === 78) return ['jump'];
+        // t=109..129: Attack combo on crow's nest beam
+        if (t === 109 || t === 119) return ['light-attack'];
+        if (t === 129) return ['heavy-attack'];
+
+        return [];
+      },
+    });
+
+    const crateLandLog = caseS.logs.find((l) => l.t === 39);
+    const dropThroughLog = caseS.logs.find((l) => l.t === 41);
+    const deckLandLog = caseS.logs.find((l) => l.t === 53);
+    const beamLandLog = caseS.logs.find((l) => l.t === 108);
+    const beamKillLog = caseS.logs.find((l) => l.t === 135);
+    const beamImpactLog = caseS.logs.find((l) => l.t === 143);
+
+    console.log('Case S Popa crate landing (expected y=226, grounded=true):', crateLandLog ? `y=${crateLandLog.playerY.toFixed(1)},grd=${crateLandLog.grounded},vy=${crateLandLog.playerVy.toFixed(1)}` : 'NONE');
+    console.log('Case S Drop-through initiation (expected drop>0, grounded=false, vy>0):', dropThroughLog ? `drop=${dropThroughLog.dropThroughTicks},grd=${dropThroughLog.grounded},vy=${dropThroughLog.playerVy.toFixed(1)}` : 'NONE');
+    console.log('Case S Deck landing after drop (expected y=262, grounded=true):', deckLandLog ? `y=${deckLandLog.playerY.toFixed(1)},grd=${deckLandLog.grounded},vy=${deckLandLog.playerVy.toFixed(1)}` : 'NONE');
+    console.log('Case S Crow nest beam landing (expected y=138, grounded=true):', beamLandLog ? `y=${beamLandLog.playerY.toFixed(1)},grd=${beamLandLog.grounded},vy=${beamLandLog.playerVy.toFixed(1)}` : 'NONE');
+    console.log('Case S Elevated archer defeat on beam (expected hp=0, state=death):', beamKillLog ? `hp=${beamKillLog.targetHp},st=${beamKillLog.targetState}` : 'NONE');
+    console.log('Case S Beam shockwave impact (expected impactY=138, impact>0):', beamImpactLog ? `impY=${beamImpactLog.groundImpactY},impTicks=${beamImpactLog.groundImpact}` : 'NONE');
+
     console.log('\n=== ALL VERIFICATION TESTS COMPLETED SUCCESSFULLY ===');
     console.log('Artifacts in scripts/verification/output/:');
     console.log(' - combo_jjj_mosaic.png & combo_jjj.gif');
@@ -1213,6 +1289,7 @@ async function run() {
     console.log(' - arena_confinement_and_barriers_mosaic.png & arena_confinement_and_barriers.gif');
     console.log(' - poseidons_rage_magic_aoe_mosaic.png & poseidons_rage_magic_aoe.gif');
     console.log(' - map_scroll_and_segments_mosaic.png & map_scroll_and_segments.gif');
+    console.log(' - platforming_verticality_and_drop_mosaic.png & platforming_verticality_and_drop.gif');
 
     ws.close();
   } finally {

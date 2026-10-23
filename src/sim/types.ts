@@ -1,6 +1,7 @@
 export type GameAction =
   | 'move-left'
   | 'move-right'
+  | 'move-down'
   | 'jump'
   | 'light-attack'
   | 'heavy-attack'
@@ -15,6 +16,7 @@ export type GameAction =
 export const DOMAIN_ACTIONS: readonly GameAction[] = [
   'move-left',
   'move-right',
+  'move-down',
   'jump',
   'light-attack',
   'heavy-attack',
@@ -150,6 +152,7 @@ export interface EntityState {
   maxMp: number;
   magicPhase: 'none' | 'startup' | 'active' | 'recovery';
   magicTicks: number;
+  dropThroughTicks: number;
   attackCooldownTicks: number;
   hurtInvulTicks: number;
   isDead: boolean;

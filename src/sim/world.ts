@@ -485,7 +485,7 @@ export class World {
           player.vx = 0;
         }
         if (this.mapData && this.arenaManager && !this.arenaTriggered && !this.arenaManager.isActive()) {
-          if (player.x >= 550) {
+          if (player.x >= 550 && player.x <= 890) {
             this.arenaTriggered = true;
             this.arenaManager.activate();
           }
@@ -516,6 +516,7 @@ export class World {
         // Air attack float: 30% gravity while active slashes slice through the air
         const isAirAttacking = !player.grounded && player.attackPhase === 'active';
         const gravityScale = isAirAttacking ? 0.3 : 1.0;
+        const wantsDown = this.input.includes('move-down');
         stepVertical(
           player,
           VERTICAL_PARAMS,
@@ -524,6 +525,7 @@ export class World {
           this.platforms,
           nowRolling,
           gravityScale,
+          wantsDown,
         );
         if (this.arenaManager && this.arenaManager.isActive()) {
           if (player.x < playerMinX) {
