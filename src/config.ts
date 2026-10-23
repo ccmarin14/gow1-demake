@@ -213,6 +213,13 @@ guard: {
   parryWindowTicks: 6,
   recoveryTicks: 4,
 },
+damage: {
+  maxHp: 100,
+  hurtHitstunTicks: 14,
+  hurtInvulTicks: 45,
+  knockbackVx: 140,
+  guardMitigationRatio: 0.85,
+},
 } as const;
 
 export const CONFIG = {

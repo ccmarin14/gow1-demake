@@ -16,6 +16,7 @@ const KEY_BINDINGS: Record<GameAction, number[]> = {
   guard: [KeyCodes.Q],
   'context-action': [KeyCodes.E],
   pause: [KeyCodes.ESC],
+  restart: [KeyCodes.R],
 };
 
 interface ActionBinding {

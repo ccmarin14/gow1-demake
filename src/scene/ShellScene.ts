@@ -34,6 +34,7 @@ export class ShellScene extends Phaser.Scene {
   private targetRects = new Map<string, Phaser.GameObjects.Rectangle>();
   private legionnaireSprites = new Map<string, Phaser.GameObjects.Sprite>();
   private readonly weaponLayer = new WeaponLayer();
+  private defeatText: Phaser.GameObjects.Text | null = null;
 
   constructor(
     private readonly simulation: Simulation,
@@ -100,6 +101,24 @@ export class ShellScene extends Phaser.Scene {
 
     this.weaponLayer.create(this);
 
+    this.defeatText = this.add
+      .text(
+        CONFIG.internal.width / 2,
+        CONFIG.internal.height / 2 - 10,
+        'DERROTA - PULSA R PARA REINTENTAR',
+        {
+          color: '#ff4444',
+          fontFamily: 'monospace',
+          fontSize: '12px',
+          fontStyle: 'bold',
+          backgroundColor: '#000000bb',
+          padding: { x: 8, y: 4 },
+        },
+      )
+      .setOrigin(0.5)
+      .setDepth(20)
+      .setVisible(false);
+
     if (import.meta.env.DEV) {
       this.lastDebugText = 'tick 0';
       this.debugText = this.add.text(6, 6, this.lastDebugText, {
@@ -124,7 +143,26 @@ export class ShellScene extends Phaser.Scene {
       this.player.setPosition(player.x, player.y);
       this.player.setFlipX(player.facing === -1);
       this.applyAnimation(player);
+
+      // Feedback visual de daño (tint en hitstun)
+      if (player.hitstunTicks > 0) {
+        this.player.setTint(0xff5555);
+      } else {
+        this.player.clearTint();
+      }
+
+      // Parpadeo visual durante invulnerabilidad post-daño
+      if (player.hurtInvulTicks > 0 && !player.isDead) {
+        this.player.setAlpha(Math.floor(player.hurtInvulTicks / 4) % 2 === 0 ? 0.4 : 1.0);
+      } else if (!player.isDead) {
+        this.player.setAlpha(1.0);
+      }
     }
+
+    if (this.defeatText) {
+      this.defeatText.setVisible(Boolean(player && player.isDead));
+    }
+
     const hitbox = this.simulation.world.playerAttackHitbox();
     const chain = player ? player.attackChain : 0;
     const hitboxColor = this.hitboxColorForChain(chain);
@@ -150,8 +188,9 @@ export class ShellScene extends Phaser.Scene {
     } else if (this.attackHitboxRect) {
       this.attackHitboxRect.setVisible(false);
     }
-    const attackParams = player ? this.simulation.world.playerAttackParams() : null;
-    this.weaponLayer.update(player, attackParams, this.simulation.world.surfacePlatforms);
+    const isPlayerAlive = Boolean(player && !player.isDead);
+    const attackParams = isPlayerAlive ? this.simulation.world.playerAttackParams() : null;
+    this.weaponLayer.update(isPlayerAlive ? player : null, attackParams, this.simulation.world.surfacePlatforms);
     this.updateTargets(player);
     if (player && player.groundImpactTicks > 0) {
       const shakePx = CONFIG.player.attack.groundImpact.shakePx;
@@ -168,7 +207,10 @@ export class ShellScene extends Phaser.Scene {
     if (this.debugText) {
       const phase = player ? player.attackPhase : '-';
       const grd = player && player.guardPhase !== 'none' ? ` grd=${player.guardPhase}:${player.guardTicks}${player.parryActive ? '(P)' : ''}` : '';
-      const nextText = `tick ${this.simulation.world.frame} x=${player ? player.x.toFixed(1) : '-'} atk=${phase} chain=${chain}${grd}`;
+      const hpInfo = player ? ` hp=${player.hp}` : '';
+      const hurtInfo = player && player.hurtInvulTicks > 0 ? ` hurtInv=${player.hurtInvulTicks}` : '';
+      const deadInfo = player && player.isDead ? ' [DEAD]' : '';
+      const nextText = `tick ${this.simulation.world.frame} x=${player ? player.x.toFixed(1) : '-'}${hpInfo}${hurtInfo}${deadInfo} atk=${phase} chain=${chain}${grd}`;
       if (nextText !== this.lastDebugText) {
         this.lastDebugText = nextText;
         this.debugText.setText(nextText);
@@ -390,6 +432,21 @@ export class ShellScene extends Phaser.Scene {
     if (!player) {
       return;
     }
+
+    if (simPlayer.isDead) {
+      this.stopLoop();
+      const frame = 2;
+      if (player.texture.key !== ATTACK_KEY) {
+        player.setTexture(ATTACK_KEY, frame);
+      } else {
+        player.setFrame(frame);
+      }
+      player.setFlipX(simPlayer.facing === -1);
+      player.setRotation(0);
+      player.setAlpha(0.65);
+      return;
+    }
+
     const { attackPhase, grounded, facing } = simPlayer;
     const speed = Math.abs(simPlayer.vx);
     const rolling = simPlayer.rollPhase !== 'none';

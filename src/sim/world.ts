@@ -175,6 +175,11 @@ export class World {
 
   step(actions: readonly GameAction[] = []): void {
     this.input = sortActions(actions);
+    if (this.input.includes('restart')) {
+      this.reset();
+      return;
+    }
+
     const wantsJump = this.input.includes('jump');
     const jumpEdge = wantsJump && !this.jumpHeld;
     this.jumpHeld = wantsJump;
@@ -199,117 +204,164 @@ export class World {
 
     const player = this.entities.find((entity) => entity.id === PLAYER_ID);
     if (player) {
-      // Buffer attack inputs on new flanks (edges) even during startup, recovery or hitstop
-      if (lightAttackEdge) {
-        player.attackBufferAction = 'light-attack';
-        player.attackBufferTicks = CONFIG.player.attack.inputBufferTicks;
-      } else if (heavyAttackEdge) {
-        player.attackBufferAction = 'heavy-attack';
-        player.attackBufferTicks = CONFIG.player.attack.inputBufferTicks;
-      } else if (grabEdge) {
-        player.attackBufferAction = 'grab';
-        player.attackBufferTicks = CONFIG.player.attack.inputBufferTicks;
+      if (player.hurtInvulTicks > 0) {
+        player.hurtInvulTicks -= 1;
+      }
+      if (player.hitstunTicks > 0) {
+        player.hitstunTicks -= 1;
       }
 
-      if (player.hitstopTicks > 0) {
-        player.hitstopTicks -= 1;
-        this.tick += 1;
-        return;
-      }
-
-      const rolling = isRolling(player);
-      const attacking = isEntityAttacking(player);
-      const guarding = isGuarding(player);
-
-      // Dodge cancels guard immediately
-      if (guarding && dodgeEdge && player.grounded) {
+      if (player.isDead) {
+        player.vx = 0;
+        player.attackPhase = 'none';
+        player.attackMove = 'none';
+        player.attackTicks = 0;
+        player.attackHits = [];
+        player.attackBufferAction = null;
+        player.attackBufferTicks = 0;
         player.guardPhase = 'none';
         player.guardTicks = 0;
         player.parryActive = false;
-      }
-
-      // Dodge: only on ground, consume action on new flank (edge), uninterruptible while active
-      if (!rolling && !attacking && dodgeEdge && player.grounded) {
-        startRoll(player);
-      }
-      stepRoll(player);
-      let nowRolling = isRolling(player);
-
-      // Roll recovery cancellation into attack (after invulnerability window closes)
-      if (nowRolling && player.invulTicks === 0 && (lightAttackEdge || heavyAttackEdge || grabEdge)) {
         player.rollPhase = 'none';
         player.rollTicks = 0;
-        nowRolling = false;
-      }
+        player.invulTicks = 0;
 
-      const hasAttackEdge = lightAttackEdge || heavyAttackEdge || grabEdge;
-
-      // Attack or jump cancels guard (allowing agile counterattack or jump out of guard)
-      if (isGuarding(player) && (hasAttackEdge || jumpEdge)) {
-        player.guardPhase = 'none';
-        player.guardTicks = 0;
-        player.parryActive = false;
-      }
-
-      // Guard: only on ground, not rolling, not attacking, not attacking on this tick
-      if (!nowRolling && !attacking && !hasAttackEdge && wantsGuard && player.grounded && player.guardPhase === 'none') {
-        startGuard(player);
-      }
-      stepGuard(player, wantsGuard && !hasAttackEdge && !nowRolling);
-      const nowGuarding = isGuarding(player);
-
-      // Attack blocked during active invulnerable roll or while actively guarding (unless cancelled above)
-      if (!nowRolling && !nowGuarding) {
-        const attackInput: AttackInput = {
-          light: lightAttackEdge,
-          heavy: heavyAttackEdge,
-          heavyHeld: wantsHeavyAttack,
-          grab: grabEdge,
-        };
-        const attackRules: AttackRules = {
-          heavyHoldTicks: CONFIG.player.attack.heavyHoldTicks,
-          hitstunTicks: CONFIG.player.attack.target.hitstunTicks,
-          groundImpactTicks: CONFIG.player.attack.groundImpact.durationTicks,
-          shockRadius: CONFIG.player.attack.groundImpact.shockRadius,
-          targetPhysics: this.targetPhysics,
-        };
-        stepAttack(
+        stepVertical(
           player,
-          attackInput,
-          this.moveSet,
-          this.targets,
+          VERTICAL_PARAMS,
+          TICK_DT,
+          false,
           this.platforms,
-          attackRules,
+          false,
+          1.0,
+        );
+      } else {
+        const inHitstun = player.hitstunTicks > 0;
+
+        // Buffer attack inputs on new flanks (edges) even during startup, recovery or hitstop (unless in hitstun)
+        if (!inHitstun) {
+          if (lightAttackEdge) {
+            player.attackBufferAction = 'light-attack';
+            player.attackBufferTicks = CONFIG.player.attack.inputBufferTicks;
+          } else if (heavyAttackEdge) {
+            player.attackBufferAction = 'heavy-attack';
+            player.attackBufferTicks = CONFIG.player.attack.inputBufferTicks;
+          } else if (grabEdge) {
+            player.attackBufferAction = 'grab';
+            player.attackBufferTicks = CONFIG.player.attack.inputBufferTicks;
+          }
+        }
+
+        if (player.hitstopTicks > 0) {
+          player.hitstopTicks -= 1;
+          this.tick += 1;
+          return;
+        }
+
+        const rolling = isRolling(player);
+        const attacking = isEntityAttacking(player);
+        const guarding = isGuarding(player);
+
+        // Dodge cancels guard immediately
+        if (guarding && dodgeEdge && player.grounded && !inHitstun) {
+          player.guardPhase = 'none';
+          player.guardTicks = 0;
+          player.parryActive = false;
+        }
+
+        // Dodge: only on ground, consume action on new flank (edge), uninterruptible while active
+        if (!rolling && !attacking && dodgeEdge && player.grounded && !inHitstun) {
+          startRoll(player);
+        }
+        stepRoll(player);
+        let nowRolling = isRolling(player);
+
+        // Roll recovery cancellation into attack (after invulnerability window closes)
+        if (nowRolling && player.invulTicks === 0 && (lightAttackEdge || heavyAttackEdge || grabEdge) && !inHitstun) {
+          player.rollPhase = 'none';
+          player.rollTicks = 0;
+          nowRolling = false;
+        }
+
+        const hasAttackEdge = lightAttackEdge || heavyAttackEdge || grabEdge;
+
+        // Attack or jump cancels guard (allowing agile counterattack or jump out of guard)
+        if (isGuarding(player) && (hasAttackEdge || jumpEdge) && !inHitstun) {
+          player.guardPhase = 'none';
+          player.guardTicks = 0;
+          player.parryActive = false;
+        }
+
+        // Guard: only on ground, not rolling, not attacking, not attacking on this tick, not in hitstun
+        if (!nowRolling && !attacking && !hasAttackEdge && wantsGuard && player.grounded && player.guardPhase === 'none' && !inHitstun) {
+          startGuard(player);
+        }
+        stepGuard(player, wantsGuard && !hasAttackEdge && !nowRolling && !inHitstun);
+        const nowGuarding = isGuarding(player);
+
+        // Attack blocked during active invulnerable roll, while actively guarding, or during hitstun
+        if (!nowRolling && !nowGuarding && !inHitstun) {
+          const attackInput: AttackInput = {
+            light: lightAttackEdge,
+            heavy: heavyAttackEdge,
+            heavyHeld: wantsHeavyAttack,
+            grab: grabEdge,
+          };
+          const attackRules: AttackRules = {
+            heavyHoldTicks: CONFIG.player.attack.heavyHoldTicks,
+            hitstunTicks: CONFIG.player.attack.target.hitstunTicks,
+            groundImpactTicks: CONFIG.player.attack.groundImpact.durationTicks,
+            shockRadius: CONFIG.player.attack.groundImpact.shockRadius,
+            targetPhysics: this.targetPhysics,
+          };
+          stepAttack(
+            player,
+            attackInput,
+            this.moveSet,
+            this.targets,
+            this.platforms,
+            attackRules,
+          );
+        }
+
+        // Decelerate knockback during hitstun
+        if (inHitstun && player.grounded) {
+          const brakeAmount = CONFIG.player.brake * TICK_DT;
+          if (player.vx > 0) {
+            player.vx = Math.max(0, player.vx - brakeAmount);
+          } else if (player.vx < 0) {
+            player.vx = Math.min(0, player.vx + brakeAmount);
+          }
+        }
+
+        // Lock horizontal control/facing during rolls, active attack slashes, guard, and hitstun
+        if (nowGuarding) {
+          player.vx = 0;
+        }
+        const horizontalLocked = nowRolling || player.attackPhase === 'active' || nowGuarding || inHitstun;
+        stepHorizontal(
+          player,
+          this.input.includes('move-left'),
+          this.input.includes('move-right'),
+          TICK_DT,
+          CONFIG.player,
+          horizontalLocked,
+        );
+        const nowAttacking = isEntityAttacking(player);
+        const canJumpEdge = jumpEdge && !nowRolling && !nowAttacking && !nowGuarding && !inHitstun;
+        // Air attack float: 30% gravity while active slashes slice through the air
+        const isAirAttacking = !player.grounded && player.attackPhase === 'active';
+        const gravityScale = isAirAttacking ? 0.3 : 1.0;
+        stepVertical(
+          player,
+          VERTICAL_PARAMS,
+          TICK_DT,
+          canJumpEdge,
+          this.platforms,
+          nowRolling,
+          gravityScale,
         );
       }
-
-      // Lock horizontal control/facing during rolls, active attack slashes, and guard
-      if (nowGuarding) {
-        player.vx = 0;
-      }
-      const horizontalLocked = nowRolling || player.attackPhase === 'active' || nowGuarding;
-      stepHorizontal(
-        player,
-        this.input.includes('move-left'),
-        this.input.includes('move-right'),
-        TICK_DT,
-        CONFIG.player,
-        horizontalLocked,
-      );
-      const nowAttacking = isEntityAttacking(player);
-      const canJumpEdge = jumpEdge && !nowRolling && !nowAttacking && !nowGuarding;
-      // Air attack float: 30% gravity while active slashes slice through the air
-      const isAirAttacking = !player.grounded && player.attackPhase === 'active';
-      const gravityScale = isAirAttacking ? 0.3 : 1.0;
-      stepVertical(
-        player,
-        VERTICAL_PARAMS,
-        TICK_DT,
-        canJumpEdge,
-        this.platforms,
-        nowRolling,
-        gravityScale,
-      );
     }
 
     if (this.targetPhysics) {

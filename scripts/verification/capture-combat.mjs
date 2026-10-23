@@ -318,9 +318,26 @@ async function run() {
           sctx.fillStyle = '#f9fafb';
           sctx.font = 'bold 11px monospace';
           const dummyInfo = dummy ? (dummy.kind === 'legionnaire' ? \` L:(hp=\${dummy.hp},st=\${dummy.aiState})\` : \` D:(y=\${dummy.y.toFixed(0)},vy=\${dummy.vy.toFixed(0)})\`) : '';
-          const actionText = p.skidTicks > 0 ? \`SKID:\${p.skidTicks}\` : (p.landingTicks > 0 ? \`LANDING:\${p.landingTicks}\` : (p.guardPhase !== 'none' ? \`GUARD:\${p.guardPhase}:\${p.guardTicks}\${p.parryActive ? ' PARRY' : ''}\` : \`\${p.attackMove} \${p.attackPhase}:\${p.attackTicks}\`));
+          const actionText = p.isDead
+            ? 'DEAD'
+            : (p.hitstunTicks > 0
+              ? \`HURT_HITSTUN:\${p.hitstunTicks}\`
+              : (p.hurtInvulTicks > 0
+                ? \`HURT_INV:\${p.hurtInvulTicks}\`
+                : (p.skidTicks > 0
+                  ? \`SKID:\${p.skidTicks}\`
+                  : (p.landingTicks > 0
+                    ? \`LANDING:\${p.landingTicks}\`
+                    : (p.guardPhase !== 'none'
+                      ? \`GUARD:\${p.guardPhase}:\${p.guardTicks}\${p.parryActive ? ' PARRY' : ''}\`
+                      : \`\${p.attackMove} \${p.attackPhase}:\${p.attackTicks}\`
+                    )
+                  )
+                )
+              )
+            );
           sctx.fillText(
-            \`t=\${t} \${actionText} \${isWeaponVisible ? '⚔️CHAIN' : ''}\`,
+            \`t=\${t} HP:\${p.hp} \${actionText} \${isWeaponVisible ? '⚔️CHAIN' : ''}\`,
             dx + 4,
             dy + 12
           );
@@ -337,12 +354,17 @@ async function run() {
           singleCtx.fillRect(2, 2, cropW * scale - 4, 18);
           singleCtx.fillStyle = '#f9fafb';
           singleCtx.font = 'bold 11px monospace';
-          singleCtx.fillText(\`t=\${t} \${actionText} Pose:\${sc.player.frame.name} S:(\${sc.player.scaleX.toFixed(2)},\${sc.player.scaleY.toFixed(2)})\`, 4, 14);
+          singleCtx.fillText(\`t=\${t} HP:\${p.hp} \${actionText} Pose:\${sc.player.frame.name} S:(\${sc.player.scaleX.toFixed(2)},\${sc.player.scaleY.toFixed(2)})\`, 4, 14);
 
           frames.push(single.toDataURL('image/png'));
 
           logs.push({
             t,
+            playerHp: p.hp,
+            hurtInvulTicks: p.hurtInvulTicks,
+            hitstunTicks: p.hitstunTicks,
+            isDead: p.isDead,
+            defeatVisible: sc.defeatText ? sc.defeatText.visible : false,
             move: p.attackMove,
             phase: p.attackPhase,
             ticks: p.attackTicks,
@@ -623,6 +645,73 @@ async function run() {
     console.log('Case J Legionnaire ascension juggle observed:', juggleObserved ? `t=${juggleObserved.t}` : 'NONE');
     console.log('Case J Legionnaire death collapse observed:', deathObserved ? `t=${deathObserved.t}` : 'NONE');
 
+    // CASE K: Player Damage & Defeat Response (GOW8B-DAMAGE-01)
+    // Scenario: 'legionnaire' (Player at 190, HP 100; Legionnaire at 240, HP 60)
+    // - t=1..48: Stalk and telegraph windup
+    // - t=49: Direct hit unprotected -> HP drops 100 -> 88, hurtInvulTicks=45, hitstunTicks=14, knockback vx=-140
+    // - t=50..89: Post-damage i-frames active (damage evasion)
+    // - t=90..104: Guard absorption -> Kratos holds guard (parry expires at t=97), enemy slashes at t=98 (dist 24 <= 32) -> 85% absorbed, residual damage 2 (HP: 88 -> 86)
+    // - t=109..110: Lethal strike -> player HP drops to 0 -> isDead=true, controls locked, defeat UI visible
+    // - t=111..118: Player remains in defeat state
+    // - t=119: Player presses 'R' ('restart') -> Scenario reloads, HP resets to 100, isDead=false, defeat UI hidden
+    // - t=120..128: Player is fully mobile and restored
+    const caseK = await recordScenarioSequence({
+      caseId: 'player_damage_and_defeat',
+      scenario: 'legionnaire',
+      totalSteps: 128,
+      getActions: (t) => {
+        const sc = window.__SHELL_SCENE;
+        // Test guard mitigation against slash at t=98..104 (post-parry sustained guard)
+        if (t === 98) {
+          const p = sc.simulation.world.peekEntity('player');
+          const enemy = sc.simulation.world.peekTargets()[0];
+          if (p && enemy) {
+            enemy.x = p.x + 24;
+            enemy.facing = -1;
+            enemy.aiState = 'slash';
+            enemy.aiTicks = 1;
+            enemy.attackHits = [];
+          }
+        }
+        if (t >= 90 && t <= 104) return ['guard'];
+
+        // Test lethal hit at t=109
+        if (t === 109) {
+          const p = sc.simulation.world.peekEntity('player');
+          const enemy = sc.simulation.world.peekTargets()[0];
+          if (p && enemy) {
+            enemy.x = p.x + 24;
+            enemy.facing = -1;
+            p.hp = 2;
+            p.hurtInvulTicks = 0;
+            p.guardPhase = 'none';
+            enemy.aiState = 'slash';
+            enemy.aiTicks = 1;
+            enemy.attackHits = [];
+          }
+        }
+
+        // Test restart action at t=119
+        if (t === 119) return ['restart'];
+
+        return [];
+      },
+      cropW: 160,
+      cropH: 100,
+    });
+
+    const unprotectedHit = caseK.logs.find((l) => l.t === 49);
+    const postHitInvul = caseK.logs.find((l) => l.t === 55);
+    const guardMitigation = caseK.logs.find((l) => l.t === 100);
+    const defeatLog = caseK.logs.find((l) => l.t === 111);
+    const restartLog = caseK.logs.find((l) => l.t === 121);
+
+    console.log('Case K Unprotected hit (expected hp=88, invul=45, stun=14):', unprotectedHit ? `hp=${unprotectedHit.playerHp},invul=${unprotectedHit.hurtInvulTicks},stun=${unprotectedHit.hitstunTicks},vx=${unprotectedHit.playerVx}` : 'NONE');
+    console.log('Case K Post-hit i-frames (expected hp=88, invul>0):', postHitInvul ? `hp=${postHitInvul.playerHp},invul=${postHitInvul.hurtInvulTicks}` : 'NONE');
+    console.log('Case K Guard absorption (expected hp=86, guard=active):', guardMitigation ? `hp=${guardMitigation.playerHp},grd=${guardMitigation.guardPhase}` : 'NONE');
+    console.log('Case K Defeat state (expected hp=0, isDead=true, defeatText=true):', defeatLog ? `hp=${defeatLog.playerHp},dead=${defeatLog.isDead},ui=${defeatLog.defeatVisible}` : 'NONE');
+    console.log('Case K Restart response (expected hp=100, isDead=false, defeatText=false):', restartLog ? `hp=${restartLog.playerHp},dead=${restartLog.isDead},ui=${restartLog.defeatVisible}` : 'NONE');
+
     console.log('\n=== ALL VERIFICATION TESTS COMPLETED SUCCESSFULLY ===');
     console.log('Artifacts in scripts/verification/output/:');
     console.log(' - combo_jjj_mosaic.png & combo_jjj.gif');
@@ -635,6 +724,7 @@ async function run() {
     console.log(' - guard_parry_window_mosaic.png & guard_parry_window.gif');
     console.log(' - guard_cancel_actions_mosaic.png & guard_cancel_actions.gif');
     console.log(' - legionnaire_combat_ai_mosaic.png & legionnaire_combat_ai.gif');
+    console.log(' - player_damage_and_defeat_mosaic.png & player_damage_and_defeat.gif');
 
     ws.close();
   } finally {

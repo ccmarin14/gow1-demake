@@ -271,7 +271,7 @@ export class WeaponLayer {
       }
     }
 
-    if (!player) {
+    if (!player || player.isDead) {
       this.hideWeapon();
       return;
     }

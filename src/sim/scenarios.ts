@@ -57,6 +57,8 @@ function playerAt(x: number, y: number): EntityState {
     hp: 100,
     maxHp: 100,
     attackCooldownTicks: 0,
+    hurtInvulTicks: 0,
+    isDead: false,
   };
 }
 
@@ -99,6 +101,8 @@ function dummyAt(id: string, x: number, y: number, facing: -1 | 1 = 1, grounded 
     hp: 100,
     maxHp: 100,
     attackCooldownTicks: 0,
+    hurtInvulTicks: 0,
+    isDead: false,
   };
 }
 
@@ -141,6 +145,8 @@ export function legionnaireAt(id: string, x: number, y: number, facing: -1 | 1 =
     hp: CONFIG.enemy.legionnaire.maxHp,
     maxHp: CONFIG.enemy.legionnaire.maxHp,
     attackCooldownTicks: 0,
+    hurtInvulTicks: 0,
+    isDead: false,
   };
 }
 

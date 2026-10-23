@@ -1,4 +1,5 @@
 import { CONFIG } from '../config';
+import { applyDamageToPlayer } from './damage';
 import type { Platform } from './scenarios';
 import type { EntityState } from './types';
 
@@ -102,28 +103,7 @@ export function stepLegionnaire(
 
       if (inReach && inVerticalReach) {
         enemy.attackHits.push(player.id);
-
-        if (player.invulTicks > 0) {
-          // 1. Esquiva con rodada (i-frames): el ataque falla limpiamente
-        } else if (player.guardPhase === 'active' && player.parryActive) {
-          // 2. ¡DESVÍO PERFECTO (PARRY)!
-          // El legionario es deflectado hacia atrás y sufre aturdimiento largo (32 ticks)
-          enemy.aiState = 'hitstun';
-          enemy.aiTicks = 0;
-          enemy.hitstunTicks = CONFIG.enemy.legionnaire.parryStunTicks;
-          enemy.vx = -enemy.facing * 120;
-          enemy.attackCooldownTicks = CONFIG.enemy.legionnaire.cooldownTicks;
-          player.attackHits.push(enemy.id);
-        } else if (player.guardPhase === 'active') {
-          // 3. Bloqueo sostenido: daño absorbido
-          enemy.vx = -enemy.facing * 40;
-          enemy.attackCooldownTicks = CONFIG.enemy.legionnaire.cooldownTicks;
-        } else {
-          // 4. Impacto directo en Kratos
-          player.hp = Math.max(0, player.hp - CONFIG.enemy.legionnaire.slashDamage);
-          player.hitstunTicks = 14;
-          player.vx = enemy.facing * 90;
-        }
+        applyDamageToPlayer(player, enemy, CONFIG.enemy.legionnaire.slashDamage);
       }
     }
 

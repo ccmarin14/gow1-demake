@@ -9,7 +9,8 @@ export type GameAction =
   | 'dodge'
   | 'guard'
   | 'context-action'
-  | 'pause';
+  | 'pause'
+  | 'restart';
 
 export const DOMAIN_ACTIONS: readonly GameAction[] = [
   'move-left',
@@ -23,6 +24,7 @@ export const DOMAIN_ACTIONS: readonly GameAction[] = [
   'guard',
   'context-action',
   'pause',
+  'restart',
 ];
 
 const ACTION_ORDER: Record<GameAction, number> = DOMAIN_ACTIONS.reduce(
@@ -132,6 +134,8 @@ export interface EntityState {
   hp: number;
   maxHp: number;
   attackCooldownTicks: number;
+  hurtInvulTicks: number;
+  isDead: boolean;
 }
 
 export interface SimulationSnapshot {
