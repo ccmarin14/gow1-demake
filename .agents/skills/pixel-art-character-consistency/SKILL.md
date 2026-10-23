@@ -29,6 +29,20 @@ This skill guarantees that:
 - The legs and arms must articulate as anatomical limbs, not as redrawn vector stick figures.
 - When the player presses a movement key, the sprite must NOT visibly change art style, head shape, or muscle mass.
 
+### 2.1 Protocolo Obligatorio de Rigging Modular Rasterizado (Anti-Mutación)
+Para animar al personaje sin mutaciones ni líneas procedurales:
+1. **Banco de Piezas Maestras Aisladas (`scratch/kratos_parts/`):**
+   - Extraer del sprite maestro limpio (`kratos-neutral.png`) las capas anatómicas rasterizadas exactas:
+     * `head_and_neck.png`: Cabeza, ceño, nariz griega, perilla angular (`#1b0717`) y tatuaje rojo continuo (`#b03028`).
+     * `torso_and_skirt.png`: Torso atlético en V con pectorales sombreados y faldón de pteruges.
+     * `blade_master.png`: Cuchilla del Caos única y simétrica (hoja plateada, runas ígneas, guarda y cadena).
+     * `thigh.png`: Muslo espartano con volumen muscular macizo (6 a 8 píxeles de grosor, nunca líneas de 1-3 px).
+     * `shin_greave.png`: Pantorrilla protegida con greba de bronce (`#b48838`) y sandalia apoyada.
+2. **Reglas de Composición Rasterizada:**
+   - Todo cuadro de animación (`run`, `air`, `roll`, `attack`) se construye ensamblando estas piezas maestras mediante traslaciones y rotaciones en Nearest Neighbor (sin interpolación bilineal ni antialiasing).
+   - Anclaje estricto a suelo: en todo cuadro donde el pie apoya la cubierta, el punto más bajo del pie debe estar exactamente en `y = 58` (`bbox[3] == 59`).
+   - Una sola espada por mano: cada brazo empuña exactamente una instancia de `blade_master.png`. Prohibido duplicar espadas en una misma extremidad.
+
 ### 3. Exact Weapon Validation
 - Kratos wields the Blades of Chaos: exactly **one blade held in each hand**.
 - Never draw or allow a sprite where two blades are welded to one hand or arm stump.
@@ -51,7 +65,8 @@ Before presenting any visual sprite work to the user:
 - [ ] Ground contact is solid at $y=58$ (`bbox[3] == 59`) across all walking/standing frames.
 - [ ] Alpha channel is 100% binary $\{0, 255\}$.
 - [ ] Colors strictly conform to the 12-color canonical palette.
-- [ ] Exactly one Blade of Chaos per hand.
+- [ ] Exactly one Blade of Chaos per hand (zero double weapons on left/right arms).
 - [ ] Face has clear brow, Greek nose, goatee, and crimson Ares tattoo.
+- [ ] Legs and limbs retain authentic Spartan mass (no 1-3px wireframe lines).
 - [ ] Browser side-by-side composite generated and visually confirmed: zero style mutation between `idle` and `run`.
 - [ ] Zero console errors in browser runtime.
