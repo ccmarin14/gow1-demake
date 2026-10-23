@@ -116,9 +116,9 @@ sprite: {
   anchorY: 1,
 },
 run: {
-  frames: 6,
-  frameRate: 10,
-  maxFrameRate: 14,
+  frames: 8,
+  frameRate: 12,
+  maxFrameRate: 16,
   idleSpeedThreshold: 1,
 },
 idle: {

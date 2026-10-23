@@ -963,7 +963,7 @@ export class ShellScene extends Phaser.Scene {
     if (this.anims.exists(key)) {
       return;
     }
-    const endFrame = key === RUN_KEY ? 5 : frames - 1;
+    const endFrame = frames - 1;
     this.anims.create({
       key,
       frames: this.anims.generateFrameNumbers(key, { start: 0, end: endFrame }),
@@ -1137,10 +1137,11 @@ export class ShellScene extends Phaser.Scene {
     // High-speed turnaround skid on ground
     if (simPlayer.skidTicks > 0) {
       this.stopLoop();
+      const skidFrame = CONFIG.player.run.frames;
       if (player.texture.key !== RUN_KEY) {
-        player.setTexture(RUN_KEY, 6);
+        player.setTexture(RUN_KEY, skidFrame);
       } else {
-        player.setFrame(6);
+        player.setFrame(skidFrame);
       }
       player.setFlipX(facing === -1);
       return;
