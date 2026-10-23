@@ -310,6 +310,16 @@ export const CONFIG = {
     weaponBladeWidth: 12,
     weaponBladeHeight: 6,
     weaponDepth: 3,
+    hud: {
+      x: 16,
+      y: 14,
+      barWidth: 110,
+      barHeight: 8,
+      ghostDrainSpeed: 45,
+      ghostPauseMs: 200,
+      criticalHpThreshold: 25,
+      depth: 100,
+    },
   },
 } as const;
 

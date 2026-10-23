@@ -244,6 +244,8 @@ async function run() {
       getActions,
       cropW = 160,
       cropH = 100,
+      fixedCropX = null,
+      fixedCropY = null,
     }) {
       console.log(`\n--- Recording Case [${caseId}]: ${totalSteps} ticks ---`);
       const tempFrameDir = path.join(OUTPUT_DIR, `temp_${caseId}`);
@@ -304,8 +306,8 @@ async function run() {
 
           const centerX = dummy ? (p.x + dummy.x) / 2 : p.x + 35;
           const centerY = dummy ? Math.min(p.y, dummy.y) - 15 : p.y - 35;
-          const sx = Math.max(0, Math.min(480 - cropW, Math.round(centerX - cropW / 2)));
-          const sy = Math.max(0, Math.min(270 - cropH, Math.round(centerY - cropH / 2)));
+          const sx = ${fixedCropX !== null ? fixedCropX : `Math.max(0, Math.min(480 - cropW, Math.round(centerX - cropW / 2)))`};
+          const sy = ${fixedCropY !== null ? fixedCropY : `Math.max(0, Math.min(270 - cropH, Math.round(centerY - cropH / 2)))`};
 
           // Draw on sheet
           sctx.drawImage(gameCanvas, sx, sy, cropW, cropH, dx, dy, cropW * scale, cropH * scale);
@@ -318,6 +320,8 @@ async function run() {
           sctx.fillStyle = '#f9fafb';
           sctx.font = 'bold 11px monospace';
           const dummyInfo = dummy ? (dummy.kind === 'legionnaire' ? \` L:(hp=\${dummy.hp},st=\${dummy.aiState})\` : \` D:(y=\${dummy.y.toFixed(0)},vy=\${dummy.vy.toFixed(0)})\`) : '';
+          const hm = sc.hudLayer ? sc.hudLayer.getMetrics() : null;
+          const hudInfo = hm ? \` [Bar:\${hm.currentWidth}px Gst:\${hm.ghostWidth}px]\` : '';
           const actionText = p.isDead
             ? 'DEAD'
             : (p.hitstunTicks > 0
@@ -337,7 +341,7 @@ async function run() {
               )
             );
           sctx.fillText(
-            \`t=\${t} HP:\${p.hp} \${actionText} \${isWeaponVisible ? '⚔️CHAIN' : ''}\`,
+            \`t=\${t} HP:\${p.hp}\${hudInfo} \${actionText} \${isWeaponVisible ? '⚔️CHAIN' : ''}\`,
             dx + 4,
             dy + 12
           );
@@ -354,7 +358,7 @@ async function run() {
           singleCtx.fillRect(2, 2, cropW * scale - 4, 18);
           singleCtx.fillStyle = '#f9fafb';
           singleCtx.font = 'bold 11px monospace';
-          singleCtx.fillText(\`t=\${t} HP:\${p.hp} \${actionText} Pose:\${sc.player.frame.name} S:(\${sc.player.scaleX.toFixed(2)},\${sc.player.scaleY.toFixed(2)})\`, 4, 14);
+          singleCtx.fillText(\`t=\${t} HP:\${p.hp}\${hudInfo} \${actionText} Pose:\${sc.player.frame.name}\`, 4, 14);
 
           frames.push(single.toDataURL('image/png'));
 
@@ -365,6 +369,7 @@ async function run() {
             hitstunTicks: p.hitstunTicks,
             isDead: p.isDead,
             defeatVisible: sc.defeatText ? sc.defeatText.visible : false,
+            hud: sc.hudLayer ? sc.hudLayer.getMetrics() : null,
             move: p.attackMove,
             phase: p.attackPhase,
             ticks: p.attackTicks,
@@ -712,6 +717,77 @@ async function run() {
     console.log('Case K Defeat state (expected hp=0, isDead=true, defeatText=true):', defeatLog ? `hp=${defeatLog.playerHp},dead=${defeatLog.isDead},ui=${defeatLog.defeatVisible}` : 'NONE');
     console.log('Case K Restart response (expected hp=100, isDead=false, defeatText=false):', restartLog ? `hp=${restartLog.playerHp},dead=${restartLog.isDead},ui=${restartLog.defeatVisible}` : 'NONE');
 
+    // CASE L: HUD Health Bar & Ghost Health Presentation (GOW8B-HUD-01)
+    // Focused on screen coordinates (0, 0) capturing the top-left Greek stone/bronze medallion and health bar
+    // - t=1: Initial full health 100/100 -> barWidth=110px, ghostWidth=110px
+    // - t=49: Damage taken (HP drops 100 -> 88) -> live bar drops immediately to 97px (88%)
+    // - t=55: Ghost pause window (200ms) -> ghost bar retains 110px while live bar is 97px
+    // - t=80: Ghost bar drains smoothly -> ghostWidth drains to 97px
+    // - t=90..104: Guard mitigation at t=98 -> HP drops 88 -> 86, live bar updates to 95px
+    // - t=109..110: Lethal strike -> HP drops to 0, isDead=true -> live bar immediately 0px
+    // - t=116: Ghost bar drains to 0px on death
+    // - t=119: Restart action 'restart' -> instant 100% reset: live bar=110px, ghost bar=110px
+    const caseL = await recordScenarioSequence({
+      caseId: 'hud_health_bar_presentation',
+      scenario: 'legionnaire',
+      totalSteps: 128,
+      cropW: 180,
+      cropH: 100,
+      fixedCropX: 0,
+      fixedCropY: 0,
+      getActions: (t) => {
+        const sc = window.__SHELL_SCENE;
+        // Guard mitigation at t=98..104
+        if (t === 98) {
+          const p = sc.simulation.world.peekEntity('player');
+          const enemy = sc.simulation.world.peekTargets()[0];
+          if (p && enemy) {
+            enemy.x = p.x + 24;
+            enemy.facing = -1;
+            enemy.aiState = 'slash';
+            enemy.aiTicks = 1;
+            enemy.attackHits = [];
+          }
+        }
+        if (t >= 90 && t <= 104) return ['guard'];
+
+        // Lethal hit at t=109
+        if (t === 109) {
+          const p = sc.simulation.world.peekEntity('player');
+          const enemy = sc.simulation.world.peekTargets()[0];
+          if (p && enemy) {
+            enemy.x = p.x + 24;
+            enemy.facing = -1;
+            p.hp = 2;
+            p.hurtInvulTicks = 0;
+            p.guardPhase = 'none';
+            enemy.aiState = 'slash';
+            enemy.aiTicks = 1;
+            enemy.attackHits = [];
+          }
+        }
+
+        // Restart at t=119
+        if (t === 119) return ['restart'];
+
+        return [];
+      },
+    });
+
+    const hudInit = caseL.logs.find((l) => l.t === 1)?.hud;
+    const hudDamageImmediate = caseL.logs.find((l) => l.t === 49)?.hud;
+    const hudGhostPause = caseL.logs.find((l) => l.t === 55)?.hud;
+    const hudGhostDrained = caseL.logs.find((l) => l.t === 80)?.hud;
+    const hudDefeat = caseL.logs.find((l) => l.t === 111)?.hud;
+    const hudRestart = caseL.logs.find((l) => l.t === 121)?.hud;
+
+    console.log('Case L HUD full health initial (expected bar=110, ghost=110):', hudInit ? `bar=${hudInit.currentWidth}px,ghost=${hudInit.ghostWidth}px,hp=${hudInit.currentHp}` : 'NONE');
+    console.log('Case L HUD damage immediate drop (expected bar=97, ghost=110):', hudDamageImmediate ? `bar=${hudDamageImmediate.currentWidth}px,ghost=${hudDamageImmediate.ghostWidth}px,hp=${hudDamageImmediate.currentHp}` : 'NONE');
+    console.log('Case L HUD ghost pause retention (expected ghost > bar):', hudGhostPause ? `bar=${hudGhostPause.currentWidth}px,ghost=${hudGhostPause.ghostWidth}px,timer=${hudGhostPause.ghostPauseTimer}s` : 'NONE');
+    console.log('Case L HUD ghost smooth drain (expected ghost ~ 97):', hudGhostDrained ? `bar=${hudGhostDrained.currentWidth}px,ghost=${hudGhostDrained.ghostWidth}px` : 'NONE');
+    console.log('Case L HUD defeat empty bar (expected bar=0, dead=true):', hudDefeat ? `bar=${hudDefeat.currentWidth}px,dead=${hudDefeat.isDead}` : 'NONE');
+    console.log('Case L HUD restart 100% reset (expected bar=110, ghost=110):', hudRestart ? `bar=${hudRestart.currentWidth}px,ghost=${hudRestart.ghostWidth}px,hp=${hudRestart.currentHp}` : 'NONE');
+
     console.log('\n=== ALL VERIFICATION TESTS COMPLETED SUCCESSFULLY ===');
     console.log('Artifacts in scripts/verification/output/:');
     console.log(' - combo_jjj_mosaic.png & combo_jjj.gif');
@@ -725,6 +801,7 @@ async function run() {
     console.log(' - guard_cancel_actions_mosaic.png & guard_cancel_actions.gif');
     console.log(' - legionnaire_combat_ai_mosaic.png & legionnaire_combat_ai.gif');
     console.log(' - player_damage_and_defeat_mosaic.png & player_damage_and_defeat.gif');
+    console.log(' - hud_health_bar_presentation_mosaic.png & hud_health_bar_presentation.gif');
 
     ws.close();
   } finally {

@@ -18,6 +18,7 @@ import {
 } from '../dev/scaleOverlay';
 import { WeaponLayer } from '../entities/WeaponLayer';
 import { InputManager } from '../input/InputManager';
+import { HudLayer } from '../ui/HudLayer';
 import type { FrameMetrics } from '../metrics';
 import type { Simulation } from '../sim/engine';
 import type { EntityState } from '../sim/types';
@@ -35,6 +36,7 @@ export class ShellScene extends Phaser.Scene {
   private legionnaireSprites = new Map<string, Phaser.GameObjects.Sprite>();
   private readonly weaponLayer = new WeaponLayer();
   private defeatText: Phaser.GameObjects.Text | null = null;
+  hudLayer!: HudLayer;
 
   constructor(
     private readonly simulation: Simulation,
@@ -100,6 +102,7 @@ export class ShellScene extends Phaser.Scene {
       .setOrigin(anchorX, anchorY);
 
     this.weaponLayer.create(this);
+    this.hudLayer = new HudLayer(this);
 
     this.defeatText = this.add
       .text(
@@ -121,7 +124,7 @@ export class ShellScene extends Phaser.Scene {
 
     if (import.meta.env.DEV) {
       this.lastDebugText = 'tick 0';
-      this.debugText = this.add.text(6, 6, this.lastDebugText, {
+      this.debugText = this.add.text(155, 6, this.lastDebugText, {
         color: CONFIG.presentation.debugText,
         fontFamily: 'monospace',
         fontSize: '8px',
@@ -162,6 +165,8 @@ export class ShellScene extends Phaser.Scene {
     if (this.defeatText) {
       this.defeatText.setVisible(Boolean(player && player.isDead));
     }
+
+    this.hudLayer.update(player ?? undefined, delta / 1000);
 
     const hitbox = this.simulation.world.playerAttackHitbox();
     const chain = player ? player.attackChain : 0;
@@ -564,5 +569,9 @@ export class ShellScene extends Phaser.Scene {
     const ratio = Phaser.Math.Clamp(speed / CONFIG.player.maxSpeed, 0, 1);
     const rate = frameRate + (maxFrameRate - frameRate) * ratio;
     this.player.anims.timeScale = rate / frameRate;
+  }
+
+  shutdown(): void {
+    this.hudLayer?.destroy();
   }
 }
