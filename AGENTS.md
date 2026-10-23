@@ -16,6 +16,13 @@ Este repositorio contiene un juego de acción lateral 2D hecho con Phaser, TypeS
 - Crea recursos originales. No copies sprites, fondos, audio ni otros recursos de los juegos de referencia. Etiqueta los recursos provisionales cuando se usen.
 - Verifica tamaño, transparencia, anclajes y consistencia de cuadros de los sprites antes de integrar animaciones.
 
+## Invariantes de Arte y Animación de Personajes (Anti-Regresión Visual)
+
+- **Prohibición de trazos vectoriales procedurales:** Queda terminantemente prohibido generar o modificar sprites de personajes humanoides mediante algoritmos de líneas (`draw_limb_segment`), polígonos matemáticos o fórmulas trigonométricas en Python. Los sprites deben ser arte pixel art rasterizado coherente, no maniquíes de alambre ni cañerías.
+- **Coherencia de Modelo Único (Cero mutaciones entre estados):** Todas las animaciones de un personaje (`idle`, `run`, `air`, `attack`, `roll`) deben derivar de la **MISMA** base anatómica y estilo visual. Si el sprite maestro tiene una cabeza, masa y armas definidas, la animación de carrera debe conservar exactamente esa misma cabeza, masa y armas. Está estrictamente prohibido que el personaje mute de estilo, proporciones o diseño al pasar de quieto a corriendo.
+- **Validación anatómica y de armas:** Verificar visualmente que cada extremidad tenga su arma correspondiente (exactamente una Cuchilla del Caos por mano, nunca dos en una sola mano) y que el rostro tenga rasgos reconocibles (ceño, perilla, nariz y tatuaje continuo de Ares).
+- **Prueba obligatoria de transición lado a lado en navegador:** Toda entrega visual debe incluir una captura compuesta del juego real en el navegador comparando lado a lado: `[Reposo / Idle en cubierta]` vs `[Carrera / Run en cubierta]`. Si el estilo, el rostro, las armas o la masa corporal difieren entre ambos estados, la tarea queda automáticamente reprobada.
+
 ## Frentes de trabajo
 
 Cada tarea se atiende con tres roles y una sola tarea activa:
