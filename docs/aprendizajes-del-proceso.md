@@ -19,6 +19,15 @@ Añade o actualiza una entrada después de cada auditoría de etapa, sea aprobad
 
 Mantén cada entrada breve y accionable. Actualiza las guías de trabajo solo cuando una lección comprobada cambie un procedimiento; conserva aquí el contexto para que futuras tareas puedan aplicarla.
 
+### KRATOS-MODULAR-PIXEL-ART-RIG-01 (Fase 1) — Cirugía y simetría del modelo maestro (2026-10-23)
+
+- Resultado: aprobada tras auditoría independiente de solo lectura.
+- Método que funcionó: auditar las armas por conteo exacto de píxeles segmentados por cuadrante anatómico (filo y runa de fuego) y validar la continuidad 8-convexa del tatuaje y el perfil de micro-pixel art antes de derivar cuadros derivados.
+- Dificultad o fallo observado: la base importada contenía una segunda espada duplicada residual (67 píxeles de arma parásita en filas 40-45) oculta en el fondo del brazo izquierdo que desbalanceaba la simetría y causaba mutaciones en el render final.
+- Aprendizaje transferible: ningún sprite base debe pasar a un pipeline de animación sin pasar por un test de balance simétrico de armas y conteo de masa por hemisferio corporal; los errores en el modelo maestro se propagan y multiplican en todas las secuencias animadas.
+- Cambio recomendado al proceso: fijar el comando `npm run audit:sprites` como compuerta CI previa a cualquier modificación de spritesheets.
+- Evidencia o referencia: informe de auditoría `89e55ef2-743b-4dfd-b161-94d53acfb690`, `audit-side-by-side-idle-vs-run.png`, `public/assets/characters/kratos-neutral.png` y `kratos-idle.png`.
+
 ### Composición por capas — verificar paleta y preservación (2026-10-13)
 
 - Resultado: auditoría independiente PARCIAL sin fallos medibles; verificación visual humana diferida y no bloqueante.
