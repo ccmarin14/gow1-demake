@@ -1,72 +1,35 @@
 ---
 name: pixel-art-character-consistency
-description: Enforces visual consistency and anti-mutation invariants for 2D pixel art character sprites. Use whenever modifying, animating, or reviewing character sprites, sheets, or animations (Kratos, enemies, bosses). Enforces single-master-model anatomy, one weapon per hand, browser side-by-side verification (idle vs run), and forbids procedural line drawing.
+description: Enforces visual consistency and semantic ASCII authoring rules for 2D pixel art character sprites. Use whenever creating, modifying, or reviewing character grids, palettes, or animations.
 ---
 
-# Pixel Art Character Consistency & Anti-Mutation Audit
+# Pixel Art Character Consistency (Semantic ASCII Pipeline)
 
 ## Overview
 
-In 2D retro action games (especially pixel art at low internal resolutions like $480 \times 270$ with $97 \times 59$ character frames), visual consistency between states is critical. A character must never mutate style, proportions, weapons, or face when transitioning from one animation state to another (e.g., from `idle` to `run`).
+Character sprites in this repository are authored as plain-text semantic ASCII grids in `grids/` and rasterized deterministically to PNG via `scripts/ascii_to_png.py`. PNG files are derived artifacts and must never be edited by hand.
 
-This skill guarantees that:
-1. No procedural line drawing or wireframe algorithms (`draw_limb_segment`, `ImageDraw.polygon`, mathematical loops) are used to generate human sprites.
-2. All animation states (`idle`, `run`, `air`, `attack`, `roll`) share the **exact same master anatomical model**.
-3. Weapons are anatomically held: exactly **one Blade of Chaos per hand**, never two clustered on one side.
-4. Every change is verified live in the browser using Chrome DevTools Protocol, generating a side-by-side composite: `[Idle on deck]` vs `[Run on deck]`.
+## Core Rules
 
----
+### 1. Semantic ASCII Authoring
+- Every character in a grid maps to a named material/color role in `palette/` (e.g., outline, lit skin, shadow skin, crimson mark, bronze, leather), with `.` for transparency.
+- Never import noisy luminance-sorted grids from generated images (`png_to_ascii` is archived). Grids must remain human-readable and directly editable as text.
 
-## The 4 Golden Invariants
+### 2. Direct Pose Drawing (No Procedural Distortion)
+- Do not generate humanoid sprites with procedural vector lines, polygons, or trigonometric limb scripts.
+- Do not auto-derive animation frames by shearing, translating, or rotating slices of the master grid via script. Every frame is drawn directly in its ASCII grid while preserving the character's head, torso proportions, and color roles.
 
-### 1. Prohibition of Procedural Vector Lines
-- Human characters must be authentic rasterized pixel art.
-- Strictly forbidden: `draw_limb_segment`, trigonometric joint connectors (`math.sin`, `math.cos`), Bresenham line cylinders.
-- Why: Procedural line algorithms create wireframes, mantis-like spider legs, or rigid square pipes that destroy the anatomical volume of Spartan musculature.
+### 3. Layer Separation
+- Character grids contain only the character's body and clothing.
+- Do not bake extended chains, weapon trails, or ground shadows into the character grid; `WeaponLayer` and scene shadow rendering handle those separately.
 
-### 2. Single Master Model (Zero Mutations Across States)
-- If `kratos-neutral.png` has a defined skull, face, torso, pteruges, and weapons, the running cycle (`kratos-run.png`) must reuse those exact same pixel clusters.
-- The legs and arms must articulate as anatomical limbs, not as redrawn vector stick figures.
-- When the player presses a movement key, the sprite must NOT visibly change art style, head shape, or muscle mass.
-
-### 2.1 Protocolo Obligatorio de Rigging Modular Rasterizado (Anti-Mutación)
-Para animar al personaje sin mutaciones ni líneas procedurales:
-1. **Banco de Piezas Maestras Aisladas (`scratch/kratos_parts/`):**
-   - Extraer del sprite maestro limpio (`kratos-neutral.png`) las capas anatómicas rasterizadas exactas:
-     * `head_and_neck.png`: Cabeza, ceño, nariz griega, perilla angular (`#1b0717`) y tatuaje rojo continuo (`#b03028`).
-     * `torso_and_skirt.png`: Torso atlético en V con pectorales sombreados y faldón de pteruges.
-     * `blade_master.png`: Cuchilla del Caos única y simétrica (hoja plateada, runas ígneas, guarda y cadena).
-     * `thigh.png`: Muslo espartano con volumen muscular macizo (6 a 8 píxeles de grosor, nunca líneas de 1-3 px).
-     * `shin_greave.png`: Pantorrilla protegida con greba de bronce (`#b48838`) y sandalia apoyada.
-2. **Reglas de Composición Rasterizada:**
-   - Todo cuadro de animación (`run`, `air`, `roll`, `attack`) se construye ensamblando estas piezas maestras mediante traslaciones y rotaciones en Nearest Neighbor (sin interpolación bilineal ni antialiasing).
-   - Anclaje estricto a suelo: en todo cuadro donde el pie apoya la cubierta, el punto más bajo del pie debe estar exactamente en `y = 58` (`bbox[3] == 59`).
-   - Una sola espada por mano: cada brazo empuña exactamente una instancia de `blade_master.png`. Prohibido duplicar espadas en una misma extremidad.
-
-### 3. Exact Weapon Validation
-- Kratos wields the Blades of Chaos: exactly **one blade held in each hand**.
-- Never draw or allow a sprite where two blades are welded to one hand or arm stump.
-- Hands must have visible gauntlets, closed fists, and bronze hilts/crossguards.
-
-### 4. Mandatory Side-by-Side Transition Capture in Browser
-- Run the game on Vite and connect via Chrome CDP.
-- Capture a frame of Kratos standing in `idle` on the ship's deck.
-- Capture a frame of Kratos actively running in `run` at the same scale.
-- Composite both frames side by side with 4x nearest-neighbor scaling.
-- If the head, face, weapons, or torso differ in style, the audit fails immediately.
-
----
+### 4. Incremental Visual Review
+- Work one frame at a time.
+- Rasterize the frame with `scripts/ascii_to_png.py`, render an upscaled nearest-neighbor preview alongside the base pose, and wait for user approval before drawing the next frame.
 
 ## Verification Checklist
 
-Before presenting any visual sprite work to the user:
-
-- [ ] Spritesheet dimensions match engine specifications ($97 \times 59$ per frame).
-- [ ] Ground contact is solid at $y=58$ (`bbox[3] == 59`) across all walking/standing frames.
-- [ ] Alpha channel is 100% binary $\{0, 255\}$.
-- [ ] Colors strictly conform to the 12-color canonical palette.
-- [ ] Exactly one Blade of Chaos per hand (zero double weapons on left/right arms).
-- [ ] Face has clear brow, Greek nose, goatee, and crimson Ares tattoo.
-- [ ] Legs and limbs retain authentic Spartan mass (no 1-3px wireframe lines).
-- [ ] Browser side-by-side composite generated and visually confirmed: zero style mutation between `idle` and `run`.
-- [ ] Zero console errors in browser runtime.
+- [ ] Grid dimensions match the character's declared width and height.
+- [ ] Every character in the grid exists in the palette file (binary alpha `{0, 255}`).
+- [ ] Grounded poses rest on the declared ground row.
+- [ ] Browser console and network requests have zero errors when the frame is connected in game.

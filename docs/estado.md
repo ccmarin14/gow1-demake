@@ -34,3 +34,4 @@ Definir el formato ASCII semántico (letras por material, paleta reducida y lien
 - `2026-10-29` — **Paso 2 (Assets y grids):** se centralizaron los PNG y grids descartados en `archivo/` conservando los sprites en uso (`kratos-neutral`, `kratos-idle-01`, `legionnaire`, `archer`, `arrow`).
 - `2026-10-29` — **Paso 3 (Scripts):** se archivaron los generadores procedurales y verificadores antiguos en `archivo/scripts/`, dejando activo únicamente `scripts/ascii_to_png.py`.
 - `2026-10-29` — **Paso 4 (Documentación):** se consolidó la documentación activa en `estado.md`, `direccion.md`, `decisiones.md`, `arquitectura.md` y `README.md`, archivando los 36 planes y registros previos en `archivo/docs/`.
+- `2026-10-29` — **Paso 5 (Reglas y skills):** se reescribieron `AGENTS.md`, `pixel-art-character-consistency` y `phaser3-project` para reflejar el flujo incremental por cuadro y el estado único en `docs/estado.md`.
