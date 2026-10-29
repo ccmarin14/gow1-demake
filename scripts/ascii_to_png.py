@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Deterministic ASCII grid -> PNG rasterizer.
 
-Rules (see docs/planes/PIXEL-ART-ASCII-MASTER-01.md):
+Rules:
     - one character = one pixel
     - '.' is fully transparent
     - every other character must exist in the palette
@@ -10,6 +10,9 @@ Rules (see docs/planes/PIXEL-ART-ASCII-MASTER-01.md):
 Usage:
     python3 scripts/ascii_to_png.py --grid grids/kratos/master.txt \
         --palette palette/master.json --out /tmp/kratos-neutral.png
+
+For the project grids prefer `pnpm art` (scripts/check_grid.py), which validates
+and regenerates every derived PNG.
 """
 
 from __future__ import annotations

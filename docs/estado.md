@@ -18,7 +18,7 @@ Documento único del estado medido de `gow-8b`. Se actualiza en el mismo commit 
 | --- | --- | --- |
 | **V-01** | En `level1`, las oleadas spawnean en `x=320/380` (`src/config.ts`) fuera de la arena activa (`x=550–890` en `src/sim/world.ts`). | El combate del nivel no se puede jugar como fue diseñado. |
 | **V-04** | El escenario `combat` usa un dummy legado que no recibe daño. | No sirve para verificar daño cuerpo a cuerpo. |
-| **V-14** | `WeaponLayer.ts` dibuja cadenas procedurales encima de un sprite que ya tiene cadenas y sombra cocidas en el PNG. | Doble cadena y sombra pegada al saltar. |
+| **V-14** | `WeaponLayer.ts` dibuja cadenas procedurales encima de un sprite que ya tiene cadenas, cuchillas y sombra cocidas en el PNG; `WeaponLayer` no dibuja nada en reposo y la sombra de escena (`playerShadow`) está apagada. | Doble cadena y sombra pegada al saltar; al quitar lo cocido faltará la pose de reposo de las cuchillas (D-29). |
 | **ART-01** | `grids/kratos/master.txt` proviene de `png_to_ascii.py` con letras asignadas por luminancia (97×59) y no es editable a mano. | Impide dibujar cuadros nuevos directamente en ASCII. |
 | **BOOT-01** | El escenario inicial por defecto es `platforms` y `flowState` arranca en `playing`. | Al abrir el juego no se entra al nivel ni a la pantalla de título. |
 | **ARCH-01** | `src/scene/ShellScene.ts` concentra 1.655 líneas (carga mixta de assets, render de escenario, animaciones y cámaras). | Deuda técnica de mantenibilidad (no bloquea el arte). |
@@ -35,3 +35,4 @@ Definir el formato ASCII semántico (letras por material, paleta reducida y lien
 - `2026-10-29` — **Paso 3 (Scripts):** se archivaron los generadores procedurales y verificadores antiguos en `archivo/scripts/`, dejando activo únicamente `scripts/ascii_to_png.py`.
 - `2026-10-29` — **Paso 4 (Documentación):** se consolidó la documentación activa en `estado.md`, `direccion.md`, `decisiones.md`, `arquitectura.md` y `README.md`, archivando los 36 planes y registros previos en `archivo/docs/`.
 - `2026-10-29` — **Paso 5 (Reglas y skills):** se reescribieron `AGENTS.md`, `pixel-art-character-consistency` y `phaser3-project` para reflejar el flujo incremental por cuadro y el estado único en `docs/estado.md`.
+- `2026-10-29` — **Paso 6 (Ajustes de la revisión crítica):** física desacoplada del lienzo (`CONFIG.player.bounds`, una sola fuente 97×59), sprites de enemigos movidos a `manifest.ts`, cadencia de run derivada de `RUN_KEYS.length`, sombra de contacto de escena (apagada), comentarios obsoletos limpiados y `pnpm art` / `pnpm art:check` (`scripts/check_grid.py`: tamaño, paleta, alfa binario, fila de suelo y PNG = grid). Comportamiento sin cambios; pendiente verificar en navegador.

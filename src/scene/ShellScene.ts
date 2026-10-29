@@ -34,6 +34,7 @@ export class ShellScene extends Phaser.Scene {
   private debugText: Phaser.GameObjects.Text | null = null;
   private lastDebugText = '';
   private player: Phaser.GameObjects.Sprite | null = null;
+  private playerShadow: Phaser.GameObjects.Ellipse | null = null;
   private platformRects: (Phaser.GameObjects.Rectangle | Phaser.GameObjects.Graphics)[] = [];
   private renderedScenario = '';
   private attackHitboxRect: Phaser.GameObjects.Rectangle | null = null;
@@ -102,15 +103,6 @@ export class ShellScene extends Phaser.Scene {
         }
       }
     }
-    this.load.spritesheet('legionnaire', 'assets/characters/legionnaire.png', {
-      frameWidth: 64,
-      frameHeight: 54,
-    });
-    this.load.spritesheet('archer', 'assets/characters/archer.png', {
-      frameWidth: 64,
-      frameHeight: 54,
-    });
-    this.load.image('arrow', 'assets/characters/arrow.png');
     // hydra: pending ASCII master in grids/hydra/
   }
 
@@ -146,13 +138,17 @@ export class ShellScene extends Phaser.Scene {
       .setDepth(-1)
       .setScrollFactor(0);
 
-    // Animations disabled: only the ASCII neutral frame exists in grids/kratos/.
-    // Idle/run grids do not exist yet, so every state uses the single static frame.
-    // Idle and run come from grids/kratos/ frames; attack, guard, roll and air
-    // still have no ASCII grids, so they fall back to the neutral frame.
+    // Idle comes from the drawn grids/kratos/ frames; run has none yet, and
+    // attack, guard, roll and air fall back to the static neutral frame.
     this.createPlayerAnimations();
     this.createRollAnimation();
     this.createHydraAnimations();
+
+    const shadowCfg = CONFIG.presentation.playerShadow;
+    this.playerShadow = this.add
+      .ellipse(0, 0, shadowCfg.width, shadowCfg.height, shadowCfg.color, shadowCfg.alpha)
+      .setDepth(-0.1)
+      .setVisible(false);
 
     const spawn = this.simulation.world.peekEntity(PLAYER_ID);
     const { anchorX, anchorY } = CONFIG.player.sprite;
@@ -287,6 +283,8 @@ export class ShellScene extends Phaser.Scene {
       this.player.setPosition(player.x, player.y);
       this.player.setFlipX(player.facing === -1);
       this.applyAnimation(player);
+      this.playerShadow?.setPosition(player.x, player.y - 1);
+      this.playerShadow?.setVisible(CONFIG.presentation.playerShadow.enabled && player.grounded && !player.isDead);
 
       // Feedback visual de daño (tint en hitstun)
       if (player.hitstunTicks > 0) {
@@ -1122,7 +1120,7 @@ export class ShellScene extends Phaser.Scene {
     if (!this.player) {
       return;
     }
-    const { frameRate, frames, stridePx, minTimeScale, maxTimeScale } = CONFIG.player.run;
+    const { frameRate, stridePx, minTimeScale, maxTimeScale } = CONFIG.player.run;
     if (!this.anims.exists(RUN_KEY)) {
       this.player.anims.stop();
       this.player.setTexture(PLAYER_KEY, 0);
@@ -1133,7 +1131,7 @@ export class ShellScene extends Phaser.Scene {
     }
     // Zero-slide cadence: one loop must cover `stridePx` of ground.
     const cyclesPerSecond = speed / stridePx;
-    const target = (cyclesPerSecond * frames) / frameRate;
+    const target = (cyclesPerSecond * RUN_KEYS.length) / frameRate;
     this.player.anims.timeScale = Phaser.Math.Clamp(target, minTimeScale, maxTimeScale);
   }
 

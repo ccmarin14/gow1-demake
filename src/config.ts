@@ -5,8 +5,20 @@ export const TICK_MICROS = Math.floor(1_000_000 / TICK_RATE);
 
 const INTERNAL_WIDTH = 480;
 const INTERNAL_HEIGHT = 270;
-const PLAYER_SPRITE_WIDTH = 97;
-const PLAYER_SPRITE_HEIGHT = 59;
+/** Character canvas (px). Single source: the manifest and the scale reference read it. */
+export const PLAYER_SPRITE_WIDTH = 97;
+export const PLAYER_SPRITE_HEIGHT = 59;
+/**
+ * Physical bounds of the player, deliberately independent of the sprite canvas:
+ * redrawing the art with a different canvas must not move walls or the jump
+ * ceiling. The values equal the legacy 97x59 canvas so behaviour is unchanged.
+ */
+const PLAYER_BOUNDS = {
+  /** Distance kept from the screen edge and from arena barriers. */
+  marginX: 48.5,
+  /** Highest `y` the feet may reach (jump ceiling). */
+  ceilingY: 59,
+} as const;
 
 /**
  * Level-1 move table (God of War 1, PS2 -> 2D). Timings are TICKS at 60 Hz.
@@ -22,7 +34,7 @@ const PLAYER_SPRITE_HEIGHT = 59;
  * `selfVy` (attacker vy applied at active start; ascension only when K is
  * held), `lungeVx` (attacker vx at active start), `airBrake` (air light:
  * `vy = max(vy, -60) * 0.35` on start), `groundImpact` (emits the yTop
- * impact event), `poseFrame` (frame of kratos-attack.png in the active
+ * impact event), `poseFrame` (frame of the legacy attack sheet in the active
  * phase) and `chain` (index reported in `attackChain`).
  */
 const MOVES = {
@@ -107,8 +119,9 @@ const PLAYER = {
 maxSpeed: 140,
 accel: 1050,
 brake: 1650,
-minX: PLAYER_SPRITE_WIDTH / 2,
-maxX: INTERNAL_WIDTH - PLAYER_SPRITE_WIDTH / 2,
+minX: PLAYER_BOUNDS.marginX,
+maxX: INTERNAL_WIDTH - PLAYER_BOUNDS.marginX,
+bounds: PLAYER_BOUNDS,
 sprite: {
   width: PLAYER_SPRITE_WIDTH,
   height: PLAYER_SPRITE_HEIGHT,
@@ -116,32 +129,25 @@ sprite: {
   anchorY: 1,
 },
 run: {
-  // Four drawn frames: contact, passing, opposite contact, opposite passing.
-  // The pose is a near-front view with a baked shadow, so a step reads as a
-  // knee lift plus fist pump, not as a lateral slide.
-  frames: 4,
+  // The frame count comes from `RUN_KEYS` (src/assets/manifest.ts); it is not
+  // repeated here so cadence cannot drift from the clip.
   // Cadence is derived from stride, never hand-tuned. `frameRate` is the
   // cadence the clip was drawn for, `stridePx` is how far the body travels
   // in one full cycle. Playing at `speed / stridePx` cycles per second is the
   // no-slide rule: one loop must cover one stride of ground.
   frameRate: 24,
-  // Measured from the drawings, not guessed: one foot's centre travels 12 px
-  // peak to peak across the cycle (`scripts/verify_ascii_master.py` I8), and
-  // ground support alternates every two frames, so that excursion is half a
-  // stride. 2 x 12 px = 24 px per cycle. At `maxSpeed` 140 px/s this plays at
-  // 5.83 cycles/s (~23 fps, timeScale 0.97), a fast sprint.
+  // Placeholder from the retired run art (12 px foot excursion x 2). Re-measure
+  // it from the new drawn frames before connecting a run clip.
   stridePx: 24,
   minTimeScale: 0.35,
   maxTimeScale: 2,
   idleSpeedThreshold: 1,
 },
 idle: {
-  frames: 2,
   // Two drawn frames, one second each: a calm breath. Faster reads as a twitch.
   frameRate: 1,
 },
 air: {
-  frames: 2,
   frameRate: 6,
 },
 vertical: {
@@ -153,7 +159,7 @@ vertical: {
   // Total upward impulses available before touching ground again. `2` keeps
   // the ground jump and adds one air jump (double jump) on a fresh press.
   maxJumps: 2,
-  topY: PLAYER_SPRITE_HEIGHT,
+  topY: PLAYER_BOUNDS.ceilingY,
 },
 /**
  * Weapon identity. The Blades of Chaos strike with chained blades: the hit
@@ -205,7 +211,7 @@ attack: {
   },
   /**
    * Hand (chain origin) offset from the feet anchor, per frame of
-   * kratos-attack.png, facing right: dx forward, dy up-negative.
+   * the legacy attack sheet (retired, no PNG exists), facing right: dx forward, dy up-negative.
    */
   hands: {
     1: { dx: 13, dy: -33 },
@@ -436,6 +442,12 @@ export const CONFIG = {
     },
   },
   presentation: {
+    /**
+     * Contact shadow drawn by the scene under the player (D-26/D-29). Keep it
+     * off while the character grid still has a baked shadow, and switch it on
+     * together with the first grid drawn without one.
+     */
+    playerShadow: { enabled: false, width: 30, height: 6, color: 0x000000, alpha: 0.35 },
     background: '#111827',
     debugText: '#d1d5db',
     metricsWindowFrames: 60,

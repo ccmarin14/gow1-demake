@@ -32,7 +32,7 @@
     "ground": 58
   },
   "retired_frames": {
-    "reason": "Derived by cutting regions of the master and translating them, which cut the neck and sheared the legs and always read as sliding. Retired as art on 2026-10-26 (V-15). Every new frame must be drawn in full as its own grid: each planted foot advances 6 px per frame at max speed (see docs/planes/PIXEL-ART-ASCII-MASTER-01.md, stride specification).",
+    "reason": "Derived by cutting regions of the master and translating them, which cut the neck and sheared the legs and always read as sliding. Retired as art on 2026-10-26 (V-15). Every new frame must be drawn in full as its own grid: each planted foot advances 6 px per frame at max speed.",
     "files": [],
     "deleted": "2026-10-26: the retired grids and their PNGs were deleted. Only the reason is kept as record."
   },
@@ -46,7 +46,8 @@
         0
       ],
       "drawn": true,
-      "note": "Drawn in full as its own grid: chest and shoulders expand 1px per side at y25..y28. The head is untouched, so there is no neck seam."
+      "note": "Drawn in full as its own grid: chest and shoulders expand 1px per side at y25..y28. The head is untouched, so there is no neck seam.",
+      "png": "kratos-idle-01"
     }
   ],
   "archived_frames": {
@@ -359,5 +360,7 @@
       }
     ],
     "foot_row": 57
-  }
+  },
+  "master_png": "kratos-neutral",
+  "enforced_by": "scripts/check_grid.py (size, palette, binary alpha, ground row). motion/clip gates of the retired verifier are not enforced."
 }

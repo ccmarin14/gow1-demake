@@ -21,10 +21,10 @@ Juego de acción lateral 2D hecho con **Phaser 3.90.0**, **TypeScript** y **Vite
 
 ## Reglas de arte y animación (ASCII → PNG)
 
-- **ASCII semántico como fuente de verdad:** los sprites de personajes viven en `grids/` como texto plano donde cada letra representa un material o rol de color claro en `palette/` y `.` es transparencia. El PNG se genera con `scripts/ascii_to_png.py` y nunca se edita a mano.
+- **ASCII semántico como fuente de verdad:** los sprites de personajes viven en `grids/` como texto plano donde cada letra representa un material o rol de color claro en `palette/` y `.` es transparencia. El PNG se genera con `pnpm art` (usa `scripts/ascii_to_png.py`) y nunca se edita a mano; `pnpm art:check` valida los grids.
 - **Dibujo directo, sin deformación por scripts:** cada cuadro se dibuja en su grid manteniendo el mismo modelo anatómico del personaje. Queda prohibido generar humanoides con trazos vectoriales procedurales (`draw_limb_segment`, polígonos) o derivar cuadros trasladando/cizallando bloques por script.
 - **Separación de capas:** el grid del personaje solo contiene su cuerpo y vestimenta. Las cadenas, las hojas extendidas y la sombra de contacto se renderizan en capas separadas del motor (`WeaponLayer` y sombra en escena).
-- **Chequeos básicos de cada cuadro:** dimensiones exactas declaradas para el personaje, solo caracteres presentes en su paleta, alfa binario (`0` o `255`) y pies apoyados en la fila de suelo en las poses terrestres.
+- **Chequeos básicos de cada cuadro** (los ejecuta `pnpm art:check`): dimensiones exactas declaradas para el personaje, solo caracteres presentes en su paleta, alfa binario (`0` o `255`) y pies apoyados en la fila de suelo en las poses terrestres.
 
 ## Lecciones clave a preservar
 

@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "tsc -b && vite build",
-    "preview": "vite preview --host 0.0.0.0"
+    "preview": "vite preview --host 0.0.0.0",
+    "art": "python3 scripts/check_grid.py kratos --build",
+    "art:check": "python3 scripts/check_grid.py kratos"
   },
   "dependencies": {
     "phaser": "^3.90.0"
