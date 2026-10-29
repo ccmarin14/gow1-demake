@@ -316,22 +316,28 @@ export const CONFIG = {
       dissipateDurationTicks: 30,
     },
     waves: {
+      /**
+       * Spawn `offsetX` is measured from the left edge of the arena that hosts
+       * the encounter (`WaveManager` origin), so the same encounters work in
+       * the `waves`/`arena` scenarios (barrier at `arena.minX`) and in level 1
+       * (barrier at `map.level1.segments.centralArena.barrierLeftX`).
+       */
       transitionDelayTicks: 60,
       spawnTelegraphTicks: 24,
       encounters: [
         {
           name: 'Vanguardia',
           spawns: [
-            { kind: 'legionnaire' as const, x: 320, delayTicks: 0, facing: -1 as const },
-            { kind: 'legionnaire' as const, x: 380, delayTicks: 15, facing: -1 as const },
+            { kind: 'legionnaire' as const, offsetX: 250, delayTicks: 0, facing: -1 as const },
+            { kind: 'legionnaire' as const, offsetX: 310, delayTicks: 15, facing: -1 as const },
           ],
         },
         {
           name: 'Fuerza Mixta',
           spawns: [
-            { kind: 'legionnaire' as const, x: 120, delayTicks: 5, facing: 1 as const },
-            { kind: 'legionnaire' as const, x: 340, delayTicks: 15, facing: -1 as const },
-            { kind: 'archer' as const, x: 430, delayTicks: 25, facing: -1 as const },
+            { kind: 'legionnaire' as const, offsetX: 50, delayTicks: 5, facing: 1 as const },
+            { kind: 'legionnaire' as const, offsetX: 270, delayTicks: 15, facing: -1 as const },
+            { kind: 'archer' as const, offsetX: 360, delayTicks: 25, facing: -1 as const },
           ],
         },
       ],

@@ -28,7 +28,8 @@ export class WaveManager {
   private spawnQueue: QueuedSpawn[] = [];
   private readonly waveEnemyIds = new Set<string>();
 
-  constructor() {
+  /** `originX` is the left edge of the arena; spawn offsets are relative to it. */
+  constructor(private readonly originX: number = CONFIG.combat.arena.minX) {
     this.reset();
   }
 
@@ -50,7 +51,7 @@ export class WaveManager {
     if (encounter) {
       this.spawnQueue = encounter.spawns.map((s) => ({
         kind: s.kind,
-        x: s.x,
+        x: this.originX + s.offsetX,
         delayTicks: s.delayTicks,
         facing: s.facing,
         spawned: false,

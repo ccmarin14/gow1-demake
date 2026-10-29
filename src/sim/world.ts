@@ -432,9 +432,10 @@ export class World {
       this.mapData = buildLevel1Map();
       this.cameraX = 0;
       this.arenaTriggered = false;
-      this.waveManager = new WaveManager();
+      const { barrierLeftX, barrierRightX } = CONFIG.map.level1.segments.centralArena;
+      this.waveManager = new WaveManager(barrierLeftX);
       this.waveEnemyIdCounter = 0;
-      this.arenaManager = new ArenaManager(550, 890, false);
+      this.arenaManager = new ArenaManager(barrierLeftX, barrierRightX, false);
     } else {
       this.waveManager = null;
       this.arenaManager = null;
@@ -725,7 +726,8 @@ export class World {
           player.vx = 0;
         }
         if (this.mapData && this.arenaManager && !this.arenaTriggered && !this.arenaManager.isActive()) {
-          if (player.x >= 550 && player.x <= 890) {
+          const arena = CONFIG.map.level1.segments.centralArena;
+          if (player.x >= arena.barrierLeftX && player.x <= arena.barrierRightX) {
             this.arenaTriggered = true;
             this.arenaManager.activate();
           }
