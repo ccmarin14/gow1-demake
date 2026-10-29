@@ -22,6 +22,7 @@ Teclado → InputManager → Acciones de dominio
 | `src/input/InputManager.ts` | Conversión de eventos de teclado a acciones de dominio. |
 | `src/assets/manifest.ts` | Claves de texturas y clips del jugador y del escenario. |
 | `src/scene/ShellScene.ts` | Escena Phaser que conecta el bucle de simulación con los sprites, la cámara y las capas visuales. |
+| `src/scene/PlayerView.ts` | Presentación del jugador: sprite de Kratos y selección de animación, sombra de contacto y capa de armas. Es el único punto que cambia al redibujar el personaje. |
 | `src/entities/WeaponLayer.ts` | Renderizado de las Cuchillas del Caos, eslabones de cadena y estelas. |
 | `src/scene/VfxLayer.ts` | Lluvia marina, relámpagos y chispas de impacto. |
 | `src/ui/` | `HudLayer.ts` (salud, maná, orbes y barra de jefe) y `GameFlowOverlay.ts` (título, pausa, victoria y derrota). |

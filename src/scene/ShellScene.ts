@@ -3,12 +3,6 @@ import {
   ASSET_DOMAINS,
   ASSETS,
   BACKGROUND_KEY,
-  IDLE_KEY,
-  IDLE_KEYS,
-  PLAYER_KEY,
-  RUN_KEY,
-  RUN_KEYS,
-  SKID_KEY,
 } from '../assets/manifest';
 import { CONFIG } from '../config';
 import {
@@ -16,10 +10,10 @@ import {
   isScaleReferenceVisible,
   updateScaleReference,
 } from '../dev/scaleOverlay';
-import { WeaponLayer } from '../entities/WeaponLayer';
 import { InputManager } from '../input/InputManager';
 import { HudLayer } from '../ui/HudLayer';
 import { GameFlowOverlay } from '../ui/GameFlowOverlay';
+import { PlayerView } from './PlayerView';
 import { VfxLayer } from './VfxLayer';
 import { SoundManager } from '../audio/SoundManager';
 import type { FrameMetrics } from '../metrics';
@@ -32,8 +26,7 @@ export class ShellScene extends Phaser.Scene {
   private bg: Phaser.GameObjects.TileSprite | null = null;
   private debugText: Phaser.GameObjects.Text | null = null;
   private lastDebugText = '';
-  private player: Phaser.GameObjects.Sprite | null = null;
-  private playerShadow: Phaser.GameObjects.Ellipse | null = null;
+  private playerView: PlayerView | null = null;
   private platformRects: (Phaser.GameObjects.Rectangle | Phaser.GameObjects.Graphics)[] = [];
   private renderedScenario = '';
   private attackHitboxRect: Phaser.GameObjects.Rectangle | null = null;
@@ -54,7 +47,6 @@ export class ShellScene extends Phaser.Scene {
       eyeX?: number;
     }
   >();
-  private readonly weaponLayer = new WeaponLayer();
   private defeatText: Phaser.GameObjects.Text | null = null;
   private waveBannerText: Phaser.GameObjects.Text | null = null;
   private upgradeBannerText: Phaser.GameObjects.Text | null = null;
@@ -135,27 +127,7 @@ export class ShellScene extends Phaser.Scene {
       .setDepth(-1)
       .setScrollFactor(0);
 
-    // Idle comes from the drawn grids/kratos/ frames; run has none yet, and
-    // attack, guard, roll and air fall back to the static neutral frame.
-    this.createPlayerAnimations();
-
-    const shadowCfg = CONFIG.presentation.playerShadow;
-    this.playerShadow = this.add
-      .ellipse(0, 0, shadowCfg.width, shadowCfg.height, shadowCfg.color, shadowCfg.alpha)
-      .setDepth(-0.1)
-      .setVisible(false);
-
-    const spawn = this.simulation.world.peekEntity(PLAYER_ID);
-    const { anchorX, anchorY } = CONFIG.player.sprite;
-    this.player = this.add
-      .sprite(
-        spawn ? spawn.x : CONFIG.internal.width / 2,
-        spawn ? spawn.y : CONFIG.internal.height,
-        PLAYER_KEY,
-      )
-      .setOrigin(anchorX, anchorY);
-
-    this.weaponLayer.create(this);
+    this.playerView = new PlayerView(this, this.simulation.world.peekEntity(PLAYER_ID));
     this.hudLayer = new HudLayer(this);
     this.flowOverlay = new GameFlowOverlay(this);
     this.vfxLayer = new VfxLayer(this);
@@ -266,34 +238,11 @@ export class ShellScene extends Phaser.Scene {
     this.simulation.advance(delta, actions);
     const flowState = this.simulation.world.getFlowState();
 
-    if (this.player && this.player.anims) {
-      if (flowState === 'paused') {
-        if (this.player.anims.isPlaying) this.player.anims.pause();
-      } else {
-        if (this.player.anims.isPaused) this.player.anims.resume();
-      }
-    }
+    this.playerView?.setPaused(flowState === 'paused');
     const player = this.simulation.world.peekEntity(PLAYER_ID) ?? null;
-    if (player && this.player) {
-      this.player.setPosition(player.x, player.y);
-      this.player.setFlipX(player.facing === -1);
-      this.applyAnimation(player);
-      this.playerShadow?.setPosition(player.x, player.y - 1);
-      this.playerShadow?.setVisible(CONFIG.presentation.playerShadow.enabled && player.grounded && !player.isDead);
-
-      // Feedback visual de daño (tint en hitstun)
-      if (player.hitstunTicks > 0) {
-        this.player.setTint(0xff5555);
-      } else {
-        this.player.clearTint();
-      }
-
-      // Parpadeo visual durante invulnerabilidad post-daño
-      if (player.hurtInvulTicks > 0 && !player.isDead) {
-        this.player.setAlpha(Math.floor(player.hurtInvulTicks / 4) % 2 === 0 ? 0.4 : 1.0);
-      } else if (!player.isDead) {
-        this.player.setAlpha(1.0);
-      }
+    if (player && this.playerView) {
+      const isOpeningChest = this.simulation.world.peekChests().some((c) => c.state === 'opening');
+      this.playerView.update(player, isOpeningChest);
     }
 
     if (this.defeatText) {
@@ -500,7 +449,7 @@ export class ShellScene extends Phaser.Scene {
     }
     const isPlayerAlive = Boolean(player && !player.isDead);
     const attackParams = isPlayerAlive ? this.simulation.world.playerAttackParams() : null;
-    this.weaponLayer.update(isPlayerAlive ? player : null, attackParams, this.simulation.world.surfacePlatforms);
+    this.playerView?.updateWeapon(isPlayerAlive ? player : null, attackParams, this.simulation.world.surfacePlatforms);
     this.updateTargets(player);
     this.updateOrbs();
     this.updateArrows();
@@ -898,155 +847,6 @@ export class ShellScene extends Phaser.Scene {
     }
 
     this.renderedScenario = this.simulation.world.scenarioName;
-  }
-
-  private createPlayerAnimations(): void {
-    const defs: { key: string; frames: readonly string[]; frameRate: number }[] = [
-      { key: IDLE_KEY, frames: IDLE_KEYS, frameRate: CONFIG.player.idle.frameRate },
-      { key: RUN_KEY, frames: RUN_KEYS, frameRate: CONFIG.player.run.frameRate },
-    ];
-    for (const def of defs) {
-      if (this.anims.exists(def.key)) {
-        continue;
-      }
-      // A single drawn frame is not an animation: render it statically instead.
-      if (def.frames.length < 2) {
-        continue;
-      }
-      if (!def.frames.every((frame) => this.textures.exists(frame))) {
-        continue;
-      }
-      this.anims.create({
-        key: def.key,
-        frames: def.frames.map((frame) => ({ key: frame })),
-        frameRate: def.frameRate,
-        repeat: -1,
-      });
-    }
-  }
-
-  private applyAnimation(simPlayer: Readonly<EntityState>): void {
-    const player = this.player;
-    if (!player) {
-      return;
-    }
-
-    if (simPlayer.isDead) {
-      this.stopLoop();
-      player.setTexture(PLAYER_KEY, 0);
-      player.setFlipX(simPlayer.facing === -1);
-      player.setRotation(0);
-      player.setAlpha(0.65);
-      return;
-    }
-
-    const { attackPhase, grounded, facing } = simPlayer;
-    const speed = Math.abs(simPlayer.vx);
-    const rolling = simPlayer.rollPhase !== 'none';
-
-    // Elastic landing compression (squash)
-    if (simPlayer.landingTicks > 0 && grounded && attackPhase === 'none' && !rolling) {
-      player.setScale(1.06, 0.92);
-    } else {
-      player.setScale(1, 1);
-    }
-
-    if (attackPhase !== 'none' && !rolling) {
-      this.stopLoop();
-      player.setTexture(PLAYER_KEY, 0);
-      player.anims.timeScale = 1;
-      player.setAlpha(1);
-      player.setRotation(0);
-      return;
-    }
-    if (simPlayer.guardPhase !== 'none' && !rolling) {
-      this.stopLoop();
-      player.setTexture(PLAYER_KEY, 0);
-      player.setFlipX(facing === -1);
-      player.setRotation(0);
-      player.setAlpha(1);
-      player.anims.timeScale = 1;
-      return;
-    }
-    const isOpeningChest = this.simulation.world.peekChests().some((c) => c.state === 'opening');
-    if (isOpeningChest && !rolling) {
-      this.stopLoop();
-      player.setTexture(PLAYER_KEY, 0);
-      player.setFlipX(facing === -1);
-      player.setRotation(0);
-      player.setAlpha(1);
-      player.anims.timeScale = 1;
-      return;
-    }
-    if (rolling) {
-      this.stopLoop();
-      player.setTexture(PLAYER_KEY, 0);
-      player.setFlipX(facing === -1);
-      player.setRotation(0);
-      player.setAlpha(1);
-      player.anims.timeScale = 1;
-      return;
-    }
-    player.setAlpha(1);
-    player.setRotation(0);
-    if (!grounded) {
-      player.setTexture(PLAYER_KEY, 0);
-      return;
-    }
-    // High-speed turnaround skid on ground
-    if (simPlayer.skidTicks > 0) {
-      this.stopLoop();
-      player.setTexture(SKID_KEY, 0);
-      player.setFlipX(facing === -1);
-      player.anims.timeScale = 1;
-      return;
-    }
-    if (speed > CONFIG.player.run.idleSpeedThreshold) {
-      this.playRun(speed);
-    } else {
-      this.playLoop(IDLE_KEY);
-    }
-  }
-
-  private stopLoop(): void {
-    if (this.player?.anims.isPlaying) {
-      this.player.anims.stop();
-    }
-  }
-
-  private playLoop(key: string): void {
-    if (!this.player) {
-      return;
-    }
-    if (!this.anims.exists(key)) {
-      this.player.anims.stop();
-      this.player.setTexture(PLAYER_KEY, 0);
-      this.player.anims.timeScale = 1;
-      return;
-    }
-    if (this.player.anims.currentAnim?.key !== key || !this.player.anims.isPlaying) {
-      this.player.play(key);
-    }
-    this.player.anims.timeScale = 1;
-  }
-
-  private playRun(speed: number): void {
-    if (!this.player) {
-      return;
-    }
-    const { frameRate, stridePx, minTimeScale, maxTimeScale } = CONFIG.player.run;
-    if (!this.anims.exists(RUN_KEY)) {
-      this.player.anims.stop();
-      this.player.setTexture(PLAYER_KEY, 0);
-      return;
-    }
-    if (this.player.anims.currentAnim?.key !== RUN_KEY || !this.player.anims.isPlaying) {
-      this.player.play(RUN_KEY);
-    }
-    // Zero-slide cadence: one loop must cover `stridePx` of ground.
-    const cyclesPerSecond = speed / stridePx;
-    const target = (cyclesPerSecond * RUN_KEYS.length) / frameRate;
-    this.player.anims.timeScale = Phaser.Math.Clamp(target, minTimeScale, maxTimeScale);
   }
 
   private updateOrbs(): void {
