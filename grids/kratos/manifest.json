@@ -47,54 +47,6 @@
       ],
       "drawn": true,
       "note": "Drawn in full as its own grid: chest and shoulders expand 1px per side at y25..y28. The head is untouched, so there is no neck seam."
-    },
-    {
-      "file": "run-00.txt",
-      "state": "run",
-      "grounded": true,
-      "head_offset": [
-        0,
-        0
-      ],
-      "drawn": true,
-      "motion": true,
-      "note": "contact: near leg forward and planted, far leg trailing with the foot off the ground; near fist down, far fist up"
-    },
-    {
-      "file": "run-01.txt",
-      "state": "run",
-      "grounded": true,
-      "head_offset": [
-        0,
-        0
-      ],
-      "drawn": true,
-      "motion": true,
-      "note": "passing: near leg almost under the body, far leg swinging through with the knee up; fists mid-swing"
-    },
-    {
-      "file": "run-02.txt",
-      "state": "run",
-      "grounded": true,
-      "head_offset": [
-        0,
-        0
-      ],
-      "drawn": true,
-      "motion": true,
-      "note": "contact opposite: near leg trailing with the foot up, far leg forward and planted; near fist up, far fist down"
-    },
-    {
-      "file": "run-03.txt",
-      "state": "run",
-      "grounded": true,
-      "head_offset": [
-        0,
-        0
-      ],
-      "drawn": true,
-      "motion": true,
-      "note": "passing opposite: near leg swinging through with the knee up, far leg under the body; fists mid-swing"
     }
   ],
   "archived_frames": {
