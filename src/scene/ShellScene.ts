@@ -112,21 +112,6 @@ export class ShellScene extends Phaser.Scene {
 
     this.redrawPlatforms();
 
-    this.add
-      .text(
-        CONFIG.internal.width / 2,
-        20,
-        'Combo ligero',
-        {
-          color: CONFIG.presentation.debugText,
-          fontFamily: 'monospace',
-          fontSize: '10px',
-        },
-      )
-      .setOrigin(0.5)
-      .setDepth(-1)
-      .setScrollFactor(0);
-
     this.playerView = new PlayerView(this, this.simulation.world.peekEntity(PLAYER_ID));
     this.hudLayer = new HudLayer(this);
     this.flowOverlay = new GameFlowOverlay(this);
@@ -277,12 +262,17 @@ export class ShellScene extends Phaser.Scene {
       }
     }
 
-    // The title screen shows no HUD: passing no player hides every HUD element.
+    // No HUD on the title screen; the boss bar shows only once the hydra is
+    // within one screen of the player.
     const hydra = this.simulation.world.getHydra();
+    const bossInRange = Boolean(
+      hydra && player && Math.abs(hydra.x - player.x) <= CONFIG.internal.width,
+    );
+    this.hudLayer.setHidden(flowState === 'title');
     this.hudLayer.update(
-      flowState === 'title' ? undefined : (player ?? undefined),
+      player ?? undefined,
       delta / 1000,
-      hydra && flowState !== 'title' ? { hp: hydra.hp, maxHp: hydra.maxHp, name: 'LA HIDRA DE LERNA' } : null,
+      hydra && bossInRange ? { hp: hydra.hp, maxHp: hydra.maxHp, name: 'LA HIDRA DE LERNA' } : null,
     );
 
     if (this.flowOverlay) {
@@ -499,6 +489,7 @@ export class ShellScene extends Phaser.Scene {
     if (import.meta.env.DEV && player) {
       updateScaleReference(player.x, player.y, player.facing);
     }
+    this.debugText?.setVisible(flowState !== 'title');
     if (this.debugText) {
       const phase = player ? player.attackPhase : '-';
       const grd = player && player.guardPhase !== 'none' ? ` grd=${player.guardPhase}:${player.guardTicks}${player.parryActive ? '(P)' : ''}` : '';

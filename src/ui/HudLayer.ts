@@ -42,6 +42,7 @@ export interface HudMetrics {
  */
 export class HudLayer {
   private readonly elements: Phaser.GameObjects.GameObject[] = [];
+  private hidden = false;
 
   // Geometría del marco y fondo
   private readonly frameBg: Phaser.GameObjects.Rectangle;
@@ -520,7 +521,24 @@ export class HudLayer {
     this.elements.push(this.bossTitleText);
   }
 
+  /** Hides the whole HUD (title screen); applied at the end of every `update`. */
+  setHidden(hidden: boolean): void {
+    this.hidden = hidden;
+  }
+
   update(player: EntityState | undefined, dt: number, boss?: { hp: number; maxHp: number; name?: string } | null): void {
+    this.render(player, dt, boss);
+    if (this.hidden) {
+      for (const elem of this.elements) {
+        (elem as Phaser.GameObjects.GameObject & Phaser.GameObjects.Components.Visible).setVisible(false);
+      }
+      for (const elem of this.bossElements) {
+        elem.setVisible(false);
+      }
+    }
+  }
+
+  private render(player: EntityState | undefined, dt: number, boss?: { hp: number; maxHp: number; name?: string } | null): void {
     if (!player) {
       this.greenBarBase.setVisible(false);
       this.greenBarHighlight.setVisible(false);
