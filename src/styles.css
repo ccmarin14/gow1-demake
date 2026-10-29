@@ -26,7 +26,7 @@ body {
 }
 
 .shell {
-  width: min(960px, calc(100vw - 32px));
+  width: max-content;
   text-align: center;
 }
 
@@ -36,9 +36,10 @@ h1 {
   font-weight: 500;
 }
 
+/* Size is set in px by fitIntegerScale() (src/main.ts) to an integer multiple of 480x270. */
 #game-root {
-  width: 100%;
-  aspect-ratio: 16 / 9;
+  width: 960px;
+  height: 540px;
   overflow: hidden;
   background: #111827;
 }

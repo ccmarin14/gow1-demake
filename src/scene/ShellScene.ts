@@ -6,7 +6,6 @@ import {
   IDLE_KEY,
   IDLE_KEYS,
   PLAYER_KEY,
-  PROVISIONAL_ART,
   RUN_KEY,
   RUN_KEYS,
   SKID_KEY,
@@ -127,7 +126,7 @@ export class ShellScene extends Phaser.Scene {
       .text(
         CONFIG.internal.width / 2,
         20,
-        PROVISIONAL_ART ? 'Combo ligero · provisional' : 'Combo ligero',
+        'Combo ligero',
         {
           color: CONFIG.presentation.debugText,
           fontFamily: 'monospace',

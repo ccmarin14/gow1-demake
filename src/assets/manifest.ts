@@ -91,5 +91,3 @@ export const PLAYER_KEY = 'kratos-neutral';
 
 export const IDLE_KEY = 'kratos-idle';
 export const RUN_KEY = 'kratos-run';
-
-export const PROVISIONAL_ART = false;
