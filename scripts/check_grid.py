@@ -28,12 +28,18 @@ ROOT = Path(__file__).resolve().parent.parent
 PNG_DIR = ROOT / "public" / "assets" / "characters"
 
 
-def entries(manifest: dict) -> list[tuple[str, str, bool]]:
-    """(grid file, png key, grounded) for the master and each drawn frame."""
-    items = [(manifest["master"], manifest["master_png"], True)]
+def entries(manifest: dict) -> list[tuple[str, str, bool, str]]:
+    """(grid file, png key, grounded, palette_file) for the master and each drawn frame."""
+    default_palette = manifest.get("palette", "master.json")
+    items = [(manifest["master"], manifest["master_png"], True, manifest.get("master_palette", "master.json"))]
     for frame in manifest["frames"]:
         if frame.get("drawn", True):
-            items.append((frame["file"], frame["png"], bool(frame.get("grounded", True))))
+            items.append((
+                frame["file"],
+                frame["png"],
+                bool(frame.get("grounded", True)),
+                frame.get("palette", default_palette),
+            ))
     return items
 
 
@@ -47,7 +53,13 @@ def main() -> int:
     manifest = json.loads((directory / "manifest.json").read_text(encoding="utf-8"))
     width, height = manifest["frame_size"]["w"], manifest["frame_size"]["h"]
     ground = int(manifest["anchors"]["ground"])
-    colors = load_palette(ROOT / "palette" / manifest.get("palette", "master.json"))
+    palette_cache: dict[str, dict[str, str]] = {}
+
+    def get_colors(palette_name: str) -> dict[str, str]:
+        if palette_name not in palette_cache:
+            palette_cache[palette_name] = load_palette(ROOT / "palette" / palette_name)
+        return palette_cache[palette_name]
+
     failures = 0
 
     def fail(name: str, message: str) -> None:
@@ -55,10 +67,10 @@ def main() -> int:
         failures += 1
         print(f"FAIL {name}: {message}")
 
-    for file_name, png_key, grounded in entries(manifest):
+    for file_name, png_key, grounded, pal_name in entries(manifest):
         try:
             lines = load_grid(directory / file_name)
-            image = rasterize(lines, colors)
+            image = rasterize(lines, get_colors(pal_name))
         except (OSError, ValueError) as error:
             fail(file_name, str(error))
             continue
