@@ -19,9 +19,12 @@ Documento único del estado medido de `gow-8b`. Se actualiza en el mismo commit 
 | --- | --- | --- |
 | **V-14** | `WeaponLayer.ts` dibuja cadenas procedurales encima de un sprite que ya tiene cadenas, cuchillas y sombra cocidas en el PNG; la sombra de escena (`playerShadow`) y la pose de reposo de `WeaponLayer` (`restPose`) están implementadas pero apagadas. | Doble cadena y sombra pegada al saltar hasta que el primer grid sin armas ni sombra cocidas permita encender ambos flags en `src/config.ts` y ajustar los offsets. |
 | **ART-01** | `grids/kratos/master.txt` proviene de `png_to_ascii.py` con letras asignadas por luminancia (97×59) y no es editable a mano. | Impide dibujar cuadros nuevos directamente en ASCII. |
+| **ESE-01** | Sin remates contextuales (QTE) ni agarre real (ESE-02); impacto poco brutal (ESE-03); enemigos de un solo truco (ESE-04); sin introducción (ESE-05, regla D-30). | El combate se aparta de la esencia de *God of War*. Plan y criterios en `docs/direccion.md` §4. |
 | **ART-02** | Los anclajes de mano de los ataques (`hand` en cada movimiento de `src/config.ts`) conservan los valores medidos sobre una hoja retirada; no coinciden con el arte nuevo. | Las cadenas saldrán de un punto que no coincide con las manos dibujadas hasta re-medirlos con los cuadros nuevos. |
 
 ## 3. Siguiente paso
+
+En paralelo al arte, el plan de esencia de `docs/direccion.md` §4 (orden: ESE-03, ESE-01 con ESE-02, ESE-04, ESE-05).
 
 Definir el formato ASCII semántico (letras por material, paleta reducida y lienzo ajustado sin cadenas ni sombra cocidas) y dibujar el primer cuadro (`idle-00`) para revisión visual antes de avanzar con los cuadros de movimiento.
 
@@ -45,3 +48,5 @@ Definir el formato ASCII semántico (letras por material, paleta reducida y lien
 
 - `2026-10-29` — **Paso 14 (HUD en el título):** la pantalla de título ya no muestra el banner de oleada ni la barra del hidra (`ShellScene.ts`). Quedan restos tenues del contador de orbes y del texto de depuración bajo el overlay; además, en `level1` la barra del hidra se muestra desde el inicio aunque el jefe esté lejos.
 - `2026-10-29` — **Paso 15 (HUD completo):** `HudLayer.setHidden` oculta todo el HUD y el texto de depuración durante el título; la barra del hidra solo se muestra cuando el jefe está a una pantalla del jugador; se eliminó la etiqueta residual "Combo ligero". Verificado en navegador (título, inicio de `level1` y escenario `hydra`, 0 errores).
+- `2026-10-29` — **Paso 16 (Plan de esencia):** revisión contra *God of War* y registro de las brechas ESE-01..07 en `docs/direccion.md` §4, la regla D-30 (la introducción nunca bloquea las pruebas) y la fila ESE-01 en problemas abiertos. Sin cambios de código.
+
