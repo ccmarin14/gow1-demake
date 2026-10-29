@@ -260,7 +260,7 @@ export class ShellScene extends Phaser.Scene {
 
     if (this.waveBannerText) {
       const wave = this.simulation.world.peekWave ? this.simulation.world.peekWave() : null;
-      if (!wave) {
+      if (!wave || flowState === 'title') {
         this.waveBannerText.setVisible(false);
       } else {
         this.waveBannerText.setVisible(true);
@@ -277,11 +277,12 @@ export class ShellScene extends Phaser.Scene {
       }
     }
 
+    // The title screen shows no HUD: passing no player hides every HUD element.
     const hydra = this.simulation.world.getHydra();
     this.hudLayer.update(
-      player ?? undefined,
+      flowState === 'title' ? undefined : (player ?? undefined),
       delta / 1000,
-      hydra ? { hp: hydra.hp, maxHp: hydra.maxHp, name: 'LA HIDRA DE LERNA' } : null,
+      hydra && flowState !== 'title' ? { hp: hydra.hp, maxHp: hydra.maxHp, name: 'LA HIDRA DE LERNA' } : null,
     );
 
     if (this.flowOverlay) {
