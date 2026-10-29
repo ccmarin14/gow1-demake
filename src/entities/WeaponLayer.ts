@@ -361,8 +361,7 @@ export class WeaponLayer {
 
     const facing = player.facing === -1 ? -1 : 1;
     const moveDef = player.attackMove !== 'none' ? CONFIG.player.attack.moves[player.attackMove] : null;
-    const poseFrame = moveDef ? moveDef.poseFrame : 1;
-    const handOffset = (CONFIG.player.attack.hands as Record<number, { dx: number; dy: number }>)[poseFrame] ?? { dx: 14, dy: -31 };
+    const handOffset = moveDef ? moveDef.hand : { dx: 13, dy: -33 };
     const handX = player.x + facing * handOffset.dx;
     const handY = player.y + handOffset.dy;
 

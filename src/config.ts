@@ -34,67 +34,68 @@ const PLAYER_BOUNDS = {
  * `selfVy` (attacker vy applied at active start; ascension only when K is
  * held), `lungeVx` (attacker vx at active start), `airBrake` (air light:
  * `vy = max(vy, -60) * 0.35` on start), `groundImpact` (emits the yTop
- * impact event), `poseFrame` (frame of the legacy attack sheet in the active
- * phase) and `chain` (index reported in `attackChain`).
+ * impact event), `hand` (chain origin offset from the feet anchor, facing
+ * right: dx forward, dy up-negative; tune against the drawn art) and `chain`
+ * (index reported in `attackChain`).
  */
 const MOVES = {
   light_1: {
-    chain: 0, startup: 4, active: 7, recovery: 7, poseFrame: 1,
+    chain: 0, startup: 4, active: 7, recovery: 7, hand: { dx: 13, dy: -33 },
     arc: { startDeg: -30, endDeg: 35, radius: 76, width: 18, thickness: 16 },
     hitstop: 2, knockbackVx: 85, launchVy: 0, lungeVx: 45,
   },
   light_2: {
-    chain: 1, startup: 3, active: 7, recovery: 7, poseFrame: 6,
+    chain: 1, startup: 3, active: 7, recovery: 7, hand: { dx: 13, dy: -33 },
     arc: { startDeg: 40, endDeg: -28, radius: 82, width: 18, thickness: 16 },
     hitstop: 2, knockbackVx: 95, launchVy: 0, lungeVx: 55,
   },
   light_3: {
-    chain: 2, startup: 4, active: 8, recovery: 10, poseFrame: 2,
+    chain: 2, startup: 4, active: 8, recovery: 10, hand: { dx: 26, dy: -31 },
     arc: { startDeg: 55, endDeg: -35, radius: 96, width: 22, thickness: 18 },
     hitstop: 3, knockbackVx: 180, launchVy: 0, lungeVx: 90,
   },
   light_4: {
-    chain: 3, startup: 4, active: 8, recovery: 10, poseFrame: 6,
+    chain: 3, startup: 4, active: 8, recovery: 10, hand: { dx: 13, dy: -33 },
     arc: { startDeg: -40, endDeg: 45, radius: 98, width: 22, thickness: 18 },
     hitstop: 3, knockbackVx: 160, launchVy: 0, lungeVx: 60,
   },
   spirit_of_hercules: {
-    chain: 3, startup: 6, active: 9, recovery: 14, poseFrame: 2,
+    chain: 3, startup: 6, active: 9, recovery: 14, hand: { dx: 26, dy: -31 },
     arc: { startDeg: 30, endDeg: -45, radius: 105, width: 26, thickness: 22 },
     hitstop: 4, knockbackVx: 220, launchVy: -120, lungeVx: 75, groundImpact: true,
   },
   plume_of_prometheus: {
-    chain: 2, startup: 5, active: 9, recovery: 12, poseFrame: 3,
+    chain: 2, startup: 5, active: 9, recovery: 12, hand: { dx: 14, dy: -33 },
     arc: { startDeg: 85, endDeg: -65, radius: 110, width: 24, thickness: 20 },
     hitstop: 4, knockbackVx: 140, launchVy: -240, lungeVx: 70, groundImpact: true,
   },
   heavy_slam: {
-    chain: 0, startup: 7, active: 8, recovery: 11, poseFrame: 3,
+    chain: 0, startup: 7, active: 8, recovery: 11, hand: { dx: 14, dy: -33 },
     arc: { startDeg: 75, endDeg: -60, radius: 95, width: 22, thickness: 18 },
     hitstop: 3, knockbackVx: 130, launchVy: 0, lungeVx: 60, groundImpact: true,
   },
   ascension: {
-    chain: 0, startup: 6, active: 8, recovery: 10, poseFrame: 4,
+    chain: 0, startup: 6, active: 8, recovery: 10, hand: { dx: 7, dy: -33 },
     arc: { startDeg: -35, endDeg: 80, radius: 88, width: 20, thickness: 18 },
     hitstop: 3, knockbackVx: 40, launchVy: -350, selfVy: -340,
   },
   air_light_1: {
-    chain: 0, startup: 3, active: 7, recovery: 6, poseFrame: 1,
+    chain: 0, startup: 3, active: 7, recovery: 6, hand: { dx: 13, dy: -33 },
     arc: { startDeg: 30, endDeg: -30, radius: 75, width: 18, thickness: 16 },
     hitstop: 2, knockbackVx: 45, launchVy: -190, airBrake: true,
   },
   air_light_2: {
-    chain: 1, startup: 3, active: 7, recovery: 6, poseFrame: 6,
+    chain: 1, startup: 3, active: 7, recovery: 6, hand: { dx: 13, dy: -33 },
     arc: { startDeg: -30, endDeg: 30, radius: 75, width: 18, thickness: 16 },
     hitstop: 2, knockbackVx: 45, launchVy: -190, airBrake: true,
   },
   air_heavy_slam: {
-    chain: 0, startup: 5, active: 8, recovery: 10, poseFrame: 3,
+    chain: 0, startup: 5, active: 8, recovery: 10, hand: { dx: 14, dy: -33 },
     arc: { startDeg: 20, endDeg: -65, radius: 95, width: 22, thickness: 18 },
     hitstop: 3, knockbackVx: 120, launchVy: 280, selfVy: 420, groundImpact: true,
   },
   chain_grab: {
-    chain: 0, startup: 4, active: 9, recovery: 9, poseFrame: 5,
+    chain: 0, startup: 4, active: 9, recovery: 9, hand: { dx: 13, dy: -33 },
     // Straight horizontal throw; the radius goes `reach.from -> reach.to`
     // (peak at 60% of the active window) and back.
     arc: { startDeg: 0, endDeg: 0, radius: 135, width: 16, thickness: 14 },
@@ -102,12 +103,12 @@ const MOVES = {
     hitstop: 4, knockbackVx: -150, launchVy: -140,
   },
   air_grab: {
-    chain: 0, startup: 3, active: 8, recovery: 8, poseFrame: 5,
+    chain: 0, startup: 3, active: 8, recovery: 8, hand: { dx: 13, dy: -33 },
     arc: { startDeg: -10, endDeg: -55, radius: 120, width: 24, thickness: 20 },
     hitstop: 4, knockbackVx: 50, launchVy: 480, groundImpact: true,
   },
   dash_attack: {
-    chain: 0, startup: 3, active: 8, recovery: 8, poseFrame: 1,
+    chain: 0, startup: 3, active: 8, recovery: 8, hand: { dx: 13, dy: -33 },
     arc: { startDeg: -20, endDeg: 40, radius: 88, width: 22, thickness: 18 },
     hitstop: 3, knockbackVx: 120, launchVy: 0, lungeVx: 110,
   },
@@ -208,18 +209,6 @@ attack: {
     shockRadius: 28,
     sparkCount: 12,
     sparkGravity: 420,
-  },
-  /**
-   * Hand (chain origin) offset from the feet anchor, per frame of
-   * the legacy attack sheet (retired, no PNG exists), facing right: dx forward, dy up-negative.
-   */
-  hands: {
-    1: { dx: 13, dy: -33 },
-    2: { dx: 26, dy: -31 },
-    3: { dx: 14, dy: -33 },
-    4: { dx: 7, dy: -33 },
-    5: { dx: 13, dy: -33 },
-    6: { dx: 13, dy: -33 },
   },
   combo: [MOVES.light_1, MOVES.light_2, MOVES.light_3],
 },
