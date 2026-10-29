@@ -180,6 +180,44 @@ export class WeaponLayer {
     this.weaponBladeImage?.setVisible(false);
   }
 
+  /** Straight chain from the grip to a blade, no trail (guard and rest poses). */
+  private drawStaticPose(
+    handX: number,
+    handY: number,
+    bladeX: number,
+    bladeY: number,
+    chainAngle: number,
+    facing: number,
+    chainColor: number,
+  ): void {
+    const segments = this.weaponChainRects.length;
+    for (let i = 0; i < segments; i += 1) {
+      const s = (i + 1) / (segments + 1);
+      const x = Math.round(handX + (bladeX - handX) * s);
+      const y = Math.round(handY + (bladeY - handY) * s);
+      this.weaponChainBorderRects[i].setPosition(x, y).setVisible(true);
+      this.weaponChainRects[i].setFillStyle(chainColor, 1.0).setPosition(x, y).setVisible(true);
+    }
+
+    this.weaponBladeCoreRect
+      ?.setPosition(bladeX, bladeY)
+      .setRotation(chainAngle)
+      .setVisible(true);
+
+    this.weaponBladeImage
+      ?.setPosition(bladeX, bladeY)
+      .setFlipY(facing === -1)
+      .setRotation(chainAngle)
+      .setVisible(true);
+
+    for (let k = 0; k < this.weaponTrailOuter.length; k += 1) {
+      this.weaponTrailOuter[k].setVisible(false);
+    }
+    for (let k = 0; k < this.weaponTrailInner.length; k += 1) {
+      this.weaponTrailInner[k].setVisible(false);
+    }
+  }
+
   private deriveVisualPose(
     player: Readonly<EntityState>,
     params: AttackParams,
@@ -283,38 +321,36 @@ export class WeaponLayer {
     // Defensive stance: chains and blades held protecting the chest
     if (player.guardPhase !== 'none' && player.attackPhase === 'none') {
       const facing = player.facing === -1 ? -1 : 1;
-      const handX = player.x + facing * 8;
-      const handY = player.y - 28;
-      const bladeX = player.x + facing * 18;
-      const bladeY = player.y - 32;
-      const chainAngle = facing === 1 ? -0.35 : Math.PI + 0.35;
+      this.drawStaticPose(
+        player.x + facing * 8,
+        player.y - 28,
+        player.x + facing * 18,
+        player.y - 32,
+        facing === 1 ? -0.35 : Math.PI + 0.35,
+        facing,
+        chainColor,
+      );
+      return;
+    }
 
-      const segments = this.weaponChainRects.length;
-      for (let i = 0; i < segments; i += 1) {
-        const s = (i + 1) / (segments + 1);
-        const x = Math.round(handX + (bladeX - handX) * s);
-        const y = Math.round(handY + (bladeY - handY) * s);
-        this.weaponChainBorderRects[i].setPosition(x, y).setVisible(true);
-        this.weaponChainRects[i].setFillStyle(chainColor, 1.0).setPosition(x, y).setVisible(true);
-      }
-
-      this.weaponBladeCoreRect
-        ?.setPosition(bladeX, bladeY)
-        .setRotation(chainAngle)
-        .setVisible(true);
-
-      this.weaponBladeImage
-        ?.setPosition(bladeX, bladeY)
-        .setFlipY(facing === -1)
-        .setRotation(chainAngle)
-        .setVisible(true);
-
-      for (let k = 0; k < this.weaponTrailOuter.length; k += 1) {
-        this.weaponTrailOuter[k].setVisible(false);
-      }
-      for (let k = 0; k < this.weaponTrailInner.length; k += 1) {
-        this.weaponTrailInner[k].setVisible(false);
-      }
+    // Rest stance: blade hanging low and forward from the grip. Off while the
+    // character grid still has the weapons baked in (D-26/D-29).
+    const rest = CONFIG.presentation.restPose;
+    if (rest.enabled && player.attackPhase === 'none' && player.rollPhase === 'none') {
+      const facing = player.facing === -1 ? -1 : 1;
+      const handX = player.x + facing * rest.handDx;
+      const handY = player.y + rest.handDy;
+      const bladeX = player.x + facing * rest.bladeDx;
+      const bladeY = player.y + rest.bladeDy;
+      this.drawStaticPose(
+        handX,
+        handY,
+        bladeX,
+        bladeY,
+        Math.atan2(bladeY - handY, bladeX - handX),
+        facing,
+        chainColor,
+      );
       return;
     }
 

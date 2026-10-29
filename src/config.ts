@@ -447,6 +447,13 @@ export const CONFIG = {
      * off while the character grid still has a baked shadow, and switch it on
      * together with the first grid drawn without one.
      */
+    /**
+     * Rest pose of the Blades of Chaos drawn by `WeaponLayer` when idle
+     * (offsets from the feet anchor, facing right). Off while the character
+     * grid still has the blades baked in; switch on with the first grid drawn
+     * without them, and tune the offsets against that art.
+     */
+    restPose: { enabled: false, handDx: 10, handDy: -28, bladeDx: 24, bladeDy: -8 },
     playerShadow: { enabled: false, width: 30, height: 6, color: 0x000000, alpha: 0.35 },
     background: '#111827',
     debugText: '#d1d5db',
