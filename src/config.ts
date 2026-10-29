@@ -116,14 +116,29 @@ sprite: {
   anchorY: 1,
 },
 run: {
-  frames: 8,
-  frameRate: 12,
-  maxFrameRate: 16,
+  // Four drawn frames: contact, passing, opposite contact, opposite passing.
+  // The pose is a near-front view with a baked shadow, so a step reads as a
+  // knee lift plus fist pump, not as a lateral slide.
+  frames: 4,
+  // Cadence is derived from stride, never hand-tuned. `frameRate` is the
+  // cadence the clip was drawn for, `stridePx` is how far the body travels
+  // in one full cycle. Playing at `speed / stridePx` cycles per second is the
+  // no-slide rule: one loop must cover one stride of ground.
+  frameRate: 24,
+  // Measured from the drawings, not guessed: one foot's centre travels 12 px
+  // peak to peak across the cycle (`scripts/verify_ascii_master.py` I8), and
+  // ground support alternates every two frames, so that excursion is half a
+  // stride. 2 x 12 px = 24 px per cycle. At `maxSpeed` 140 px/s this plays at
+  // 5.83 cycles/s (~23 fps, timeScale 0.97), a fast sprint.
+  stridePx: 24,
+  minTimeScale: 0.35,
+  maxTimeScale: 2,
   idleSpeedThreshold: 1,
 },
 idle: {
   frames: 2,
-  frameRate: 3,
+  // Two drawn frames, one second each: a calm breath. Faster reads as a twitch.
+  frameRate: 1,
 },
 air: {
   frames: 2,

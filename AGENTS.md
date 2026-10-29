@@ -1,5 +1,15 @@
 # Guía de trabajo para agentes
 
+## Entorno de IA para Phaser
+
+- Para tareas Phaser, carga `.agents/skills/phaser3-project/SKILL.md` y consulta
+  `docs/phaser-ai-environment.md` antes de seleccionar APIs o comprobaciones.
+- La versión instalada de referencia es Phaser 3.90.0. La skill global `animations`
+  describe Phaser 4: no la uses como autoridad de compatibilidad para este proyecto.
+- Context7 y Chrome DevTools MCP ya están configurados en el host; comprueba su
+  disponibilidad en cada sesión sin duplicar servidores ni instalar servicios.
+- Adecuar el entorno no autoriza cambiar jugabilidad, sprites, niveles o motor.
+
 ## Propósito del proyecto
 
 Este repositorio contiene un juego de acción lateral 2D hecho con Phaser, TypeScript y Vite. La dirección acordada combina el ritmo y la lectura visual de *God of War: Betrayal* con la historia del primer *God of War* de PlayStation 2, adaptada a pixel art. Antes de cambiar esta dirección, consulta al usuario.
@@ -8,8 +18,8 @@ Este repositorio contiene un juego de acción lateral 2D hecho con Phaser, TypeS
 
 - Inspecciona la implementación actual y conserva los cambios del usuario. No reemplaces archivos o sistemas completos sin una razón comprobada.
 - Trabaja en pasos pequeños y coherentes. Mantén el juego ejecutable al finalizar cada paso.
-- Antes de implementar una etapa, define su alcance y criterios de aceptación. Al terminarla, evalúala con `docs/verificacion.md`; corrige y vuelve a probar cualquier fallo antes de pasar a la etapa siguiente.
-- Sigue las etapas documentadas en `docs/verificacion.md` (plan vigente de 30 etapas), con una sola etapa activa cada vez. No repitas la lista aquí: `verificacion.md` es la fuente de verdad y puede cambiar (p. ej. al añadir etapas nuevas). Cada etapa debe dejar una versión ejecutable y evidencia de su evaluación.
+- Antes de implementar una etapa, define su alcance y criterios de aceptación. Al terminarla, evalúala con evidencia reproducible y registra el resultado en `docs/estado-verificado.md`; corrige y vuelve a probar cualquier fallo antes de pasar a la etapa siguiente.
+- Antes de implementar, lee el estado medido en `docs/estado-verificado.md` (qué arranca, qué funciona, qué defectos conocidos hay). `docs/verificacion.md` es el **registro histórico** del plan de etapas y de sus auditorías: no lo interpretes como afirmación del estado actual. Trabaja con una sola tarea activa cada vez y deja evidencia de su evaluación.
 - Centraliza parámetros ajustables en la configuración del juego; evita dispersar números de balance entre escenas y entidades.
 - Mantén separadas, en lo posible, las reglas de simulación, entradas, combate, entidades, escenas, interfaz, audio y recursos.
 - Prioriza controles responsivos, combate legible y siluetas claras a la resolución interna. Los efectos no deben ocultar anticipaciones, personajes ni áreas peligrosas.
@@ -25,6 +35,7 @@ Este repositorio contiene un juego de acción lateral 2D hecho con Phaser, TypeS
 - **Coherencia de Modelo Único (Cero mutaciones entre estados):** Todas las animaciones de un personaje (`idle`, `run`, `air`, `attack`, `roll`) deben derivar de la **MISMA** base anatómica y estilo visual. Si el sprite maestro tiene una cabeza, masa y armas definidas, la animación de carrera debe conservar exactamente esa misma cabeza, masa y armas. Está estrictamente prohibido que el personaje mute de estilo, proporciones o diseño al pasar de quieto a corriendo.
 - **Validación anatómica y de armas:** Verificar visualmente que cada extremidad tenga su arma correspondiente (exactamente una Cuchilla del Caos por mano, nunca dos en una sola mano) y que el rostro tenga rasgos reconocibles (ceño, perilla, nariz y tatuaje continuo de Ares).
 - **Prueba obligatoria de transición lado a lado en navegador:** Toda entrega visual debe incluir una captura compuesta del juego real en el navegador comparando lado a lado: `[Reposo / Idle en cubierta]` vs `[Carrera / Run en cubierta]`. Si el estilo, el rostro, las armas o la masa corporal difieren entre ambos estados, la tarea queda automáticamente reprobada.
+- **ASCII como fuente de verdad del pixel art de personajes (D-25):** Los sprites de personajes se producen desde grids de texto en `grids/`; el PNG es un artefacto derivado y nunca se edita a mano. Un solo maestro anatómico por personaje, paleta única en `palette/master.json` e invariantes verificables (continuidad de cabeza/torso, una cuchilla por mano, anclaje al suelo, ≤12 colores, determinismo por hash). Especificación: `docs/planes/PIXEL-ART-ASCII-MASTER-01.md`. Las hojas PNG actuales quedan congeladas hasta que exista un maestro aprobado: no se parchean.
 
 ## Frentes de trabajo
 
@@ -34,7 +45,7 @@ Cada tarea se atiende con tres roles y una sola tarea activa:
 - **Implementador (subagente):** trabaja únicamente en la tarea asignada y entrega archivos modificados, comprobaciones ejecutadas, resultados y limitaciones. No amplía el alcance por cuenta propia.
 - **Auditor (subagente distinto):** revisa la tarea terminada en modo de solo lectura. Comprueba los criterios de aceptación y vuelve a probar las funciones ya aprobadas para detectar regresiones. Informa hallazgos con evidencia y estado aprobado, fallido o parcial.
 
-Cerrar una tarea documental no autoriza desarrollo. Si el estado vigente indica que no hay una etapa activa, iniciar desarrollo requiere autorización explícita del usuario. Una vez autorizada una secuencia de desarrollo, sus etapas internas continúan automáticamente sin pedir una nueva confirmación por etapa; pausa solo si el usuario lo pide, surge un bloqueo externo o queda sin resolver una decisión material. Al aprobar cada etapa, registra el aprendizaje y empieza la siguiente tarea de `docs/verificacion.md`; si falla, corrige y vuelve a auditar antes de avanzar. Comunica avances y entrega el informe de cierre al completar el plan o al encontrar un bloqueo.
+Cerrar una tarea documental no autoriza desarrollo. Si el estado vigente indica que no hay una etapa activa, iniciar desarrollo requiere autorización explícita del usuario. Una vez autorizada una secuencia de desarrollo, sus etapas internas continúan automáticamente sin pedir una nueva confirmación por etapa; pausa solo si el usuario lo pide, surge un bloqueo externo o queda sin resolver una decisión material. Al aprobar cada etapa, registra el aprendizaje y empieza la siguiente tarea del plan vigente; si falla, corrige y vuelve a auditar antes de avanzar. Comunica avances y entrega el informe de cierre al completar el plan o al encontrar un bloqueo.
 
 Para toda corrección derivada de un hallazgo de auditoría, antes de editar el orquestador redacta un plan que incluya hallazgo y evidencia, archivos exactos, cambio propuesto, criterios de aceptación y regresiones protegidas. El auditor que reportó el hallazgo revisa ese plan en modo de solo lectura. Si lo rechaza, el orquestador revisa el plan y no se editan archivos hasta su aprobación. Si lo aprueba, un único implementador aplica la corrección y un auditor distinto realiza la reauditoría; los fallos vuelven a esta misma compuerta.
 

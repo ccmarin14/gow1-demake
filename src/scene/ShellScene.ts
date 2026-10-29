@@ -1,16 +1,17 @@
 import Phaser from 'phaser';
 import {
-  AIR_KEY,
   ASSET_DOMAINS,
   ASSETS,
-  ATTACK_KEY,
   BACKGROUND_KEY,
   IDLE_KEY,
+  IDLE_KEYS,
+  PLAYER_KEY,
   PROVISIONAL_ART,
-  ROLL_KEY,
   RUN_KEY,
+  RUN_KEYS,
+  SKID_KEY,
 } from '../assets/manifest';
-import { CONFIG, ROLL_TICKS } from '../config';
+import { CONFIG } from '../config';
 import {
   attachScaleReferenceOverlay,
   isScaleReferenceVisible,
@@ -110,10 +111,7 @@ export class ShellScene extends Phaser.Scene {
       frameHeight: 54,
     });
     this.load.image('arrow', 'assets/characters/arrow.png');
-    this.load.spritesheet('hydra', 'assets/characters/hydra.png', {
-      frameWidth: 128,
-      frameHeight: 112,
-    });
+    // hydra: pending ASCII master in grids/hydra/
   }
 
   create(): void {
@@ -148,9 +146,11 @@ export class ShellScene extends Phaser.Scene {
       .setDepth(-1)
       .setScrollFactor(0);
 
-    this.createLoopAnimation(RUN_KEY, CONFIG.player.run.frames, CONFIG.player.run.frameRate);
-    this.createLoopAnimation(IDLE_KEY, CONFIG.player.idle.frames, CONFIG.player.idle.frameRate);
-    this.createLoopAnimation(AIR_KEY, CONFIG.player.air.frames, CONFIG.player.air.frameRate);
+    // Animations disabled: only the ASCII neutral frame exists in grids/kratos/.
+    // Idle/run grids do not exist yet, so every state uses the single static frame.
+    // Idle and run come from grids/kratos/ frames; attack, guard, roll and air
+    // still have no ASCII grids, so they fall back to the neutral frame.
+    this.createPlayerAnimations();
     this.createRollAnimation();
     this.createHydraAnimations();
 
@@ -160,7 +160,7 @@ export class ShellScene extends Phaser.Scene {
       .sprite(
         spawn ? spawn.x : CONFIG.internal.width / 2,
         spawn ? spawn.y : CONFIG.internal.height,
-        IDLE_KEY,
+        PLAYER_KEY,
       )
       .setOrigin(anchorX, anchorY);
 
@@ -959,46 +959,33 @@ export class ShellScene extends Phaser.Scene {
     this.renderedScenario = this.simulation.world.scenarioName;
   }
 
-  private createLoopAnimation(key: string, frames: number, frameRate: number): void {
-    if (this.anims.exists(key)) {
-      return;
-    }
-    const endFrame = frames - 1;
-    this.anims.create({
-      key,
-      frames: this.anims.generateFrameNumbers(key, { start: 0, end: endFrame }),
-      frameRate,
-      repeat: -1,
-    });
+  private createRollAnimation(): void {
+    // Roll animation disabled: art archived (not ASCII-generated)
   }
 
-  private createRollAnimation(): void {
-    if (this.anims.exists(ROLL_KEY)) {
-      return;
+  private createPlayerAnimations(): void {
+    const defs: { key: string; frames: readonly string[]; frameRate: number }[] = [
+      { key: IDLE_KEY, frames: IDLE_KEYS, frameRate: CONFIG.player.idle.frameRate },
+      { key: RUN_KEY, frames: RUN_KEYS, frameRate: CONFIG.player.run.frameRate },
+    ];
+    for (const def of defs) {
+      if (this.anims.exists(def.key)) {
+        continue;
+      }
+      // A single drawn frame is not an animation: render it statically instead.
+      if (def.frames.length < 2) {
+        continue;
+      }
+      if (!def.frames.every((frame) => this.textures.exists(frame))) {
+        continue;
+      }
+      this.anims.create({
+        key: def.key,
+        frames: def.frames.map((frame) => ({ key: frame })),
+        frameRate: def.frameRate,
+        repeat: -1,
+      });
     }
-    const texture = this.textures.get(ROLL_KEY);
-    if (!texture || !this.textures.exists(ROLL_KEY)) {
-      return;
-    }
-    // The spritesheet may not be loaded yet when the texture is missing; the
-    // animation would then reference zero frames and Phaser would later fail
-    // reading `duration` from an undefined frame.
-    //
-    // `frameTotal` counts the syntetic `__BASE` frame as well, so the last real
-    // frame is `frameTotal - 2`. Using `frameTotal - 1` requests a frame that
-    // does not exist and Phaser warns "Frame not found in texture".
-    const lastFrame = texture.frameTotal - 2;
-    if (lastFrame < 0) {
-      return;
-    }
-    const frameCount = lastFrame + 1;
-    const frameRate = Math.max(1, frameCount / (ROLL_TICKS / 60));
-    this.anims.create({
-      key: ROLL_KEY,
-      frames: this.anims.generateFrameNumbers(ROLL_KEY, { start: 0, end: lastFrame }),
-      frameRate,
-      repeat: 0,
-    });
   }
 
   private createHydraAnimations(): void {
@@ -1034,12 +1021,7 @@ export class ShellScene extends Phaser.Scene {
 
     if (simPlayer.isDead) {
       this.stopLoop();
-      const frame = 2;
-      if (player.texture.key !== ATTACK_KEY) {
-        player.setTexture(ATTACK_KEY, frame);
-      } else {
-        player.setFrame(frame);
-      }
+      player.setTexture(PLAYER_KEY, 0);
       player.setFlipX(simPlayer.facing === -1);
       player.setRotation(0);
       player.setAlpha(0.65);
@@ -1059,23 +1041,7 @@ export class ShellScene extends Phaser.Scene {
 
     if (attackPhase !== 'none' && !rolling) {
       this.stopLoop();
-      let frame = 0;
-      if (attackPhase === 'startup') {
-        frame = 0;
-      } else if (attackPhase === 'active') {
-        const moveId = simPlayer.attackMove !== 'none' ? simPlayer.attackMove : 'light_1';
-        const moveDef = CONFIG.player.attack.moves[moveId];
-        frame = moveDef ? moveDef.poseFrame : 1;
-      } else if (attackPhase === 'recovery') {
-        const moveId = simPlayer.attackMove !== 'none' ? simPlayer.attackMove : 'light_1';
-        const moveDef = CONFIG.player.attack.moves[moveId];
-        frame = simPlayer.attackTicks <= 2 ? (moveDef ? moveDef.poseFrame : 1) : 2;
-      }
-      if (player.texture.key !== ATTACK_KEY) {
-        player.setTexture(ATTACK_KEY, frame);
-      } else {
-        player.setFrame(frame);
-      }
+      player.setTexture(PLAYER_KEY, 0);
       player.anims.timeScale = 1;
       player.setAlpha(1);
       player.setRotation(0);
@@ -1083,13 +1049,7 @@ export class ShellScene extends Phaser.Scene {
     }
     if (simPlayer.guardPhase !== 'none' && !rolling) {
       this.stopLoop();
-      // Defensive stance (compact crouch with blades ready in ATTACK_KEY frame 0)
-      const frame = 0;
-      if (player.texture.key !== ATTACK_KEY) {
-        player.setTexture(ATTACK_KEY, frame);
-      } else {
-        player.setFrame(frame);
-      }
+      player.setTexture(PLAYER_KEY, 0);
       player.setFlipX(facing === -1);
       player.setRotation(0);
       player.setAlpha(1);
@@ -1099,30 +1059,17 @@ export class ShellScene extends Phaser.Scene {
     const isOpeningChest = this.simulation.world.peekChests().some((c) => c.state === 'opening');
     if (isOpeningChest && !rolling) {
       this.stopLoop();
-      // Postura de apertura de cofre (agachado e interactuando en ATTACK_KEY frame 0)
-      const frame = 0;
-      if (player.texture.key !== ATTACK_KEY) {
-        player.setTexture(ATTACK_KEY, frame);
-      } else {
-        player.setFrame(frame);
-      }
+      player.setTexture(PLAYER_KEY, 0);
       player.setFlipX(facing === -1);
       player.setRotation(0);
       player.setAlpha(1);
       player.anims.timeScale = 1;
       return;
     }
-    if (rolling && this.anims.exists(ROLL_KEY)) {
-      if (player.texture.key !== ROLL_KEY || !player.anims.isPlaying) {
-        // Only (re)start the clip on entry. Calling `stopLoop()` here would kill
-        // the animation on every tick and `play()` would restart it from frame 0,
-        // freezing the roll on its first pose (which reads as a plain dash).
-        player.play(ROLL_KEY);
-      }
+    if (rolling) {
+      this.stopLoop();
+      player.setTexture(PLAYER_KEY, 0);
       player.setFlipX(facing === -1);
-      // Keep rotation at 0 so the feet/ground anchor (0.5, 1.0) never pivots the
-      // sprite below the floor; the 4-frame somersault spritesheet (`ROLL_KEY`)
-      // depicts the ground roll directly within the frame box.
       player.setRotation(0);
       player.setAlpha(1);
       player.anims.timeScale = 1;
@@ -1131,19 +1078,15 @@ export class ShellScene extends Phaser.Scene {
     player.setAlpha(1);
     player.setRotation(0);
     if (!grounded) {
-      this.playLoop(AIR_KEY);
+      player.setTexture(PLAYER_KEY, 0);
       return;
     }
     // High-speed turnaround skid on ground
     if (simPlayer.skidTicks > 0) {
       this.stopLoop();
-      const skidFrame = CONFIG.player.run.frames;
-      if (player.texture.key !== RUN_KEY) {
-        player.setTexture(RUN_KEY, skidFrame);
-      } else {
-        player.setFrame(skidFrame);
-      }
+      player.setTexture(SKID_KEY, 0);
       player.setFlipX(facing === -1);
+      player.anims.timeScale = 1;
       return;
     }
     if (speed > CONFIG.player.run.idleSpeedThreshold) {
@@ -1163,6 +1106,12 @@ export class ShellScene extends Phaser.Scene {
     if (!this.player) {
       return;
     }
+    if (!this.anims.exists(key)) {
+      this.player.anims.stop();
+      this.player.setTexture(PLAYER_KEY, 0);
+      this.player.anims.timeScale = 1;
+      return;
+    }
     if (this.player.anims.currentAnim?.key !== key || !this.player.anims.isPlaying) {
       this.player.play(key);
     }
@@ -1173,13 +1122,19 @@ export class ShellScene extends Phaser.Scene {
     if (!this.player) {
       return;
     }
+    const { frameRate, frames, stridePx, minTimeScale, maxTimeScale } = CONFIG.player.run;
+    if (!this.anims.exists(RUN_KEY)) {
+      this.player.anims.stop();
+      this.player.setTexture(PLAYER_KEY, 0);
+      return;
+    }
     if (this.player.anims.currentAnim?.key !== RUN_KEY || !this.player.anims.isPlaying) {
       this.player.play(RUN_KEY);
     }
-    const { frameRate, maxFrameRate } = CONFIG.player.run;
-    const ratio = Phaser.Math.Clamp(speed / CONFIG.player.maxSpeed, 0, 1);
-    const rate = frameRate + (maxFrameRate - frameRate) * ratio;
-    this.player.anims.timeScale = rate / frameRate;
+    // Zero-slide cadence: one loop must cover `stridePx` of ground.
+    const cyclesPerSecond = speed / stridePx;
+    const target = (cyclesPerSecond * frames) / frameRate;
+    this.player.anims.timeScale = Phaser.Math.Clamp(target, minTimeScale, maxTimeScale);
   }
 
   private updateOrbs(): void {

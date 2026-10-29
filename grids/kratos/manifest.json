@@ -1,0 +1,411 @@
+{
+  "character": "kratos",
+  "frame_size": {
+    "w": 97,
+    "h": 59
+  },
+  "master": "master.txt",
+  "regions": {
+    "head": {
+      "x0": 40,
+      "x1": 57,
+      "y0": 14,
+      "y1": 24
+    },
+    "torso_core": {
+      "x0": 36,
+      "x1": 62,
+      "y0": 25,
+      "y1": 34
+    },
+    "legs": {
+      "x0": 15,
+      "x1": 80,
+      "y0": 35,
+      "y1": 58
+    }
+  },
+  "continuity": [
+    "head"
+  ],
+  "anchors": {
+    "ground": 58
+  },
+  "retired_frames": {
+    "reason": "Derived by cutting regions of the master and translating them, which cut the neck and sheared the legs and always read as sliding. Retired as art on 2026-10-26 (V-15). Every new frame must be drawn in full as its own grid: each planted foot advances 6 px per frame at max speed (see docs/planes/PIXEL-ART-ASCII-MASTER-01.md, stride specification).",
+    "files": [],
+    "deleted": "2026-10-26: the retired grids and their PNGs were deleted. Only the reason is kept as record."
+  },
+  "frames": [
+    {
+      "file": "idle-01.txt",
+      "state": "idle",
+      "grounded": true,
+      "head_offset": [
+        0,
+        0
+      ],
+      "drawn": true,
+      "note": "Drawn in full as its own grid: chest and shoulders expand 1px per side at y25..y28. The head is untouched, so there is no neck seam."
+    },
+    {
+      "file": "run-00.txt",
+      "state": "run",
+      "grounded": true,
+      "head_offset": [
+        0,
+        0
+      ],
+      "drawn": true,
+      "motion": true,
+      "note": "contact: near leg forward and planted, far leg trailing with the foot off the ground; near fist down, far fist up"
+    },
+    {
+      "file": "run-01.txt",
+      "state": "run",
+      "grounded": true,
+      "head_offset": [
+        0,
+        0
+      ],
+      "drawn": true,
+      "motion": true,
+      "note": "passing: near leg almost under the body, far leg swinging through with the knee up; fists mid-swing"
+    },
+    {
+      "file": "run-02.txt",
+      "state": "run",
+      "grounded": true,
+      "head_offset": [
+        0,
+        0
+      ],
+      "drawn": true,
+      "motion": true,
+      "note": "contact opposite: near leg trailing with the foot up, far leg forward and planted; near fist up, far fist down"
+    },
+    {
+      "file": "run-03.txt",
+      "state": "run",
+      "grounded": true,
+      "head_offset": [
+        0,
+        0
+      ],
+      "drawn": true,
+      "motion": true,
+      "note": "passing opposite: near leg swinging through with the knee up, far leg under the body; fists mid-swing"
+    }
+  ],
+  "archived_frames": {
+    "date": "2026-10-27",
+    "reason": "Rejected as animation: the run and air batches changed only the lower legs, between 27 and 77 pixels out of 1001, with zero pixels changed in head, torso or arms. The feet never travelled (left foot x32..38 in every frame, right foot x57..66 within +-1 px) and the support row was identical in all frames. The attack batch changed one arm only (x<48) with torso, hips, legs and the opposite arm frozen. They are the master with a twitching limb, not drawn poses.",
+    "measured": {
+      "run_00": {
+        "changed_px": 27,
+        "head": 0,
+        "torso_arms": 0,
+        "legs": 27
+      },
+      "run_01": {
+        "changed_px": 42,
+        "head": 0,
+        "torso_arms": 0,
+        "legs": 42
+      },
+      "run_02": {
+        "changed_px": 49,
+        "head": 0,
+        "torso_arms": 0,
+        "legs": 49
+      },
+      "run_03": {
+        "changed_px": 35,
+        "head": 0,
+        "torso_arms": 0,
+        "legs": 35
+      },
+      "run_04": {
+        "changed_px": 36,
+        "head": 0,
+        "torso_arms": 0,
+        "legs": 36
+      },
+      "run_05": {
+        "changed_px": 41,
+        "head": 0,
+        "torso_arms": 0,
+        "legs": 41
+      },
+      "air_00": {
+        "changed_px": 77,
+        "head": 0,
+        "torso_arms": 0,
+        "legs": 77
+      },
+      "air_01": {
+        "changed_px": 29,
+        "head": 0,
+        "torso_arms": 0,
+        "legs": 29
+      },
+      "attack_00": {
+        "changed_px": 180,
+        "left_half_only": true
+      },
+      "attack_01": {
+        "changed_px": 139,
+        "left_half_only": true
+      },
+      "attack_02": {
+        "changed_px": 169,
+        "left_half_only": true
+      },
+      "attack_03": {
+        "changed_px": 126,
+        "left_half_only": true
+      }
+    },
+    "files": [
+      "master.txt",
+      "run-00.txt",
+      "run-01.txt",
+      "run-02.txt",
+      "run-03.txt",
+      "run-04.txt",
+      "run-05.txt",
+      "air-00.txt",
+      "air-01.txt",
+      "attack-00.txt",
+      "attack-01.txt",
+      "attack-02.txt",
+      "attack-03.txt"
+    ],
+    "grids_at": "grids/kratos/archivo/",
+    "pngs_at": "public/assets/characters/archivo/",
+    "previews_at": "docs/preview/archivo/"
+  },
+  "anatomy": {
+    "measured_from": "master.txt",
+    "date": "2026-10-27",
+    "note": "Mediciones del maestro. Todo cuadro nuevo posee este cuerpo: mismos grosores y mismas articulaciones, sin inventar formas.",
+    "center_x": 48,
+    "ground": 58,
+    "head_box": {
+      "x0": 40,
+      "x1": 58,
+      "y0": 14,
+      "y1": 24
+    },
+    "torso_box": {
+      "x0": 36,
+      "x1": 62,
+      "y0": 25,
+      "y1": 43
+    },
+    "skirt_box": {
+      "x0": 37,
+      "x1": 60,
+      "y0": 39,
+      "y1": 46
+    },
+    "leg_tops": {
+      "far": {
+        "x0": 55,
+        "x1": 60,
+        "y": 47
+      },
+      "near": {
+        "x0": 36,
+        "x1": 41,
+        "y": 47
+      }
+    },
+    "leg_width_px": {
+      "thigh": 6,
+      "calf": 5,
+      "ankle": 4
+    },
+    "feet": {
+      "near": {
+        "x0": 32,
+        "x1": 37,
+        "y0": 55,
+        "y1": 57
+      },
+      "far": {
+        "x0": 58,
+        "x1": 66,
+        "y0": 55,
+        "y1": 57
+      }
+    },
+    "shoulders": {
+      "near": {
+        "x": 36,
+        "y": 33
+      },
+      "far": {
+        "x": 62,
+        "y": 33
+      }
+    },
+    "fists": {
+      "near": {
+        "x0": 16,
+        "x1": 22,
+        "y0": 27,
+        "y1": 35,
+        "glow": [
+          [
+            19,
+            33
+          ],
+          [
+            20,
+            33
+          ],
+          [
+            22,
+            34
+          ]
+        ]
+      },
+      "far": {
+        "x0": 74,
+        "x1": 80,
+        "y0": 29,
+        "y1": 35,
+        "glow": [
+          [
+            75,
+            33
+          ],
+          [
+            76,
+            33
+          ],
+          [
+            78,
+            34
+          ]
+        ]
+      }
+    },
+    "forearm_width_px": 5,
+    "chains": {
+      "near_hand": {
+        "x0": 22,
+        "x1": 25,
+        "y0": 35,
+        "y1": 39
+      },
+      "far_hip": {
+        "x0": 65,
+        "x1": 68,
+        "y0": 44,
+        "y1": 49
+      }
+    },
+    "shadow_row": {
+      "y": 58,
+      "x0": 29,
+      "x1": 67
+    },
+    "shading": {
+      "outline": [
+        "k",
+        "j"
+      ],
+      "leg_fill": [
+        "g",
+        "h"
+      ],
+      "leg_highlight": [
+        "c",
+        "e"
+      ],
+      "foot": [
+        "c",
+        "d",
+        "e"
+      ],
+      "skin": [
+        "a",
+        "c",
+        "e"
+      ],
+      "glow": "b"
+    }
+  },
+  "motion_gate": {
+    "note": "A frame that declares motion must be a different pose, not the master with a twitching limb. Bands must change; frozen regions must not change at all.",
+    "min_total_changed_px": 250,
+    "bands": [
+      {
+        "name": "legs",
+        "x0": 15,
+        "x1": 80,
+        "y0": 44,
+        "y1": 57,
+        "min_changed": 70
+      },
+      {
+        "name": "near_arm",
+        "x0": 8,
+        "x1": 36,
+        "y0": 18,
+        "y1": 47,
+        "min_changed": 60
+      },
+      {
+        "name": "far_arm",
+        "x0": 58,
+        "x1": 90,
+        "y0": 18,
+        "y1": 47,
+        "min_changed": 60
+      }
+    ],
+    "frozen": [
+      {
+        "name": "head",
+        "x0": 40,
+        "x1": 57,
+        "y0": 14,
+        "y1": 24
+      },
+      {
+        "name": "torso_core",
+        "x0": 36,
+        "x1": 62,
+        "y0": 25,
+        "y1": 34
+      },
+      {
+        "name": "shadow",
+        "x0": 29,
+        "x1": 67,
+        "y0": 58,
+        "y1": 58
+      }
+    ]
+  },
+  "clip_gate": {
+    "note": "The rejected batches changed the legs by 27-77 px with the feet fixed: the support row was identical in every frame. This gate measures support alternation and real foot travel, not just that frames differ. The foot row is the last body row; row 58 is the baked shadow and touches the ground in every frame.",
+    "min_consecutive_change_px": 60,
+    "min_foot_travel_px": 6,
+    "clips": [
+      {
+        "name": "run",
+        "frames": [
+          "run-00.txt",
+          "run-01.txt",
+          "run-02.txt",
+          "run-03.txt"
+        ]
+      }
+    ],
+    "foot_row": 57
+  }
+}

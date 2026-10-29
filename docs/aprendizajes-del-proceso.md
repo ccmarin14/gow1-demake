@@ -1,5 +1,26 @@
 # Aprendizajes del proceso
 
+## Pruebas pequeñas de animación rasterizada: separar integridad y viabilidad (2026-10-23)
+
+- Resultado del método ensayado: fallido; se conservó la versión productiva.
+- Reutilizar píxeles y conservar paleta/alfa no garantiza que las articulaciones
+  permanezcan conectadas después de rotar recortes. Una muestra debe evaluar
+  pivotes, solapes y encuadre, no solo comprobar que sus cuadros sean distintos.
+- Una sombra conservada en la última fila puede hacer pasar una prueba de caja
+  delimitadora aunque los pies no apoyen. Medir el contacto del pie por separado.
+- Un diff contra fondo necesita una región de control sin cambios; si esta
+  cambia entre capturas, no llamar al resultado «silueta aislada».
+- Un ensayo negativo acotado permite detener una implementación defectuosa sin
+  reemplazar lo aprobado ni concluir que toda la técnica es imposible.
+- Si el ensayo omite partes esenciales del enfoque, no basta para cerrar el
+  objetivo: se corrige esa omisión y se vuelven a comprobar los defectos concretos.
+- Medir solapes sobre las capas transformadas de muslo, pantorrilla y pie evita
+  confundir una silueta global conectada con articulaciones realmente cubiertas.
+- Para aislar la silueta del fondo, detener el bucle y redibujar sin actualizar
+  la simulación; un segundo redibujado idéntico sirve como control. Un reloj del
+  motor controlado demuestra avance funcional, no rendimiento en tiempo real.
+
+
 Bitácora de métodos reutilizables aprendidos al completar cada tarea. Se mantiene agnóstica al juego: registra cómo planear, implementar, probar, integrar o coordinar el trabajo, no el lore, balance ni decisiones visuales del producto.
 
 Añade o actualiza una entrada después de cada auditoría de etapa, sea aprobada, fallida o parcial. Basa las lecciones en lo que ocurrió; no conviertas una preferencia en una regla sin evidencia. Si no surgió una lección generalizable, deja constancia de ello y explica qué práctica permitió avanzar sin sorpresas.
@@ -846,3 +867,68 @@ Mantén cada entrada breve y accionable. Actualiza las guías de trabajo solo cu
 
 
 
+
+### DOC-TRUTH-01 — El acta de aprobación por etapa no es evidencia del estado integrado (2026-10-26)
+
+- Resultado: cerrada. Se alineó la documentación con el estado medido y se registraron siete defectos verificables (V-01 a V-07) en un documento único de estado.
+- Método que funcionó:
+  1. **Separar dos preguntas distintas:** "¿esta etapa se aprobó en su momento?" y "¿qué hace el producto hoy?". La primera vive en el historial de auditorías; la segunda exige volver a medir. Mezclarlas produce documentos que declaran un juego completo sobre un arranque que es un escenario de prueba.
+  2. **Un documento de estado fechado, con método y evidencia por fila:** cada afirmación cita archivo y línea, comando o medición de navegador. Lo no verificado se declara como no verificado en lugar de omitirse.
+  3. **Etiquetar el historial en vez de reescribirlo:** los registros de auditoría se conservan íntegros, pero dejan de presentarse como estado actual. Borrar el historial habría destruido la trazabilidad; dejarlo sin etiqueta era el problema.
+  4. **Corregir primero el archivo que el proceso manda leer:** mientras el documento de reglas apunte a un registro histórico como "fuente de verdad", cualquier agente futuro razona sobre premisas falsas. La documentación es infraestructura de decisión, no un adorno.
+- Dificultad o fallo observado: las afirmaciones de progreso se volvieron más ambiciosas que la evidencia a medida que se acumulaban etapas aprobadas. Nadie mintió: cada etapa probablemente se auditó. El error fue inferir de la suma de aprobaciones un estado integrado que nunca se re-midió, y luego citar ese resumen como fuente de verdad en el archivo de reglas.
+- Aprendizaje transferible: en proyectos con muchos ciclos de aprobación, el progreso debe medirse por el comportamiento observable del producto integrado, no por la acumulación de actas. Todo documento de estado necesita fecha, método y contraevidencia; sin eso se convierte en el insumo más peligroso para el siguiente que lo lea.
+- Cambio recomendado al proceso: ningún documento puede declarar "completado" sin una fila medida en el documento de estado; y al cerrar cualquier etapa se re-mide lo afectado, incluido el arranque por defecto, antes de actualizar el resumen.
+- Evidencia o referencia: `docs/estado-verificado.md`; `docs/verificacion.md`; `docs/estado-de-trabajo.md`; `README.md`; `docs/arquitectura.md`; `docs/decisiones.md` (D-10, D-25); `AGENTS.md`; `src/sim/scenarios.ts`; `src/sim/world.ts`; `src/config.ts`; `scripts/gen-enemy-hydra.py`.
+
+### PIXEL-ART-ASCII-MASTER-01 / P2 — Un pipeline textual se valida con round-trip, no con opinión (2026-10-26)
+
+- Resultado: cerrada técnicamente. 10/10 invariantes en verde y round-trip byte a byte idéntico al PNG actual.
+- Método que funcionó:
+  1. **Definir el invariante antes del arte:** determinismo por hash, paleta cerrada, alfa binario, continuidad de cabeza y torso, anclaje al suelo. El verificador falla antes de que exista juicio estético de por medio.
+  2. **Probar el formato con un round-trip exacto:** importar el PNG existente a grid y volver a rasterizarlo. Si el hash coincide, el formato no pierde información y el problema queda aislado al arte, no a la herramienta.
+  3. **Importador separado del rasterizador:** el bootstrap (`png_to_ascii.py`) existe para sembrar el pipeline y no se confunde con la vía de producción.
+  4. **Declarar el núcleo estático en el manifiesto (`continuity`):** comparar cabeza y torso superior entre cuadros, dejando brazos y piernas fuera del invariante porque su posición cambia por diseño.
+- Dificultad o fallo observado: un round-trip perfecto puede leerse como "arte aprobado", y no lo es. El mismo número que prueba fidelidad técnica es inútil como prueba de calidad visual; confundirlos es el error caro.
+- Aprendizaje transferible: cuando se sustituye un pipeline binario por uno textual, la primera evidencia debe ser una igualdad byte a byte contra el artefacto anterior. Eso separa "la herramienta no degrada" de "el arte es bueno", que son dos decisiones distintas y con dueños distintos.
+- Cambio recomendado al proceso: ninguna fase de arte se declara cerrada sin separar explícitamente la evidencia técnica (hash, invariantes) de la aprobación visual de la usuaria.
+- Evidencia o referencia: `grids/kratos/neutral-00.txt`; `grids/kratos/manifest.json`; `palette/master.json`; `scripts/ascii_to_png.py`; `scripts/verify_ascii_master.py`; `scripts/png_to_ascii.py`; `docs/planes/PIXEL-ART-ASCII-MASTER-01.md`.
+
+### PIXEL-ART-ASCII-MASTER-01 / P3 — Un invariante mal modelado produce un falso verde (2026-10-26)
+
+- Resultado: medido y corregido. La cabeza de los 9 cuadros de `run` se trasplantó desde el maestro; deriva 0 y 0 píxeles huérfanos. I5 quedó declarado `NOT EVALUATED`, no aprobado.
+- Método que funcionó:
+  1. **El invariante de continuidad necesita ventana móvil, no rejilla fija.** Si la cabeza sube o baja dos píxeles, la región que se compara se mueve con ella. Comparar siempre las mismas filas hacía que la corrección pareciera completa cuando la cabeza real ya estaba en otra banda vertical.
+  2. **Medir píxeles huérfanos además de la coincidencia.** La primera versión de la corrección coincidía al 100 % dentro de la ventana y aun así dejaba 2–12 píxeles de la cabeza anterior en las columnas 58–60. La coincidencia no detecta lo que sobra; por eso el invariante tiene que contar también lo que queda fuera de la huella.
+  3. **Corregir el repositorio solo después de validar en una copia.** El prototipo en `/tmp` reveló los huérfanos y el recorte del borde inferior antes de escribir un solo grid.
+  4. **Un invariante no evaluable se informa, no se omite.** Cuando la paleta no distingue hoja de cuerpo y las zonas de mano dependen de la pose, la herramienta dice `NOT EVALUATED` y termina con código 2. Un `PASS` por omisión es el defecto más caro que puede tener un verificador.
+- Dificultad o fallo observado: el primer trasplante dio "deriva 0" y "cambia solo 7–13 píxeles": dos números que sonaban a éxito. Los dos eran ciertos y el resultado seguía teniendo basura flotante al lado de la cara. El número que faltaba era el que contaba lo que no debería estar.
+- Aprendizaje transferible: en cualquier verificación por igualdad, agregar siempre la comprobación complementaria —lo que aparece fuera del molde—. Una igualdad alta con residuos fuera de lugar no es una corrección, es una corrección a medias.
+- Cambio recomendado al proceso: todo invariante con región debe declarar tres cosas: la huella de referencia, el desplazamiento permitido y el conteo de píxeles fuera de la huella. Y todo verificador con verificaciones no evaluables debe salir con código distinto de cero.
+- Evidencia o referencia: `grids/kratos/manifest.json`; `grids/kratos/run-00.txt`…`run-08.txt`; `scripts/verify_ascii_master.py`; `docs/planes/PIXEL-ART-ASCII-MASTER-01.md`; `/tmp/opencode/gow8b-ascii-p3/`.
+
+### PIXEL-ART-ASCII-MASTER-01 / P3.1 — "No puedo ver imágenes" no es "no puedo verificar" (2026-10-26)
+
+- Resultado: la corrección de cabeza se aplicó y se verificó **en navegador real** sin interpretar una sola imagen: 48/48 celdas opacas de la cabeza idénticas al grid, clip `run` recorriendo 0→1→2→3→4→5→6→7 en orden con 97–100 % de confianza, y capturas identificadas contra su grid de origen (100 % reposo, 97,6 % carrera).
+- Método que funcionó:
+  1. **Calibrar el mapeo dibujo→muestra antes de medir.** Se comparó un cuadro conocido (la pose neutral, cuyo grid es verdad de referencia) contra el canvas: el desplazamiento correcto dio 168/168 celdas y el siguiente candidato cayó a 29,8 %. Sin ese contraste, "coincide al 95 %" no significa nada.
+  2. **Una prueba de control sobre un estado estático.** En reposo, con la posición fija, el patrón de la cabeza dio **un solo** valor en 12 muestras. Eso valida el instrumento; recién entonces lo que cambia en carrera se puede atribuir a la animación.
+  3. **Firmar el clip por el cuadro que se conoce, no por un hash del recuadro.** El hash del recorte cambiaba en cada muestra aunque el cuadro fuera el mismo, porque el personaje se desplaza fracciones de píxel. Comparar contra los 9 grids precalculados convirtió ruido en un veredicto categórico por índice.
+  4. **Reducir la escena a lo mínimo.** Con cámara fija y una sola entidad, el muestreo es limpio; con cámara que sigue al jugador y otras entidades, el mismo método produjo 95 "estados" distintos en 150 muestras.
+- Dificultad o fallo observado: el primer intento de medir la carrera devolvió 100 estados de sprite distintos para 100 muestras y se leyó como "el clip no avanza". Era alineación, no animación: el instrumento estaba mal calibrado, no el objeto de estudio. Se necesitó una prueba de control sobre un estado que no cambia para distinguir instrumento de fenómeno.
+- Aprendizaje transferible: cuando un runtime no puede interpretar imágenes, el sustituto no es "queda pendiente de validación humana" sino un **instrumento calibrado contra una verdad conocida**, con prueba de control en un estado estático y una métrica categórica (índice de cuadro) en vez de una continua y ruidosa (hash, similitud). Lo que queda para el humano es solo el juicio estético.
+- Cambio recomendado al proceso: antes de declarar "no verificable por agentes", exigir que se hayan agotado (a) calibración contra verdad conocida, (b) prueba de control estática y (c) métrica discreta derivada de la fuente de verdad.
+- Evidencia o referencia: `docs/estado-verificado.md` §4.5 y §6; `docs/planes/PIXEL-ART-ASCII-MASTER-01.md` §P3 y §P3.1; `/tmp/opencode/gow8b-head/navegador-idle-vs-run.png`; `/tmp/opencode/gow8b-head/cabeza-antes-despues.png`; `/tmp/opencode/gow8b-head/cabeza-antes-despues-silueta.png`; `grids/kratos/`; `palette/master.json`.
+
+### PIXEL-ART-ASCII-MASTER-01 / P2 — Un pipeline fiel puede estar validando el arte equivocado (2026-10-26)
+
+- Resultado: se descartó todo el arte previo de Kratos —incluidos los grids que parecían la fuente de verdad— y se reinició con un solo cuadro dibujado desde cero, verificado en navegador con offset exacto y 99,3–99,5 % de coincidencia de color.
+- Método que funcionó:
+  1. **Separar "el formato funciona" de "el arte es aceptable".** El round-trip byte a byte y el IoU de 1.0 demostraban que el rasterizador no degradaba la imagen; no decían nada sobre la calidad de la imagen. Presentarlos juntos permitió leer un pipeline correcto como un arte aprobado.
+  2. **Importar el PNG viejo al grid convierte el error en fuente de verdad.** Un grid generado por `png_to_ascii.py` hereda todos los defectos del PNG: el pipeline lo reproduce con fidelidad perfecta y el verificador lo aprueba. La fidelidad del pipeline es ortogonal a la calidad del insumo.
+  3. **Archivar en vez de borrar.** Mover los activos rechazados a `archivo/` conserva la evidencia de comparación y evita que un `git clean` posterior los reintroduzca por accidente.
+  4. **Volver a medir el dibujo tras cada reinicio.** El offset de dibujo (`round(x−48.5)`, `round(y−59)`) se verificó de nuevo sobre el cuadro nuevo en reposo y en carrera: la fórmula no cambió, pero un cambio de tamaño de frame sí la habría invalidado en silencio.
+- Dificultad o fallo observado: mantener el juego compilando mientras se elimina el arte obligó a sustituir animaciones por un cuadro estático. Un `createLoopAnimation` que ya nadie llama y un `setTexture` sin textura cargada son errores de compilación visibles; el riesgo real fue el opuesto, dejar el código intacto y que fallara solo en runtime.
+- Aprendizaje transferible: cuando el insumo de un pipeline se genera a partir del artefacto que el pipeline debía mejorar, el resultado siempre pasa las verificaciones. La pregunta correcta no es "¿el pipeline es fiel?" sino "¿de dónde salió este insumo?".
+- Cambio recomendado al proceso: todo verificador debe registrar el origen del insumo. Si un grid se produjo por ingeniería inversa de un PNG, se etiqueta como derivado y no puede sostener una aprobación de arte.
+- Evidencia o referencia: `docs/estado-verificado.md` §4.1–§4.3; `docs/planes/PIXEL-ART-ASCII-MASTER-01.md` §P2; `grids/kratos/`; `public/assets/characters/archivo/`.

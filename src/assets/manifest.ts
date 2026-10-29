@@ -27,13 +27,41 @@ function characterSheet(key: string, path: string): AssetEntry {
   };
 }
 
+/**
+ * Motion frames derived by translating blocks of the master are retired.
+ * Those frames cut the head and sheared the legs, which mutates anatomy and
+ * reads as sliding. Until a frame is drawn in full it is not animated: the
+ * character stays on the single drawn master.
+ */
+const STATIC_KEY = 'kratos-neutral';
+
+export const IDLE_KEYS = [STATIC_KEY, 'kratos-idle-01'] as const;
+/**
+ * Four drawn poses: contact, passing, opposite contact, opposite passing.
+ * The foot support alternates every two poses, which is what `stridePx`
+ * measures in `CONFIG.player.run`.
+ */
+export const RUN_KEYS = [
+  'kratos-run-00',
+  'kratos-run-01',
+  'kratos-run-02',
+  'kratos-run-03',
+] as const;
+export const SKID_KEY = STATIC_KEY;
+
+/** Additional grid-derived frames, one PNG each, drawn in full. */
+export const PLAYER_FRAME_KEYS: readonly string[] = [
+  'kratos-idle-01',
+  ...RUN_KEYS,
+];
+
 export const ASSETS: Record<AssetDomain, readonly AssetEntry[]> = {
   characters: [
-    characterSheet('kratos-idle', 'assets/characters/kratos-idle.png'),
-    characterSheet('kratos-run', 'assets/characters/kratos-run.png'),
-    characterSheet('kratos-air', 'assets/characters/kratos-air.png'),
-    characterSheet('kratos-attack', 'assets/characters/kratos-attack.png'),
-    characterSheet('kratos-roll', 'assets/characters/kratos-roll.png'),
+    characterSheet('kratos-neutral', 'assets/characters/kratos-neutral.png'),
+    ...PLAYER_FRAME_KEYS.map((key) => ({
+      key,
+      path: `assets/characters/${key}.png`,
+    })),
   ],
   environment: [
     { key: 'egeo-fondo', path: 'assets/environment/egeo-fondo.png' },
@@ -51,8 +79,5 @@ export const PLAYER_KEY = 'kratos-neutral';
 
 export const IDLE_KEY = 'kratos-idle';
 export const RUN_KEY = 'kratos-run';
-export const AIR_KEY = 'kratos-air';
-export const ATTACK_KEY = 'kratos-attack';
-export const ROLL_KEY = 'kratos-roll';
 
 export const PROVISIONAL_ART = false;
