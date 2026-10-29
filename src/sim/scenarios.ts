@@ -315,16 +315,6 @@ register({
 });
 
 register({
-  name: 'combat',
-  entities: [
-    playerAt(200, GROUND_Y),
-    dummyAt('dummy', 240, GROUND_Y, -1, true),
-  ],
-  platforms: [{ x1: 0, x2: 480, yTop: GROUND_Y }],
-  targetPhysics: true,
-});
-
-register({
   name: 'legionnaire',
   entities: [
     playerAt(190, GROUND_Y),
@@ -428,7 +418,7 @@ register({
   targetPhysics: true,
 });
 
-export const DEFAULT_SCENARIO = 'platforms';
+export const DEFAULT_SCENARIO = 'level1';
 
 export function getScenario(name: string): Scenario {
   const scenario = scenarios.get(name);

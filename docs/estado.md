@@ -7,20 +7,19 @@ Documento único del estado medido de `gow-8b`. Se actualiza en el mismo commit 
 - **Build y navegador:** `pnpm build` pasa sin errores; el servidor de desarrollo carga en Chrome a 480×270 con 0 errores de consola y 0 peticiones HTTP fallidas.
 - **Simulación determinista (60 Hz):** movimiento horizontal, salto y doble salto, plataformas one-way, rodada con i-frames, ataque ligero y pesado, guardia/parry, magia (*Ira de Poseidón*), orbes, cofres, checkpoints e IA de legionario, arquero e hidra (`src/sim/`).
 - **Presentación y audio:** HUD de salud/maná/orbes (`HudLayer.ts`), efectos de lluvia/relámpagos (`VfxLayer.ts`), overlay de flujo (`GameFlowOverlay.ts`) y audio procedural Web Audio (`SoundManager.ts`).
+- **Arranque:** el juego abre en la pantalla de título sobre `level1` (escenario por defecto); las oleadas de la arena central nacen dentro de la arena.
 - **Harness DEV:** `window.__GOW8B` expone `snapshot()`, `loadScenario()`, `reset()`, `step()`, `advance()` y `metrics()`.
 - **Sprites activos:**
   - Kratos tiene `kratos-neutral.png` y `kratos-idle-01.png` (clip `kratos-idle` de 2 cuadros). El resto de los estados (`run`, `attack`, `air`, `roll`, `guard`) usan el cuadro estático `kratos-neutral` hasta que se dibujen los cuadros nuevos en ASCII.
-  - `legionnaire.png`, `archer.png` y `arrow.png` están cargados como arte provisional; `hydra` no tiene textura cargada.
+  - `legionnaire.png`, `archer.png` y `arrow.png` están cargados como arte provisional; el hidra se dibuja como un rectángulo marcador (`presentation.hydraPlaceholder`) hasta que tenga arte.
 
 ## 2. Problemas abiertos
 
 | ID | Problema | Impacto |
 | --- | --- | --- |
-| **V-04** | El escenario `combat` usa un dummy legado que no recibe daño. | No sirve para verificar daño cuerpo a cuerpo. |
 | **V-14** | `WeaponLayer.ts` dibuja cadenas procedurales encima de un sprite que ya tiene cadenas, cuchillas y sombra cocidas en el PNG; la sombra de escena (`playerShadow`) y la pose de reposo de `WeaponLayer` (`restPose`) están implementadas pero apagadas. | Doble cadena y sombra pegada al saltar hasta que el primer grid sin armas ni sombra cocidas permita encender ambos flags en `src/config.ts` y ajustar los offsets. |
 | **ART-01** | `grids/kratos/master.txt` proviene de `png_to_ascii.py` con letras asignadas por luminancia (97×59) y no es editable a mano. | Impide dibujar cuadros nuevos directamente en ASCII. |
 | **ART-02** | Los anclajes de mano de los ataques (`hand` en cada movimiento de `src/config.ts`) conservan los valores medidos sobre una hoja retirada; no coinciden con el arte nuevo. | Las cadenas saldrán de un punto que no coincide con las manos dibujadas hasta re-medirlos con los cuadros nuevos. |
-| **BOOT-01** | El escenario inicial por defecto es `platforms` y `flowState` arranca en `playing`. | Al abrir el juego no se entra al nivel ni a la pantalla de título. |
 | **ARCH-01** | `src/scene/ShellScene.ts` concentra 1.655 líneas (carga mixta de assets, render de escenario, animaciones y cámaras). | Deuda técnica de mantenibilidad (no bloquea el arte). |
 
 ## 3. Siguiente paso
@@ -42,3 +41,5 @@ Definir el formato ASCII semántico (letras por material, paleta reducida y lien
 - `2026-10-29` — **Paso 9 (Pose de reposo y sombra):** `WeaponLayer` dibuja una cuchilla colgante en reposo (`presentation.restPose`, apagada); pose compartida con la guardia mediante `drawStaticPose`. Con ambos flags encendidos temporalmente se verificó en navegador (derecha, izquierda y aire, 0 errores). La sombra solo se ve en suelo; no se distingue de la sombra cocida actual. Se abrió ART-02 (anclajes de mano).
 - `2026-10-29` — **Paso 10 (Anclajes por movimiento):** se eliminó la indirección `poseFrame` → tabla `hands` (apuntaba a una hoja de ataque retirada); cada movimiento declara su `hand` con los mismos valores, sin cambio de comportamiento. ART-02 queda reducido a re-medir los valores con el arte nuevo.
 - `2026-10-29` — **Paso 11 (V-01):** los spawns de las oleadas se declaran con `offsetX` relativo al borde izquierdo de la arena (`WaveManager(originX)`), y `world.ts` lee los límites de la arena de `CONFIG.map.level1` en vez de repetir 550/890. Verificado en navegador: en `level1` nacen en x=800/860 (dentro de 550–890) y `waves` conserva x=320/380.
+- `2026-10-29` — **Paso 12 (Retiro de lo roto o legado):** se eliminó el escenario `combat` (dummy sin daño, V-04) y el código del hidra que pedía una textura y animaciones inexistentes (`Missing animation: hydra-idle` en cada frame; ahora un marcador rectangular), la animación de rodada vacía y los gates, regiones y registros de cuadros retirados de `grids/kratos/manifest.json` (nada los ejecutaba). El juego arranca en la pantalla de título sobre `level1` (BOOT-01); verificado en navegador.
+

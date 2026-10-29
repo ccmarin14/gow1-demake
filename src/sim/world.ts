@@ -119,6 +119,8 @@ export class World {
 
   constructor() {
     this.loadScenario(DEFAULT_SCENARIO);
+    // The game boots on the title screen; scenarios loaded later start playing.
+    this.flowState = 'title';
   }
 
   get frame(): number {

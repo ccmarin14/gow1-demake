@@ -40,7 +40,6 @@ export class ShellScene extends Phaser.Scene {
   private targetRects = new Map<string, Phaser.GameObjects.Rectangle>();
   private legionnaireSprites = new Map<string, Phaser.GameObjects.Sprite>();
   private archerSprites = new Map<string, Phaser.GameObjects.Sprite>();
-  private hydraSprites = new Map<string, Phaser.GameObjects.Sprite>();
   private arrowSprites = new Map<string, Phaser.GameObjects.Image>();
   private readonly orbSprites = new Map<string, { outer: Phaser.GameObjects.Arc; core: Phaser.GameObjects.Arc; highlight: Phaser.GameObjects.Arc }>();
   private readonly chestGfx = new Map<
@@ -102,7 +101,6 @@ export class ShellScene extends Phaser.Scene {
         }
       }
     }
-    // hydra: pending ASCII master in grids/hydra/
   }
 
   create(): void {
@@ -140,8 +138,6 @@ export class ShellScene extends Phaser.Scene {
     // Idle comes from the drawn grids/kratos/ frames; run has none yet, and
     // attack, guard, roll and air fall back to the static neutral frame.
     this.createPlayerAnimations();
-    this.createRollAnimation();
-    this.createHydraAnimations();
 
     const shadowCfg = CONFIG.presentation.playerShadow;
     this.playerShadow = this.add
@@ -594,14 +590,8 @@ export class ShellScene extends Phaser.Scene {
         this.archerSprites.delete(id);
       }
     }
-    for (const [id, sprite] of this.hydraSprites.entries()) {
-      if (!targets.some((t) => t.id === id && t.kind === 'hydra')) {
-        sprite.destroy();
-        this.hydraSprites.delete(id);
-      }
-    }
     for (const [id, rect] of this.targetRects.entries()) {
-      if (!targets.some((t) => t.id === id && t.kind !== 'legionnaire' && t.kind !== 'archer' && t.kind !== 'hydra')) {
+      if (!targets.some((t) => t.id === id && t.kind !== 'legionnaire' && t.kind !== 'archer')) {
         rect.destroy();
         this.targetRects.delete(id);
       }
@@ -699,61 +689,19 @@ export class ShellScene extends Phaser.Scene {
         } else {
           sprite.clearTint();
         }
-      } else if (target.kind === 'hydra') {
-        let sprite = this.hydraSprites.get(target.id);
-        if (!sprite) {
-          sprite = this.add.sprite(target.x, target.y, 'hydra', 0);
-          sprite.setOrigin(1.0, 1.0).setDepth(1);
-          this.hydraSprites.set(target.id, sprite);
-        }
-        const shakeX = target.hitstunTicks > 0 && target.hitstunTicks % 2 === 1 ? (target.facing === 1 ? -2 : 2) : 0;
-        sprite.setPosition(target.x + shakeX, target.y);
-        sprite.setFlipX(target.facing === 1);
-
-        let animKey = 'hydra-idle';
-        switch (target.aiState) {
-          case 'hydra_idle':
-            animKey = 'hydra-idle';
-            break;
-          case 'hydra_roar':
-            animKey = 'hydra-roar';
-            break;
-          case 'hydra_slam':
-          case 'hydra_stuck':
-            animKey = 'hydra-slam';
-            break;
-          case 'hydra_sweep':
-            animKey = 'hydra-sweep';
-            break;
-          case 'hydra_hurt':
-            animKey = 'hydra-hurt';
-            break;
-          case 'hydra_stagger':
-            animKey = 'hydra-stagger';
-            break;
-          case 'hydra_defeat':
-            animKey = 'hydra-defeat';
-            break;
-        }
-
-        if (sprite.anims.currentAnim?.key !== animKey) {
-          sprite.play(animKey);
-        }
-
-        if (target.hitstunTicks > 0) {
-          sprite.setTint(player && player.magicPhase === 'active' ? 0x67e8f9 : 0xff7777);
-        } else {
-          sprite.clearTint();
-        }
       } else {
+        // Targets without drawn art are placeholder rectangles; the hydra is larger.
+        const hydraBox = CONFIG.presentation.hydraPlaceholder;
+        const boxHalfW = target.kind === 'hydra' ? hydraBox.width / 2 : halfW;
+        const boxHalfH = target.kind === 'hydra' ? hydraBox.height / 2 : halfH;
         let rect = this.targetRects.get(target.id);
         if (!rect) {
-          rect = this.add.rectangle(0, 0, halfW * 2, halfH * 2, CONFIG.presentation.targetColor);
+          rect = this.add.rectangle(0, 0, boxHalfW * 2, boxHalfH * 2, CONFIG.presentation.targetColor);
           rect.setOrigin(0.5, 0.5).setDepth(1);
           this.targetRects.set(target.id, rect);
         }
         const shakeX = target.hitstunTicks > 0 && target.hitstunTicks % 2 === 1 ? 1 : 0;
-        rect.setPosition(target.x + shakeX, target.y - halfH);
+        rect.setPosition(target.x + shakeX, target.y - boxHalfH);
         rect.setFillStyle(
           hits.includes(target.id)
             ? CONFIG.presentation.targetHitColor
@@ -786,10 +734,6 @@ export class ShellScene extends Phaser.Scene {
       sprite.destroy();
     }
     this.archerSprites.clear();
-    for (const sprite of this.hydraSprites.values()) {
-      sprite.destroy();
-    }
-    this.hydraSprites.clear();
     for (const sprite of this.arrowSprites.values()) {
       sprite.destroy();
     }
@@ -956,10 +900,6 @@ export class ShellScene extends Phaser.Scene {
     this.renderedScenario = this.simulation.world.scenarioName;
   }
 
-  private createRollAnimation(): void {
-    // Roll animation disabled: art archived (not ASCII-generated)
-  }
-
   private createPlayerAnimations(): void {
     const defs: { key: string; frames: readonly string[]; frameRate: number }[] = [
       { key: IDLE_KEY, frames: IDLE_KEYS, frameRate: CONFIG.player.idle.frameRate },
@@ -982,31 +922,6 @@ export class ShellScene extends Phaser.Scene {
         frameRate: def.frameRate,
         repeat: -1,
       });
-    }
-  }
-
-  private createHydraAnimations(): void {
-    if (!this.textures.exists('hydra')) {
-      return;
-    }
-    const defs: { key: string; frames: number[]; frameRate: number; repeat: number }[] = [
-      { key: 'hydra-idle', frames: [0, 1], frameRate: 3, repeat: -1 },
-      { key: 'hydra-roar', frames: [2], frameRate: 6, repeat: 0 },
-      { key: 'hydra-slam', frames: [3], frameRate: 6, repeat: 0 },
-      { key: 'hydra-sweep', frames: [4], frameRate: 6, repeat: 0 },
-      { key: 'hydra-hurt', frames: [5], frameRate: 6, repeat: 0 },
-      { key: 'hydra-stagger', frames: [6], frameRate: 6, repeat: -1 },
-      { key: 'hydra-defeat', frames: [7], frameRate: 6, repeat: 0 },
-    ];
-    for (const def of defs) {
-      if (!this.anims.exists(def.key)) {
-        this.anims.create({
-          key: def.key,
-          frames: this.anims.generateFrameNumbers('hydra', { frames: def.frames }),
-          frameRate: def.frameRate,
-          repeat: def.repeat,
-        });
-      }
     }
   }
 
@@ -1614,10 +1529,6 @@ export class ShellScene extends Phaser.Scene {
       sprite.destroy();
     }
     this.archerSprites.clear();
-    for (const sprite of this.hydraSprites.values()) {
-      sprite.destroy();
-    }
-    this.hydraSprites.clear();
     for (const sprite of this.arrowSprites.values()) {
       sprite.destroy();
     }

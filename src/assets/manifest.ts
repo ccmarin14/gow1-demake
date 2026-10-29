@@ -42,12 +42,7 @@ function characterSheet(key: string, path: string): AssetEntry {
   };
 }
 
-/**
- * Motion frames derived by translating blocks of the master are retired.
- * Those frames cut the head and sheared the legs, which mutates anatomy and
- * reads as sliding. Until a frame is drawn in full it is not animated: the
- * character stays on the single drawn master.
- */
+/** Static fallback pose for every state that has no drawn frames yet. */
 const STATIC_KEY = 'kratos-neutral';
 
 export const IDLE_KEYS = [STATIC_KEY, 'kratos-idle-01'] as const;

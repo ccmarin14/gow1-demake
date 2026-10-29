@@ -137,8 +137,8 @@ run: {
   // in one full cycle. Playing at `speed / stridePx` cycles per second is the
   // no-slide rule: one loop must cover one stride of ground.
   frameRate: 24,
-  // Placeholder from the retired run art (12 px foot excursion x 2). Re-measure
-  // it from the new drawn frames before connecting a run clip.
+  // Placeholder until the run frames are drawn: measure the foot excursion
+  // (peak to peak) on them, x 2, before connecting a run clip.
   stridePx: 24,
   minTimeScale: 0.35,
   maxTimeScale: 2,
@@ -449,6 +449,8 @@ export const CONFIG = {
      * without them, and tune the offsets against that art.
      */
     restPose: { enabled: false, handDx: 10, handDy: -28, bladeDx: 24, bladeDy: -8 },
+    /** Placeholder box for the hydra until its art is drawn (px). */
+    hydraPlaceholder: { width: 56, height: 72 },
     playerShadow: { enabled: false, width: 30, height: 6, color: 0x000000, alpha: 0.35 },
     background: '#111827',
     debugText: '#d1d5db',
