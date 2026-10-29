@@ -44,6 +44,9 @@ def load_palette(path: Path) -> dict[str, str]:
         if char == TRANSPARENT:
             raise ValueError(f"'{TRANSPARENT}' is reserved for transparency")
         hex_to_rgba(value)
+    roles = data.get("roles")
+    if roles is not None and set(roles) != set(colors):
+        raise ValueError("palette 'roles' must name exactly the same letters as 'colors'")
     max_colors = int(data.get("max_colors", 12))
     if len(colors) > max_colors:
         raise ValueError(f"palette has {len(colors)} colors, max is {max_colors}")

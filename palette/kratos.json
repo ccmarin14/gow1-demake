@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "max_colors": 12,
+  "note": "Semantic palette for the redrawn Kratos grids. Letters are mnemonic per role; hex values are reused from palette/master.json (legacy a..l by luminance). Weapons, chains and shadows are not part of this palette: they are engine layers (D-26).",
+  "colors": {
+    "o": "#1d0717",
+    "s": "#c1b8ac",
+    "m": "#9f8d7c",
+    "d": "#584841",
+    "r": "#b03028",
+    "l": "#583027",
+    "t": "#3c2d27",
+    "c": "#3d1629",
+    "b": "#82614e"
+  },
+  "roles": {
+    "o": "outline",
+    "s": "skin_lit",
+    "m": "skin_mid",
+    "d": "skin_shadow",
+    "r": "red_mark",
+    "l": "leather",
+    "t": "leather_dark",
+    "c": "cloth",
+    "b": "bronze"
+  }
+}

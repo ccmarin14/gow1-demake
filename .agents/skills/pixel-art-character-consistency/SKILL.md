@@ -25,7 +25,7 @@ Character sprites in this repository are authored as plain-text semantic ASCII g
 
 ### 4. Incremental Visual Review
 - Work one frame at a time.
-- Rasterize the frame with `scripts/ascii_to_png.py`, render an upscaled nearest-neighbor preview alongside the base pose, and wait for user approval before drawing the next frame.
+- Rasterize the frame with `scripts/ascii_to_png.py`, render an upscaled nearest-neighbor preview alongside the base pose, and wait for user approval before drawing the next frame. Commit a frame only after it is approved (one frame per commit).
 
 ## Verification Checklist
 

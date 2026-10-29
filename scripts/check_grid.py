@@ -3,7 +3,7 @@
 
 Checks per grid (the master and every frame in grids/<character>/manifest.json):
     - exact canvas size declared in the manifest (`frame_size`)
-    - every character exists in palette/master.json
+    - every character exists in the manifest's palette (default palette/master.json)
     - grounded frames have opaque pixels on the ground row (`anchors.ground`)
     - the PNG in public/assets/characters/ equals the rasterized grid
 
@@ -25,7 +25,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from ascii_to_png import TRANSPARENT, load_grid, load_palette, rasterize  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
-PALETTE = ROOT / "palette" / "master.json"
 PNG_DIR = ROOT / "public" / "assets" / "characters"
 
 
@@ -48,7 +47,7 @@ def main() -> int:
     manifest = json.loads((directory / "manifest.json").read_text(encoding="utf-8"))
     width, height = manifest["frame_size"]["w"], manifest["frame_size"]["h"]
     ground = int(manifest["anchors"]["ground"])
-    colors = load_palette(PALETTE)
+    colors = load_palette(ROOT / "palette" / manifest.get("palette", "master.json"))
     failures = 0
 
     def fail(name: str, message: str) -> None:

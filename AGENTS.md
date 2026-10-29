@@ -16,7 +16,7 @@ Juego de acción lateral 2D hecho con **Phaser 3.90.0**, **TypeScript** y **Vite
 
 1. **Unidades chicas y revisables:** cada paso aborda un único cambio acotado (por ejemplo, un cuadro de animación en ASCII o la corrección de un defecto puntual).
 2. **Juego siempre ejecutable:** al cerrar cada paso, `pnpm build` debe pasar y el juego debe cargar en navegador sin errores de consola ni peticiones 404.
-3. **Aprobación visual directa:** en tareas de arte o animación, muestra el cuadro ampliado junto al cuadro de referencia (y en el navegador cuando se conecte al juego) y espera la aprobación de la usuaria antes de avanzar al siguiente cuadro.
+3. **Aprobación visual directa:** en tareas de arte o animación, muestra el cuadro ampliado junto al cuadro de referencia (y en el navegador cuando se conecte al juego) y espera la aprobación de la usuaria antes de avanzar al siguiente cuadro. Un cuadro se commitea solo después de aprobado (un cuadro = un commit, con su línea en `docs/estado.md`); mientras está en revisión queda sin commitear. Cuando exista `idle-00` nuevo, `idle-01` (derivado del master heredado) se marca obsoleto y se redibuja.
 4. **Sin burocracia:** no crees planes extensos por etapa, ni archivos de auditoría separados, ni documentos nuevos fuera de los cuatro listados arriba. Registra una línea en `docs/estado.md` por cada paso completado.
 
 ## Reglas de arte y animación (ASCII → PNG)
