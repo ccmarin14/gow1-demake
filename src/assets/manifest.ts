@@ -37,16 +37,10 @@ const STATIC_KEY = 'kratos-neutral';
 
 export const IDLE_KEYS = [STATIC_KEY, 'kratos-idle-01'] as const;
 /**
- * Four drawn poses: contact, passing, opposite contact, opposite passing.
- * The foot support alternates every two poses, which is what `stridePx`
- * measures in `CONFIG.player.run`.
+ * Run frames. Empty until the new ASCII art exists: with fewer than two
+ * frames `ShellScene` renders the static `PLAYER_KEY` while running.
  */
-export const RUN_KEYS = [
-  'kratos-run-00',
-  'kratos-run-01',
-  'kratos-run-02',
-  'kratos-run-03',
-] as const;
+export const RUN_KEYS: readonly string[] = [];
 export const SKID_KEY = STATIC_KEY;
 
 /** Additional grid-derived frames, one PNG each, drawn in full. */
