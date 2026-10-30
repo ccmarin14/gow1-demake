@@ -661,7 +661,9 @@ export class World {
 
         // Dodge: only on ground, consume action on new flank (edge), uninterruptible while active
         if (!rolling && !attacking && !nowCastingMagic && !isOpeningChest && dodgeEdge && player.grounded && !inHitstun) {
-          startRoll(player);
+          const wantsLeft = this.input.includes('move-left');
+          const wantsRight = this.input.includes('move-right');
+          startRoll(player, wantsLeft === wantsRight ? 0 : wantsRight ? 1 : -1);
         }
         stepRoll(player);
         let nowRolling = isRolling(player);

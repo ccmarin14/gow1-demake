@@ -11,7 +11,12 @@ import type { EntityState } from './types';
  */
 const ROLL_DURATION_TICKS = ROLL_TICKS;
 
-export function startRoll(entity: EntityState): boolean {
+/**
+ * Starts a roll toward `inputDir` (the held direction), or forward when no
+ * direction is held. As in GoW 1, the evasion goes where the player aims, so
+ * it can escape backwards; the body turns to face the roll.
+ */
+export function startRoll(entity: EntityState, inputDir: -1 | 0 | 1 = 0): boolean {
   if (entity.rollPhase !== 'none') {
     return false;
   }
@@ -24,7 +29,8 @@ export function startRoll(entity: EntityState): boolean {
   if (entity.invulTicks < ROLL_INVUL_TICKS) {
     entity.invulTicks = ROLL_INVUL_TICKS;
   }
-  const dir = entity.facing === -1 ? -1 : 1;
+  const dir: -1 | 1 = inputDir !== 0 ? inputDir : entity.facing === -1 ? -1 : 1;
+  entity.facing = dir;
   entity.vx = CONFIG.player.dodge.rollSpeed * dir;
   return true;
 }
