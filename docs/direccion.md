@@ -62,10 +62,10 @@ Revisión del 2026-10-29 contra el primer *God of War*, hecha sobre código, con
 | **Vista previa con reglas** | `scripts/preview_grid.py`: ampliación con coordenadas y comparación lado a lado. Permite decir "codo en x=14, y=30" en vez de contar caracteres. | Existe |
 | **Puntos de referencia por cuadro** | Coordenadas de cabeza, hombros, codos, manos, caderas, rodillas y pies, en `grids/kratos/<cuadro>.landmarks.json`. No dibujan: fijan dónde cae cada parte. | Existe |
 | **Validador de puntos de referencia** | `scripts/check_landmarks.py`: comprueba que en cada coordenada haya el material esperado (por ejemplo, piel en la mano), que los pies estén en la fila de suelo y, con `--delta`, la distancia que avanza cada punto entre dos cuadros. Reemplaza los gates archivados, que contaban píxeles cambiados. | Existe (probado con datos sintéticos; falta usarlo con un cuadro real) |
-| **Arranque desde referencia** | Cuantizar una imagen de referencia aprobada a `palette/kratos.json` por color más cercano (no por luminancia) para obtener una base del primer cuadro y refinarla a mano. | **Por construir (ART-03)** |
+| **Arranque desde referencia** | `scripts/quantize_reference.py`: recorta una región de una imagen existente y la convierte a `palette/kratos.json` por color más cercano (no por luminancia), como referencia ASCII para leer y calcar a mano. Escribe fuera de `grids/` (se niega a escribir dentro). Sus letras son por color, no por material; los roles se deciden al dibujar. | Existe |
 | **Bucle visual** | El agente rasteriza, mira la vista previa ampliada, compara con la lista de comprobación y corrige, con un máximo de rondas. Requiere un modelo que vea imágenes. | Regla vigente |
 
-**Regla dura:** ningún script, función o bucle puede generar o modificar el contenido de `grids/*.txt`. El grid se escribe con una herramienta de escritura de archivos, con filas literales. Python solo valida, rasteriza y previsualiza.
+**Regla dura:** ningún script, función o bucle puede generar o modificar el contenido de `grids/*.txt`. El grid se escribe con una herramienta de escritura de archivos, con filas literales. Python solo valida, rasteriza, previsualiza y genera referencias fuera de `grids/`.
 
 **Alternativa descartada por ahora:** 3D con rig renderizado a píxeles. Da animación consistente pero es geometría procedural (choca con D-28) y exige modelar a Kratos; se reconsidera solo si este método también falla.
 
