@@ -1,7 +1,7 @@
 {
   "version": 1,
   "max_colors": 12,
-  "note": "Semantic palette for the redrawn Kratos grids. Letters are mnemonic per role; hex values are reused from palette/master.json (legacy a..l by luminance). Weapons, chains and shadows are not part of this palette: they are engine layers (D-26).",
+  "note": "Semantic palette for the redrawn Kratos grids. Letters are mnemonic per role; hex values come from the legacy master sprite. Weapons, chains and shadows are not part of this palette: they are engine layers (D-26).",
   "colors": {
     "o": "#1d0717",
     "s": "#c1b8ac",

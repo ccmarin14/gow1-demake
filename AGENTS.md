@@ -10,7 +10,7 @@ Juego de acción lateral 2D hecho con **Phaser 3.90.0**, **TypeScript** y **Vite
 - **[`docs/direccion.md`](docs/direccion.md):** dirección creativa, mapa de controles y guía visual.
 - **[`docs/decisiones.md`](docs/decisiones.md):** decisiones vigentes.
 - **[`docs/arquitectura.md`](docs/arquitectura.md):** separación entre simulación (`src/sim/`) y presentación Phaser (`src/scene/`).
-- **`archivo/`:** material histórico retirado. No lo uses como referencia del estado actual ni lo edites.
+- **Historial retirado:** el material viejo (planes, scripts procedurales y arte descartado) solo vive en el historial de git (`git show c2e8729:archivo/`). No lo uses como referencia del estado actual.
 
 ## Flujo de trabajo
 

@@ -83,7 +83,7 @@ def main() -> int:
     parser.add_argument("--out", required=True, type=Path)
     args = parser.parse_args()
 
-    palettes = args.palette or [Path("palette/master.json")]
+    palettes = args.palette or [Path("palette/kratos.json")]
     if len(palettes) not in (1, len(args.grids)):
         print("error: give one --palette for all grids or one per grid", file=sys.stderr)
         return 1

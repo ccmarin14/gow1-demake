@@ -1,6 +1,6 @@
 # Registro de decisiones vigentes
 
-Las decisiones históricas o reemplazadas de ciclos anteriores se conservan en `archivo/docs/decisiones.md`.
+Las decisiones históricas o reemplazadas de ciclos anteriores quedan en el historial de git (`git show c2e8729:archivo/docs/decisiones.md`).
 
 | ID | Decisión | Motivo |
 | --- | --- | --- |

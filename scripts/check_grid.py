@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Validate the ASCII grids of a character and optionally regenerate its PNGs.
 
-Checks per grid (the optional master and every frame in grids/<character>/manifest.json):
+Checks per grid (every frame in grids/<character>/manifest.json):
     - exact canvas size declared in the manifest (`frame_size`)
-    - every character exists in the manifest's palette (default palette/master.json)
+    - every character exists in the manifest's palette (`palette`, or a per-frame `palette`)
     - grounded frames have opaque pixels on the ground row (`anchors.ground`)
     - the PNG in public/assets/characters/ equals the rasterized grid
 
@@ -29,11 +29,9 @@ PNG_DIR = ROOT / "public" / "assets" / "characters"
 
 
 def entries(manifest: dict) -> list[tuple[str, str, bool, str]]:
-    """(grid file, png key, grounded, palette_file) for the master, if any, and each drawn frame."""
-    default_palette = manifest.get("palette", "master.json")
+    """(grid file, png key, grounded, palette_file) for each drawn frame."""
+    default_palette = manifest["palette"]
     items: list[tuple[str, str, bool, str]] = []
-    if "master" in manifest:
-        items.append((manifest["master"], manifest["master_png"], True, manifest.get("master_palette", "master.json")))
     for frame in manifest["frames"]:
         if frame.get("drawn", True):
             items.append((
