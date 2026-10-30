@@ -2,7 +2,7 @@
 
 Documento único del estado medido de `gow-8b`. Se actualiza en el mismo commit de cada paso. El historial previo está archivado en `archivo/docs/`.
 
-## 1. Qué funciona hoy (medido el 2026-10-29)
+## 1. Qué funciona hoy (medido el 2026-10-30)
 
 - **Build y navegador:** `pnpm build` pasa sin errores; el servidor de desarrollo carga en Chrome a 480×270 con 0 errores de consola y 0 peticiones HTTP fallidas.
 - **Simulación determinista (60 Hz):** movimiento horizontal, salto y doble salto, plataformas one-way, rodada con i-frames, ataque ligero y pesado, guardia/parry, magia (*Ira de Poseidón*), orbes, cofres, checkpoints e IA de legionario, arquero e hidra (`src/sim/`).
@@ -10,25 +10,21 @@ Documento único del estado medido de `gow-8b`. Se actualiza en el mismo commit 
 - **Arranque:** el juego abre en la pantalla de título sobre `level1` (escenario por defecto); las oleadas de la arena central nacen dentro de la arena.
 - **Harness DEV:** `window.__GOW8B` expone `snapshot()`, `loadScenario()`, `reset()`, `step()`, `advance()` y `metrics()`.
 - **Sprites activos:**
-  - Kratos tiene `kratos-neutral.png` y `kratos-idle-01.png` (clip `kratos-idle` de 2 cuadros). El resto de los estados (`run`, `attack`, `air`, `roll`, `guard`) usan el cuadro estático `kratos-neutral` hasta que se dibujen los cuadros nuevos en ASCII.
+  - Kratos tiene un solo cuadro, `kratos-idle-00.png` (grid `grids/kratos/idle-00.txt`, 64×56, paleta `palette/kratos.json`, solo cuerpo). Todos los estados lo muestran estático hasta que se dibujen los cuadros siguientes. La cuchilla en reposo (`restPose`) y la sombra de contacto (`playerShadow`) las dibuja el motor.
   - `legionnaire.png`, `archer.png` y `arrow.png` están cargados como arte provisional; el hidra se dibuja como un rectángulo marcador (`presentation.hydraPlaceholder`) hasta que tenga arte.
 
 ## 2. Problemas abiertos
 
 | ID | Problema | Impacto |
 | --- | --- | --- |
-| **V-14** | `WeaponLayer.ts` dibuja cadenas procedurales encima de un sprite que ya tiene cadenas, cuchillas y sombra cocidas en el PNG; la sombra de escena (`playerShadow`) y la pose de reposo de `WeaponLayer` (`restPose`) están implementadas pero apagadas. | Doble cadena y sombra pegada al saltar hasta que el primer grid sin armas ni sombra cocidas permita encender ambos flags en `src/config.ts` y ajustar los offsets. |
-| **ART-01** | `grids/kratos/master.txt` proviene de `png_to_ascii.py` con letras asignadas por luminancia (97×59) y no es editable a mano. | Impide dibujar cuadros nuevos directamente en ASCII. |
 | **ESE-01** | Sin remates contextuales (QTE) ni agarre real (ESE-02); impacto poco brutal (ESE-03); enemigos de un solo truco (ESE-04); sin introducción (ESE-05, regla D-30). | El combate se aparta de la esencia de *God of War*. Plan y criterios en `docs/direccion.md` §4. |
-| **ART-02** | Los anclajes de mano de los ataques (`hand` en cada movimiento de `src/config.ts`) conservan los valores medidos sobre una hoja retirada; no coinciden con el arte nuevo. | Las cadenas saldrán de un punto que no coincide con las manos dibujadas hasta re-medirlos con los cuadros nuevos. |
+| **ART-02** | Los anclajes de mano de los ataques (`hand` en cada movimiento de `src/config.ts`, entre `dx 7..26`, `dy -31..-33`) conservan valores de una hoja retirada; en `idle-00` el puño delantero está en `dx 18, dy -20`. No se cambiaron porque también definen el arco de golpe de la simulación. | Las cadenas de ataque salen por encima del puño dibujado. Se re-miden cuando existan los cuadros de ataque, con prueba en el harness. |
 
 ## 3. Siguiente paso
 
-Tarea en curso para otro agente: dibujar `idle-00`; instrucciones completas en `docs/temporal/brief-idle-00.md` (se borra al cerrar la tarea).
+Dibujar el siguiente cuadro de Kratos con el mismo método (`docs/direccion.md` §5), partiendo de `idle-00` como modelo del personaje: `idle-01` (respiración) o el primer cuadro de carrera.
 
 En paralelo al arte, el plan de esencia de `docs/direccion.md` §4 (orden: ESE-03, ESE-01 con ESE-02, ESE-04, ESE-05).
-
-Definir el formato ASCII semántico (letras por material, paleta reducida y lienzo ajustado sin cadenas ni sombra cocidas) y dibujar el primer cuadro (`idle-00`) para revisión visual antes de avanzar con los cuadros de movimiento.
 
 ## 4. Registro de pasos
 
@@ -54,4 +50,5 @@ Definir el formato ASCII semántico (letras por material, paleta reducida y lien
 - `2026-10-29` — **Paso 17 (Método de dibujo para agentes):** decisión D-31 y `docs/direccion.md` §5 (ASCII guiado por puntos de referencia, vista previa con reglas, bucle visual, lienzo 64×56). Se añadió `scripts/preview_grid.py`. Falta construir el validador y la cuantización (ART-03).
 - `2026-10-29` — **Paso 18 (Validador y brief en el repo):** `scripts/check_landmarks.py` valida puntos de referencia (material, fila de suelo y desplazamiento entre cuadros) y el brief de `idle-00` pasó a `docs/temporal/` con la excepción registrada en `AGENTS.md`.
 - `2026-10-29` — **Paso 19 (Referencia y puntos reales):** `scripts/quantize_reference.py` genera una referencia del cuerpo del master heredado en la paleta semántica, y los puntos de referencia de `idle-00` salen de ella. La primera entrega del otro agente (maniquí simétrico) se descartó: el validador la mide a 7–8 px de las manos y pies de la referencia. ART-03 cerrado.
+- `2026-10-30` — **Paso 20 (`idle-00` aprobado y conectado):** `idle-00` (64×56) es el cuerpo de `kratos-neutral.png` en el commit `e9d9a34` (la versión posterior estropeó la cabeza), copiado a mano en la paleta semántica, sin cadenas ni cuchillas, con puños, antebrazos y cara rehechos con el estilo del torso (bordes de color del lado de la luz, contorno oscuro solo del lado de la sombra) y cara mínima, como en *Betrayal*. Se retiraron `master.txt`, `idle-01.txt` y sus PNG; `check_grid.py` ya no exige master. Lienzo 64×56 en el manifest y en `PLAYER_SPRITE_*`; `restPose` y `playerShadow` encendidos. Verificado en navegador (reposo a ambos lados y en el aire, 0 errores, 0 peticiones fallidas). V-14 y ART-01 cerrados; ART-02 sigue abierto.
 

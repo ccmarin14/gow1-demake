@@ -6,8 +6,8 @@ positions ("elbow at x=14, y=30") instead of counting characters.
 
 Usage:
     python3 scripts/preview_grid.py grids/kratos/idle-00.txt --out /tmp/idle-00-preview.png
-    python3 scripts/preview_grid.py grids/kratos/idle-00.txt grids/kratos/master.txt \
-        --palette palette/kratos.json --palette palette/master.json --out /tmp/compare.png
+    python3 scripts/preview_grid.py grids/kratos/idle-00.txt docs/temporal/reference.txt \
+        --palette palette/kratos.json --out /tmp/compare.png
 
 Each grid is drawn at `--scale` x with a ruler: a tick every 5 px and a label
 every 10 px. Several grids are placed side by side (one palette per grid, or a

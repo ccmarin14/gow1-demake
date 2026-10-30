@@ -29,7 +29,8 @@
 - **Jerarquía de lectura:** Kratos y sus armas → enemigo activo y anticipación de ataque → suelo y bordes de plataforma → fondo marino y lluvia.
 - **Construcción desde ASCII:**
   - Los sprites de personajes se editan en grids de texto (`grids/`) y se convierten a PNG mediante `scripts/ascii_to_png.py`. El PNG nunca se edita a mano.
-  - Cada carácter del grid representa un **material o rol de color** claro (contorno, piel, piel en sombra, marca roja, bronce, cuero, metal) y `.` representa transparencia. Los grids rediseñados usan `palette/kratos.json` (letras mnemónicas con `roles` nombrados, declarada en el campo `palette` del `manifest.json` del personaje); el `master.txt` heredado usa `palette/master.json`, con letras `a..l` por luminancia que no son roles.
+  - Cada carácter del grid representa un **material o rol de color** claro (contorno, piel, piel en sombra, marca roja, bronce, cuero, metal) y `.` representa transparencia. Los grids de Kratos usan `palette/kratos.json` (letras mnemónicas con `roles` nombrados, declarada en el campo `palette` del `manifest.json` del personaje).
+  - **Estilo de sombreado:** luz desde arriba a la izquierda. Del lado de la luz el borde es de color (granate `c` o bronce `b`); el contorno oscuro `o` va solo del lado de la sombra. Las formas se modelan pasando por los tonos intermedios (`s` → `m` → `b` → `d`), no saltando de claro a contorno. La cara es mínima, como en *Betrayal*: cráneo claro, franja roja con borde granate, oreja, cuenca del ojo granate bajo la ceja iluminada, pómulo con luz y chivera insinuada bajo el mentón; sin nariz ni boca dibujadas. `idle-00` es el modelo de referencia del personaje.
   - **Separación de capas:** el sprite del personaje contiene únicamente su anatomía y vestimenta. Las cadenas, las hojas extendidas y la sombra de contacto se dibujan en capas separadas del motor (`WeaponLayer` y sombra en escena) para no duplicar armas ni arrastrar la sombra durante el salto.
   - **Trabajo incremental:** cada cuadro nuevo se dibuja completo en ASCII, se rasteriza y se presenta ampliado junto al cuadro base para aprobación visual antes de pasar al cuadro siguiente.
 
@@ -57,11 +58,11 @@ Revisión del 2026-10-29 contra el primer *God of War*, hecha sobre código, con
 
 | Pieza | Qué es | Estado |
 | --- | --- | --- |
-| **Lienzo solo-cuerpo** | 64×56, pies en la fila 55. El 97×59 heredado reservaba espacio para armas y cadenas que ya no van en el sprite. La física no depende del lienzo (D-29). Se aplica al aprobar la silueta. | Pendiente de aplicar |
+| **Lienzo solo-cuerpo** | 64×56, pies en la fila 55. El 97×59 heredado reservaba espacio para armas y cadenas que ya no van en el sprite. La física no depende del lienzo (D-29). | Aplicado |
 | **Tres pasadas** | Silueta (2 colores, la usuaria la aprueba), sombreado y contorno con detalle. Cada pasada es el cuadro completo dibujado a mano. | Regla vigente |
 | **Vista previa con reglas** | `scripts/preview_grid.py`: ampliación con coordenadas y comparación lado a lado. Permite decir "codo en x=14, y=30" en vez de contar caracteres. | Existe |
 | **Puntos de referencia por cuadro** | Coordenadas de cabeza, hombros, codos, manos, caderas, rodillas y pies, en `grids/kratos/<cuadro>.landmarks.json`. No dibujan: fijan dónde cae cada parte. | Existe |
-| **Validador de puntos de referencia** | `scripts/check_landmarks.py`: comprueba que en cada coordenada haya el material esperado (por ejemplo, piel en la mano), que los pies estén en la fila de suelo y, con `--delta`, la distancia que avanza cada punto entre dos cuadros. Reemplaza los gates archivados, que contaban píxeles cambiados. | Existe (probado con datos sintéticos; falta usarlo con un cuadro real) |
+| **Validador de puntos de referencia** | `scripts/check_landmarks.py`: comprueba que en cada coordenada haya el material esperado (por ejemplo, piel en la mano), que los pies estén en la fila de suelo y, con `--delta`, la distancia que avanza cada punto entre dos cuadros. Reemplaza los gates archivados, que contaban píxeles cambiados. | Existe (usado en `idle-00`) |
 | **Arranque desde referencia** | `scripts/quantize_reference.py`: recorta una región de una imagen existente y la convierte a `palette/kratos.json` por color más cercano (no por luminancia), como referencia ASCII para leer y calcar a mano. Escribe fuera de `grids/` (se niega a escribir dentro). Sus letras son por color, no por material; los roles se deciden al dibujar. | Existe |
 | **Bucle visual** | El agente rasteriza, mira la vista previa ampliada, compara con la lista de comprobación y corrige, con un máximo de rondas. Requiere un modelo que vea imágenes. | Regla vigente |
 

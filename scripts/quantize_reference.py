@@ -9,7 +9,7 @@ which only receives hand-written grids (D-31).
 
 Usage:
     python3 scripts/quantize_reference.py \
-        --png public/assets/characters/kratos-neutral.png \
+        --png /tmp/source-sprite.png \
         --palette palette/kratos.json \
         --crop 30,14,68,57 --size 64x56 --ground-row 55 \
         --out docs/temporal/idle-00.reference.txt
@@ -26,6 +26,7 @@ import argparse
 import collections
 import sys
 from pathlib import Path
+from typing import cast
 
 from PIL import Image
 
@@ -80,12 +81,13 @@ def main() -> int:
         return 1
 
     pixels = source.load()
+    assert pixels is not None
     grid = [["."] * width for _ in range(height)]
     counts: collections.Counter[str] = collections.Counter()
     dropped = 0
     for sy in range(y0, y1 + 1):
         for sx in range(x0, x1 + 1):
-            r, g, b, a = pixels[sx, sy]
+            r, g, b, a = cast("tuple[int, int, int, int]", pixels[sx, sy])
             if a < 128:
                 continue
             char, dist = nearest((r, g, b), palette)

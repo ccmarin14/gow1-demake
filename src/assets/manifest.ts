@@ -43,9 +43,10 @@ function characterSheet(key: string, path: string): AssetEntry {
 }
 
 /** Static fallback pose for every state that has no drawn frames yet. */
-const STATIC_KEY = 'kratos-neutral';
+const STATIC_KEY = 'kratos-idle-00';
 
-export const IDLE_KEYS = [STATIC_KEY, 'kratos-idle-01'] as const;
+/** Idle frames. One drawn frame: `PlayerView` renders it statically. */
+export const IDLE_KEYS: readonly string[] = [STATIC_KEY];
 /**
  * Run frames. Empty until the new ASCII art exists: with fewer than two
  * frames `ShellScene` renders the static `PLAYER_KEY` while running.
@@ -54,14 +55,11 @@ export const RUN_KEYS: readonly string[] = [];
 export const SKID_KEY = STATIC_KEY;
 
 /** Additional grid-derived frames, one PNG each, drawn in full. */
-export const PLAYER_FRAME_KEYS: readonly string[] = [
-  'kratos-idle-01',
-  ...RUN_KEYS,
-];
+export const PLAYER_FRAME_KEYS: readonly string[] = [...RUN_KEYS];
 
 export const ASSETS: Record<AssetDomain, readonly AssetEntry[]> = {
   characters: [
-    characterSheet('kratos-neutral', 'assets/characters/kratos-neutral.png'),
+    characterSheet(STATIC_KEY, `assets/characters/${STATIC_KEY}.png`),
     ...PLAYER_FRAME_KEYS.map((key) => ({
       key,
       path: `assets/characters/${key}.png`,
@@ -82,7 +80,7 @@ export const ASSETS: Record<AssetDomain, readonly AssetEntry[]> = {
 export const ASSET_DOMAINS = Object.keys(ASSETS) as AssetDomain[];
 
 export const BACKGROUND_KEY = ASSETS.environment[0].key;
-export const PLAYER_KEY = 'kratos-neutral';
+export const PLAYER_KEY = STATIC_KEY;
 
 export const IDLE_KEY = 'kratos-idle';
 export const RUN_KEY = 'kratos-run';

@@ -1,20 +1,19 @@
 {
   "character": "kratos",
+  "palette": "kratos.json",
   "frame_size": {
-    "w": 97,
-    "h": 59
+    "w": 64,
+    "h": 56
   },
-  "master": "master.txt",
   "anchors": {
-    "ground": 58
+    "ground": 55
   },
   "frames": [
     {
-      "file": "idle-01.txt",
+      "file": "idle-00.txt",
       "state": "idle",
       "grounded": true,
-      "png": "kratos-idle-01"
+      "png": "kratos-idle-00"
     }
-  ],
-  "master_png": "kratos-neutral"
+  ]
 }

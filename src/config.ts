@@ -6,8 +6,8 @@ export const TICK_MICROS = Math.floor(1_000_000 / TICK_RATE);
 const INTERNAL_WIDTH = 480;
 const INTERNAL_HEIGHT = 270;
 /** Character canvas (px). Single source: the manifest and the scale reference read it. */
-export const PLAYER_SPRITE_WIDTH = 97;
-export const PLAYER_SPRITE_HEIGHT = 59;
+export const PLAYER_SPRITE_WIDTH = 64;
+export const PLAYER_SPRITE_HEIGHT = 56;
 /**
  * Physical bounds of the player, deliberately independent of the sprite canvas:
  * redrawing the art with a different canvas must not move walls or the jump
@@ -448,10 +448,10 @@ export const CONFIG = {
      * grid still has the blades baked in; switch on with the first grid drawn
      * without them, and tune the offsets against that art.
      */
-    restPose: { enabled: false, handDx: 10, handDy: -28, bladeDx: 24, bladeDy: -8 },
+    restPose: { enabled: true, handDx: 18, handDy: -20, bladeDx: 28, bladeDy: -6 },
     /** Placeholder box for the hydra until its art is drawn (px). */
     hydraPlaceholder: { width: 56, height: 72 },
-    playerShadow: { enabled: false, width: 30, height: 6, color: 0x000000, alpha: 0.35 },
+    playerShadow: { enabled: true, width: 36, height: 6, color: 0x000000, alpha: 0.35 },
     background: '#111827',
     debugText: '#d1d5db',
     metricsWindowFrames: 60,

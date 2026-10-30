@@ -8,8 +8,8 @@ Rules:
     - no antialiasing, no scaling, no interpolation
 
 Usage:
-    python3 scripts/ascii_to_png.py --grid grids/kratos/master.txt \
-        --palette palette/master.json --out /tmp/kratos-neutral.png
+    python3 scripts/ascii_to_png.py --grid grids/kratos/idle-00.txt \
+        --palette palette/kratos.json --out /tmp/kratos-idle-00.png
 
 For the project grids prefer `pnpm art` (scripts/check_grid.py), which validates
 and regenerates every derived PNG.
@@ -76,6 +76,7 @@ def rasterize(lines: list[str], colors: dict[str, str]) -> Image.Image:
     width = len(lines[0])
     image = Image.new("RGBA", (width, height), (0, 0, 0, 0))
     pixels = image.load()
+    assert pixels is not None
     cache: dict[str, tuple[int, int, int, int]] = {}
     for y, line in enumerate(lines):
         for x, char in enumerate(line):
