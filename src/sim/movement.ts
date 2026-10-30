@@ -6,6 +6,10 @@ export interface MovementParams {
   brake: number;
   minX: number;
   maxX: number;
+  /** Weaker control while airborne (px/s^2). */
+  airControl: { accel: number; brake: number };
+  /** Ground turnaround slide (see `CONFIG.player.skid`). */
+  skid: { brake: number; ticks: number; minSpeedRatio: number };
 }
 
 function brakeTowardZero(vx: number, delta: number): number {
@@ -28,8 +32,28 @@ function clampSpeed(vx: number, maxSpeed: number): number {
   return vx;
 }
 
-const BRAKE_SKID = 2200;
-const SKID_TICKS = 6;
+/**
+ * One tick of steering without skid: brake with no input (or both), brake
+ * while the input opposes the motion, otherwise accelerate up to `maxSpeed`.
+ */
+function steer(
+  entity: EntityState,
+  vx: number,
+  inputDir: -1 | 0 | 1,
+  accel: number,
+  brake: number,
+  maxSpeed: number,
+  dtSeconds: number,
+): number {
+  if (inputDir === 0) {
+    return brakeTowardZero(vx, brake * dtSeconds);
+  }
+  entity.facing = inputDir;
+  if (vx * inputDir < 0) {
+    return brakeTowardZero(vx, brake * dtSeconds);
+  }
+  return clampSpeed(vx + inputDir * accel * dtSeconds, maxSpeed);
+}
 
 export function stepHorizontal(
   entity: EntityState,
@@ -39,67 +63,43 @@ export function stepHorizontal(
   params: MovementParams,
   locked: boolean = false,
 ): void {
-  const { maxSpeed, accel, brake, minX, maxX } = params;
+  const { maxSpeed, accel, brake, minX, maxX, airControl, skid } = params;
+  const inputDir: -1 | 0 | 1 = wantsLeft === wantsRight ? 0 : wantsRight ? 1 : -1;
   let vx = entity.vx;
 
-  if (locked || !entity.grounded) {
+  if (locked) {
     entity.skidTicks = 0;
-    if (locked) {
-      vx = entity.vx;
-    } else {
-      if (wantsLeft === wantsRight) {
-        vx = brakeTowardZero(vx, brake * dtSeconds);
-      } else {
-        const dir: -1 | 1 = wantsRight ? 1 : -1;
-        if (vx * dir < 0) {
-          vx = brakeTowardZero(vx, brake * dtSeconds);
-        } else {
-          vx = clampSpeed(vx + dir * accel * dtSeconds, maxSpeed);
-        }
-        entity.facing = dir;
-      }
-    }
+  } else if (!entity.grounded) {
+    entity.skidTicks = 0;
+    vx = steer(entity, vx, inputDir, airControl.accel, airControl.brake, maxSpeed, dtSeconds);
   } else {
-    const hasDirectionInput = wantsLeft !== wantsRight;
-    const inputDir: -1 | 1 = wantsRight ? 1 : -1;
-
-    // Detect high-speed turnaround on ground
-    if (entity.skidTicks <= 0) {
-      if (
-        hasDirectionInput &&
-        vx * inputDir < 0 &&
-        Math.abs(vx) >= maxSpeed * 0.6
-      ) {
-        entity.skidTicks = SKID_TICKS;
-      }
+    // A fast ground turnaround starts a skid.
+    if (
+      entity.skidTicks <= 0 &&
+      inputDir !== 0 &&
+      vx * inputDir < 0 &&
+      Math.abs(vx) >= maxSpeed * skid.minSpeedRatio
+    ) {
+      entity.skidTicks = skid.ticks;
     }
 
     if (entity.skidTicks > 0) {
       entity.skidTicks -= 1;
-      vx = brakeTowardZero(vx, BRAKE_SKID * dtSeconds);
+      vx = brakeTowardZero(vx, skid.brake * dtSeconds);
 
-      // If direction reversed back to facing, cancel skid early
-      if (hasDirectionInput && inputDir === entity.facing) {
+      if (inputDir !== 0 && inputDir === entity.facing) {
+        // Input returned to the facing direction: cancel the skid early.
         entity.skidTicks = 0;
         vx = clampSpeed(vx + inputDir * accel * dtSeconds, maxSpeed);
       } else if (entity.skidTicks === 0 || vx === 0) {
         entity.skidTicks = 0;
-        if (hasDirectionInput) {
+        if (inputDir !== 0) {
           entity.facing = inputDir;
           vx = clampSpeed(vx + inputDir * accel * dtSeconds, maxSpeed);
         }
       }
     } else {
-      if (!hasDirectionInput) {
-        vx = brakeTowardZero(vx, brake * dtSeconds);
-      } else {
-        if (vx * inputDir < 0) {
-          vx = brakeTowardZero(vx, brake * dtSeconds);
-        } else {
-          vx = clampSpeed(vx + inputDir * accel * dtSeconds, maxSpeed);
-        }
-        entity.facing = inputDir;
-      }
+      vx = steer(entity, vx, inputDir, accel, brake, maxSpeed, dtSeconds);
     }
   }
 

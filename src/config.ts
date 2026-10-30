@@ -11,11 +11,12 @@ export const PLAYER_SPRITE_HEIGHT = 56;
 /**
  * Physical bounds of the player, deliberately independent of the sprite canvas:
  * redrawing the art with a different canvas must not move walls or the jump
- * ceiling. The values equal the legacy 97x59 canvas so behaviour is unchanged.
+ * ceiling. `marginX` is the half width of Kratos' body in `idle-00` (it spans
+ * 20 px each side of the anchor), so the body stops at the edge, not inside it.
  */
 const PLAYER_BOUNDS = {
-  /** Distance kept from the screen edge and from arena barriers. */
-  marginX: 48.5,
+  /** Distance kept from the screen edge, the level edges and arena barriers. */
+  marginX: 20,
   /** Highest `y` the feet may reach (jump ceiling). */
   ceilingY: 59,
 } as const;
@@ -123,6 +124,23 @@ brake: 1650,
 minX: PLAYER_BOUNDS.marginX,
 maxX: INTERNAL_WIDTH - PLAYER_BOUNDS.marginX,
 bounds: PLAYER_BOUNDS,
+/**
+ * Air control (px/s^2): weaker than on the ground so a jump keeps its
+ * momentum. Releasing the input drifts to a stop instead of halting in place.
+ */
+airControl: {
+  accel: 700,
+  brake: 350,
+},
+/**
+ * Ground turnaround above `minSpeedRatio * maxSpeed`: the body slides for up
+ * to `ticks` with `brake` (px/s^2), still facing the old way, then turns.
+ */
+skid: {
+  brake: 2200,
+  ticks: 6,
+  minSpeedRatio: 0.6,
+},
 sprite: {
   width: PLAYER_SPRITE_WIDTH,
   height: PLAYER_SPRITE_HEIGHT,

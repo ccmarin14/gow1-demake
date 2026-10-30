@@ -31,6 +31,6 @@ Teclado → InputManager → Acciones de dominio
 
 ## Reglas de separación
 
-1. Ninguna regla de simulación depende de objetos Phaser; `src/sim/` opera sobre datos serializables.
+1. Ninguna regla de simulación depende de objetos Phaser; `src/sim/` opera sobre datos serializables. Por eso se prueba sin navegador: `pnpm test` corre `tests/*.test.ts` con el runner nativo de Node (`--experimental-transform-types` y el hook `scripts/test/`), sin dependencias nuevas.
 2. Los parámetros de balance y geometría viven en `src/config.ts`.
 3. Los PNG de personajes en `public/assets/characters/` se generan desde `grids/` con `scripts/ascii_to_png.py`.

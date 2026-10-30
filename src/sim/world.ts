@@ -735,13 +735,13 @@ export class World {
           }
         }
         const horizontalLocked = nowRolling || player.attackPhase === 'active' || nowGuarding || inHitstun || nowCastingMagic || isOpeningChest;
-        const marginX = this.mapData ? 16 : CONFIG.player.bounds.marginX;
+        const marginX = CONFIG.player.bounds.marginX;
         const playerMinX = (this.arenaManager && this.arenaManager.isActive())
           ? this.arenaManager.getMinX() + marginX
-          : (this.mapData ? 16 : CONFIG.player.minX);
+          : (this.mapData ? marginX : CONFIG.player.minX);
         const playerMaxX = (this.arenaManager && this.arenaManager.isActive())
           ? this.arenaManager.getMaxX() - marginX
-          : (this.mapData ? this.mapData.width - 16 : CONFIG.player.maxX);
+          : (this.mapData ? this.mapData.width - marginX : CONFIG.player.maxX);
         const playerMovementParams = {
           ...CONFIG.player,
           minX: playerMinX,

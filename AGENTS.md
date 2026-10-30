@@ -15,7 +15,7 @@ Juego de acción lateral 2D hecho con **Phaser 3.90.0**, **TypeScript** y **Vite
 ## Flujo de trabajo
 
 1. **Unidades chicas y revisables:** cada paso aborda un único cambio acotado (por ejemplo, un cuadro de animación en ASCII o la corrección de un defecto puntual).
-2. **Juego siempre ejecutable:** al cerrar cada paso, `pnpm build` debe pasar y el juego debe cargar en navegador sin errores de consola ni peticiones 404.
+2. **Juego siempre ejecutable:** al cerrar cada paso, `pnpm build` y `pnpm test` deben pasar y el juego debe cargar en navegador sin errores de consola ni peticiones 404.
 3. **Aprobación visual directa:** en tareas de arte o animación, muestra el cuadro ampliado junto al cuadro de referencia (y en el navegador cuando se conecte al juego) y espera la aprobación de la usuaria antes de avanzar al siguiente cuadro. Un cuadro se commitea solo después de aprobado (un cuadro = un commit, con su línea en `docs/estado.md`); mientras está en revisión queda sin commitear. Los cuadros nuevos parten de `idle-00` como modelo del personaje. Si la usuaria no puede revisar en el momento, el cuadro se commitea igual y se anota en "Revisiones pendientes" de `docs/estado.md`; si después lo rechaza, se corrige en un commit nuevo. Ningún cuadro nuevo parte de uno pendiente: mientras haya revisiones pendientes se avanza en trabajo verificable sin ojo humano (simulación, harness, código).
 4. **Sin burocracia:** no crees planes extensos por etapa, ni archivos de auditoría separados, ni documentos nuevos fuera de los cuatro listados arriba. Única excepción: `docs/temporal/` guarda el brief de la tarea en curso para otro agente (uno por tarea); se borra en el mismo commit que cierra la tarea. Registra una línea en `docs/estado.md` por cada paso completado.
 
