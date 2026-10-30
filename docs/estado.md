@@ -49,6 +49,26 @@ Las implementaron agentes anteriores. La usuaria fijó la intención general (D-
 | Legionario, arquero e hidra (IA) | Sin verificar | Comportamientos y valores. |
 | Oleadas y arena | Sin verificar | Composición y barreras. |
 
+### Decisiones de combate pendientes
+
+Para que la usuaria decida cada mecánica antes de auditarla o ampliarla. "GoW 1" cita el [artículo de Wikipedia del juego](https://en.wikipedia.org/wiki/God_of_War_(2005_video_game)); "a confirmar" marca lo que no se pudo verificar en una fuente (las wikis especializadas no fueron accesibles). Opciones por fila: **mantener**, **ajustar** (decir cómo), **quitar** o, si falta, **agregar**.
+
+| # | Mecánica | Hoy en el juego | En GoW 1 |
+| --- | --- | --- | --- |
+| C1 | Combo ligero | 4 golpes encadenados con `J` (`light_1..4`). | Combate por combos con las Cuchillas; el detalle de cada combo, a confirmar. |
+| C2 | Golpes pesados y finales | `heavy_slam` (golpe al suelo), `ascension` (lanzador al mantener `K`), `plume_of_prometheus` (`J, J, K`), `spirit_of_hercules`. | Nombres y entradas, a confirmar. |
+| C3 | Ataques aéreos | `air_light_1/2`, `air_heavy_slam` y `air_grab`; en el aire el ataque reduce la gravedad al 30 %. | A confirmar. |
+| C4 | Agarre | `chain_grab` con `L`: un golpe que jala (`knockbackVx -150`), no sujeta ni remata (ESE-02). | A confirmar el agarre con círculo; los remates sí existen (C5). |
+| C5 | Remates QTE | No existe (ESE-01). | Sí: al debilitar a un enemigo fuerte se inicia un QTE; fallarlo suele dañar a Kratos. |
+| C6 | Embestida | `dash_attack`. | A confirmar. |
+| C7 | Guardia y desvío | Guardia con `O`; desvío (*parry*) en los primeros ticks, que aturde al legionario y refleja flechas. | A confirmar. |
+| C8 | Magia | Solo *Ira de Poseidón* (costo 35, radio 90). | Cuatro hechizos: *Furia de Zeus*, *Mirada de Medusa*, *Ira de Poseidón* y *Ejército de Hades*. |
+| C9 | Ira de los Dioses | No existe. | Sí: invulnerabilidad temporal y más daño; se recarga con orbes rojos. |
+| C10 | Hoja de Artemisa | No existe. | Arma secundaria, una espada grande con otras opciones de combate. |
+| C11 | Orbes y cofres | Orbes rojos, verdes y azules; cofres; Ojos de Gorgona y Plumas de Fénix (6 por mejora, +20 de vida o maná); mejora de arma a nivel 2. | Sí: verdes curan, azules dan magia, rojos son experiencia para mejorar armas y magia y recargan la Ira; los Ojos y las Plumas alargan vida y magia. |
+| C12 | Enemigos | Legionario (un tajo con aviso), arquero e hidra (jefe con barra). | A confirmar qué enemigos aparecen en el Egeo y cómo se comportan. |
+| C13 | Oleadas y arena cerrada | Arena central de `level1` con barreras y 2 oleadas. | A confirmar. |
+
 ### Decisiones visuales pendientes
 
 Elementos heredados que la usuaria no decidió. Están apagados con un interruptor en `src/config.ts`; encenderlos es cambiar un valor.
@@ -99,4 +119,5 @@ Revisión de la usuaria del arte pendiente (tabla de arriba): con eso se juzga s
 - `2026-10-30` — **Paso 28 (Desplazamiento de GoW 1, D-32):** la usuaria decidió el desplazamiento: el de GoW 1 en 2D, correr sin caminar, salto, doble salto y rodada, sin derrape. Se quitó el derrape de la simulación (`skidTicks`, `CONFIG.player.skid`), de `PlayerView` y de las pruebas; ahora un giro a toda velocidad mira al nuevo lado en el primer tick, frena y vuelve a acelerar (prueba nueva sobre `World`).
 - `2026-10-30` — **Paso 29 (Rodada auditada):** 6 pruebas nuevas sobre `World`. Corregido: la rodada salía siempre hacia donde Kratos miraba, así que no servía para escapar hacia atrás; ahora va hacia la dirección mantenida (o hacia adelante si no hay ninguna) y Kratos gira con ella, como la evasión de GoW 1. Verificado en navegador: mirando a la derecha, izquierda + `Shift` rueda 83 px a la izquierda, sin errores. Con esto el desplazamiento de D-32 queda completo en simulación; falta su arte (en el aire y la rodada muestran `idle-00`).
 - `2026-10-30` — **Paso 30 (Arte del aire y de la rodada):** `air-00`/`air-01` (subida y caída, según la velocidad vertical) y `roll-00`/`roll-01` (agachado y bola) dibujados a mano sobre `idle-00` y conectados en `PlayerView`; antes los dos estados mostraban el cuadro de reposo. Verificado en navegador sin errores. Quedan en "Revisiones pendientes". Corrección: no estaban bloqueados por las revisiones pendientes, porque parten de `idle-00`, que está aprobado.
+- `2026-10-30` — **Paso 31 (Decisiones de combate):** tabla "Decisiones de combate pendientes" (C1–C13): lo que el juego tiene hoy frente a GoW 1, con fuente o "a confirmar", para que la usuaria decida antes de auditar el combate. Sin cambios de código.
 
