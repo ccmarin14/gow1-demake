@@ -19,19 +19,6 @@ export interface AssetEntry {
 export const CHARACTER_FRAME_WIDTH = PLAYER_SPRITE_WIDTH;
 export const CHARACTER_FRAME_HEIGHT = PLAYER_SPRITE_HEIGHT;
 
-export const ENEMY_FRAME_WIDTH = 64;
-export const ENEMY_FRAME_HEIGHT = 54;
-
-function enemySheet(key: string): AssetEntry {
-  return {
-    key,
-    path: `assets/characters/${key}.png`,
-    type: 'spritesheet',
-    frameWidth: ENEMY_FRAME_WIDTH,
-    frameHeight: ENEMY_FRAME_HEIGHT,
-  };
-}
-
 function characterSheet(key: string, path: string): AssetEntry {
   return {
     key,
@@ -66,9 +53,6 @@ export const ASSETS: Record<AssetDomain, readonly AssetEntry[]> = {
       key,
       path: `assets/characters/${key}.png`,
     })),
-    enemySheet('legionnaire'),
-    enemySheet('archer'),
-    { key: 'arrow', path: 'assets/characters/arrow.png' },
   ],
   environment: [
     { key: 'egeo-fondo', path: 'assets/environment/egeo-fondo.png' },

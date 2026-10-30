@@ -31,9 +31,7 @@ export class ShellScene extends Phaser.Scene {
   private renderedScenario = '';
   private attackHitboxRect: Phaser.GameObjects.Rectangle | null = null;
   private targetRects = new Map<string, Phaser.GameObjects.Rectangle>();
-  private legionnaireSprites = new Map<string, Phaser.GameObjects.Sprite>();
-  private archerSprites = new Map<string, Phaser.GameObjects.Sprite>();
-  private arrowSprites = new Map<string, Phaser.GameObjects.Image>();
+  private arrowRects = new Map<string, Phaser.GameObjects.Rectangle>();
   private readonly orbSprites = new Map<string, { outer: Phaser.GameObjects.Arc; core: Phaser.GameObjects.Arc; highlight: Phaser.GameObjects.Arc }>();
   private readonly chestGfx = new Map<
     string,
@@ -416,7 +414,9 @@ export class ShellScene extends Phaser.Scene {
     const hitbox = this.simulation.world.playerAttackHitbox();
     const chain = player ? player.attackChain : 0;
     const hitboxColor = this.hitboxColorForChain(chain);
-    if (hitbox && import.meta.env.DEV && isScaleReferenceVisible()) {
+    // Without weapon art the attack shows its hitbox as a neutral placeholder.
+    const showHitbox = !CONFIG.presentation.weaponArt || (import.meta.env.DEV && isScaleReferenceVisible());
+    if (hitbox && showHitbox) {
       if (!this.attackHitboxRect) {
         this.attackHitboxRect = this.add
           .rectangle(
@@ -517,138 +517,40 @@ export class ShellScene extends Phaser.Scene {
     const targets = this.simulation.world.peekTargets();
     const halfW = CONFIG.player.attack.targetHalfWidth;
     const halfH = CONFIG.player.attack.targetHalfHeight;
+    const enemy = CONFIG.presentation.enemyPlaceholder;
+    const hydraBox = CONFIG.presentation.hydraPlaceholder;
 
-    // Clean up stale sprites
-    for (const [id, sprite] of this.legionnaireSprites.entries()) {
-      if (!targets.some((t) => t.id === id && t.kind === 'legionnaire')) {
-        sprite.destroy();
-        this.legionnaireSprites.delete(id);
-      }
-    }
-    for (const [id, sprite] of this.archerSprites.entries()) {
-      if (!targets.some((t) => t.id === id && t.kind === 'archer')) {
-        sprite.destroy();
-        this.archerSprites.delete(id);
-      }
-    }
     for (const [id, rect] of this.targetRects.entries()) {
-      if (!targets.some((t) => t.id === id && t.kind !== 'legionnaire' && t.kind !== 'archer')) {
+      if (!targets.some((t) => t.id === id)) {
         rect.destroy();
         this.targetRects.delete(id);
       }
     }
 
+    // Every target is a placeholder box the size of its hit area until its art
+    // is drawn; the hydra box is larger.
     for (const target of targets) {
-      if (target.kind === 'legionnaire') {
-        let sprite = this.legionnaireSprites.get(target.id);
-        if (!sprite) {
-          sprite = this.add.sprite(target.x, target.y, 'legionnaire', 0);
-          sprite.setOrigin(0.5, 1.0).setDepth(0);
-          this.legionnaireSprites.set(target.id, sprite);
-        }
-        const shakeX = target.hitstunTicks > 0 && target.hitstunTicks % 2 === 1 ? (target.facing === 1 ? -2 : 2) : 0;
-        sprite.setPosition(target.x + shakeX, target.y);
-        sprite.setFlipX(target.facing === -1);
-
-        let frame = 0;
-        switch (target.aiState) {
-          case 'idle':
-          case 'patrol':
-          case 'spawning':
-            frame = 0;
-            break;
-          case 'approach':
-            frame = Math.floor(target.aiTicks / 8) % 2 === 0 ? 1 : 2;
-            break;
-          case 'windup':
-            frame = 3;
-            break;
-          case 'slash':
-            frame = 4;
-            break;
-          case 'hitstun':
-            frame = 5;
-            break;
-          case 'juggle':
-            frame = 6;
-            break;
-          case 'death':
-            frame = 7;
-            break;
-          case 'recover':
-            frame = 0;
-            break;
-        }
-        sprite.setFrame(frame);
-        if (target.hitstunTicks > 0) {
-          sprite.setTint(player && player.magicPhase === 'active' ? 0x67e8f9 : 0xff7777);
-        } else {
-          sprite.clearTint();
-        }
-      } else if (target.kind === 'archer') {
-        let sprite = this.archerSprites.get(target.id);
-        if (!sprite) {
-          sprite = this.add.sprite(target.x, target.y, 'archer', 0);
-          sprite.setOrigin(0.5, 1.0).setDepth(0);
-          this.archerSprites.set(target.id, sprite);
-        }
-        const shakeX = target.hitstunTicks > 0 && target.hitstunTicks % 2 === 1 ? (target.facing === 1 ? -2 : 2) : 0;
-        sprite.setPosition(target.x + shakeX, target.y);
-        // Sprite en PNG mira a la izquierda (facing = -1); si mira a la derecha (facing = 1), flipX = true
-        sprite.setFlipX(target.facing === 1);
-
-        let frame = 0;
-        switch (target.aiState) {
-          case 'idle':
-          case 'recover':
-          case 'spawning':
-            frame = 0;
-            break;
-          case 'reposition':
-          case 'approach':
-            frame = Math.floor(target.aiTicks / 8) % 2 === 0 ? 1 : 2;
-            break;
-          case 'aim':
-            frame = 3;
-            break;
-          case 'shoot':
-            frame = 4;
-            break;
-          case 'hitstun':
-            frame = 5;
-            break;
-          case 'juggle':
-            frame = 6;
-            break;
-          case 'death':
-            frame = 7;
-            break;
-        }
-        sprite.setFrame(frame);
-        if (target.hitstunTicks > 0) {
-          sprite.setTint(player && player.magicPhase === 'active' ? 0x67e8f9 : 0xff7777);
-        } else {
-          sprite.clearTint();
-        }
-      } else {
-        // Targets without drawn art are placeholder rectangles; the hydra is larger.
-        const hydraBox = CONFIG.presentation.hydraPlaceholder;
-        const boxHalfW = target.kind === 'hydra' ? hydraBox.width / 2 : halfW;
-        const boxHalfH = target.kind === 'hydra' ? hydraBox.height / 2 : halfH;
-        let rect = this.targetRects.get(target.id);
-        if (!rect) {
-          rect = this.add.rectangle(0, 0, boxHalfW * 2, boxHalfH * 2, CONFIG.presentation.targetColor);
-          rect.setOrigin(0.5, 0.5).setDepth(1);
-          this.targetRects.set(target.id, rect);
-        }
-        const shakeX = target.hitstunTicks > 0 && target.hitstunTicks % 2 === 1 ? 1 : 0;
-        rect.setPosition(target.x + shakeX, target.y - boxHalfH);
-        rect.setFillStyle(
-          hits.includes(target.id)
-            ? CONFIG.presentation.targetHitColor
-            : CONFIG.presentation.targetColor,
-        );
+      const boxHalfW = target.kind === 'hydra' ? hydraBox.width / 2 : halfW;
+      const boxHalfH = target.kind === 'hydra' ? hydraBox.height / 2 : halfH;
+      let rect = this.targetRects.get(target.id);
+      if (!rect) {
+        rect = this.add.rectangle(0, 0, boxHalfW * 2, boxHalfH * 2, CONFIG.presentation.targetColor);
+        rect.setOrigin(0.5, 0.5).setDepth(1);
+        this.targetRects.set(target.id, rect);
       }
+      const shakeX = target.hitstunTicks > 0 && target.hitstunTicks % 2 === 1 ? 1 : 0;
+      rect.setPosition(target.x + shakeX, target.y - boxHalfH);
+
+      const telegraphing = target.aiState === 'windup' || target.aiState === 'aim';
+      let color: number = CONFIG.presentation.targetColor;
+      if (target.kind === 'legionnaire') color = enemy.legionnaireColor;
+      if (target.kind === 'archer') color = enemy.archerColor;
+      if (telegraphing) color = enemy.telegraphColor;
+      if (target.hitstunTicks > 0 || hits.includes(target.id)) {
+        color = player && player.magicPhase === 'active' ? 0x67e8f9 : CONFIG.presentation.targetHitColor;
+      }
+      rect.setFillStyle(color);
+      rect.setAlpha(target.aiState === 'death' ? enemy.deadAlpha : 1);
     }
   }
 
@@ -667,18 +569,10 @@ export class ShellScene extends Phaser.Scene {
       rect.destroy();
     }
     this.targetRects.clear();
-    for (const sprite of this.legionnaireSprites.values()) {
-      sprite.destroy();
+    for (const rect of this.arrowRects.values()) {
+      rect.destroy();
     }
-    this.legionnaireSprites.clear();
-    for (const sprite of this.archerSprites.values()) {
-      sprite.destroy();
-    }
-    this.archerSprites.clear();
-    for (const sprite of this.arrowSprites.values()) {
-      sprite.destroy();
-    }
-    this.arrowSprites.clear();
+    this.arrowRects.clear();
     for (const gfx of this.chestGfx.values()) {
       gfx.body.destroy();
       gfx.prompt.destroy();
@@ -893,34 +787,27 @@ export class ShellScene extends Phaser.Scene {
     const simArrows = this.simulation.world.peekArrows();
     const activeIds = new Set(simArrows.filter((a) => a.active).map((a) => a.id));
 
-    // Limpiar sprites de flechas inactivas
-    for (const [id, sprite] of this.arrowSprites.entries()) {
+    for (const [id, rect] of this.arrowRects.entries()) {
       if (!activeIds.has(id)) {
-        sprite.destroy();
-        this.arrowSprites.delete(id);
+        rect.destroy();
+        this.arrowRects.delete(id);
       }
     }
 
-    // Renderizar o actualizar cada flecha activa
+    // Arrows are placeholder bars until their art is drawn; gold once parried.
+    const look = CONFIG.presentation.enemyPlaceholder.arrow;
     for (let i = 0; i < simArrows.length; i += 1) {
       const arrow = simArrows[i];
       if (!arrow.active) continue;
 
-      let sprite = this.arrowSprites.get(arrow.id);
-      if (!sprite) {
-        sprite = this.add.image(arrow.x, arrow.y, 'arrow');
-        sprite.setOrigin(0.5, 0.5).setDepth(20);
-        this.arrowSprites.set(arrow.id, sprite);
+      let rect = this.arrowRects.get(arrow.id);
+      if (!rect) {
+        rect = this.add.rectangle(arrow.x, arrow.y, look.width, look.height, look.color);
+        rect.setOrigin(0.5, 0.5).setDepth(20);
+        this.arrowRects.set(arrow.id, rect);
       }
-      sprite.setPosition(arrow.x, arrow.y);
-      // arrow.png apunta por defecto a la izquierda (vx < 0).
-      // Si vx > 0 (proyectil reflejado hacia la derecha), flipX = true.
-      sprite.setFlipX(arrow.vx > 0);
-      if (arrow.reflected) {
-        sprite.setTint(0xffea00); // Resplandor dorado de reflejo por Parry
-      } else {
-        sprite.clearTint();
-      }
+      rect.setPosition(arrow.x, arrow.y);
+      rect.setFillStyle(arrow.reflected ? 0xffea00 : look.color);
     }
   }
 
@@ -1317,14 +1204,10 @@ export class ShellScene extends Phaser.Scene {
       gfx.highlight.destroy();
     }
     this.orbSprites.clear();
-    for (const sprite of this.archerSprites.values()) {
-      sprite.destroy();
+    for (const rect of this.arrowRects.values()) {
+      rect.destroy();
     }
-    this.archerSprites.clear();
-    for (const sprite of this.arrowSprites.values()) {
-      sprite.destroy();
-    }
-    this.arrowSprites.clear();
+    this.arrowRects.clear();
     for (const gfx of this.chestGfx.values()) {
       gfx.body.destroy();
       gfx.prompt.destroy();

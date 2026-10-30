@@ -464,13 +464,32 @@ export const CONFIG = {
      */
     /**
      * Rest pose of the Blades of Chaos drawn by `WeaponLayer` when idle
-     * (offsets from the feet anchor, facing right). Off while the character
-     * grid still has the blades baked in; switch on with the first grid drawn
-     * without them, and tune the offsets against that art.
+     * (offsets from the feet anchor, facing right, measured on `idle-00`).
+     * Off until the user decides on it.
      */
-    restPose: { enabled: true, handDx: 18, handDy: -20, bladeDx: 28, bladeDy: -6 },
+    restPose: { enabled: false, handDx: 18, handDy: -20, bladeDx: 28, bladeDy: -6 },
+    /**
+     * Inherited visuals switched off until the user decides on each one:
+     * `weaponArt` is the procedural chains, blades and trails of `WeaponLayer`
+     * (while off, an attack shows its hitbox as a neutral box), and
+     * `landingSquash` stretches the sprite for a few ticks after landing.
+     */
+    weaponArt: false,
+    landingSquash: false,
     /** Placeholder box for the hydra until its art is drawn (px). */
     hydraPlaceholder: { width: 56, height: 72 },
+    /**
+     * Enemies are neutral boxes the size of their hit area until their art is
+     * drawn. A box turns `telegraphColor` while it winds up or aims, so the
+     * attack stays readable.
+     */
+    enemyPlaceholder: {
+      legionnaireColor: 0x8a9bb0,
+      archerColor: 0x7c8f6a,
+      telegraphColor: 0xfacc15,
+      deadAlpha: 0.35,
+      arrow: { width: 10, height: 2, color: 0xd6d3d1 },
+    },
     playerShadow: { enabled: true, width: 36, height: 6, color: 0x000000, alpha: 0.35 },
     background: '#111827',
     debugText: '#d1d5db',
@@ -617,6 +636,8 @@ export const CONFIG = {
       depth: -2,
     },
     combatSparks: {
+      /** Inherited effect, off until the user decides on it. */
+      enabled: false,
       sparkCount: 6,
       lifetimeTicks: 8,
       colors: [0xfde047, 0xf97316, 0xef4444],

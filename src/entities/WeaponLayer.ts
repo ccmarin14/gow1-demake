@@ -286,6 +286,13 @@ export class WeaponLayer {
     params: AttackParams | null,
     platforms: readonly Platform[] = [],
   ): void {
+    if (!CONFIG.presentation.weaponArt) {
+      this.hideWeapon();
+      for (let i = 0; i < this.groundImpactParticles.length; i += 1) {
+        this.groundImpactParticles[i].setVisible(false);
+      }
+      return;
+    }
     // 1. Update ground impact sparks even if attack just finished (duration > 0)
     if (player && player.groundImpactTicks > 0) {
       const duration = CONFIG.player.attack.groundImpact.durationTicks;

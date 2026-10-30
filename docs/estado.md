@@ -12,13 +12,15 @@ Documento único del estado medido de `gow-8b`. Se actualiza en el mismo commit 
 - **Harness DEV:** `window.__GOW8B` expone `snapshot()`, `loadScenario()`, `reset()`, `step()`, `advance()` y `metrics()`.
 - **Sprites activos:**
   - Kratos tiene un solo cuadro, `kratos-idle-00.png` (grid `grids/kratos/idle-00.txt`, 64×56, paleta `palette/kratos.json`, solo cuerpo). Todos los estados lo muestran estático hasta que se dibujen los cuadros siguientes. La cuchilla en reposo (`restPose`) y la sombra de contacto (`playerShadow`) las dibuja el motor.
-  - `legionnaire.png`, `archer.png` y `arrow.png` están cargados como arte provisional; el hidra se dibuja como un rectángulo marcador (`presentation.hydraPlaceholder`) hasta que tenga arte.
+  - Los enemigos no tienen arte: legionario, arquero e hidra son cajas neutras del tamaño de su zona de golpe (`presentation.enemyPlaceholder`, `hydraPlaceholder`), que se ponen amarillas al preparar un ataque; las flechas son barras.
+  - Los visuales heredados están apagados hasta que la usuaria los decida (ver "Decisiones visuales pendientes"); mientras tanto, un ataque muestra su zona de golpe como caja.
 
 ## 2. Problemas abiertos
 
 | ID | Problema | Impacto |
 | --- | --- | --- |
 | **ESE-01** | Sin remates contextuales (QTE) ni agarre real (ESE-02); impacto poco brutal (ESE-03); enemigos de un solo truco (ESE-04); sin introducción (ESE-05, regla D-30). | El combate se aparta de la esencia de *God of War*. Plan y criterios en `docs/direccion.md` §4. |
+| **CAM-01** | Al llegar a la arena central de `level1` avanzando con el harness, la captura no muestra ni a Kratos ni a los enemigos aunque el `snapshot` los ubica en x ≈ 840–875 con `cameraX` 480. Pasa igual con el código anterior a la limpieza. | Sin verificar si ocurre jugando a mano; se audita con la cámara y la arena. |
 | **ART-02** | Los anclajes de mano de los ataques (`hand` en cada movimiento de `src/config.ts`, entre `dx 7..26`, `dy -31..-33`) conservan valores de una hoja retirada; en `idle-00` el puño delantero está en `dx 18, dy -20`. No se cambiaron porque también definen el arco de golpe de la simulación. | Las cadenas de ataque salen por encima del puño dibujado. Se re-miden cuando existan los cuadros de ataque, con prueba en el harness. |
 
 ### Revisiones pendientes
@@ -28,7 +30,18 @@ Cuadros commiteados sin la aprobación visual de la usuaria (regla en `AGENTS.md
 | Cuadro | Qué revisar | Cómo verlo |
 | --- | --- | --- |
 | `idle-01` | Respiración: cabeza, hombros, pecho y brazos suben 1 px sobre `idle-00`; cintura, taparrabos y piernas fijos. Alterna con `idle-00` a 1 cuadro por segundo. | `python3 scripts/preview_grid.py grids/kratos/idle-00.txt grids/kratos/idle-01.txt --palette palette/kratos.json --ground-row 55 --scale 8 --out /tmp/idle.png`, o en el juego, quieto. |
-| `run-00..03` | Ciclo de carrera de 4 cuadros: contacto con la pierna cercana adelante, paso, contacto con la lejana adelante, paso. El torso y los brazos son los de `idle-00` sin cambios (los brazos no balancean todavía) y las piernas son nuevas. Además, la cuchilla de reposo sigue colgando del puño mientras corre y en el aire. | `python3 scripts/preview_grid.py grids/kratos/run-00.txt grids/kratos/run-01.txt grids/kratos/run-02.txt grids/kratos/run-03.txt --palette palette/kratos.json --ground-row 55 --scale 6 --out /tmp/run.png`, o en el juego, corriendo. |
+| `run-00..03` | Ciclo de carrera de 4 cuadros: contacto con la pierna cercana adelante, paso, contacto con la lejana adelante, paso. El torso y los brazos son los de `idle-00` sin cambios (los brazos no balancean todavía) y las piernas son nuevas. | `python3 scripts/preview_grid.py grids/kratos/run-00.txt grids/kratos/run-01.txt grids/kratos/run-02.txt grids/kratos/run-03.txt --palette palette/kratos.json --ground-row 55 --scale 6 --out /tmp/run.png`, o en el juego, corriendo. |
+
+### Decisiones visuales pendientes
+
+Elementos heredados que la usuaria no decidió. Están apagados con un interruptor en `src/config.ts`; encenderlos es cambiar un valor.
+
+| Elemento | Interruptor | Qué hace al encenderlo |
+| --- | --- | --- |
+| Cuchilla en reposo | `presentation.restPose.enabled` | Una cuchilla del motor cuelga del puño delantero en reposo, al correr y en el aire. |
+| Armas del motor | `presentation.weaponArt` | Cadenas, cuchillas y estelas procedurales en ataques y guardia (en lugar de la caja de la zona de golpe). |
+| Chispas de golpe | `vfx.combatSparks.enabled` | Partículas al acertar, bloquear y en el golpe al suelo. |
+| Aplastamiento al aterrizar | `presentation.landingSquash` | El sprite se ensancha y achata unos ticks al tocar el suelo. |
 
 ## 3. Siguiente paso
 
@@ -63,4 +76,5 @@ Con `idle-01` y la carrera pendientes de revisión, no se dibuja arte nuevo enci
 - `2026-10-30` — **Paso 22 (Física del movimiento lateral con pruebas):** `pnpm test` nuevo (runner nativo de Node, 13 pruebas) sobre `stepHorizontal` y `World`. Corregido: en el aire Kratos frenaba como en el suelo (1650 px/s²) y quedaba vertical al soltar la dirección; ahora usa `CONFIG.player.airControl` (aceleración 700, frenado 350) y conserva la inercia del salto. El derrape (`BRAKE_SKID`, `SKID_TICKS`, umbral 60 %) pasó de constantes del código a `CONFIG.player.skid`. `bounds.marginX` bajó de 48.5 (mitad del lienzo viejo) a 20 (mitad del cuerpo de `idle-00`), y el nivel usa ese mismo valor en lugar de un `16` repetido. Verificado también en navegador con el harness: derrape de 6 ticks con orientación sostenida, 81.7 px/s tras 10 ticks en el aire sin dirección y parada en x = 20 en el borde.
 - `2026-10-30` — **Paso 23 (Ciclo de carrera):** `run-00..03` dibujados a mano (torso de `idle-00`, piernas nuevas) y conectados en `RUN_KEYS`. La zancada se midió en los cuadros: el pie apoyado recorre 30.5 y 32.5 px por medio ciclo, así que `run.stridePx` = 62 y `run.frameRate` = 9 (a velocidad máxima el clip va a `timeScale` 1, sin patinar). Corregido en `PlayerView`: al saltar desde la carrera, la animación seguía pisando el cuadro del aire. Verificado en navegador sin errores. Queda en "Revisiones pendientes".
 - `2026-10-30` — **Paso 24 (Limpieza de material heredado):** se borró `archivo/` (183 archivos, 17 MB: planes, docs viejas, generadores procedurales de sprites y arte descartado), que contaminaba las búsquedas de los agentes; queda en el historial de git. Se retiró `palette/master.json` y el soporte de master en `check_grid.py` (ahora exige `palette` en el manifest) y se puso al día el README (comandos `test` y `art`, scripts y estructura). La referencia de escala de desarrollo (`scale.ts`, `dev/scaleOverlay.ts`) se conserva: se deriva en vivo de `CONFIG.player.sprite` y servirá para auditar el combate. `pnpm build`, `pnpm test` y `pnpm art:check` pasan; no hay cambios en `src/`.
+- `2026-10-30` — **Paso 25 (Visuales heredados apagados):** cuchilla en reposo, armas procedurales de `WeaponLayer`, chispas de golpe y aplastamiento al aterrizar quedan apagados con interruptores en `CONFIG` (tabla "Decisiones visuales pendientes"); sin armas, el ataque muestra su zona de golpe. Legionario, arquero y flecha dejaron de usar los PNG de los generadores procedurales (borrados) y son cajas neutras como el hidra, amarillas al preparar el ataque. Verificado en navegador en los escenarios `magic`, `waves` y `hydra`, sin errores ni peticiones fallidas. Se abrió CAM-01 (problema previo, no causado por este cambio).
 

@@ -146,6 +146,9 @@ export class VfxLayer {
   }
 
   emitCombatSparks(worldX: number, worldY: number, count: number = CONFIG.vfx.combatSparks.sparkCount): void {
+    if (!CONFIG.vfx.combatSparks.enabled) {
+      return;
+    }
     const colors = CONFIG.vfx.combatSparks.colors;
     const maxLife = CONFIG.vfx.combatSparks.lifetimeTicks;
     const speedMin = CONFIG.vfx.combatSparks.speedMin;

@@ -130,7 +130,7 @@ export class PlayerView {
     const rolling = simPlayer.rollPhase !== 'none';
 
     // Elastic landing compression (squash)
-    if (simPlayer.landingTicks > 0 && grounded && attackPhase === 'none' && !rolling) {
+    if (CONFIG.presentation.landingSquash && simPlayer.landingTicks > 0 && grounded && attackPhase === 'none' && !rolling) {
       player.setScale(1.06, 0.92);
     } else {
       player.setScale(1, 1);
