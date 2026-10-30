@@ -31,6 +31,23 @@ Cuadros commiteados sin la aprobación visual de la usuaria (regla en `AGENTS.md
 | `idle-01` | Respiración: cabeza, hombros, pecho y brazos suben 1 px sobre `idle-00`; cintura, taparrabos y piernas fijos. Alterna con `idle-00` a 1 cuadro por segundo. | `python3 scripts/preview_grid.py grids/kratos/idle-00.txt grids/kratos/idle-01.txt --palette palette/kratos.json --ground-row 55 --scale 8 --out /tmp/idle.png`, o en el juego, quieto. |
 | `run-00..03` | Ciclo de carrera de 4 cuadros: contacto con la pierna cercana adelante, paso, contacto con la lejana adelante, paso. El torso y los brazos son los de `idle-00` sin cambios (los brazos no balancean todavía) y las piernas son nuevas. | `python3 scripts/preview_grid.py grids/kratos/run-00.txt grids/kratos/run-01.txt grids/kratos/run-02.txt grids/kratos/run-03.txt --palette palette/kratos.json --ground-row 55 --scale 6 --out /tmp/run.png`, o en el juego, corriendo. |
 
+### Mecánicas heredadas
+
+Las implementaron agentes anteriores. La usuaria fijó la intención general (D-03: historia, enemigos y repertorio de combate del primer *God of War*; D-08: controles), pero no decidió cada mecánica ni sus valores. Hasta que lo haga, ninguna es un requisito: no se dibuja arte ni se amplía una de ellas sin preguntarle. "Verificada" significa cubierta por `pnpm test`.
+
+| Mecánica | Estado | Detalles que la usuaria no decidió |
+| --- | --- | --- |
+| Correr y frenar | Verificada | Velocidad 140 px/s, aceleración y frenado. |
+| Derrape al girar rápido | Verificada | Que exista; 6 ticks. |
+| Salto, doble salto y plataformas | Verificada | Altura fija (no depende de cuánto se mantiene la tecla); se cae del borde cuando sale el centro, no el pie. |
+| Rodada con invulnerabilidad | Sin verificar | Duración, distancia e invulnerabilidad. |
+| Ataques (14 movimientos, combos, aéreos, agarre) | Sin verificar | Lista de movimientos, tiempos, alcance, flotación en el aire. |
+| Guardia y desvío (*parry*) | Sin verificar | Ventana de desvío y efectos. |
+| Magia (*Ira de Poseidón*) | Sin verificar | Costo, alcance y efecto. |
+| Orbes, cofres, mejora de arma y puntos de control | Sin verificar | Cantidades y reglas. |
+| Legionario, arquero e hidra (IA) | Sin verificar | Comportamientos y valores. |
+| Oleadas y arena | Sin verificar | Composición y barreras. |
+
 ### Decisiones visuales pendientes
 
 Elementos heredados que la usuaria no decidió. Están apagados con un interruptor en `src/config.ts`; encenderlos es cambiar un valor.
@@ -77,4 +94,5 @@ Con `idle-01` y la carrera pendientes de revisión, no se dibuja arte nuevo enci
 - `2026-10-30` — **Paso 24 (Limpieza de material heredado):** se borró `archivo/` (183 archivos, 17 MB: planes, docs viejas, generadores procedurales de sprites y arte descartado), que contaminaba las búsquedas de los agentes; queda en el historial de git. Se retiró `palette/master.json` y el soporte de master en `check_grid.py` (ahora exige `palette` en el manifest) y se puso al día el README (comandos `test` y `art`, scripts y estructura). La referencia de escala de desarrollo (`scale.ts`, `dev/scaleOverlay.ts`) se conserva: se deriva en vivo de `CONFIG.player.sprite` y servirá para auditar el combate. `pnpm build`, `pnpm test` y `pnpm art:check` pasan; no hay cambios en `src/`.
 - `2026-10-30` — **Paso 25 (Visuales heredados apagados):** cuchilla en reposo, armas procedurales de `WeaponLayer`, chispas de golpe y aplastamiento al aterrizar quedan apagados con interruptores en `CONFIG` (tabla "Decisiones visuales pendientes"); sin armas, el ataque muestra su zona de golpe. Legionario, arquero y flecha dejaron de usar los PNG de los generadores procedurales (borrados) y son cajas neutras como el hidra, amarillas al preparar el ataque. Verificado en navegador en los escenarios `magic`, `waves` y `hydra`, sin errores ni peticiones fallidas. Se abrió CAM-01 (problema previo, no causado por este cambio).
 - `2026-10-30` — **Paso 26 (Salto, plataformas y cámara auditados):** 9 pruebas nuevas del eje vertical. Corregido: caer de un borde sin saltar daba dos saltos en el aire (la caída ahora gasta el salto de suelo) y `vertical.ts` usaba `262` a mano para el suelo (ahora `groundY` del mapa). CAM-01 cerrado: la cámara de `level1` nunca se movió desde `9c9d793`, porque la sacudida del golpe al suelo hacía `setScroll(0, …)` en cada cuadro después de fijar el desplazamiento; ahora `applyCamera` fija ambos ejes en un solo lugar. Verificado en navegador: la cámara sigue a Kratos hasta la arena y se ven barreras, enemigos y jugador. Sin cambiar: la altura del salto no depende de cuánto se mantiene la tecla (decisión de diseño abierta).
+- `2026-10-30` — **Paso 27 (Quitar el sesgo de lo heredado):** tabla "Mecánicas heredadas" en este documento (qué implementaron agentes anteriores, qué está verificado con pruebas y qué detalles no decidió la usuaria) y regla 4 de `AGENTS.md`: lo heredado no es requisito. La skill `pixel-art-character-consistency` deja de mencionar el master y remite a `idle-00`, al método y a la regla de revisiones pendientes. Fuera del repo: el rastreador viejo `odd/tasks/gow-8b-betrayal-pixel-art.md` (ignorado por git, describía un lienzo de 320×180 y documentos inexistentes) se movió a `~/gow-8b-respaldos/`, y seis memorias persistentes del agente sobre arte retirado quedaron marcadas como obsoletas.
 
