@@ -174,7 +174,10 @@ export class PlayerView {
     player.setAlpha(1);
     player.setRotation(0);
     if (!grounded) {
+      // Stop the run loop first: a playing animation would overwrite the texture.
+      this.stopLoop();
       player.setTexture(PLAYER_KEY, 0);
+      player.anims.timeScale = 1;
       return;
     }
     // High-speed turnaround skid on ground

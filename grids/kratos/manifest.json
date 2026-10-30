@@ -20,6 +20,30 @@
       "state": "idle",
       "grounded": true,
       "png": "kratos-idle-01"
+    },
+    {
+      "file": "run-00.txt",
+      "state": "run",
+      "grounded": true,
+      "png": "kratos-run-00"
+    },
+    {
+      "file": "run-01.txt",
+      "state": "run",
+      "grounded": true,
+      "png": "kratos-run-01"
+    },
+    {
+      "file": "run-02.txt",
+      "state": "run",
+      "grounded": true,
+      "png": "kratos-run-02"
+    },
+    {
+      "file": "run-03.txt",
+      "state": "run",
+      "grounded": true,
+      "png": "kratos-run-03"
     }
   ]
 }

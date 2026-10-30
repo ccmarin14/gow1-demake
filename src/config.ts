@@ -154,10 +154,12 @@ run: {
   // cadence the clip was drawn for, `stridePx` is how far the body travels
   // in one full cycle. Playing at `speed / stridePx` cycles per second is the
   // no-slide rule: one loop must cover one stride of ground.
-  frameRate: 24,
-  // Placeholder until the run frames are drawn: measure the foot excursion
-  // (peak to peak) on them, x 2, before connecting a run clip.
-  stridePx: 24,
+  // At `maxSpeed` (140 px/s) the cycle runs 140 / 62 = 2.26 times a second,
+  // 9 frames a second for 4 frames: the clip plays at `timeScale` 1.
+  frameRate: 9,
+  // Measured on run-00..03: the planted foot travels 30.5 px (near leg) and
+  // 32.5 px (far leg) from front contact to back contact, half a cycle each.
+  stridePx: 62,
   minTimeScale: 0.35,
   maxTimeScale: 2,
   idleSpeedThreshold: 1,

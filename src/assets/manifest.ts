@@ -47,11 +47,13 @@ const STATIC_KEY = 'kratos-idle-00';
 
 /** Idle breathing loop: `idle-01` lifts the upper body 1 px. */
 export const IDLE_KEYS: readonly string[] = [STATIC_KEY, 'kratos-idle-01'];
-/**
- * Run frames. Empty until the new ASCII art exists: with fewer than two
- * frames `ShellScene` renders the static `PLAYER_KEY` while running.
- */
-export const RUN_KEYS: readonly string[] = [];
+/** Run cycle: contact, passing, contact (other leg), passing. */
+export const RUN_KEYS: readonly string[] = [
+  'kratos-run-00',
+  'kratos-run-01',
+  'kratos-run-02',
+  'kratos-run-03',
+];
 export const SKID_KEY = STATIC_KEY;
 
 /** Additional grid-derived frames, one PNG each, drawn in full. */
