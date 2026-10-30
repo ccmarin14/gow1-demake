@@ -9,6 +9,8 @@ export interface VerticalParams {
   jumpBufferTicks: number;
   maxJumps: number;
   topY: number;
+  /** Floor of the level: platforms above it are the only ones down + jump drops through. */
+  groundY: number;
 }
 
 export function stepVertical(
@@ -32,7 +34,7 @@ export function stepVertical(
   }
 
   // Descenso voluntario (drop-through): Kratos sobre plataforma elevada pulsa abajo + salto
-  const canDropThrough = !locked && wasGrounded && entity.y < 262 && wantsDown && jumpPressedEdge;
+  const canDropThrough = !locked && wasGrounded && entity.y < params.groundY && wantsDown && jumpPressedEdge;
   if (canDropThrough) {
     entity.dropThroughTicks = 14;
     entity.grounded = false;
@@ -74,7 +76,8 @@ export function stepVertical(
     } else if (canAirJump) {
       entity.vy = -params.jumpSpeed;
       entity.jumpBufferTicks = 0;
-      entity.jumpsUsed += 1;
+      // Falling off a ledge spends the ground jump: only the air jumps remain.
+      entity.jumpsUsed = Math.max(entity.jumpsUsed, 1) + 1;
       entity.landingTicks = 0;
     }
   }
@@ -95,8 +98,8 @@ export function stepVertical(
   let landed = false;
   if (entity.vy >= 0) {
     for (const platform of platforms) {
-      // Si está en drop-through, ignora plataformas elevadas (yTop < 262)
-      if (entity.dropThroughTicks > 0 && platform.yTop < 262) {
+      // While dropping through, raised platforms (above the floor) are ignored.
+      if (entity.dropThroughTicks > 0 && platform.yTop < params.groundY) {
         continue;
       }
       if (

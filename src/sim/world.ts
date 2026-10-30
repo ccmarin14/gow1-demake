@@ -42,6 +42,7 @@ const VERTICAL_PARAMS: VerticalParams = {
     (CONFIG.player.vertical.jumpBufferMs * CONFIG.sim.tickRate) / 1000,
   ),
   maxJumps: CONFIG.player.vertical.maxJumps,
+  groundY: CONFIG.map.level1.groundY,
   topY: CONFIG.player.vertical.topY,
 };
 

@@ -401,11 +401,7 @@ export class ShellScene extends Phaser.Scene {
       this.hydraVictoryBannerText?.setAlpha(0);
     }
 
-    if (this.simulation.world.scenarioName === 'level1') {
-      this.cameras.main.scrollX = this.simulation.world.cameraScrollX;
-    } else {
-      this.cameras.main.scrollX = 0;
-    }
+    this.applyCamera(player);
 
     if (this.bg) {
       this.bg.tilePositionX = this.cameras.main.scrollX * (CONFIG.map.level1.camera.parallaxFactor ?? 0.25);
@@ -448,13 +444,6 @@ export class ShellScene extends Phaser.Scene {
     this.updateMagic(player);
     this.updateChests(player);
     this.updateCheckpoints();
-    if (player && player.groundImpactTicks > 0) {
-      const shakePx = CONFIG.player.attack.groundImpact.shakePx;
-      const dy = player.groundImpactTicks % 2 === 1 ? shakePx : -shakePx;
-      this.cameras.main.setScroll(0, dy);
-    } else {
-      this.cameras.main.setScroll(0, 0);
-    }
 
     // Banner de mejora de arma a Nivel 2
     if (player) {
@@ -552,6 +541,22 @@ export class ShellScene extends Phaser.Scene {
       rect.setFillStyle(color);
       rect.setAlpha(target.aiState === 'death' ? enemy.deadAlpha : 1);
     }
+  }
+
+  /**
+   * The single place that sets the camera each frame: horizontal scroll from
+   * the simulation (level1 only), vertical offset from the ground-impact
+   * shake. Setting them separately let the shake reset `scrollX` to 0 and the
+   * level camera never moved (CAM-01).
+   */
+  private applyCamera(player: Readonly<EntityState> | null): void {
+    const scrollX = this.simulation.world.scenarioName === 'level1' ? this.simulation.world.cameraScrollX : 0;
+    let scrollY = 0;
+    if (player && player.groundImpactTicks > 0) {
+      const shakePx = CONFIG.player.attack.groundImpact.shakePx;
+      scrollY = player.groundImpactTicks % 2 === 1 ? shakePx : -shakePx;
+    }
+    this.cameras.main.setScroll(scrollX, scrollY);
   }
 
   private redrawPlatforms(): void {
