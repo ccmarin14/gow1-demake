@@ -45,8 +45,8 @@ function characterSheet(key: string, path: string): AssetEntry {
 /** Static fallback pose for every state that has no drawn frames yet. */
 const STATIC_KEY = 'kratos-idle-00';
 
-/** Idle frames. One drawn frame: `PlayerView` renders it statically. */
-export const IDLE_KEYS: readonly string[] = [STATIC_KEY];
+/** Idle breathing loop: `idle-01` lifts the upper body 1 px. */
+export const IDLE_KEYS: readonly string[] = [STATIC_KEY, 'kratos-idle-01'];
 /**
  * Run frames. Empty until the new ASCII art exists: with fewer than two
  * frames `ShellScene` renders the static `PLAYER_KEY` while running.
@@ -55,7 +55,7 @@ export const RUN_KEYS: readonly string[] = [];
 export const SKID_KEY = STATIC_KEY;
 
 /** Additional grid-derived frames, one PNG each, drawn in full. */
-export const PLAYER_FRAME_KEYS: readonly string[] = [...RUN_KEYS];
+export const PLAYER_FRAME_KEYS: readonly string[] = ['kratos-idle-01', ...RUN_KEYS];
 
 export const ASSETS: Record<AssetDomain, readonly AssetEntry[]> = {
   characters: [

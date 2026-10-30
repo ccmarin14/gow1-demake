@@ -20,11 +20,17 @@ Documento único del estado medido de `gow-8b`. Se actualiza en el mismo commit 
 | **ESE-01** | Sin remates contextuales (QTE) ni agarre real (ESE-02); impacto poco brutal (ESE-03); enemigos de un solo truco (ESE-04); sin introducción (ESE-05, regla D-30). | El combate se aparta de la esencia de *God of War*. Plan y criterios en `docs/direccion.md` §4. |
 | **ART-02** | Los anclajes de mano de los ataques (`hand` en cada movimiento de `src/config.ts`, entre `dx 7..26`, `dy -31..-33`) conservan valores de una hoja retirada; en `idle-00` el puño delantero está en `dx 18, dy -20`. No se cambiaron porque también definen el arco de golpe de la simulación. | Las cadenas de ataque salen por encima del puño dibujado. Se re-miden cuando existan los cuadros de ataque, con prueba en el harness. |
 
+### Revisiones pendientes
+
+Cuadros commiteados sin la aprobación visual de la usuaria (regla en `AGENTS.md`). Ninguno sirve de base para otro cuadro hasta aprobarse.
+
+| Cuadro | Qué revisar | Cómo verlo |
+| --- | --- | --- |
+| `idle-01` | Respiración: cabeza, hombros, pecho y brazos suben 1 px sobre `idle-00`; cintura, taparrabos y piernas fijos. Alterna con `idle-00` a 1 cuadro por segundo. | `python3 scripts/preview_grid.py grids/kratos/idle-00.txt grids/kratos/idle-01.txt --palette palette/kratos.json --ground-row 55 --scale 8 --out /tmp/idle.png`, o en el juego, quieto. |
+
 ## 3. Siguiente paso
 
-Dibujar el siguiente cuadro de Kratos con el mismo método (`docs/direccion.md` §5), partiendo de `idle-00` como modelo del personaje: `idle-01` (respiración) o el primer cuadro de carrera.
-
-En paralelo al arte, el plan de esencia de `docs/direccion.md` §4 (orden: ESE-03, ESE-01 con ESE-02, ESE-04, ESE-05).
+Mientras `idle-01` espera revisión, el plan de esencia de `docs/direccion.md` §4, que se verifica con el harness: ESE-03 (peso de los golpes), luego ESE-01 con ESE-02, ESE-04 y ESE-05. El arte sigue con el primer cuadro de carrera, partiendo de `idle-00`, cuando la usuaria pueda revisar.
 
 ## 4. Registro de pasos
 
@@ -51,4 +57,5 @@ En paralelo al arte, el plan de esencia de `docs/direccion.md` §4 (orden: ESE-0
 - `2026-10-29` — **Paso 18 (Validador y brief en el repo):** `scripts/check_landmarks.py` valida puntos de referencia (material, fila de suelo y desplazamiento entre cuadros) y el brief de `idle-00` pasó a `docs/temporal/` con la excepción registrada en `AGENTS.md`.
 - `2026-10-29` — **Paso 19 (Referencia y puntos reales):** `scripts/quantize_reference.py` genera una referencia del cuerpo del master heredado en la paleta semántica, y los puntos de referencia de `idle-00` salen de ella. La primera entrega del otro agente (maniquí simétrico) se descartó: el validador la mide a 7–8 px de las manos y pies de la referencia. ART-03 cerrado.
 - `2026-10-30` — **Paso 20 (`idle-00` aprobado y conectado):** `idle-00` (64×56) es el cuerpo de `kratos-neutral.png` en el commit `e9d9a34` (la versión posterior estropeó la cabeza), copiado a mano en la paleta semántica, sin cadenas ni cuchillas, con puños, antebrazos y cara rehechos con el estilo del torso (bordes de color del lado de la luz, contorno oscuro solo del lado de la sombra) y cara mínima, como en *Betrayal*. Se retiraron `master.txt`, `idle-01.txt` y sus PNG; `check_grid.py` ya no exige master. Lienzo 64×56 en el manifest y en `PLAYER_SPRITE_*`; `restPose` y `playerShadow` encendidos. Verificado en navegador (reposo a ambos lados y en el aire, 0 errores, 0 peticiones fallidas). V-14 y ART-01 cerrados; ART-02 sigue abierto.
+- `2026-10-30` — **Paso 21 (`idle-01` y revisiones pendientes):** `idle-01` (respiración) dibujado a mano sobre `idle-00` y conectado como clip `kratos-idle` de 2 cuadros; verificado con `art:check`, puntos de referencia (≤ 1 px respecto a `idle-00`) y navegador sin errores. Queda en "Revisiones pendientes": la usuaria no puede revisar ahora, y la regla nueva de `AGENTS.md` permite commitear cuadros pendientes sin apilar otros encima.
 
