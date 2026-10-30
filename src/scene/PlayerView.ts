@@ -1,12 +1,17 @@
 import Phaser from 'phaser';
 import {
+  AIR_FALL_KEY,
+  AIR_RISE_KEY,
   IDLE_KEY,
+  ROLL_BALL_KEY,
+  ROLL_CROUCH_KEY,
+  ROLL_CROUCH_TICKS,
   IDLE_KEYS,
   PLAYER_KEY,
   RUN_KEY,
   RUN_KEYS,
 } from '../assets/manifest';
-import { CONFIG } from '../config';
+import { CONFIG, ROLL_TICKS } from '../config';
 import { WeaponLayer } from '../entities/WeaponLayer';
 import type { Platform } from '../sim/scenarios';
 import type { AttackParams } from '../sim/attack';
@@ -163,7 +168,9 @@ export class PlayerView {
     }
     if (rolling) {
       this.stopLoop();
-      player.setTexture(PLAYER_KEY, 0);
+      const t = simPlayer.rollTicks;
+      const curled = t >= ROLL_CROUCH_TICKS && t < ROLL_TICKS - ROLL_CROUCH_TICKS;
+      player.setTexture(curled ? ROLL_BALL_KEY : ROLL_CROUCH_KEY, 0);
       player.setFlipX(facing === -1);
       player.setRotation(0);
       player.setAlpha(1);
@@ -175,7 +182,7 @@ export class PlayerView {
     if (!grounded) {
       // Stop the run loop first: a playing animation would overwrite the texture.
       this.stopLoop();
-      player.setTexture(PLAYER_KEY, 0);
+      player.setTexture(simPlayer.vy < 0 ? AIR_RISE_KEY : AIR_FALL_KEY, 0);
       player.anims.timeScale = 1;
       return;
     }

@@ -44,6 +44,30 @@
       "state": "run",
       "grounded": true,
       "png": "kratos-run-03"
+    },
+    {
+      "file": "air-00.txt",
+      "state": "air-rise",
+      "grounded": false,
+      "png": "kratos-air-00"
+    },
+    {
+      "file": "air-01.txt",
+      "state": "air-fall",
+      "grounded": false,
+      "png": "kratos-air-01"
+    },
+    {
+      "file": "roll-00.txt",
+      "state": "roll-crouch",
+      "grounded": true,
+      "png": "kratos-roll-00"
+    },
+    {
+      "file": "roll-01.txt",
+      "state": "roll-ball",
+      "grounded": true,
+      "png": "kratos-roll-01"
     }
   ]
 }
