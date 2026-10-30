@@ -129,8 +129,6 @@ export interface EntityState {
   guardPhase: 'none' | 'startup' | 'active' | 'recovery';
   guardTicks: number;
   parryActive: boolean;
-  /** Ticks left of skid / turnaround braking state; 0 = normal movement. */
-  skidTicks: number;
   /** Ticks left of elastic landing impact absorption; 0 = normal presentation. */
   landingTicks: number;
   aiState:

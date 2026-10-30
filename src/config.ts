@@ -132,15 +132,6 @@ airControl: {
   accel: 700,
   brake: 350,
 },
-/**
- * Ground turnaround above `minSpeedRatio * maxSpeed`: the body slides for up
- * to `ticks` with `brake` (px/s^2), still facing the old way, then turns.
- */
-skid: {
-  brake: 2200,
-  ticks: 6,
-  minSpeedRatio: 0.6,
-},
 sprite: {
   width: PLAYER_SPRITE_WIDTH,
   height: PLAYER_SPRITE_HEIGHT,

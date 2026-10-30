@@ -5,7 +5,6 @@ import {
   PLAYER_KEY,
   RUN_KEY,
   RUN_KEYS,
-  SKID_KEY,
 } from '../assets/manifest';
 import { CONFIG } from '../config';
 import { WeaponLayer } from '../entities/WeaponLayer';
@@ -177,14 +176,6 @@ export class PlayerView {
       // Stop the run loop first: a playing animation would overwrite the texture.
       this.stopLoop();
       player.setTexture(PLAYER_KEY, 0);
-      player.anims.timeScale = 1;
-      return;
-    }
-    // High-speed turnaround skid on ground
-    if (simPlayer.skidTicks > 0) {
-      this.stopLoop();
-      player.setTexture(SKID_KEY, 0);
-      player.setFlipX(facing === -1);
       player.anims.timeScale = 1;
       return;
     }

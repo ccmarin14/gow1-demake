@@ -11,7 +11,7 @@ const P = CONFIG.player;
 const OPEN: MovementParams = { ...P, minX: 0, maxX: 100_000 };
 
 function body(overrides: Partial<EntityState> = {}): EntityState {
-  return { x: 500, vx: 0, facing: 1, grounded: true, skidTicks: 0, ...overrides } as EntityState;
+  return { x: 500, vx: 0, facing: 1, grounded: true, ...overrides } as EntityState;
 }
 
 function ticksToReach(entity: EntityState, left: boolean, right: boolean, done: (e: EntityState) => boolean): number {
@@ -40,31 +40,15 @@ describe('ground movement', () => {
     assert.equal(kratos.facing, 1);
   });
 
-  it('skids on a fast turnaround: keeps facing until the slide ends, then runs the other way', () => {
+  it('turns around at once with no skid: faces the new way, brakes, then runs back', () => {
     const kratos = body({ vx: P.maxSpeed });
     stepHorizontal(kratos, true, false, DT, OPEN);
-    assert.ok(kratos.skidTicks > 0, 'a fast reversal starts a skid');
-    assert.equal(kratos.facing, 1, 'facing holds during the skid');
-    const ticks = ticksToReach(kratos, true, false, (e) => e.vx < 0);
-    assert.ok(ticks <= P.skid.ticks, `reversed after ${ticks} ticks`);
-    assert.equal(kratos.facing, -1);
-    assert.equal(kratos.skidTicks, 0);
-  });
-
-  it('turns at once without skidding below the skid speed', () => {
-    const kratos = body({ vx: P.maxSpeed * P.skid.minSpeedRatio * 0.5 });
-    stepHorizontal(kratos, true, false, DT, OPEN);
-    assert.equal(kratos.skidTicks, 0);
-    assert.equal(kratos.facing, -1);
-  });
-
-  it('cancels the skid when the input returns to the facing direction', () => {
-    const kratos = body({ vx: P.maxSpeed });
-    stepHorizontal(kratos, true, false, DT, OPEN);
-    stepHorizontal(kratos, false, true, DT, OPEN);
-    assert.equal(kratos.skidTicks, 0);
-    assert.equal(kratos.facing, 1);
-    assert.ok(kratos.vx > 0);
+    assert.equal(kratos.facing, -1, 'faces the new direction on the first tick');
+    assert.ok(!('skidTicks' in kratos), 'there is no skid state');
+    const stop = ticksToReach(kratos, true, false, (e) => e.vx <= 0);
+    assert.ok(stop <= Math.ceil(P.maxSpeed / (P.brake * DT)), `stopped after ${stop + 1} ticks`);
+    const back = ticksToReach(kratos, true, false, (e) => e.vx === -P.maxSpeed);
+    assert.ok(back <= Math.ceil(P.maxSpeed / (P.accel * DT)) + 1, `top speed back after ${back} ticks`);
   });
 
   it('holding both directions brakes like no input', () => {
@@ -85,13 +69,12 @@ describe('air movement', () => {
     assert.ok(kratos.vx > P.maxSpeed / 2, 'a jump keeps carrying forward');
   });
 
-  it('reverses more slowly in the air than on the ground, and never skids', () => {
+  it('reverses more slowly in the air than on the ground', () => {
     const ground = body({ vx: P.maxSpeed });
     const air = body({ vx: P.maxSpeed, grounded: false });
     const groundTicks = ticksToReach(ground, true, false, (e) => e.vx <= 0);
     const airTicks = ticksToReach(air, true, false, (e) => e.vx <= 0);
     assert.ok(airTicks > groundTicks, `air ${airTicks} vs ground ${groundTicks}`);
-    assert.equal(air.skidTicks, 0);
   });
 
   it('accelerates from rest more slowly in the air than on the ground', () => {
@@ -118,7 +101,6 @@ describe('locks and bounds', () => {
     stepHorizontal(kratos, false, true, DT, { ...OPEN, maxX: 100 });
     assert.equal(kratos.x, 100);
     assert.equal(kratos.vx, 0);
-    assert.equal(kratos.skidTicks, 0);
   });
 });
 
@@ -146,6 +128,15 @@ describe('world', () => {
     const accelTicks = Math.ceil(P.maxSpeed / (P.accel * DT));
     const lower = start + P.maxSpeed * DT * (60 - accelTicks);
     assert.ok(kratos.x > lower && kratos.x <= start + P.maxSpeed, `moved to ${kratos.x}`);
+  });
+
+  it('a full-speed turnaround faces the new way on the first tick (no skid)', () => {
+    const world = playingWorld();
+    for (let i = 0; i < 30; i += 1) world.step(['move-right']);
+    world.step(['move-left']);
+    const kratos = player(world);
+    assert.equal(kratos.facing, -1);
+    assert.ok(!('skidTicks' in kratos), 'there is no skid state');
   });
 
   it('stops at the left edge of the level, keeping the body on the map', () => {

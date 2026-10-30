@@ -50,7 +50,6 @@ export function createHydraState(
     guardPhase: 'none',
     guardTicks: 0,
     parryActive: false,
-    skidTicks: 0,
     landingTicks: 0,
     aiState: 'hydra_idle',
     aiTicks: 0,

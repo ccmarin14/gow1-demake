@@ -103,7 +103,6 @@ export function respawnAtCheckpoint(
   player.invulTicks = 0;
   player.magicPhase = 'none';
   player.magicTicks = 0;
-  player.skidTicks = 0;
   player.landingTicks = 0;
 
   if (savedData) {

@@ -41,7 +41,6 @@ export const RUN_KEYS: readonly string[] = [
   'kratos-run-02',
   'kratos-run-03',
 ];
-export const SKID_KEY = STATIC_KEY;
 
 /** Additional grid-derived frames, one PNG each, drawn in full. */
 export const PLAYER_FRAME_KEYS: readonly string[] = ['kratos-idle-01', ...RUN_KEYS];

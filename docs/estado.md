@@ -5,10 +5,10 @@ Documento único del estado medido de `gow-8b`. Se actualiza en el mismo commit 
 ## 1. Qué funciona hoy (medido el 2026-10-30)
 
 - **Build y navegador:** `pnpm build` pasa sin errores; el servidor de desarrollo carga en Chrome a 480×270 con 0 errores de consola y 0 peticiones HTTP fallidas.
-- **Simulación determinista (60 Hz):** movimiento horizontal (con inercia en el aire y derrape en `CONFIG.player`), salto y doble salto, plataformas one-way, rodada con i-frames, ataque ligero y pesado, guardia/parry, magia (*Ira de Poseidón*), orbes, cofres, checkpoints e IA de legionario, arquero e hidra (`src/sim/`).
+- **Simulación determinista (60 Hz):** movimiento horizontal (con inercia en el aire, sin derrape; D-32), salto y doble salto, plataformas one-way, rodada con i-frames, ataque ligero y pesado, guardia/parry, magia (*Ira de Poseidón*), orbes, cofres, checkpoints e IA de legionario, arquero e hidra (`src/sim/`).
 - **Presentación y audio:** HUD de salud/maná/orbes (`HudLayer.ts`), efectos de lluvia/relámpagos (`VfxLayer.ts`), overlay de flujo (`GameFlowOverlay.ts`) y audio procedural Web Audio (`SoundManager.ts`).
 - **Arranque:** el juego abre en la pantalla de título sobre `level1` (escenario por defecto); las oleadas de la arena central nacen dentro de la arena.
-- **Pruebas:** `pnpm test` (runner nativo de Node, sin dependencias, 22 pruebas) cubre el movimiento horizontal (aceleración, frenado, derrape, control en el aire, bloqueos, límites y el recorrido en `level1`) y el vertical (altura del salto, doble salto, caída de un borde, tiempo de coyote, búfer de salto, velocidad máxima de caída, plataformas de un sentido y bajada con abajo + salto).
+- **Pruebas:** `pnpm test` (runner nativo de Node, sin dependencias, 21 pruebas) cubre el movimiento horizontal (aceleración, frenado, derrape, control en el aire, bloqueos, límites y el recorrido en `level1`; sin derrape) y el vertical (altura del salto, doble salto, caída de un borde, tiempo de coyote, búfer de salto, velocidad máxima de caída, plataformas de un sentido y bajada con abajo + salto).
 - **Harness DEV:** `window.__GOW8B` expone `snapshot()`, `loadScenario()`, `reset()`, `step()`, `advance()` y `metrics()`.
 - **Sprites activos:**
   - Kratos tiene un solo cuadro, `kratos-idle-00.png` (grid `grids/kratos/idle-00.txt`, 64×56, paleta `palette/kratos.json`, solo cuerpo). Todos los estados lo muestran estático hasta que se dibujen los cuadros siguientes. La cuchilla en reposo (`restPose`) y la sombra de contacto (`playerShadow`) las dibuja el motor.
@@ -37,10 +37,9 @@ Las implementaron agentes anteriores. La usuaria fijó la intención general (D-
 
 | Mecánica | Estado | Detalles que la usuaria no decidió |
 | --- | --- | --- |
-| Correr y frenar | Verificada | Velocidad 140 px/s, aceleración y frenado. |
-| Derrape al girar rápido | Verificada | Que exista; 6 ticks. |
-| Salto, doble salto y plataformas | Verificada | Altura fija (no depende de cuánto se mantiene la tecla); se cae del borde cuando sale el centro, no el pie. |
-| Rodada con invulnerabilidad | Sin verificar | Duración, distancia e invulnerabilidad. |
+| Correr y frenar (D-32) | Decidida y verificada | Velocidad 140 px/s, aceleración y frenado. Sin caminar y sin derrape. |
+| Salto, doble salto y plataformas (D-32) | Decidida y verificada | Altura fija (no depende de cuánto se mantiene la tecla); se cae del borde cuando sale el centro, no el pie. |
+| Rodada con invulnerabilidad (D-32) | Decidida, sin verificar | Duración, distancia e invulnerabilidad. |
 | Ataques (14 movimientos, combos, aéreos, agarre) | Sin verificar | Lista de movimientos, tiempos, alcance, flotación en el aire. |
 | Guardia y desvío (*parry*) | Sin verificar | Ventana de desvío y efectos. |
 | Magia (*Ira de Poseidón*) | Sin verificar | Costo, alcance y efecto. |
@@ -95,4 +94,5 @@ Con `idle-01` y la carrera pendientes de revisión, no se dibuja arte nuevo enci
 - `2026-10-30` — **Paso 25 (Visuales heredados apagados):** cuchilla en reposo, armas procedurales de `WeaponLayer`, chispas de golpe y aplastamiento al aterrizar quedan apagados con interruptores en `CONFIG` (tabla "Decisiones visuales pendientes"); sin armas, el ataque muestra su zona de golpe. Legionario, arquero y flecha dejaron de usar los PNG de los generadores procedurales (borrados) y son cajas neutras como el hidra, amarillas al preparar el ataque. Verificado en navegador en los escenarios `magic`, `waves` y `hydra`, sin errores ni peticiones fallidas. Se abrió CAM-01 (problema previo, no causado por este cambio).
 - `2026-10-30` — **Paso 26 (Salto, plataformas y cámara auditados):** 9 pruebas nuevas del eje vertical. Corregido: caer de un borde sin saltar daba dos saltos en el aire (la caída ahora gasta el salto de suelo) y `vertical.ts` usaba `262` a mano para el suelo (ahora `groundY` del mapa). CAM-01 cerrado: la cámara de `level1` nunca se movió desde `9c9d793`, porque la sacudida del golpe al suelo hacía `setScroll(0, …)` en cada cuadro después de fijar el desplazamiento; ahora `applyCamera` fija ambos ejes en un solo lugar. Verificado en navegador: la cámara sigue a Kratos hasta la arena y se ven barreras, enemigos y jugador. Sin cambiar: la altura del salto no depende de cuánto se mantiene la tecla (decisión de diseño abierta).
 - `2026-10-30` — **Paso 27 (Quitar el sesgo de lo heredado):** tabla "Mecánicas heredadas" en este documento (qué implementaron agentes anteriores, qué está verificado con pruebas y qué detalles no decidió la usuaria) y regla 4 de `AGENTS.md`: lo heredado no es requisito. La skill `pixel-art-character-consistency` deja de mencionar el master y remite a `idle-00`, al método y a la regla de revisiones pendientes. Fuera del repo: el rastreador viejo `odd/tasks/gow-8b-betrayal-pixel-art.md` (ignorado por git, describía un lienzo de 320×180 y documentos inexistentes) se movió a `~/gow-8b-respaldos/`, y seis memorias persistentes del agente sobre arte retirado quedaron marcadas como obsoletas.
+- `2026-10-30` — **Paso 28 (Desplazamiento de GoW 1, D-32):** la usuaria decidió el desplazamiento: el de GoW 1 en 2D, correr sin caminar, salto, doble salto y rodada, sin derrape. Se quitó el derrape de la simulación (`skidTicks`, `CONFIG.player.skid`), de `PlayerView` y de las pruebas; ahora un giro a toda velocidad mira al nuevo lado en el primer tick, frena y vuelve a acelerar (prueba nueva sobre `World`).
 
