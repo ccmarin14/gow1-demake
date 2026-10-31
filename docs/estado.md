@@ -11,7 +11,7 @@ Documento único del estado medido de `gow-8b`. Se actualiza en el mismo commit 
 - **Pruebas:** `pnpm test` (runner nativo de Node, sin dependencias, 29 pruebas) cubre el movimiento horizontal (aceleración, frenado, derrape, control en el aire, bloqueos, límites y el recorrido en `level1`; sin derrape) y el vertical (altura del salto, doble salto, caída de un borde, tiempo de coyote, búfer de salto, velocidad máxima de caída, plataformas de un sentido y bajada con abajo + salto) y la rodada (distancia, dirección, invulnerabilidad, solo en el suelo, sin encadenar y cancelación en ataque) y que `level1` contiene solo a Kratos.
 - **Harness DEV:** `window.__GOW8B` expone `snapshot()`, `loadScenario()`, `reset()`, `step()`, `advance()` y `metrics()`.
 - **Sprites activos:**
-  - Kratos tiene un solo cuadro, `kratos-idle-00.png` (grid `grids/kratos/idle-00.txt`, 64×56, paleta `palette/kratos.json`, solo cuerpo). Todos los estados lo muestran estático hasta que se dibujen los cuadros siguientes. La cuchilla en reposo (`restPose`) y la sombra de contacto (`playerShadow`) las dibuja el motor.
+  - Kratos tiene `kratos-idle-00.png` (grid `grids/kratos/idle-00.txt`, 64×56, paleta `palette/kratos.json`, solo cuerpo) y el ciclo de carrera en borrador `kratos-run-00..07` (D-34: render del maniquí 3D, sin terminar). Los demás estados muestran `idle-00` estático hasta que se dibujen sus cuadros. La cuchilla en reposo (`restPose`) y la sombra de contacto (`playerShadow`) las dibuja el motor.
   - Los enemigos no tienen arte: legionario, arquero e hidra son cajas neutras del tamaño de su zona de golpe (`presentation.enemyPlaceholder`, `hydraPlaceholder`), que se ponen amarillas al preparar un ataque; las flechas son barras.
   - Los visuales heredados están apagados hasta que la usuaria los decida (ver "Decisiones visuales pendientes"); mientras tanto, un ataque muestra su zona de golpe como caja.
 
@@ -28,6 +28,7 @@ Cuadros commiteados sin la aprobación visual de la usuaria (regla en `AGENTS.md
 
 | Cuadro | Qué revisar | Cómo verlo |
 | --- | --- | --- |
+| `run-00..07` | Borrador del ciclo de carrera (D-34): render del maniquí 3D reducido a la paleta, todavía sin la cabeza de `idle-00`, el tatuaje ni el faldón terminado. Revisar si el movimiento se lee como la carrera de Kratos antes de la terminación. En `run-03`, `run-06` y `run-07` los dos pies están en el aire (fase de vuelo). | En el juego, corriendo con `D`; capturas en `docs/tmp/navegador/`. |
 | `idle-01` | Respiración: cabeza, hombros, pecho y brazos suben 1 px sobre `idle-00`; cintura, taparrabos y piernas fijos. Alterna con `idle-00` a 1 cuadro por segundo. | `python3 scripts/preview_grid.py grids/kratos/idle-00.txt grids/kratos/idle-01.txt --palette palette/kratos.json --ground-row 55 --scale 8 --out /tmp/idle.png`, o en el juego, quieto. |
 
 ### Mecánicas heredadas
@@ -79,7 +80,7 @@ Elementos heredados que la usuaria no decidió. Están apagados con un interrupt
 
 ## 3. Siguiente paso
 
-Revisión de la usuaria del arte pendiente (tabla de arriba): con eso se juzga si la física del desplazamiento (D-32) sigue vigente. Los cuadros nuevos parten de `idle-00`, nunca de uno pendiente. Lo siguiente verificable sin ojo humano es el combate (tabla "Mecánicas heredadas").
+Que la usuaria juzgue el borrador de la carrera en movimiento. Si se lee bien, se arman con el mismo método los borradores del salto, la caída y la rodada, y después se terminan a mano todos los cuadros (D-34). Lo siguiente verificable sin ojo humano es el combate (tabla "Mecánicas heredadas").
 
 ## 4. Registro de pasos
 
@@ -119,4 +120,4 @@ Revisión de la usuaria del arte pendiente (tabla de arriba): con eso se juzga s
 - `2026-10-30` — **Paso 31 (Decisiones de combate):** tabla "Decisiones de combate pendientes" (C1–C13): lo que el juego tiene hoy frente a GoW 1, con fuente o "a confirmar", para que la usuaria decida antes de auditar el combate. Sin cambios de código.
 - `2026-10-31` — **Paso 32 (Nivel vacío, D-33):** la usuaria pidió volver al inicio del nivel sin nada con que interactuar. `level1` quedó con Kratos, la cubierta y sus plataformas; se quitaron del nivel el arquero, la hidra, los cuatro cofres, los dos puntos de control, las oleadas y la arena, que siguen en sus escenarios de prueba. 2 pruebas nuevas. Verificado en navegador recorriendo el nivel entero, sin errores.
 - `2026-10-31` — **Paso 33 (Cuadros de movimiento rechazados y retirados):** la usuaria rechazó `run-00..03`, `air-00/01` y `roll-00/01`: se veían cortados en la cadera y rígidos arriba, porque no eran poses nuevas sino el torso y los brazos de `idle-00` pegados sobre piernas redibujadas. Se retiraron los 8 grids y sus PNG; correr, el aire y la rodada vuelven a mostrar `idle-00` (la física no cambia). Regla nueva en `AGENTS.md`: cada cuadro es una pose completa del cuerpo entero, nunca partes de otro cuadro pegadas.
-
+- `2026-10-31` — **Paso 34 (Borrador 3D de la carrera, D-34):** el dibujo a mano desde cero de los cuadros de movimiento quedó por debajo de `idle-00` en todos los intentos. Ahora las animaciones arrancan de un render del maniquí CC0 de Quaternius, engrosado a la complexión de Kratos, con faldón y cámara a 20° (`scripts/pose_render/`), reducido a la paleta. Entraron los 8 cuadros de `Sprint_Loop` como `run-00..07` en revisión pendiente; paso medido de 68 px (pie de x=14 a x=48, ×2) y 15 cuadros por segundo de base. `pnpm test` y `pnpm build` pasan; verificado en Chrome headless corriendo por la cubierta, con 0 errores de consola y 0 peticiones fallidas. Regla nueva en `AGENTS.md`: las imágenes de trabajo van en `docs/tmp/`.

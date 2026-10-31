@@ -35,10 +35,10 @@ const STATIC_KEY = 'kratos-idle-00';
 /** Idle breathing loop: `idle-01` lifts the upper body 1 px. */
 export const IDLE_KEYS: readonly string[] = [STATIC_KEY, 'kratos-idle-01'];
 /**
- * Run frames. Empty until they are drawn as full poses: with fewer than two
- * frames `PlayerView` shows the static `PLAYER_KEY` while running.
+ * Run cycle: blockout frames rendered from the 3D mannequin (D-34), pending
+ * the finishing pass with the idle head, tattoo and costume detail.
  */
-export const RUN_KEYS: readonly string[] = [];
+export const RUN_KEYS: readonly string[] = Array.from({ length: 8 }, (_, i) => `kratos-run-0${i}`);
 /** Additional grid-derived frames, one PNG each, drawn in full. */
 export const PLAYER_FRAME_KEYS: readonly string[] = ['kratos-idle-01', ...RUN_KEYS];
 

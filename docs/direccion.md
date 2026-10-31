@@ -66,7 +66,12 @@ Revisión del 2026-10-29 contra el primer *God of War*, hecha sobre código, con
 | **Arranque desde referencia** | `scripts/quantize_reference.py`: recorta una región de una imagen existente y la convierte a `palette/kratos.json` por color más cercano (no por luminancia), como referencia ASCII para leer y calcar a mano. Escribe fuera de `grids/` (se niega a escribir dentro). Sus letras son por color, no por material; los roles se deciden al dibujar. | Existe |
 | **Bucle visual** | El agente rasteriza, mira la vista previa ampliada, compara con la lista de comprobación y corrige, con un máximo de rondas. Requiere un modelo que vea imágenes. | Regla vigente |
 
-**Regla dura:** ningún script, función o bucle puede generar o modificar el contenido de `grids/*.txt`. El grid se escribe con una herramienta de escritura de archivos, con filas literales. Python solo valida, rasteriza, previsualiza y genera referencias fuera de `grids/`.
+**Regla dura:** ningún script, función o bucle puede generar o modificar el contenido de `grids/*.txt`. La única excepción es el borrador de D-34: `scripts/pose_render/to_grid.py` produce el grid inicial de un cuadro de animación, que después se termina con una herramienta de escritura de archivos, con filas literales.
 
-**Alternativa descartada por ahora:** 3D con rig renderizado a píxeles. Da animación consistente pero es geometría procedural (choca con D-28) y exige modelar a Kratos; se reconsidera solo si este método también falla.
+**Borrador 3D (D-34), reemplaza la alternativa descartada:** el método de arriba no alcanzó la calidad de `idle-00` en los cuadros de movimiento. Ahora cada animación arranca de un render del maniquí CC0 de Quaternius:
+
+1. `blender -b --python scripts/pose_render/render.py -- scripts/pose_render/kratos.json <acción> <carpeta> <cuadros>` renderiza la acción con la complejidad de Kratos (volumen por hueso, faldón, cámara a 20°, luz arriba a la izquierda). El modelo se descarga en `docs/tmp/` (fuente en `kratos.json`).
+2. `python3 scripts/pose_render/to_grid.py <render.png> <grid.txt>` lo reduce a la paleta de Kratos: piel, cuero y sandalias por hueso, lado cercano y lejano, cuatro tonos y contorno.
+3. El borrador entra al juego como revisión pendiente para probar el movimiento.
+4. La terminación es a mano: cabeza de `idle-00` donde el render pone la cabeza, tatuaje con borde granate, hueco del cuello bajo la mandíbula, faldón y textura de tonos mezclados. La forma la da el render; a mano no se rehace la anatomía.
 

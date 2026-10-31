@@ -20,6 +20,54 @@
       "state": "idle",
       "grounded": true,
       "png": "kratos-idle-01"
+    },
+    {
+      "file": "run-00.txt",
+      "state": "run",
+      "grounded": true,
+      "png": "kratos-run-00"
+    },
+    {
+      "file": "run-01.txt",
+      "state": "run",
+      "grounded": true,
+      "png": "kratos-run-01"
+    },
+    {
+      "file": "run-02.txt",
+      "state": "run",
+      "grounded": true,
+      "png": "kratos-run-02"
+    },
+    {
+      "file": "run-03.txt",
+      "state": "run",
+      "grounded": false,
+      "png": "kratos-run-03"
+    },
+    {
+      "file": "run-04.txt",
+      "state": "run",
+      "grounded": true,
+      "png": "kratos-run-04"
+    },
+    {
+      "file": "run-05.txt",
+      "state": "run",
+      "grounded": true,
+      "png": "kratos-run-05"
+    },
+    {
+      "file": "run-06.txt",
+      "state": "run",
+      "grounded": false,
+      "png": "kratos-run-06"
+    },
+    {
+      "file": "run-07.txt",
+      "state": "run",
+      "grounded": false,
+      "png": "kratos-run-07"
     }
   ]
 }
