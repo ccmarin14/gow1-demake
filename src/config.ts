@@ -154,8 +154,8 @@ run: {
   idleSpeedThreshold: 1,
 },
 idle: {
-  // Four frames sampled every 15 of the 30 fps `Idle_Loop` clip.
-  frameRate: 2,
+  // Panting: one breath (exhale, mid, inhale, mid) every 2/3 s.
+  frameRate: 6,
 },
 air: {
   frameRate: 6,

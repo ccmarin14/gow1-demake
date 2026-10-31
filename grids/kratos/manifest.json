@@ -28,12 +28,6 @@
       "png": "kratos-idle-02"
     },
     {
-      "file": "idle-03.txt",
-      "state": "idle",
-      "grounded": true,
-      "png": "kratos-idle-03"
-    },
-    {
       "file": "run-00.txt",
       "state": "run",
       "grounded": true,
