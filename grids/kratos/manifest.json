@@ -68,6 +68,48 @@
       "state": "run",
       "grounded": false,
       "png": "kratos-run-07"
+    },
+    {
+      "file": "air-00.txt",
+      "state": "air",
+      "grounded": false,
+      "png": "kratos-air-00"
+    },
+    {
+      "file": "air-01.txt",
+      "state": "air",
+      "grounded": false,
+      "png": "kratos-air-01"
+    },
+    {
+      "file": "roll-00.txt",
+      "state": "roll",
+      "grounded": true,
+      "png": "kratos-roll-00"
+    },
+    {
+      "file": "roll-01.txt",
+      "state": "roll",
+      "grounded": true,
+      "png": "kratos-roll-01"
+    },
+    {
+      "file": "roll-02.txt",
+      "state": "roll",
+      "grounded": true,
+      "png": "kratos-roll-02"
+    },
+    {
+      "file": "roll-03.txt",
+      "state": "roll",
+      "grounded": true,
+      "png": "kratos-roll-03"
+    },
+    {
+      "file": "roll-04.txt",
+      "state": "roll",
+      "grounded": true,
+      "png": "kratos-roll-04"
     }
   ]
 }

@@ -39,8 +39,20 @@ export const IDLE_KEYS: readonly string[] = [STATIC_KEY, 'kratos-idle-01'];
  * the finishing pass with the idle head, tattoo and costume detail.
  */
 export const RUN_KEYS: readonly string[] = Array.from({ length: 8 }, (_, i) => `kratos-run-0${i}`);
+/** Airborne blockout poses (D-34): knees tucked while rising, open while falling. */
+export const AIR_RISE_KEY = 'kratos-air-00';
+export const AIR_FALL_KEY = 'kratos-air-01';
+/** Roll blockout (D-34): crouch, dive, hands down, curled, recover; spread over the roll. */
+export const ROLL_KEYS: readonly string[] = Array.from({ length: 5 }, (_, i) => `kratos-roll-0${i}`);
+
 /** Additional grid-derived frames, one PNG each, drawn in full. */
-export const PLAYER_FRAME_KEYS: readonly string[] = ['kratos-idle-01', ...RUN_KEYS];
+export const PLAYER_FRAME_KEYS: readonly string[] = [
+  'kratos-idle-01',
+  ...RUN_KEYS,
+  AIR_RISE_KEY,
+  AIR_FALL_KEY,
+  ...ROLL_KEYS,
+];
 
 export const ASSETS: Record<AssetDomain, readonly AssetEntry[]> = {
   characters: [

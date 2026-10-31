@@ -2,7 +2,11 @@
 """Reduce a `render.py` image to a Kratos palette grid (D-34).
 
 Usage:
-    python3 scripts/pose_render/to_grid.py <render.png> <out.txt>
+    python3 scripts/pose_render/to_grid.py <render.png> <out.txt> [--ground ROW]
+
+`--ground ROW` frames the pose so its lowest pixel sits on that row, for
+actions whose root leaves the floor (jump, roll); without it the render keeps
+the camera framing.
 
 Each 8x8 block becomes one grid cell by majority vote of (material, tone, side).
 Far-side cells that touch near-side cells become outline `o`, and an outline is
@@ -46,10 +50,17 @@ def classify(pixel: tuple[int, int, int, int]) -> tuple[str, int, str] | None:
 
 
 def main() -> int:
-    if len(sys.argv) != 3:
+    args = sys.argv[1:]
+    ground = None
+    if "--ground" in args:
+        at = args.index("--ground")
+        ground = int(args[at + 1])
+        del args[at : at + 2]
+    if len(args) != 2:
         print(__doc__)
         return 2
-    image = Image.open(sys.argv[1]).convert("RGBA")
+    source, target = args
+    image = Image.open(source).convert("RGBA")
     pixels = image.load()
     assert pixels is not None
     width, height = image.width // SCALE, image.height // SCALE
@@ -83,7 +94,15 @@ def main() -> int:
                 for dx, dy in NEIGHBORS
             ):
                 outlined[y][x] = "o"
-    with open(sys.argv[2], "w", encoding="utf-8") as handle:
+    if ground is not None:
+        lowest = max(y for y, row in enumerate(outlined) if any(c != "." for c in row))
+        shift = ground - lowest
+        empty = ["."] * width
+        if shift > 0:
+            outlined = [empty[:] for _ in range(shift)] + outlined[:height - shift]
+        elif shift < 0:
+            outlined = outlined[-shift:] + [empty[:] for _ in range(-shift)]
+    with open(target, "w", encoding="utf-8") as handle:
         handle.write("\n".join("".join(row) for row in outlined) + "\n")
     return 0
 
