@@ -64,7 +64,16 @@ export function sortActions(actions: readonly GameAction[]): GameAction[] {
 }
 
 /** Level-1 move ids (see `CONFIG.player.attack.moves`). */
-export type AttackMoveId = 'light_1';
+export type AttackMoveId =
+  | 'light_1'
+  | 'light_2'
+  | 'light_3'
+  | 'plume_of_prometheus'
+  | 'heavy'
+  | 'ascension'
+  | 'air_light_1'
+  | 'air_light_2'
+  | 'air_heavy';
 
 export const PLAYER_ID = 'player';
 

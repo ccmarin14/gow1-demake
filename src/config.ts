@@ -22,9 +22,12 @@ const PLAYER_BOUNDS = {
 } as const;
 
 /**
- * Moves of the Blades of Chaos at level 1 (God of War 1, PS2 -> 2D), added
- * one at a time with their tests: only the basic Square strike exists so far.
- * Timings are TICKS at 60 Hz.
+ * Moves of the Blades of Chaos at level 1 (God of War 1, PS2 -> 2D, D-35):
+ * the Square chain (3 hits, count to be confirmed against the game), the
+ * Triangle strike, Ascension (Triangle held), Plume of Prometheus (Square,
+ * Square, Triangle) and their air versions. Grab is not built yet. Timings
+ * are TICKS at 60 Hz; the values come from the inherited table and are
+ * pinned by `tests/attack.test.ts`.
  *
  * Arc angles are degrees, `0` = horizontal forward, POSITIVE = UP (sim
  * convention). Per move: `hitstop` (ticks both sides freeze on impact),
@@ -38,6 +41,46 @@ const MOVES = {
     chain: 0, startup: 4, active: 7, recovery: 7, hand: { dx: 13, dy: -33 },
     arc: { startDeg: -30, endDeg: 35, radius: 76, width: 18, thickness: 16 },
     hitstop: 2, knockbackVx: 85, launchVy: 0, lungeVx: 45, damage: 12,
+  },
+  light_2: {
+    chain: 1, startup: 3, active: 7, recovery: 7, hand: { dx: 13, dy: -33 },
+    arc: { startDeg: 40, endDeg: -28, radius: 82, width: 18, thickness: 16 },
+    hitstop: 2, knockbackVx: 95, launchVy: 0, lungeVx: 55, damage: 12,
+  },
+  light_3: {
+    chain: 2, startup: 4, active: 8, recovery: 10, hand: { dx: 26, dy: -31 },
+    arc: { startDeg: 55, endDeg: -35, radius: 96, width: 22, thickness: 18 },
+    hitstop: 3, knockbackVx: 180, launchVy: 0, lungeVx: 90, damage: 15,
+  },
+  plume_of_prometheus: {
+    chain: 2, startup: 5, active: 9, recovery: 12, hand: { dx: 14, dy: -33 },
+    arc: { startDeg: 85, endDeg: -65, radius: 110, width: 24, thickness: 20 },
+    hitstop: 4, knockbackVx: 140, launchVy: -240, lungeVx: 70, groundImpact: true, damage: 30,
+  },
+  heavy: {
+    chain: 0, startup: 7, active: 8, recovery: 11, hand: { dx: 14, dy: -33 },
+    arc: { startDeg: 75, endDeg: -60, radius: 95, width: 22, thickness: 18 },
+    hitstop: 3, knockbackVx: 130, launchVy: 0, lungeVx: 60, groundImpact: true, damage: 22,
+  },
+  ascension: {
+    chain: 0, startup: 6, active: 8, recovery: 10, hand: { dx: 7, dy: -33 },
+    arc: { startDeg: -35, endDeg: 80, radius: 88, width: 20, thickness: 18 },
+    hitstop: 3, knockbackVx: 40, launchVy: -350, selfVy: -340, damage: 18,
+  },
+  air_light_1: {
+    chain: 0, startup: 3, active: 7, recovery: 6, hand: { dx: 13, dy: -33 },
+    arc: { startDeg: 30, endDeg: -30, radius: 75, width: 18, thickness: 16 },
+    hitstop: 2, knockbackVx: 45, launchVy: -190, airBrake: true, damage: 12,
+  },
+  air_light_2: {
+    chain: 1, startup: 3, active: 7, recovery: 6, hand: { dx: 13, dy: -33 },
+    arc: { startDeg: -30, endDeg: 30, radius: 75, width: 18, thickness: 16 },
+    hitstop: 2, knockbackVx: 45, launchVy: -190, airBrake: true, damage: 12,
+  },
+  air_heavy: {
+    chain: 0, startup: 5, active: 8, recovery: 10, hand: { dx: 14, dy: -33 },
+    arc: { startDeg: 20, endDeg: -65, radius: 95, width: 22, thickness: 18 },
+    hitstop: 3, knockbackVx: 120, launchVy: 280, selfVy: 420, groundImpact: true, damage: 22,
   },
 } as const;
 
@@ -122,6 +165,10 @@ attack: {
    * hitstop, or early recovery are consumed when chain/attack window opens.
    */
   inputBufferTicks: 4,
+  /** Triangle held this many ticks during the heavy startup becomes Ascension. */
+  heavyHoldTicks: 6,
+  /** Gravity multiplier while an air strike is active: Kratos hangs in the air. */
+  airStrikeGravityScale: 0.3,
   moves: MOVES,
   /** Hit response of scenario targets (`combat`). */
   target: {
@@ -316,9 +363,9 @@ export const CONFIG = {
     movement: { maxSpeed: PLAYER.maxSpeed },
     jump: PLAYER.vertical,
     attack: {
-      maxChain: 1,
+      maxChain: 3,
       gripOffsetY: PLAYER.weapon.gripOffsetY,
-      combo: [PLAYER.attack.moves.light_1],
+      combo: [PLAYER.attack.moves.light_1, PLAYER.attack.moves.light_2, PLAYER.attack.moves.light_3],
     },
   }),
   map: {

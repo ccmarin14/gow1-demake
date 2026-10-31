@@ -299,7 +299,12 @@ export class ShellScene extends Phaser.Scene {
       if (player) {
         // Attack swing sound
         if (player.attackPhase === 'startup' && this.prevAttackPhase !== 'startup') {
-          this.soundManager.playSlash(false);
+          const heavy =
+            player.attackMove === 'heavy' ||
+            player.attackMove === 'ascension' ||
+            player.attackMove === 'plume_of_prometheus' ||
+            player.attackMove === 'air_heavy';
+          this.soundManager.playSlash(heavy);
         }
         this.prevAttackPhase = player.attackPhase;
 
@@ -366,7 +371,7 @@ export class ShellScene extends Phaser.Scene {
 
         // Detect ground impact
         if (player.groundImpactTicks > 0 && this.prevGroundImpactTicks === 0) {
-          const impactX = player.x + player.facing * 30;
+          const impactX = player.x + player.facing * (player.attackMove === 'plume_of_prometheus' ? 45 : 30);
           this.vfxLayer.emitCombatSparks(impactX, player.groundImpactY, 8);
         }
         this.prevGroundImpactTicks = player.groundImpactTicks;

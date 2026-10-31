@@ -46,9 +46,13 @@ export type AttackMoveSet = Readonly<Record<AttackMoveId, AttackParams>>;
 /** Per-tick attack input, already reduced to edges/holds by the world. */
 export interface AttackInput {
   light: boolean;
+  heavy: boolean;
+  heavyHeld: boolean;
 }
 
 export interface AttackRules {
+  /** Triangle held this many ticks during the heavy startup becomes Ascension. */
+  heavyHoldTicks: number;
   hitstunTicks: number;
   groundImpactTicks: number;
   shockRadius: number;
@@ -252,10 +256,51 @@ function beginFromIdle(
   input: AttackInput,
   moves: AttackMoveSet,
 ): void {
-  // Only the basic Square strike exists so far, and only on the ground.
-  if (input.light && player.grounded) {
-    beginMove(player, moves.light_1);
+  if (input.heavy) {
+    beginMove(player, player.grounded ? moves.heavy : moves.air_heavy);
+  } else if (input.light) {
+    beginMove(player, player.grounded ? moves.light_1 : moves.air_light_1);
   }
+}
+
+/**
+ * Next move of a level-1 combo, or `null` to keep the current one. A combo
+ * input is taken once the current strike is out (active or recovery).
+ */
+function nextMoveFor(
+  player: Readonly<EntityState>,
+  input: AttackInput,
+  moves: AttackMoveSet,
+  rules: AttackRules,
+): AttackParams | null {
+  const move = player.attackMove;
+  const phase = player.attackPhase;
+  const open = phase === 'active' || phase === 'recovery';
+  if (player.grounded) {
+    if (move === 'heavy' && phase === 'startup' && player.heavyHoldTicks >= rules.heavyHoldTicks) {
+      return moves.ascension;
+    }
+    if (open && input.light) {
+      if (move === 'light_1') return moves.light_2;
+      if (move === 'light_2') return moves.light_3;
+    }
+    if (open && input.heavy && move === 'light_2') {
+      return moves.plume_of_prometheus;
+    }
+    return null;
+  }
+  const airCombo = move === 'air_light_1' || move === 'air_light_2' || move === 'ascension';
+  if (!open || !airCombo) {
+    return null;
+  }
+  if (input.light) {
+    if (move === 'ascension') return moves.air_light_1;
+    if (move === 'air_light_1') return moves.air_light_2;
+  }
+  if (input.heavy) {
+    return moves.air_heavy;
+  }
+  return null;
 }
 
 function applyHit(
@@ -326,7 +371,11 @@ export function stepAttack(
   const hasBufferedAction = Boolean(player.attackBufferAction && player.attackBufferTicks > 0);
   const effectiveInput: AttackInput = {
     light: input.light || (hasBufferedAction && player.attackBufferAction === 'light-attack'),
+    heavy: input.heavy || (hasBufferedAction && player.attackBufferAction === 'heavy-attack'),
+    heavyHeld: input.heavyHeld,
   };
+
+  player.heavyHoldTicks = input.heavyHeld ? player.heavyHoldTicks + 1 : 0;
 
   if (player.attackPhase === 'none') {
     beginFromIdle(player, effectiveInput, moves);
@@ -334,6 +383,14 @@ export function stepAttack(
       player.attackBufferAction = null;
       player.attackBufferTicks = 0;
     }
+    return;
+  }
+
+  const next = nextMoveFor(player, effectiveInput, moves, rules);
+  if (next) {
+    beginMove(player, next);
+    player.attackBufferAction = null;
+    player.attackBufferTicks = 0;
     return;
   }
 
@@ -367,7 +424,9 @@ export function stepAttack(
     player.attackTicks += 1;
     const pose = bladePoseForTick(player, params, platforms);
     if (pose) {
-      const groundImpactActive = params.groundImpact && pose.clamped;
+      // The air Triangle drives Kratos down: landing during it is a floor impact too.
+      const landedDive = params.moveId === 'air_heavy' && player.grounded;
+      const groundImpactActive = params.groundImpact && (pose.clamped || landedDive);
 
       for (const target of targets) {
         if (player.attackHits.includes(target.id)) {
