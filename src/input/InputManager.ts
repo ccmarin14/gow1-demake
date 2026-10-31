@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import type { GameAction } from '../sim/types';
 import { DOMAIN_ACTIONS } from '../sim/types';
+import { touchActions } from './touchControls';
 
 const { KeyCodes } = Phaser.Input.Keyboard;
 
@@ -44,6 +45,10 @@ export class InputManager {
     const active: GameAction[] = [];
     for (let i = 0; i < this.bindings.length; i += 1) {
       const { action, keys } = this.bindings[i];
+      if (touchActions().has(action)) {
+        active.push(action);
+        continue;
+      }
       for (let j = 0; j < keys.length; j += 1) {
         if (keys[j].isDown) {
           active.push(action);

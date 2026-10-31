@@ -6,6 +6,7 @@ import {
   isScaleReferenceVisible,
   toggleScaleReference,
 } from './dev/scaleOverlay';
+import { installTouchControls } from './input/touchControls';
 import { FrameMetrics } from './metrics';
 import { ShellScene } from './scene/ShellScene';
 import { Simulation } from './sim/engine';
@@ -40,17 +41,17 @@ const game = new Phaser.Game({
 function fitIntegerScale(): void {
   const root = document.getElementById('game-root');
   if (!root) return;
-  const availableWidth = window.innerWidth - 32;
-  const availableHeight = window.innerHeight - 96;
-  const factor = Math.max(
-    1,
-    Math.floor(
-      Math.min(
-        availableWidth / CONFIG.internal.width,
-        availableHeight / CONFIG.internal.height,
-      ),
-    ),
+  const touch = document.body.classList.contains('has-touch-controls');
+  const availableWidth = window.innerWidth - (touch ? 0 : 32);
+  // Touch screens keep a strip at the bottom for the controls.
+  const availableHeight = window.innerHeight - (touch ? 72 : 96);
+  const fit = Math.min(
+    availableWidth / CONFIG.internal.width,
+    availableHeight / CONFIG.internal.height,
   );
+  // On a phone the screen can be narrower than 480 px: fill it rather than
+  // overflow, even if the scale is not a whole number.
+  const factor = touch ? fit : Math.max(1, Math.floor(fit));
   const width = CONFIG.internal.width * factor;
   const height = CONFIG.internal.height * factor;
   root.style.width = `${width}px`;
@@ -58,8 +59,12 @@ function fitIntegerScale(): void {
   game.scale.setParentSize(width, height);
 }
 
+installTouchControls();
 fitIntegerScale();
 window.addEventListener('resize', fitIntegerScale);
+// Phones settle their viewport late (address bar, rotation): refit then too.
+window.addEventListener('load', fitIntegerScale);
+window.visualViewport?.addEventListener('resize', fitIntegerScale);
 
 installHarness({
   simulation,

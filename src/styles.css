@@ -57,3 +57,57 @@ p {
   color: #9ca3af;
   font-size: 12px;
 }
+
+/* Touch controls (src/input/touchControls.ts), only on touch screens. */
+body.has-touch-controls {
+  place-items: start center;
+  overflow: hidden;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+body.has-touch-controls .shell h1,
+body.has-touch-controls .shell p {
+  display: none;
+}
+
+.touch-pad {
+  position: fixed;
+  inset: auto 0 0 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 0 12px max(12px, env(safe-area-inset-bottom));
+  pointer-events: none;
+}
+
+.touch-move,
+.touch-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+.touch-actions {
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+}
+
+.touch-button {
+  min-width: 52px;
+  height: 52px;
+  padding: 0 10px;
+  border: 2px solid rgba(242, 163, 58, 0.7);
+  border-radius: 14px;
+  background: rgba(17, 24, 39, 0.55);
+  color: #f3efe6;
+  font: 600 18px system-ui, sans-serif;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.touch-button.is-held {
+  background: rgba(194, 54, 27, 0.75);
+}
