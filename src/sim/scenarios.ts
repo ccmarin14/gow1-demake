@@ -367,29 +367,20 @@ register({
   targetPhysics: true,
 });
 
+/**
+ * The level holds only Kratos, the deck and its platforms (user decision,
+ * D-33). Enemies, chests, checkpoints, waves and the arena live in their own
+ * scenarios until the user puts each one back.
+ */
 register({
   name: 'level1',
-  entities: [
-    playerAt(100, GROUND_Y),
-    archerAt('archer-crow', 1170, 138, -1),
-    hydraAt('hydra-proa', 1360, 262, -1),
-  ],
+  entities: [playerAt(100, GROUND_Y)],
   platforms: [
     { x1: 0, x2: 1440, yTop: 262 },
     { x1: 200, x2: 290, yTop: 226 },
     { x1: 1040, x2: 1180, yTop: 200 },
     { x1: 1100, x2: 1240, yTop: 138 },
     { x1: 1310, x2: 1440, yTop: 218 },
-  ],
-  chests: [
-    chestAt('chest-red-popa', 'red_orbs', 70, 262),
-    chestAt('chest-popa', 'gorgon_eye', 240, 226),
-    chestAt('chest-feather-beam', 'phoenix_feather', 1110, 200),
-    chestAt('chest-proa', 'gorgon_eye', 1360, 218),
-  ],
-  checkpoints: [
-    checkpointAt('chk-popa', 140, 262, 'Popa de la Nave'),
-    checkpointAt('chk-proa', 980, 262, 'Umbral de Proa'),
   ],
   targetPhysics: true,
 });

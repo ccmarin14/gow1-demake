@@ -435,10 +435,10 @@ export class World {
       this.mapData = buildLevel1Map();
       this.cameraX = 0;
       this.arenaTriggered = false;
-      const { barrierLeftX, barrierRightX } = CONFIG.map.level1.segments.centralArena;
-      this.waveManager = new WaveManager(barrierLeftX);
-      this.waveEnemyIdCounter = 0;
-      this.arenaManager = new ArenaManager(barrierLeftX, barrierRightX, false);
+      // No waves or arena in the level for now (D-33); the `waves` and `arena`
+      // scenarios keep both systems.
+      this.waveManager = null;
+      this.arenaManager = null;
     } else {
       this.waveManager = null;
       this.arenaManager = null;

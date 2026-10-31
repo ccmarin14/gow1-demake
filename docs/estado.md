@@ -7,8 +7,8 @@ Documento único del estado medido de `gow-8b`. Se actualiza en el mismo commit 
 - **Build y navegador:** `pnpm build` pasa sin errores; el servidor de desarrollo carga en Chrome a 480×270 con 0 errores de consola y 0 peticiones HTTP fallidas.
 - **Simulación determinista (60 Hz):** movimiento horizontal (con inercia en el aire, sin derrape; D-32), salto y doble salto, plataformas one-way, rodada con i-frames, ataque ligero y pesado, guardia/parry, magia (*Ira de Poseidón*), orbes, cofres, checkpoints e IA de legionario, arquero e hidra (`src/sim/`).
 - **Presentación y audio:** HUD de salud/maná/orbes (`HudLayer.ts`), efectos de lluvia/relámpagos (`VfxLayer.ts`), overlay de flujo (`GameFlowOverlay.ts`) y audio procedural Web Audio (`SoundManager.ts`).
-- **Arranque:** el juego abre en la pantalla de título sobre `level1` (escenario por defecto); las oleadas de la arena central nacen dentro de la arena.
-- **Pruebas:** `pnpm test` (runner nativo de Node, sin dependencias, 27 pruebas) cubre el movimiento horizontal (aceleración, frenado, derrape, control en el aire, bloqueos, límites y el recorrido en `level1`; sin derrape) y el vertical (altura del salto, doble salto, caída de un borde, tiempo de coyote, búfer de salto, velocidad máxima de caída, plataformas de un sentido y bajada con abajo + salto) y la rodada (distancia, dirección, invulnerabilidad, solo en el suelo, sin encadenar y cancelación en ataque).
+- **Arranque:** el juego abre en la pantalla de título sobre `level1` (escenario por defecto), que solo tiene a Kratos, la cubierta y sus plataformas (D-33).
+- **Pruebas:** `pnpm test` (runner nativo de Node, sin dependencias, 29 pruebas) cubre el movimiento horizontal (aceleración, frenado, derrape, control en el aire, bloqueos, límites y el recorrido en `level1`; sin derrape) y el vertical (altura del salto, doble salto, caída de un borde, tiempo de coyote, búfer de salto, velocidad máxima de caída, plataformas de un sentido y bajada con abajo + salto) y la rodada (distancia, dirección, invulnerabilidad, solo en el suelo, sin encadenar y cancelación en ataque) y que `level1` contiene solo a Kratos.
 - **Harness DEV:** `window.__GOW8B` expone `snapshot()`, `loadScenario()`, `reset()`, `step()`, `advance()` y `metrics()`.
 - **Sprites activos:**
   - Kratos tiene un solo cuadro, `kratos-idle-00.png` (grid `grids/kratos/idle-00.txt`, 64×56, paleta `palette/kratos.json`, solo cuerpo). Todos los estados lo muestran estático hasta que se dibujen los cuadros siguientes. La cuchilla en reposo (`restPose`) y la sombra de contacto (`playerShadow`) las dibuja el motor.
@@ -45,9 +45,9 @@ Las implementaron agentes anteriores. La usuaria fijó la intención general (D-
 | Ataques (14 movimientos, combos, aéreos, agarre) | Sin verificar | Lista de movimientos, tiempos, alcance, flotación en el aire. |
 | Guardia y desvío (*parry*) | Sin verificar | Ventana de desvío y efectos. |
 | Magia (*Ira de Poseidón*) | Sin verificar | Costo, alcance y efecto. |
-| Orbes, cofres, mejora de arma y puntos de control | Sin verificar | Cantidades y reglas. |
-| Legionario, arquero e hidra (IA) | Sin verificar | Comportamientos y valores. |
-| Oleadas y arena | Sin verificar | Composición y barreras. |
+| Orbes, cofres, mejora de arma y puntos de control | Sin verificar; fuera del nivel (D-33) | Cantidades y reglas. |
+| Legionario, arquero e hidra (IA) | Sin verificar; fuera del nivel (D-33) | Comportamientos y valores. |
+| Oleadas y arena | Sin verificar; fuera del nivel (D-33) | Composición y barreras. |
 
 ### Decisiones de combate pendientes
 
@@ -120,4 +120,5 @@ Revisión de la usuaria del arte pendiente (tabla de arriba): con eso se juzga s
 - `2026-10-30` — **Paso 29 (Rodada auditada):** 6 pruebas nuevas sobre `World`. Corregido: la rodada salía siempre hacia donde Kratos miraba, así que no servía para escapar hacia atrás; ahora va hacia la dirección mantenida (o hacia adelante si no hay ninguna) y Kratos gira con ella, como la evasión de GoW 1. Verificado en navegador: mirando a la derecha, izquierda + `Shift` rueda 83 px a la izquierda, sin errores. Con esto el desplazamiento de D-32 queda completo en simulación; falta su arte (en el aire y la rodada muestran `idle-00`).
 - `2026-10-30` — **Paso 30 (Arte del aire y de la rodada):** `air-00`/`air-01` (subida y caída, según la velocidad vertical) y `roll-00`/`roll-01` (agachado y bola) dibujados a mano sobre `idle-00` y conectados en `PlayerView`; antes los dos estados mostraban el cuadro de reposo. Verificado en navegador sin errores. Quedan en "Revisiones pendientes". Corrección: no estaban bloqueados por las revisiones pendientes, porque parten de `idle-00`, que está aprobado.
 - `2026-10-30` — **Paso 31 (Decisiones de combate):** tabla "Decisiones de combate pendientes" (C1–C13): lo que el juego tiene hoy frente a GoW 1, con fuente o "a confirmar", para que la usuaria decida antes de auditar el combate. Sin cambios de código.
+- `2026-10-31` — **Paso 32 (Nivel vacío, D-33):** la usuaria pidió volver al inicio del nivel sin nada con que interactuar. `level1` quedó con Kratos, la cubierta y sus plataformas; se quitaron del nivel el arquero, la hidra, los cuatro cofres, los dos puntos de control, las oleadas y la arena, que siguen en sus escenarios de prueba. 2 pruebas nuevas. Verificado en navegador recorriendo el nivel entero, sin errores.
 
