@@ -29,6 +29,9 @@ function characterSheet(key: string, path: string): AssetEntry {
   };
 }
 
+/** Blade of Chaos sprite (grid `grids/blades/blade.txt`), drawn by `WeaponLayer`. */
+export const BLADE_KEY = 'blade-of-chaos';
+
 /** Static fallback pose for every state that has no drawn frames yet. */
 const STATIC_KEY = 'kratos-idle-00';
 
@@ -68,6 +71,7 @@ export const ASSETS: Record<AssetDomain, readonly AssetEntry[]> = {
       key,
       path: `assets/characters/${key}.png`,
     })),
+    { key: BLADE_KEY, path: `assets/characters/${BLADE_KEY}.png` },
   ],
   environment: [
     { key: 'egeo-fondo', path: 'assets/environment/egeo-fondo.png' },

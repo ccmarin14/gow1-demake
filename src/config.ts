@@ -371,18 +371,21 @@ export const CONFIG = {
      * together with the first grid drawn without one.
      */
     /**
-     * Rest pose of the Blades of Chaos drawn by `WeaponLayer` when idle
-     * (offsets from the feet anchor, facing right, measured on `idle-00`).
-     * Off until the user decides on it.
+     * Blades of Chaos carried on the back while not attacking, as in GoW 1:
+     * two blades hanging crossed behind the shoulders. Offsets from the feet
+     * anchor facing right (`dx` forward, `dy` up-negative) and the blade
+     * direction in degrees (0 = forward, 90 = down).
      */
-    restPose: { enabled: false, handDx: 18, handDy: -20, bladeDx: 28, bladeDy: -6 },
+    backBlades: [
+      { dx: -9, dy: -34, deg: 128 },
+      { dx: -5, dy: -36, deg: 110 },
+    ],
     /**
-     * Inherited visuals switched off until the user decides on each one:
-     * `weaponArt` is the procedural chains, blades and trails of `WeaponLayer`
-     * (while off, an attack shows its hitbox as a neutral box), and
-     * `landingSquash` stretches the sprite for a few ticks after landing.
+     * `weaponArt` draws the Blades of Chaos and their chains (`WeaponLayer`);
+     * while off, an attack shows its hitbox as a neutral box. `landingSquash`
+     * (inherited, undecided) stretches the sprite for a few ticks after landing.
      */
-    weaponArt: false,
+    weaponArt: true,
     landingSquash: false,
     /** Placeholder box for the hydra until its art is drawn (px). */
     hydraPlaceholder: { width: 56, height: 72 },
@@ -433,17 +436,13 @@ export const CONFIG = {
      * 0xffee00`, `scaleFeetColor 0x22d3ee`, `scaleSilhouetteColor 0xfacc15`,
      * `scaleJumpColor 0x4ade80`, `scaleAttackColor 0xf472b6` and background
      * `#111827`:
-     *   - `weaponChainColor 0x9e9e9e` — neutral cool grey; every existing grey
-     *     (`targetColor`, `platformEdgeColor`) is tinted, none is neutral.
-     *   - `weaponBladeColor 0xfff1c9` — warm near-white; no existing color is
-     *     this light (`scaleSilhouetteColor` is a saturated yellow).
+     *   - `weaponChainColor` / `weaponChainOutline` — steel and outline of
+     *     `palette/blades.json`, so the chain matches the blade sprite.
+     *   - `weaponTrailColor` — the blade's glowing edge (`edge_glow`).
      */
-    weaponChainColor: 0x9e9e9e,
-    weaponBladeColor: 0xfff1c9,
-    weaponChainSegmentPx: 2,
-    weaponChainSegments: 18,
-    weaponBladeWidth: 12,
-    weaponBladeHeight: 6,
+    weaponChainColor: 0x8c8790,
+    weaponChainOutline: 0x1d0717,
+    weaponTrailColor: 0xf2a33a,
     weaponDepth: 3,
     hud: {
       x: 16,
@@ -485,7 +484,6 @@ export const CONFIG = {
       redOrbsShadowColor: 0x991b1b,
       depth: 2,
     },
-    weaponChainLevel2Color: 0xf59e0b,
     checkpoint: {
       pillarColor: 0xfde047,
       glowColor: 0xfacc15,

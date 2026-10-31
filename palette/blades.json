@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "max_colors": 8,
+  "note": "Blades of Chaos. Same outline as Kratos; steel in three tones, the cutting edge glows red to orange, leather grip and bronze guard. The chain is drawn by the engine (D-26).",
+  "colors": {
+    "o": "#1d0717",
+    "d": "#4b4650",
+    "m": "#8c8790",
+    "s": "#d9d3c7",
+    "r": "#c2361b",
+    "y": "#f2a33a",
+    "h": "#3c2d27",
+    "b": "#82614e"
+  },
+  "roles": {
+    "o": "outline",
+    "d": "steel_shadow",
+    "m": "steel_mid",
+    "s": "steel_lit",
+    "r": "edge_hot",
+    "y": "edge_glow",
+    "h": "grip",
+    "b": "bronze"
+  }
+}

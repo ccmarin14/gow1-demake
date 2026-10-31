@@ -1,0 +1,19 @@
+{
+  "character": "blades",
+  "palette": "blades.json",
+  "frame_size": {
+    "w": 18,
+    "h": 7
+  },
+  "anchors": {
+    "ground": 6
+  },
+  "frames": [
+    {
+      "file": "blade.txt",
+      "state": "blade",
+      "grounded": false,
+      "png": "blade-of-chaos"
+    }
+  ]
+}

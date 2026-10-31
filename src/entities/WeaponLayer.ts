@@ -1,220 +1,244 @@
 import Phaser from 'phaser';
+import { BLADE_KEY } from '../assets/manifest';
 import { CONFIG } from '../config';
 import { bladePoseForTick, type AttackParams, type BladePose } from '../sim/attack';
 import type { Platform } from '../sim/scenarios';
 import type { EntityState } from '../sim/types';
 
-const CHAOS_BLADE_TEX_KEY = 'chaos-blade-tex';
 const CHAIN_LINKS = 20;
 const TRAIL_STEPS = 16;
 const SPARK_COUNT = 16;
-
-// Pixel-art Chaos Blade bitmap (22x13):
-// '.' = transparent
-// '#' = dark outline (#1d1415)
-// 'G' = bronze guard (#b94a2c)
-// 'F' = fiery spine/groove (#ff8800)
-// 'M' = warm steel bevel (#d7c6ad)
-// 'B' = bright blade edge/belly (#fff1c9 = weaponBladeColor)
-const CHAOS_BLADE_ASCII: readonly string[] = [
-  '...........###........',
-  '..........#BBB#...###.',
-  '.........#BBBB###BBBB#',
-  '..###...#BBBBBBBBBBBB#',
-  '.#GGG###BBBBBBBBBBBB#.',
-  '#GGGGFFBBBBBBBBBBBB#..',
-  '#GGGFFFBBBBBBBBBBB#...',
-  '.#GGGFFMMMMBBBBBB#....',
-  '..###..#MMMMBBBB#.....',
-  '........#####BB#......',
-  '............###.......',
-  '......................',
-  '......................',
-];
-
-const PIXEL_COLORS: Record<string, string> = {
-  '#': '#1d1415',
-  G: '#b94a2c',
-  F: '#ff8800',
-  M: '#d7c6ad',
-  B: '#fff1c9',
-};
-
-function ensureChaosBladeTexture(scene: Phaser.Scene): void {
-  if (scene.textures.exists(CHAOS_BLADE_TEX_KEY)) {
-    return;
-  }
-  const tex = scene.textures.createCanvas(CHAOS_BLADE_TEX_KEY, 22, 13);
-  if (!tex) {
-    return;
-  }
-  const ctx = tex.getContext();
-  ctx.clearRect(0, 0, 22, 13);
-  for (let y = 0; y < CHAOS_BLADE_ASCII.length; y += 1) {
-    const row = CHAOS_BLADE_ASCII[y];
-    for (let x = 0; x < row.length; x += 1) {
-      const color = PIXEL_COLORS[row[x]];
-      if (color) {
-        ctx.fillStyle = color;
-        ctx.fillRect(x, y, 1, 1);
-      }
-    }
-  }
-  tex.refresh();
-}
+/**
+ * The blade sprite (18x7, `grids/blades/blade.txt`) points right with the grip
+ * on the left. Its origin sits on the blade body so the sprite center matches
+ * the sim's blade center; the chain ends at the grip, `GRIP_BACK_PX` behind it.
+ */
+const BLADE_ORIGIN_X = 0.55;
+const GRIP_BACK_PX = 8;
 
 /**
- * Reused weapon layer: continuous dark-outlined chain + pixel-art Chaos Blade +
- * continuous crescent slash trail + pre-allocated ground impact spark pool.
- * Created once in `create()` and repositioned per frame without allocating display
- * objects during gameplay.
+ * Blades of Chaos and their chains (D-26: weapons are an engine layer, not
+ * part of the character grid). While attacking, one blade flies on its chain
+ * along the arc the simulation sweeps, so what is seen is what hits. Otherwise
+ * both blades hang crossed on Kratos' back, as in GoW 1. Every display object
+ * is created once and repositioned per frame.
  */
 export class WeaponLayer {
-  private weaponChainBorderRects: Phaser.GameObjects.Rectangle[] = [];
-  private weaponChainRects: Phaser.GameObjects.Rectangle[] = [];
-  private weaponTrailOuter: Phaser.GameObjects.Rectangle[] = [];
-  private weaponTrailInner: Phaser.GameObjects.Rectangle[] = [];
-  private weaponBladeCoreRect: Phaser.GameObjects.Rectangle | null = null;
-  private weaponBladeImage: Phaser.GameObjects.Image | null = null;
-  private groundImpactParticles: Phaser.GameObjects.Rectangle[] = [];
+  private chainOutline: Phaser.GameObjects.Rectangle[] = [];
+  private chainCore: Phaser.GameObjects.Rectangle[] = [];
+  private trailOuter: Phaser.GameObjects.Rectangle[] = [];
+  private trailInner: Phaser.GameObjects.Rectangle[] = [];
+  private blade: Phaser.GameObjects.Image | null = null;
+  private backBlades: Phaser.GameObjects.Image[] = [];
+  private sparks: Phaser.GameObjects.Rectangle[] = [];
 
   create(scene: Phaser.Scene): void {
-    this.weaponChainBorderRects = [];
-    this.weaponChainRects = [];
-    this.weaponTrailOuter = [];
-    this.weaponTrailInner = [];
-    this.groundImpactParticles = [];
-
-    ensureChaosBladeTexture(scene);
-
     const {
       weaponChainColor,
-      weaponBladeColor,
+      weaponChainOutline,
+      weaponTrailColor,
       hitboxColorChain1,
       targetHitColor,
       weaponDepth,
+      backBlades,
     } = CONFIG.presentation;
 
-    // 16 overlapping crescent trail segments (inner fiery core + outer steel/cream edge)
+    this.trailOuter = [];
+    this.trailInner = [];
     for (let k = 0; k < TRAIL_STEPS; k += 1) {
       const progress = (k + 1) / TRAIL_STEPS;
-      const outerAlpha = 0.16 + 0.68 * progress;
-      const innerAlpha = 0.14 + 0.56 * progress;
       const innerColor = k < TRAIL_STEPS / 2 ? targetHitColor : hitboxColorChain1;
-      this.weaponTrailInner.push(
+      this.trailInner.push(
         scene.add
-          .rectangle(0, 0, 4, 4, innerColor, innerAlpha)
-          .setOrigin(0.5, 0.5)
+          .rectangle(0, 0, 4, 4, innerColor, 0.14 + 0.56 * progress)
           .setDepth(weaponDepth - 0.15)
           .setVisible(false),
       );
-      this.weaponTrailOuter.push(
+      this.trailOuter.push(
         scene.add
-          .rectangle(0, 0, 4, 4, weaponBladeColor, outerAlpha)
-          .setOrigin(0.5, 0.5)
+          .rectangle(0, 0, 4, 4, weaponTrailColor, 0.16 + 0.68 * progress)
           .setDepth(weaponDepth - 0.1)
           .setVisible(false),
       );
     }
 
-    // 14 overlapping chain links: dark 4x4 outline + 2x2/3x2 metallic core
+    this.chainOutline = [];
+    this.chainCore = [];
     for (let i = 0; i < CHAIN_LINKS; i += 1) {
-      this.weaponChainBorderRects.push(
-        scene.add
-          .rectangle(0, 0, 4, 4, 0x1d1415)
-          .setOrigin(0.5, 0.5)
-          .setDepth(weaponDepth)
-          .setVisible(false),
+      this.chainOutline.push(
+        scene.add.rectangle(0, 0, 4, 4, weaponChainOutline).setDepth(weaponDepth).setVisible(false),
       );
-      const coreW = i % 2 === 0 ? 3 : 2;
-      const coreH = i % 2 === 0 ? 2 : 3;
-      this.weaponChainRects.push(
+      const even = i % 2 === 0;
+      this.chainCore.push(
         scene.add
-          .rectangle(0, 0, coreW, coreH, weaponChainColor)
-          .setOrigin(0.5, 0.5)
+          .rectangle(0, 0, even ? 3 : 2, even ? 2 : 3, weaponChainColor)
           .setDepth(weaponDepth + 0.05)
           .setVisible(false),
       );
     }
 
-    this.weaponBladeCoreRect = scene.add
-      .rectangle(0, 0, 6, 4, weaponBladeColor)
-      .setOrigin(0.5, 0.5)
-      .setDepth(weaponDepth + 0.08)
-      .setVisible(false);
-
-    this.weaponBladeImage = scene.add
-      .image(0, 0, CHAOS_BLADE_TEX_KEY)
-      .setOrigin(0.35, 0.46)
+    this.blade = scene.add
+      .image(0, 0, BLADE_KEY)
+      .setOrigin(BLADE_ORIGIN_X, 0.5)
       .setDepth(weaponDepth + 0.1)
       .setVisible(false);
 
-    // Pre-allocated pool of impact sparks/debris (zero allocations at runtime)
+    // Behind the character sprite (depth 0), above the contact shadow.
+    this.backBlades = backBlades.map(() =>
+      scene.add.image(0, 0, BLADE_KEY).setOrigin(0.12, 0.5).setDepth(-0.05).setVisible(false),
+    );
+
+    this.sparks = [];
     for (let i = 0; i < SPARK_COUNT; i += 1) {
-      const col = i % 3 === 0 ? 0xfff1c9 : i % 3 === 1 ? 0xff8800 : 0xff5533;
+      const color = i % 3 === 0 ? 0xfff1c9 : i % 3 === 1 ? 0xff8800 : 0xff5533;
       const size = i % 2 === 0 ? 2 : 3;
-      this.groundImpactParticles.push(
-        scene.add
-          .rectangle(0, 0, size, size, col)
-          .setOrigin(0.5, 0.5)
-          .setDepth(weaponDepth + 0.2)
-          .setVisible(false),
+      this.sparks.push(
+        scene.add.rectangle(0, 0, size, size, color).setDepth(weaponDepth + 0.2).setVisible(false),
       );
     }
   }
 
-  private hideWeapon(): void {
-    for (let i = 0; i < this.weaponChainBorderRects.length; i += 1) {
-      this.weaponChainBorderRects[i].setVisible(false);
+  update(
+    player: Readonly<EntityState> | null,
+    params: AttackParams | null,
+    platforms: readonly Platform[] = [],
+  ): void {
+    if (!CONFIG.presentation.weaponArt || !player || player.isDead) {
+      this.hideAll();
+      return;
     }
-    for (let i = 0; i < this.weaponChainRects.length; i += 1) {
-      this.weaponChainRects[i].setVisible(false);
+    this.updateSparks(player);
+
+    const facing = player.facing === -1 ? -1 : 1;
+    const attacking = params !== null && player.attackPhase !== 'none';
+    const guarding = player.guardPhase !== 'none' && !attacking;
+    this.showBackBlades(player, facing, !attacking && !guarding);
+
+    if (guarding) {
+      // Blade held across the chest on a short chain.
+      this.drawChain(player.x + facing * 8, player.y - 28, player.x + facing * 14, player.y - 31, null, 0, 0);
+      this.placeBlade(player.x + facing * 20, player.y - 33, facing === 1 ? -0.35 : Math.PI + 0.35, facing);
+      this.hideTrail();
+      return;
     }
-    for (let i = 0; i < this.weaponTrailOuter.length; i += 1) {
-      this.weaponTrailOuter[i].setVisible(false);
+    if (!attacking) {
+      this.hideAttackBlade();
+      return;
     }
-    for (let i = 0; i < this.weaponTrailInner.length; i += 1) {
-      this.weaponTrailInner[i].setVisible(false);
+
+    const hand = CONFIG.player.attack.moves[player.attackMove === 'none' ? 'light_1' : player.attackMove].hand;
+    const handX = player.x + facing * hand.dx;
+    const handY = player.y + hand.dy;
+    const visual = this.deriveVisualPose(player, params, handX, handY, platforms);
+    if (!visual) {
+      this.hideAttackBlade();
+      return;
     }
-    this.weaponBladeCoreRect?.setVisible(false);
-    this.weaponBladeImage?.setVisible(false);
+    const { pose, whipSign, showTrail } = visual;
+    const angle = Math.atan2(pose.bladeCenterY - handY, pose.bladeCenterX - handX);
+    const gripX = pose.bladeCenterX - Math.cos(angle) * GRIP_BACK_PX;
+    const gripY = pose.bladeCenterY - Math.sin(angle) * GRIP_BACK_PX;
+    const amp = Math.min(Math.max(params.arc.radius * 0.08, 4.5), 9.0);
+    this.drawChain(handX, handY, gripX, gripY, pose, amp * whipSign * facing, pose.progress);
+    this.placeBlade(Math.round(pose.bladeCenterX), Math.round(pose.bladeCenterY), angle, facing);
+    if (showTrail) {
+      this.drawTrail(pose, params, facing);
+    } else {
+      this.hideTrail();
+    }
   }
 
-  /** Straight chain from the grip to a blade, no trail (guard and rest poses). */
-  private drawStaticPose(
-    handX: number,
-    handY: number,
-    bladeX: number,
-    bladeY: number,
-    chainAngle: number,
-    facing: number,
-    chainColor: number,
+  private showBackBlades(player: Readonly<EntityState>, facing: number, visible: boolean): void {
+    const slots = CONFIG.presentation.backBlades;
+    for (let i = 0; i < this.backBlades.length; i += 1) {
+      const image = this.backBlades[i];
+      if (!visible) {
+        image.setVisible(false);
+        continue;
+      }
+      const slot = slots[i];
+      const rad = (slot.deg * Math.PI) / 180;
+      // Mirror the direction with the facing: the blades always point back-down.
+      const angle = facing === 1 ? rad : Math.PI - rad;
+      image
+        .setPosition(player.x + facing * slot.dx, player.y + slot.dy)
+        .setRotation(angle)
+        .setFlipY(facing === -1)
+        .setVisible(true);
+    }
+  }
+
+  /** Chain links from the hand to the blade grip; `wave` bends it like a whip. */
+  private drawChain(
+    fromX: number,
+    fromY: number,
+    toX: number,
+    toY: number,
+    pose: BladePose | null,
+    wave: number,
+    progress: number,
   ): void {
-    const segments = this.weaponChainRects.length;
-    for (let i = 0; i < segments; i += 1) {
-      const s = (i + 1) / (segments + 1);
-      const x = Math.round(handX + (bladeX - handX) * s);
-      const y = Math.round(handY + (bladeY - handY) * s);
-      this.weaponChainBorderRects[i].setPosition(x, y).setVisible(true);
-      this.weaponChainRects[i].setFillStyle(chainColor, 1.0).setPosition(x, y).setVisible(true);
+    const dx = toX - fromX;
+    const dy = toY - fromY;
+    const len = Math.hypot(dx, dy) || 1;
+    const nx = -dy / len;
+    const ny = dx / len;
+    const links = this.chainCore.length;
+    for (let i = 0; i < links; i += 1) {
+      const s = (i + 1) / (links + 1);
+      const bend = wave * Math.sin(Math.PI * s) * Math.sin(2 * Math.PI * (progress - s * 0.35));
+      const x = Math.round(fromX + dx * s + nx * bend);
+      let y = Math.round(fromY + dy * s + ny * bend);
+      // Links never sink below the deck.
+      if (pose && pose.groundY < Infinity && y > pose.groundY - 2) {
+        y = Math.round(pose.groundY - 2);
+      }
+      this.chainOutline[i].setPosition(x, y).setVisible(true);
+      this.chainCore[i].setPosition(x, y).setVisible(true);
     }
+  }
 
-    this.weaponBladeCoreRect
-      ?.setPosition(bladeX, bladeY)
-      .setRotation(chainAngle)
-      .setVisible(true);
+  private placeBlade(x: number, y: number, angle: number, facing: number): void {
+    // Flip vertically when facing left so the spine stays on top.
+    this.blade?.setPosition(x, y).setRotation(angle).setFlipY(facing === -1).setVisible(true);
+  }
 
-    this.weaponBladeImage
-      ?.setPosition(bladeX, bladeY)
-      .setFlipY(facing === -1)
-      .setRotation(chainAngle)
-      .setVisible(true);
-
-    for (let k = 0; k < this.weaponTrailOuter.length; k += 1) {
-      this.weaponTrailOuter[k].setVisible(false);
+  private drawTrail(pose: BladePose, params: AttackParams, facing: number): void {
+    const trailSpan = (params.arc.endRad - params.arc.startRad) * 0.42;
+    const outerR = params.arc.radius + 4;
+    const innerR = Math.max(8, params.arc.radius - 2);
+    for (let k = 0; k < TRAIL_STEPS; k += 1) {
+      const trailAngle = pose.angleRad - trailSpan * (1 - k / (TRAIL_STEPS - 1));
+      const cosA = Math.cos(trailAngle);
+      const sinA = Math.sin(trailAngle);
+      const ox = Math.round(pose.gripX + facing * cosA * outerR);
+      let oy = Math.round(pose.gripY - sinA * outerR);
+      const ix = Math.round(pose.gripX + facing * cosA * innerR);
+      let iy = Math.round(pose.gripY - sinA * innerR);
+      if (pose.groundY < Infinity) {
+        oy = Math.min(oy, Math.round(pose.groundY - 2));
+        iy = Math.min(iy, Math.round(pose.groundY - 2));
+      }
+      const rot = -trailAngle * facing;
+      this.trailOuter[k].setPosition(ox, oy).setRotation(rot).setVisible(true);
+      this.trailInner[k].setPosition(ix, iy).setRotation(rot).setVisible(true);
     }
-    for (let k = 0; k < this.weaponTrailInner.length; k += 1) {
-      this.weaponTrailInner[k].setVisible(false);
+  }
+
+  /** Floor-impact sparks keep flying for their duration after the move ends. */
+  private updateSparks(player: Readonly<EntityState>): void {
+    if (player.groundImpactTicks <= 0) {
+      for (const spark of this.sparks) spark.setVisible(false);
+      return;
+    }
+    const { durationTicks, sparkGravity } = CONFIG.player.attack.groundImpact;
+    const tSec = (durationTicks - player.groundImpactTicks) / 60;
+    for (let i = 0; i < this.sparks.length; i += 1) {
+      const vx = ((i - 7.5) / 7.5) * 65;
+      const vy = -120 + (i % 5) * 16;
+      const px = Math.round(player.groundImpactX + vx * tSec);
+      const py = Math.round(player.groundImpactY + vy * tSec + 0.5 * sparkGravity * tSec * tSec);
+      this.sparks[i].setPosition(px, py).setVisible(py <= player.groundImpactY + 3);
     }
   }
 
@@ -233,220 +257,57 @@ export class WeaponLayer {
       const sweepDir = params.arc.endRad >= params.arc.startRad ? 1 : -1;
       return { pose, whipSign: sweepDir, showTrail: true };
     }
-
-    // Startup tension: blade held primed at the attack start angle without blinking out
+    // Startup: blade drawn back toward the start of the arc on a short chain.
     if (player.attackPhase === 'startup') {
       const u = params.startupTicks > 0 ? player.attackTicks / params.startupTicks : 0;
-      const startAngle = params.arc.startRad;
-      const prepRadius = Math.min(32, Math.max(18, params.arc.radius * 0.35));
-      return {
-        pose: {
-          gripX: handX,
-          gripY: handY,
-          bladeCenterX: handX + player.facing * Math.cos(startAngle) * prepRadius,
-          bladeCenterY: handY - Math.sin(startAngle) * prepRadius,
-          angleRad: startAngle,
-          radius: prepRadius,
-          progress: u,
-          clamped: false,
-          groundY: Infinity,
-        },
-        whipSign: 1,
-        showTrail: false,
-      };
+      const radius = Math.min(32, Math.max(18, params.arc.radius * 0.35));
+      return { pose: this.poseAt(player, handX, handY, params.arc.startRad, radius, u), whipSign: 1, showTrail: false };
     }
-
-    // Smooth retraction across the entire recovery phase back to the body
+    // Recovery: the chain retracts the blade back to the hand.
     if (player.attackPhase === 'recovery' && params.recoveryTicks > 0) {
       const u = Math.min(Math.max(player.attackTicks / params.recoveryTicks, 0), 1);
       const radius = Math.max(12, params.arc.radius * 0.55 * (1 - u * 0.82));
-      const angle = params.arc.endRad;
-      return {
-        pose: {
-          gripX: handX,
-          gripY: handY,
-          bladeCenterX: handX + player.facing * Math.cos(angle) * radius,
-          bladeCenterY: handY - Math.sin(angle) * radius,
-          angleRad: angle,
-          radius,
-          progress: 1 - u,
-          clamped: false,
-          groundY: Infinity,
-        },
-        whipSign: -1,
-        showTrail: false,
-      };
+      return { pose: this.poseAt(player, handX, handY, params.arc.endRad, radius, 1 - u), whipSign: -1, showTrail: false };
     }
-
     return null;
   }
 
-  update(
-    player: Readonly<EntityState> | null,
-    params: AttackParams | null,
-    platforms: readonly Platform[] = [],
-  ): void {
-    if (!CONFIG.presentation.weaponArt) {
-      this.hideWeapon();
-      for (let i = 0; i < this.groundImpactParticles.length; i += 1) {
-        this.groundImpactParticles[i].setVisible(false);
-      }
-      return;
-    }
-    // 1. Update ground impact sparks even if attack just finished (duration > 0)
-    if (player && player.groundImpactTicks > 0) {
-      const duration = CONFIG.player.attack.groundImpact.durationTicks;
-      const age = duration - player.groundImpactTicks;
-      const gravity = CONFIG.player.attack.groundImpact.sparkGravity;
-      const tSec = age / 60;
-      for (let i = 0; i < this.groundImpactParticles.length; i += 1) {
-        const vx = ((i - 7.5) / 7.5) * 65;
-        const vy = -120 + (i % 5) * 16;
-        const px = Math.round(player.groundImpactX + vx * tSec);
-        const py = Math.round(player.groundImpactY + vy * tSec + 0.5 * gravity * tSec * tSec);
-        if (py <= player.groundImpactY + 3) {
-          this.groundImpactParticles[i].setPosition(px, py).setVisible(true);
-        } else {
-          this.groundImpactParticles[i].setVisible(false);
-        }
-      }
-    } else {
-      for (let i = 0; i < this.groundImpactParticles.length; i += 1) {
-        this.groundImpactParticles[i].setVisible(false);
-      }
-    }
+  private poseAt(
+    player: Readonly<EntityState>,
+    handX: number,
+    handY: number,
+    angle: number,
+    radius: number,
+    progress: number,
+  ): BladePose {
+    return {
+      gripX: handX,
+      gripY: handY,
+      bladeCenterX: handX + player.facing * Math.cos(angle) * radius,
+      bladeCenterY: handY - Math.sin(angle) * radius,
+      angleRad: angle,
+      radius,
+      progress,
+      clamped: false,
+      groundY: Infinity,
+    };
+  }
 
-    if (!player || player.isDead) {
-      this.hideWeapon();
-      return;
-    }
+  private hideTrail(): void {
+    for (const rect of this.trailOuter) rect.setVisible(false);
+    for (const rect of this.trailInner) rect.setVisible(false);
+  }
 
-    const chainColor = player.weaponLevel === 2
-      ? (CONFIG.presentation.weaponChainLevel2Color ?? 0xf59e0b)
-      : CONFIG.presentation.weaponChainColor;
+  private hideAttackBlade(): void {
+    for (const rect of this.chainOutline) rect.setVisible(false);
+    for (const rect of this.chainCore) rect.setVisible(false);
+    this.blade?.setVisible(false);
+    this.hideTrail();
+  }
 
-    // Defensive stance: chains and blades held protecting the chest
-    if (player.guardPhase !== 'none' && player.attackPhase === 'none') {
-      const facing = player.facing === -1 ? -1 : 1;
-      this.drawStaticPose(
-        player.x + facing * 8,
-        player.y - 28,
-        player.x + facing * 18,
-        player.y - 32,
-        facing === 1 ? -0.35 : Math.PI + 0.35,
-        facing,
-        chainColor,
-      );
-      return;
-    }
-
-    // Rest stance: blade hanging low and forward from the grip. Off while the
-    // character grid still has the weapons baked in (D-26/D-29).
-    const rest = CONFIG.presentation.restPose;
-    if (rest.enabled && player.attackPhase === 'none' && player.rollPhase === 'none') {
-      const facing = player.facing === -1 ? -1 : 1;
-      const handX = player.x + facing * rest.handDx;
-      const handY = player.y + rest.handDy;
-      const bladeX = player.x + facing * rest.bladeDx;
-      const bladeY = player.y + rest.bladeDy;
-      this.drawStaticPose(
-        handX,
-        handY,
-        bladeX,
-        bladeY,
-        Math.atan2(bladeY - handY, bladeX - handX),
-        facing,
-        chainColor,
-      );
-      return;
-    }
-
-    if (!params || player.attackPhase === 'none') {
-      this.hideWeapon();
-      return;
-    }
-
-    const facing = player.facing === -1 ? -1 : 1;
-    const moveDef = player.attackMove !== 'none' ? CONFIG.player.attack.moves[player.attackMove] : null;
-    const handOffset = moveDef ? moveDef.hand : { dx: 13, dy: -33 };
-    const handX = player.x + facing * handOffset.dx;
-    const handY = player.y + handOffset.dy;
-
-    const visual = this.deriveVisualPose(player, params, handX, handY, platforms);
-    if (!visual) {
-      this.hideWeapon();
-      return;
-    }
-
-    const { pose, whipSign, showTrail } = visual;
-    const dx = pose.bladeCenterX - handX;
-    const dy = pose.bladeCenterY - handY;
-    const len = Math.hypot(dx, dy) || 1;
-    const nx = -dy / len;
-    const ny = dx / len;
-
-    const segments = this.weaponChainRects.length;
-    const amp = Math.min(Math.max(params.arc.radius * 0.08, 4.5), 9.0);
-    for (let i = 0; i < segments; i += 1) {
-      const s = (i + 1) / (segments + 1);
-      // Whip wave equation: wave(s, p) = A * sin(pi * s) * sin(2*pi * (p - s * 0.35))
-      const wave = amp * Math.sin(Math.PI * s) * Math.sin(2 * Math.PI * (pose.progress - s * 0.35)) * whipSign * facing;
-      let x = Math.round(handX + dx * s + nx * wave);
-      let y = Math.round(handY + dy * s + ny * wave);
-
-      // Floor clamp: links never sink below wood deck (yTop - 2)
-      if (pose.groundY < Infinity && y > pose.groundY - 2) {
-        y = Math.round(pose.groundY - 2);
-      }
-
-      this.weaponChainBorderRects[i].setPosition(x, y).setVisible(true);
-      this.weaponChainRects[i].setFillStyle(chainColor, 1.0).setPosition(x, y).setVisible(true);
-    }
-
-    const bladeX = Math.round(pose.bladeCenterX);
-    const bladeY = Math.round(pose.bladeCenterY);
-    const chainAngle = Math.atan2(pose.bladeCenterY - handY, pose.bladeCenterX - handX);
-
-    this.weaponBladeCoreRect
-      ?.setPosition(bladeX, bladeY)
-      .setRotation(chainAngle)
-      .setVisible(true);
-
-    this.weaponBladeImage
-      ?.setPosition(bladeX, bladeY)
-      .setFlipY(facing === -1)
-      .setRotation(chainAngle)
-      .setVisible(true);
-
-    if (showTrail) {
-      const deltaArc = params.arc.endRad - params.arc.startRad;
-      const trailSpan = deltaArc * 0.42;
-      const outerR = params.arc.radius + 4;
-      const innerR = Math.max(8, params.arc.radius - 2);
-      for (let k = 0; k < TRAIL_STEPS; k += 1) {
-        const frac = 1 - k / (TRAIL_STEPS - 1);
-        const trailAngle = pose.angleRad - trailSpan * frac;
-        const cosA = Math.cos(trailAngle);
-        const sinA = Math.sin(trailAngle);
-        const ox = Math.round(pose.gripX + facing * cosA * outerR);
-        let oy = Math.round(pose.gripY - sinA * outerR);
-        const ix = Math.round(pose.gripX + facing * cosA * innerR);
-        let iy = Math.round(pose.gripY - sinA * innerR);
-        if (pose.groundY < Infinity) {
-          if (oy > pose.groundY - 2) oy = Math.round(pose.groundY - 2);
-          if (iy > pose.groundY - 2) iy = Math.round(pose.groundY - 2);
-        }
-        const rot = -trailAngle * facing;
-        this.weaponTrailOuter[k].setPosition(ox, oy).setRotation(rot).setVisible(true);
-        this.weaponTrailInner[k].setPosition(ix, iy).setRotation(rot).setVisible(true);
-      }
-    } else {
-      for (let k = 0; k < this.weaponTrailOuter.length; k += 1) {
-        this.weaponTrailOuter[k].setVisible(false);
-      }
-      for (let k = 0; k < this.weaponTrailInner.length; k += 1) {
-        this.weaponTrailInner[k].setVisible(false);
-      }
-    }
+  private hideAll(): void {
+    this.hideAttackBlade();
+    for (const image of this.backBlades) image.setVisible(false);
+    for (const spark of this.sparks) spark.setVisible(false);
   }
 }
