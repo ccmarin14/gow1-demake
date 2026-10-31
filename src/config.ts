@@ -154,8 +154,8 @@ run: {
   idleSpeedThreshold: 1,
 },
 idle: {
-  // Four frames sampled every 10 of the 30 fps `Sword_Idle` clip.
-  frameRate: 3,
+  // Four frames sampled every 15 of the 30 fps `Idle_Loop` clip.
+  frameRate: 2,
 },
 air: {
   frameRate: 6,

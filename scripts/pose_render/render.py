@@ -1,7 +1,13 @@
 """Render a pose guide of the 3D mannequin with Blender (D-34).
 
 Usage:
-    blender -b --python scripts/pose_render/render.py -- <config.json> <action> <out_dir> <frames>
+    blender -b --python scripts/pose_render/render.py -- <config.json> <action> <out_dir> <frames> [pose.json]
+
+`pose.json` (optional) adjusts the action for Kratos' attitude:
+    {
+      "camera_yaw_deg": 45,                      # optional, overrides the config
+      "rotations": {"spine_02": [[1, 0, 0], -10]} # bone-local axis, degrees
+    }
 
 Example:
     blender -b --python scripts/pose_render/render.py -- scripts/pose_render/kratos.json \
@@ -20,7 +26,7 @@ import os
 import sys
 
 import bpy
-from mathutils import Vector
+from mathutils import Quaternion, Vector
 
 SCALE = 8
 TONE_STOPS = [(0.0, 0.2), (0.18, 0.4), (0.42, 0.6), (0.7, 0.8)]
@@ -28,9 +34,16 @@ MATERIALS = [("skin", 0.25), ("leather", 0.5), ("foot", 0.75)]
 SIDES = [("near", 0.8), ("far", 0.3)]
 ALWAYS_NEAR = ("Head", "neck_01")
 
-config_path, action_name, out_dir, frame_list = sys.argv[sys.argv.index("--") + 1:][:4]
+args = sys.argv[sys.argv.index("--") + 1:]
+config_path, action_name, out_dir, frame_list = args[:4]
 with open(config_path, encoding="utf-8") as handle:
     cfg = json.load(handle)
+pose_offsets: dict = {}
+if len(args) > 4:
+    with open(args[4], encoding="utf-8") as handle:
+        pose = json.load(handle)
+    pose_offsets = pose.get("rotations", {})
+    cfg["camera_yaw_deg"] = pose.get("camera_yaw_deg", cfg["camera_yaw_deg"])
 frames = [int(value) for value in frame_list.split(",")]
 os.makedirs(out_dir, exist_ok=True)
 
@@ -163,6 +176,10 @@ def apply_bulk(_scene, *_args) -> None:
             if key.lower() in name:
                 pose_bone.scale = value if isinstance(value, list) else (value, 1.0, value)
                 break
+    for bone_name, (axis, degrees) in pose_offsets.items():
+        pose_bone = armature.pose.bones[bone_name]
+        pose_bone.rotation_mode = "QUATERNION"
+        pose_bone.rotation_quaternion = pose_bone.rotation_quaternion @ Quaternion(axis, math.radians(degrees))
 
 
 bpy.app.handlers.frame_change_post.append(apply_bulk)
