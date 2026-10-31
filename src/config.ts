@@ -154,8 +154,8 @@ run: {
   idleSpeedThreshold: 1,
 },
 idle: {
-  // Panting: one breath (exhale, mid, inhale, mid) every 2/3 s.
-  frameRate: 6,
+  // Tired panting: one breath (exhale, mid, inhale, mid) per second.
+  frameRate: 4,
 },
 air: {
   frameRate: 6,
