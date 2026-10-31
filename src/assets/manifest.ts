@@ -46,6 +46,8 @@ export const RUN_KEYS: readonly string[] = Array.from({ length: 8 }, (_, i) => `
 /** Airborne blockout poses (D-34): knees tucked while rising, open while falling. */
 export const AIR_RISE_KEY = 'kratos-air-00';
 export const AIR_FALL_KEY = 'kratos-air-01';
+/** Double jump: arms thrust down, knees tucked, as if pushing off the air. */
+export const AIR_DOUBLE_KEY = 'kratos-air-02';
 /** Roll blockout (D-34): crouch, dive, hands down, curled, recover; spread over the roll. */
 export const ROLL_KEYS: readonly string[] = Array.from({ length: 5 }, (_, i) => `kratos-roll-0${i}`);
 
@@ -55,6 +57,7 @@ export const PLAYER_FRAME_KEYS: readonly string[] = [
   ...RUN_KEYS,
   AIR_RISE_KEY,
   AIR_FALL_KEY,
+  AIR_DOUBLE_KEY,
   ...ROLL_KEYS,
 ];
 

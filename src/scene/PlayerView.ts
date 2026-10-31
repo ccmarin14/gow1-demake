@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import {
+  AIR_DOUBLE_KEY,
   AIR_FALL_KEY,
   AIR_RISE_KEY,
   IDLE_KEY,
@@ -180,7 +181,9 @@ export class PlayerView {
     if (!grounded) {
       // Stop the run loop first: a playing animation would overwrite the texture.
       this.stopLoop();
-      player.setTexture(simPlayer.vy < 0 ? AIR_RISE_KEY : AIR_FALL_KEY, 0);
+      const rising = simPlayer.vy < 0;
+      const airKey = !rising ? AIR_FALL_KEY : simPlayer.jumpsUsed >= 2 ? AIR_DOUBLE_KEY : AIR_RISE_KEY;
+      player.setTexture(airKey, 0);
       player.anims.timeScale = 1;
       return;
     }

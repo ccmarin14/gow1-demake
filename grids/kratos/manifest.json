@@ -88,6 +88,12 @@
       "png": "kratos-air-01"
     },
     {
+      "file": "air-02.txt",
+      "state": "air",
+      "grounded": false,
+      "png": "kratos-air-02"
+    },
+    {
       "file": "roll-00.txt",
       "state": "roll",
       "grounded": true,
