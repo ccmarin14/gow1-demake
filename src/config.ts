@@ -11,8 +11,8 @@ export const PLAYER_SPRITE_HEIGHT = 56;
 /**
  * Physical bounds of the player, deliberately independent of the sprite canvas:
  * redrawing the art with a different canvas must not move walls or the jump
- * ceiling. `marginX` is the half width of Kratos' body in `idle-00` (it spans
- * 20 px each side of the anchor), so the body stops at the edge, not inside it.
+ * ceiling. `marginX` covers the half width of Kratos' body (the idle stance
+ * spans 16 px each side of the anchor), so the body stops before the edge.
  */
 const PLAYER_BOUNDS = {
   /** Distance kept from the screen edge, the level edges and arena barriers. */
@@ -154,8 +154,8 @@ run: {
   idleSpeedThreshold: 1,
 },
 idle: {
-  // Two drawn frames, one second each: a calm breath. Faster reads as a twitch.
-  frameRate: 1,
+  // Four frames sampled every 10 of the 30 fps `Sword_Idle` clip.
+  frameRate: 3,
 },
 air: {
   frameRate: 6,

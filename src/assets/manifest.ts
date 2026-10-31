@@ -32,8 +32,8 @@ function characterSheet(key: string, path: string): AssetEntry {
 /** Static fallback pose for every state that has no drawn frames yet. */
 const STATIC_KEY = 'kratos-idle-00';
 
-/** Idle breathing loop: `idle-01` lifts the upper body 1 px. */
-export const IDLE_KEYS: readonly string[] = [STATIC_KEY, 'kratos-idle-01'];
+/** Idle loop: combat stance swaying, blockout of the mannequin's `Sword_Idle` (D-34). */
+export const IDLE_KEYS: readonly string[] = Array.from({ length: 4 }, (_, i) => `kratos-idle-0${i}`);
 /**
  * Run cycle: blockout frames rendered from the 3D mannequin (D-34), pending
  * the finishing pass with the idle head, tattoo and costume detail.
@@ -47,7 +47,7 @@ export const ROLL_KEYS: readonly string[] = Array.from({ length: 5 }, (_, i) => 
 
 /** Additional grid-derived frames, one PNG each, drawn in full. */
 export const PLAYER_FRAME_KEYS: readonly string[] = [
-  'kratos-idle-01',
+  ...IDLE_KEYS.slice(1),
   ...RUN_KEYS,
   AIR_RISE_KEY,
   AIR_FALL_KEY,

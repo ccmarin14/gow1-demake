@@ -11,7 +11,7 @@ Documento único del estado medido de `gow-8b`. Se actualiza en el mismo commit 
 - **Pruebas:** `pnpm test` (runner nativo de Node, sin dependencias, 29 pruebas) cubre el movimiento horizontal (aceleración, frenado, derrape, control en el aire, bloqueos, límites y el recorrido en `level1`; sin derrape) y el vertical (altura del salto, doble salto, caída de un borde, tiempo de coyote, búfer de salto, velocidad máxima de caída, plataformas de un sentido y bajada con abajo + salto) y la rodada (distancia, dirección, invulnerabilidad, solo en el suelo, sin encadenar y cancelación en ataque) y que `level1` contiene solo a Kratos.
 - **Harness DEV:** `window.__GOW8B` expone `snapshot()`, `loadScenario()`, `reset()`, `step()`, `advance()` y `metrics()`.
 - **Sprites activos:**
-  - Kratos tiene `kratos-idle-00.png` (grid `grids/kratos/idle-00.txt`, 64×56, paleta `palette/kratos.json`, solo cuerpo) y borradores sin terminar del maniquí 3D (D-34): carrera `kratos-run-00..07`, aire `kratos-air-00/01` (subida y caída, por la velocidad vertical) y rodada `kratos-roll-00..04` (repartidos en los ticks de la rodada). Ataque, guardia y muerte muestran `idle-00` estático. La cuchilla en reposo (`restPose`) y la sombra de contacto (`playerShadow`) las dibuja el motor.
+  - Kratos solo tiene borradores sin terminar del maniquí 3D (D-34; grids en `grids/kratos/`, 64×56, paleta `palette/kratos.json`, solo cuerpo): reposo `kratos-idle-00..03` (guardia `Sword_Idle`), carrera `kratos-run-00..07`, aire `kratos-air-00/01` (subida y caída, por la velocidad vertical) y rodada `kratos-roll-00..04` (repartidos en los ticks de la rodada). Ataque, guardia y muerte muestran `idle-00` estático.
   - Los enemigos no tienen arte: legionario, arquero e hidra son cajas neutras del tamaño de su zona de golpe (`presentation.enemyPlaceholder`, `hydraPlaceholder`), que se ponen amarillas al preparar un ataque; las flechas son barras.
   - Los visuales heredados están apagados hasta que la usuaria los decida (ver "Decisiones visuales pendientes"); mientras tanto, un ataque muestra su zona de golpe como caja.
 
@@ -20,7 +20,7 @@ Documento único del estado medido de `gow-8b`. Se actualiza en el mismo commit 
 | ID | Problema | Impacto |
 | --- | --- | --- |
 | **ESE-01** | Sin remates contextuales (QTE) ni agarre real (ESE-02); impacto poco brutal (ESE-03); enemigos de un solo truco (ESE-04); sin introducción (ESE-05, regla D-30). | El combate se aparta de la esencia de *God of War*. Plan y criterios en `docs/direccion.md` §4. |
-| **ART-02** | Los anclajes de mano de los ataques (`hand` en cada movimiento de `src/config.ts`, entre `dx 7..26`, `dy -31..-33`) conservan valores de una hoja retirada; en `idle-00` el puño delantero está en `dx 18, dy -20`. No se cambiaron porque también definen el arco de golpe de la simulación. | Las cadenas de ataque salen por encima del puño dibujado. Se re-miden cuando existan los cuadros de ataque, con prueba en el harness. |
+| **ART-02** | Los anclajes de mano de los ataques (`hand` en cada movimiento de `src/config.ts`, entre `dx 7..26`, `dy -31..-33`) conservan valores de una hoja retirada y no coinciden con el puño del reposo actual. No se cambiaron porque también definen el arco de golpe de la simulación. | Las cadenas de ataque salen por encima del puño dibujado. Se re-miden cuando existan los cuadros de ataque, con prueba en el harness. |
 
 ### Revisiones pendientes
 
@@ -28,9 +28,9 @@ Cuadros commiteados sin la aprobación visual de la usuaria (regla en `AGENTS.md
 
 | Cuadro | Qué revisar | Cómo verlo |
 | --- | --- | --- |
+| `idle-00..03` | Borrador del reposo (`Sword_Idle` 0, 10, 20 y 30: guardia de combate con piernas abiertas y un balanceo leve), que reemplaza al `idle-00` dibujado a mano para que no desentone con el resto. | En el juego, quieto. |
 | `air-00/01`, `roll-00..04` | Borradores del salto (`Jump_Start` 8 sube, `Jump_Loop` 30 cae) y de la rodada (`Roll` 0, 5, 10, 15 y 20: agachado, zambullida, manos al suelo, bola y recuperación), apoyados en la fila de suelo. | En el juego con `Espacio` y `Shift`; capturas en `docs/tmp/navegador/`. |
-| `run-00..07` | Borrador del ciclo de carrera (D-34): render del maniquí 3D reducido a la paleta, todavía sin la cabeza de `idle-00`, el tatuaje ni el faldón terminado. Revisar si el movimiento se lee como la carrera de Kratos antes de la terminación. En `run-03`, `run-06` y `run-07` los dos pies están en el aire (fase de vuelo). | En el juego, corriendo con `D`; capturas en `docs/tmp/navegador/`. |
-| `idle-01` | Respiración: cabeza, hombros, pecho y brazos suben 1 px sobre `idle-00`; cintura, taparrabos y piernas fijos. Alterna con `idle-00` a 1 cuadro por segundo. | `python3 scripts/preview_grid.py grids/kratos/idle-00.txt grids/kratos/idle-01.txt --palette palette/kratos.json --ground-row 55 --scale 8 --out /tmp/idle.png`, o en el juego, quieto. |
+| `run-00..07` | Borrador del ciclo de carrera (D-34): render del maniquí 3D reducido a la paleta, todavía sin la cabeza aprobada, el tatuaje ni el faldón terminado. Revisar si el movimiento se lee como la carrera de Kratos antes de la terminación. En `run-03`, `run-06` y `run-07` los dos pies están en el aire (fase de vuelo). | En el juego, corriendo con `D`; capturas en `docs/tmp/navegador/`. |
 
 ### Mecánicas heredadas
 
@@ -81,7 +81,7 @@ Elementos heredados que la usuaria no decidió. Están apagados con un interrupt
 
 ## 3. Siguiente paso
 
-Que la usuaria juzgue el borrador de la carrera en movimiento. Ya están los borradores de carrera, aire y rodada; falta decidir si `idle` también pasa a render para que no desentone, y después terminar a mano todos los cuadros (D-34). Lo siguiente verificable sin ojo humano es el combate (tabla "Mecánicas heredadas").
+Que la usuaria juzgue el borrador de la carrera en movimiento. Ya están los borradores de carrera, aire y rodada; el reposo también pasó a render. Falta terminar a mano todos los cuadros (D-34). Lo siguiente verificable sin ojo humano es el combate (tabla "Mecánicas heredadas").
 
 ## 4. Registro de pasos
 
@@ -123,3 +123,4 @@ Que la usuaria juzgue el borrador de la carrera en movimiento. Ya están los bor
 - `2026-10-31` — **Paso 33 (Cuadros de movimiento rechazados y retirados):** la usuaria rechazó `run-00..03`, `air-00/01` y `roll-00/01`: se veían cortados en la cadera y rígidos arriba, porque no eran poses nuevas sino el torso y los brazos de `idle-00` pegados sobre piernas redibujadas. Se retiraron los 8 grids y sus PNG; correr, el aire y la rodada vuelven a mostrar `idle-00` (la física no cambia). Regla nueva en `AGENTS.md`: cada cuadro es una pose completa del cuerpo entero, nunca partes de otro cuadro pegadas.
 - `2026-10-31` — **Paso 34 (Borrador 3D de la carrera, D-34):** el dibujo a mano desde cero de los cuadros de movimiento quedó por debajo de `idle-00` en todos los intentos. Ahora las animaciones arrancan de un render del maniquí CC0 de Quaternius, engrosado a la complexión de Kratos, con faldón y cámara a 20° (`scripts/pose_render/`), reducido a la paleta. Entraron los 8 cuadros de `Sprint_Loop` como `run-00..07` en revisión pendiente; paso medido de 68 px (pie de x=14 a x=48, ×2) y 15 cuadros por segundo de base. `pnpm test` y `pnpm build` pasan; verificado en Chrome headless corriendo por la cubierta, con 0 errores de consola y 0 peticiones fallidas. Regla nueva en `AGENTS.md`: las imágenes de trabajo van en `docs/tmp/`.
 - `2026-10-31` — **Paso 35 (Borradores del aire y la rodada, D-34):** la usuaria aprobó la carrera en borrador como base. Con el mismo método entraron `air-00/01` y `roll-00..04`; `to_grid.py` suma `--ground` para apoyar en el suelo las acciones cuya raíz se despega (salto, rodada). `PlayerView` elige el cuadro del aire por la velocidad vertical y reparte la rodada en sus 20 ticks. `pnpm test` (29) y `pnpm build` pasan; verificado en Chrome headless saltando y rodando, con 0 errores y 0 peticiones fallidas.
+- `2026-10-31` — **Paso 36 (Reposo en borrador, D-34):** a pedido de la usuaria (el reposo dibujado desentonaba con la carrera), `idle-00..03` pasan a ser el render de `Sword_Idle` a 3 cuadros por segundo. El `idle-00` dibujado a mano queda en el commit `0af23ae` como fuente de la cabeza para la terminación. Se quitaron los puntos de referencia (`idle-0x.landmarks.json`) y `scripts/check_landmarks.py`, que describían el dibujo anterior.
