@@ -1,4 +1,3 @@
-import { CONFIG } from '../config';
 import type { Platform } from './scenarios';
 import type { AttackMoveId, EntityState } from './types';
 
@@ -39,11 +38,7 @@ export interface AttackParams {
   lungeVx: number;
   airBrake: boolean;
   groundImpact: boolean;
-}
-
-export interface AttackCombo {
-  maxChain: number;
-  hits: readonly AttackParams[];
+  damage: number;
 }
 
 export type AttackMoveSet = Readonly<Record<AttackMoveId, AttackParams>>;
@@ -51,13 +46,9 @@ export type AttackMoveSet = Readonly<Record<AttackMoveId, AttackParams>>;
 /** Per-tick attack input, already reduced to edges/holds by the world. */
 export interface AttackInput {
   light: boolean;
-  heavy: boolean;
-  heavyHeld: boolean;
-  grab: boolean;
 }
 
 export interface AttackRules {
-  heavyHoldTicks: number;
   hitstunTicks: number;
   groundImpactTicks: number;
   shockRadius: number;
@@ -73,14 +64,6 @@ export interface AttackHitbox {
   y1: number;
   x2: number;
   y2: number;
-}
-
-export function attackParamsForChain(
-  combo: AttackCombo,
-  chain: number,
-): AttackParams {
-  const index = Math.min(Math.max(chain, 0), combo.hits.length - 1);
-  return combo.hits[index];
 }
 
 /**
@@ -269,64 +252,10 @@ function beginFromIdle(
   input: AttackInput,
   moves: AttackMoveSet,
 ): void {
-  if (input.grab) {
-    beginMove(player, player.grounded ? moves.chain_grab : moves.air_grab);
-  } else if (input.heavy) {
-    beginMove(player, player.grounded ? moves.heavy_slam : moves.air_heavy_slam);
-  } else if (input.light) {
-    if (player.grounded) {
-      const isSprinting = Math.abs(player.vx) >= 110;
-      beginMove(player, isSprinting ? moves.dash_attack : moves.light_1);
-    } else {
-      beginMove(player, moves.air_light_1);
-    }
+  // Only the basic Square strike exists so far, and only on the ground.
+  if (input.light && player.grounded) {
+    beginMove(player, moves.light_1);
   }
-}
-
-/** Branch to the next move of a combo/cancel, or `null` to keep the current one. */
-function nextMoveFor(
-  player: Readonly<EntityState>,
-  input: AttackInput,
-  moves: AttackMoveSet,
-  rules: AttackRules,
-): AttackParams | null {
-  const move = player.attackMove;
-  const phase = player.attackPhase;
-  const open = phase === 'active' || phase === 'recovery';
-  if (player.grounded) {
-    if (move === 'heavy_slam') {
-      // K, K or K held (hold is only honoured before the slam is released).
-      if (input.heavy) {
-        return moves.ascension;
-      }
-      if (phase === 'startup' && player.heavyHoldTicks >= rules.heavyHoldTicks) {
-        return moves.ascension;
-      }
-    }
-    if (open && input.light) {
-      if (move === 'light_1') return moves.light_2;
-      if (move === 'light_2') return moves.light_3;
-      if (move === 'light_3') return moves.light_4;
-      if (move === 'dash_attack') return moves.light_2;
-    }
-    if (open && input.heavy) {
-      if (move === 'light_2') return moves.plume_of_prometheus;
-      if (move === 'light_3') return moves.spirit_of_hercules;
-    }
-    return null;
-  }
-  const airChain =
-    move === 'air_light_1' ||
-    move === 'air_light_2' ||
-    (move === 'ascension' && phase === 'recovery');
-  if (airChain && open) {
-    if (input.grab) return moves.air_grab;
-    if (input.heavy) return moves.air_heavy_slam;
-    if (input.light) {
-      return move === 'air_light_1' ? moves.air_light_2 : moves.air_light_1;
-    }
-  }
-  return null;
 }
 
 function applyHit(
@@ -355,20 +284,7 @@ function applyHit(
     if (target.aiState === 'death' || target.aiState === 'hydra_defeat') {
       return;
     }
-    const baseDamage =
-      params.moveId === 'plume_of_prometheus' ? 30 :
-      params.moveId === 'spirit_of_hercules' ? 25 :
-      params.moveId === 'heavy_slam' || params.moveId === 'air_heavy_slam' ? 22 :
-      params.moveId === 'ascension' ? 18 :
-      params.moveId === 'air_grab' || params.moveId === 'chain_grab' ? 24 :
-      params.moveId === 'light_4' ? 18 :
-      params.moveId === 'light_3' ? 15 :
-      params.moveId === 'dash_attack' ? 14 : 12;
-
-    const damageMultiplier = player.weaponLevel === 2
-      ? (CONFIG.player.weapon.upgrades?.level2DamageMultiplier ?? 1.3)
-      : 1.0;
-    const damage = Math.round(baseDamage * damageMultiplier);
+    const damage = params.damage;
 
     target.hp = Math.max(0, target.hp - damage);
     if (target.hp <= 0) {
@@ -406,15 +322,10 @@ export function stepAttack(
   if (player.groundImpactTicks > 0) {
     player.groundImpactTicks -= 1;
   }
-  player.heavyHoldTicks = input.heavyHeld ? player.heavyHoldTicks + 1 : 0;
-
   // Combine fresh input edges with buffered attack action
   const hasBufferedAction = Boolean(player.attackBufferAction && player.attackBufferTicks > 0);
   const effectiveInput: AttackInput = {
     light: input.light || (hasBufferedAction && player.attackBufferAction === 'light-attack'),
-    heavy: input.heavy || (hasBufferedAction && player.attackBufferAction === 'heavy-attack'),
-    heavyHeld: input.heavyHeld,
-    grab: input.grab || (hasBufferedAction && player.attackBufferAction === 'grab'),
   };
 
   if (player.attackPhase === 'none') {
@@ -423,14 +334,6 @@ export function stepAttack(
       player.attackBufferAction = null;
       player.attackBufferTicks = 0;
     }
-    return;
-  }
-
-  const next = nextMoveFor(player, effectiveInput, moves, rules);
-  if (next) {
-    beginMove(player, next);
-    player.attackBufferAction = null;
-    player.attackBufferTicks = 0;
     return;
   }
 
@@ -453,11 +356,8 @@ export function stepAttack(
         player.vx = params.lungeVx * player.facing;
       }
       if (params.selfVy !== 0) {
-        // Ascension only carries Kratos up while K is held.
-        if (params.moveId !== 'ascension' || input.heavyHeld) {
-          player.vy = params.selfVy;
-          player.grounded = false;
-        }
+        player.vy = params.selfVy;
+        player.grounded = false;
       }
     }
     return;
@@ -467,11 +367,7 @@ export function stepAttack(
     player.attackTicks += 1;
     const pose = bladePoseForTick(player, params, platforms);
     if (pose) {
-      // A diving slam that lands also counts as a floor impact.
-      const landedDive =
-        params.moveId === 'air_heavy_slam' && player.grounded;
-      const groundImpactActive =
-        params.groundImpact && (pose.clamped || landedDive);
+      const groundImpactActive = params.groundImpact && pose.clamped;
 
       for (const target of targets) {
         if (player.attackHits.includes(target.id)) {

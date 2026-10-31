@@ -231,7 +231,7 @@ export class WeaponLayer {
         return null;
       }
       const sweepDir = params.arc.endRad >= params.arc.startRad ? 1 : -1;
-      return { pose, whipSign: sweepDir, showTrail: params.moveId !== 'chain_grab' };
+      return { pose, whipSign: sweepDir, showTrail: true };
     }
 
     // Startup tension: blade held primed at the attack start angle without blinking out
@@ -386,7 +386,7 @@ export class WeaponLayer {
     const ny = dx / len;
 
     const segments = this.weaponChainRects.length;
-    const amp = params.moveId === 'chain_grab' ? 0 : Math.min(Math.max(params.arc.radius * 0.08, 4.5), 9.0);
+    const amp = Math.min(Math.max(params.arc.radius * 0.08, 4.5), 9.0);
     for (let i = 0; i < segments; i += 1) {
       const s = (i + 1) / (segments + 1);
       // Whip wave equation: wave(s, p) = A * sin(pi * s) * sin(2*pi * (p - s * 0.35))

@@ -66,7 +66,7 @@ function buildAttackMoveSet(): AttackMoveSet {
         width: raw.arc.width,
         thickness: raw.arc.thickness,
       },
-      reach: 'reach' in raw && raw.reach ? { fromPx: raw.reach.from, toPx: raw.reach.to } : null,
+      reach: null,
       targetHalfWidth: CONFIG.player.attack.targetHalfWidth,
       targetHalfHeight: CONFIG.player.attack.targetHalfHeight,
       hitstopTicks: raw.hitstop,
@@ -76,6 +76,7 @@ function buildAttackMoveSet(): AttackMoveSet {
       lungeVx: 'lungeVx' in raw && typeof raw.lungeVx === 'number' ? raw.lungeVx : 0,
       airBrake: 'airBrake' in raw && Boolean(raw.airBrake),
       groundImpact: 'groundImpact' in raw && Boolean(raw.groundImpact),
+      damage: raw.damage,
     };
   }
   return result as AttackMoveSet;
@@ -89,8 +90,6 @@ export class World {
   private input: GameAction[] = [];
   private jumpHeld = false;
   private lightAttackHeld = false;
-  private heavyAttackHeld = false;
-  private grabHeld = false;
   private dodgeHeld = false;
   private magicHeld = false;
   private activeScenario: string = DEFAULT_SCENARIO;
@@ -397,8 +396,6 @@ export class World {
     this.input = [];
     this.jumpHeld = false;
     this.lightAttackHeld = false;
-    this.heavyAttackHeld = false;
-    this.grabHeld = false;
     this.dodgeHeld = false;
     this.magicHeld = false;
     this.platforms = scenario.platforms;
@@ -554,14 +551,6 @@ export class World {
     const lightAttackEdge = wantsLightAttack && !this.lightAttackHeld;
     this.lightAttackHeld = wantsLightAttack;
 
-    const wantsHeavyAttack = this.input.includes('heavy-attack');
-    const heavyAttackEdge = wantsHeavyAttack && !this.heavyAttackHeld;
-    this.heavyAttackHeld = wantsHeavyAttack;
-
-    const wantsGrab = this.input.includes('grab');
-    const grabEdge = wantsGrab && !this.grabHeld;
-    this.grabHeld = wantsGrab;
-
     const wantsDodge = this.input.includes('dodge');
     const dodgeEdge = wantsDodge && !this.dodgeHeld;
     this.dodgeHeld = wantsDodge;
@@ -621,12 +610,6 @@ export class World {
           if (lightAttackEdge) {
             player.attackBufferAction = 'light-attack';
             player.attackBufferTicks = CONFIG.player.attack.inputBufferTicks;
-          } else if (heavyAttackEdge) {
-            player.attackBufferAction = 'heavy-attack';
-            player.attackBufferTicks = CONFIG.player.attack.inputBufferTicks;
-          } else if (grabEdge) {
-            player.attackBufferAction = 'grab';
-            player.attackBufferTicks = CONFIG.player.attack.inputBufferTicks;
           }
         }
 
@@ -669,13 +652,13 @@ export class World {
         let nowRolling = isRolling(player);
 
         // Roll recovery cancellation into attack (after invulnerability window closes)
-        if (nowRolling && player.invulTicks === 0 && (lightAttackEdge || heavyAttackEdge || grabEdge) && !inHitstun && !isOpeningChest) {
+        if (nowRolling && player.invulTicks === 0 && lightAttackEdge && !inHitstun && !isOpeningChest) {
           player.rollPhase = 'none';
           player.rollTicks = 0;
           nowRolling = false;
         }
 
-        const hasAttackEdge = lightAttackEdge || heavyAttackEdge || grabEdge;
+        const hasAttackEdge = lightAttackEdge;
 
         // Attack or jump cancels guard (allowing agile counterattack or jump out of guard)
         if (isGuarding(player) && (hasAttackEdge || jumpEdge) && !inHitstun) {
@@ -693,14 +676,8 @@ export class World {
 
         // Attack blocked during active invulnerable roll, while actively guarding, during magic, during hitstun, or while opening chest
         if (!nowRolling && !nowGuarding && !nowCastingMagic && !inHitstun && !isOpeningChest) {
-          const attackInput: AttackInput = {
-            light: lightAttackEdge,
-            heavy: heavyAttackEdge,
-            heavyHeld: wantsHeavyAttack,
-            grab: grabEdge,
-          };
+          const attackInput: AttackInput = { light: lightAttackEdge };
           const attackRules: AttackRules = {
-            heavyHoldTicks: CONFIG.player.attack.heavyHoldTicks,
             hitstunTicks: CONFIG.player.attack.target.hitstunTicks,
             groundImpactTicks: CONFIG.player.attack.groundImpact.durationTicks,
             shockRadius: CONFIG.player.attack.groundImpact.shockRadius,
@@ -760,9 +737,7 @@ export class World {
         );
         const nowAttacking = isEntityAttacking(player);
         const canJumpEdge = jumpEdge && !nowRolling && !nowAttacking && !nowGuarding && !inHitstun && !nowCastingMagic && !isOpeningChest;
-        // Air attack float: 30% gravity while active slashes slice through the air
-        const isAirAttacking = !player.grounded && player.attackPhase === 'active';
-        const gravityScale = isAirAttacking ? 0.3 : 1.0;
+        const gravityScale = 1.0;
         const wantsDown = this.input.includes('move-down');
         stepVertical(
           player,

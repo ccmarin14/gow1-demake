@@ -22,96 +22,22 @@ const PLAYER_BOUNDS = {
 } as const;
 
 /**
- * Level-1 move table (God of War 1, PS2 -> 2D). Timings are TICKS at 60 Hz.
- * Arc angles are degrees, `0` = horizontal forward, POSITIVE = UP (sim
- * convention). The plan table lists them in screen convention (positive =
- * down), so every angle here is the plan value negated. `heavy_slam` and
- * `plume_of_prometheus` end lower than the plan values (-60 / -65 instead of
- * -20 / -22 up-convention) because the grip is 30 px above the feet: a blade
- * of radius 50-56 only reaches `yTop` below roughly -34 deg.
+ * Moves of the Blades of Chaos at level 1 (God of War 1, PS2 -> 2D), added
+ * one at a time with their tests: only the basic Square strike exists so far.
+ * Timings are TICKS at 60 Hz.
  *
- * Per move: `hitstop` (ticks both sides freeze on impact), `knockbackVx`
- * (multiplied by the attacker `facing`), `launchVy` (target vy, 0 = leave),
- * `selfVy` (attacker vy applied at active start; ascension only when K is
- * held), `lungeVx` (attacker vx at active start), `airBrake` (air light:
- * `vy = max(vy, -60) * 0.35` on start), `groundImpact` (emits the yTop
- * impact event), `hand` (chain origin offset from the feet anchor, facing
- * right: dx forward, dy up-negative; tune against the drawn art) and `chain`
- * (index reported in `attackChain`).
+ * Arc angles are degrees, `0` = horizontal forward, POSITIVE = UP (sim
+ * convention). Per move: `hitstop` (ticks both sides freeze on impact),
+ * `knockbackVx` (multiplied by the attacker `facing`), `launchVy` (target vy,
+ * 0 = leave), `lungeVx` (attacker vx at active start), `damage` and `hand`
+ * (chain origin offset from the feet anchor, facing right: dx forward, dy
+ * up-negative; tune against the drawn art).
  */
 const MOVES = {
   light_1: {
     chain: 0, startup: 4, active: 7, recovery: 7, hand: { dx: 13, dy: -33 },
     arc: { startDeg: -30, endDeg: 35, radius: 76, width: 18, thickness: 16 },
-    hitstop: 2, knockbackVx: 85, launchVy: 0, lungeVx: 45,
-  },
-  light_2: {
-    chain: 1, startup: 3, active: 7, recovery: 7, hand: { dx: 13, dy: -33 },
-    arc: { startDeg: 40, endDeg: -28, radius: 82, width: 18, thickness: 16 },
-    hitstop: 2, knockbackVx: 95, launchVy: 0, lungeVx: 55,
-  },
-  light_3: {
-    chain: 2, startup: 4, active: 8, recovery: 10, hand: { dx: 26, dy: -31 },
-    arc: { startDeg: 55, endDeg: -35, radius: 96, width: 22, thickness: 18 },
-    hitstop: 3, knockbackVx: 180, launchVy: 0, lungeVx: 90,
-  },
-  light_4: {
-    chain: 3, startup: 4, active: 8, recovery: 10, hand: { dx: 13, dy: -33 },
-    arc: { startDeg: -40, endDeg: 45, radius: 98, width: 22, thickness: 18 },
-    hitstop: 3, knockbackVx: 160, launchVy: 0, lungeVx: 60,
-  },
-  spirit_of_hercules: {
-    chain: 3, startup: 6, active: 9, recovery: 14, hand: { dx: 26, dy: -31 },
-    arc: { startDeg: 30, endDeg: -45, radius: 105, width: 26, thickness: 22 },
-    hitstop: 4, knockbackVx: 220, launchVy: -120, lungeVx: 75, groundImpact: true,
-  },
-  plume_of_prometheus: {
-    chain: 2, startup: 5, active: 9, recovery: 12, hand: { dx: 14, dy: -33 },
-    arc: { startDeg: 85, endDeg: -65, radius: 110, width: 24, thickness: 20 },
-    hitstop: 4, knockbackVx: 140, launchVy: -240, lungeVx: 70, groundImpact: true,
-  },
-  heavy_slam: {
-    chain: 0, startup: 7, active: 8, recovery: 11, hand: { dx: 14, dy: -33 },
-    arc: { startDeg: 75, endDeg: -60, radius: 95, width: 22, thickness: 18 },
-    hitstop: 3, knockbackVx: 130, launchVy: 0, lungeVx: 60, groundImpact: true,
-  },
-  ascension: {
-    chain: 0, startup: 6, active: 8, recovery: 10, hand: { dx: 7, dy: -33 },
-    arc: { startDeg: -35, endDeg: 80, radius: 88, width: 20, thickness: 18 },
-    hitstop: 3, knockbackVx: 40, launchVy: -350, selfVy: -340,
-  },
-  air_light_1: {
-    chain: 0, startup: 3, active: 7, recovery: 6, hand: { dx: 13, dy: -33 },
-    arc: { startDeg: 30, endDeg: -30, radius: 75, width: 18, thickness: 16 },
-    hitstop: 2, knockbackVx: 45, launchVy: -190, airBrake: true,
-  },
-  air_light_2: {
-    chain: 1, startup: 3, active: 7, recovery: 6, hand: { dx: 13, dy: -33 },
-    arc: { startDeg: -30, endDeg: 30, radius: 75, width: 18, thickness: 16 },
-    hitstop: 2, knockbackVx: 45, launchVy: -190, airBrake: true,
-  },
-  air_heavy_slam: {
-    chain: 0, startup: 5, active: 8, recovery: 10, hand: { dx: 14, dy: -33 },
-    arc: { startDeg: 20, endDeg: -65, radius: 95, width: 22, thickness: 18 },
-    hitstop: 3, knockbackVx: 120, launchVy: 280, selfVy: 420, groundImpact: true,
-  },
-  chain_grab: {
-    chain: 0, startup: 4, active: 9, recovery: 9, hand: { dx: 13, dy: -33 },
-    // Straight horizontal throw; the radius goes `reach.from -> reach.to`
-    // (peak at 60% of the active window) and back.
-    arc: { startDeg: 0, endDeg: 0, radius: 135, width: 16, thickness: 14 },
-    reach: { from: 20, to: 135 },
-    hitstop: 4, knockbackVx: -150, launchVy: -140,
-  },
-  air_grab: {
-    chain: 0, startup: 3, active: 8, recovery: 8, hand: { dx: 13, dy: -33 },
-    arc: { startDeg: -10, endDeg: -55, radius: 120, width: 24, thickness: 20 },
-    hitstop: 4, knockbackVx: 50, launchVy: 480, groundImpact: true,
-  },
-  dash_attack: {
-    chain: 0, startup: 3, active: 8, recovery: 8, hand: { dx: 13, dy: -33 },
-    arc: { startDeg: -20, endDeg: 40, radius: 88, width: 22, thickness: 18 },
-    hitstop: 3, knockbackVx: 120, launchVy: 0, lungeVx: 110,
+    hitstop: 2, knockbackVx: 85, launchVy: 0, lungeVx: 45, damage: 12,
   },
 } as const;
 
@@ -191,17 +117,11 @@ weapon: {
 attack: {
   targetHalfWidth: 14,
   targetHalfHeight: 24,
-  maxChain: 3,
   /**
    * Input buffering: actions buffered within this many ticks during startup,
    * hitstop, or early recovery are consumed when chain/attack window opens.
    */
   inputBufferTicks: 4,
-  /**
-   * K held this many ticks while `heavy_slam` is in startup converts it into
-   * `ascension` (Launcher). A second K press also converts it (`K, K`).
-   */
-  heavyHoldTicks: 6,
   moves: MOVES,
   /** Hit response of scenario targets (`combat`). */
   target: {
@@ -219,7 +139,6 @@ attack: {
     sparkCount: 12,
     sparkGravity: 420,
   },
-  combo: [MOVES.light_1, MOVES.light_2, MOVES.light_3],
 },
 dodge: {
   // Roll impulse speed. The roll *duration* is not declared here: it lives in
@@ -397,9 +316,9 @@ export const CONFIG = {
     movement: { maxSpeed: PLAYER.maxSpeed },
     jump: PLAYER.vertical,
     attack: {
-      maxChain: PLAYER.attack.maxChain,
+      maxChain: 1,
       gripOffsetY: PLAYER.weapon.gripOffsetY,
-      combo: PLAYER.attack.combo,
+      combo: [PLAYER.attack.moves.light_1],
     },
   }),
   map: {
