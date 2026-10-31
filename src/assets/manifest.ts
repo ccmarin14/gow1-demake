@@ -34,31 +34,13 @@ const STATIC_KEY = 'kratos-idle-00';
 
 /** Idle breathing loop: `idle-01` lifts the upper body 1 px. */
 export const IDLE_KEYS: readonly string[] = [STATIC_KEY, 'kratos-idle-01'];
-/** Run cycle: contact, passing, contact (other leg), passing. */
-export const RUN_KEYS: readonly string[] = [
-  'kratos-run-00',
-  'kratos-run-01',
-  'kratos-run-02',
-  'kratos-run-03',
-];
-/** Airborne poses: knees tucked while rising, legs hanging while falling. */
-export const AIR_RISE_KEY = 'kratos-air-00';
-export const AIR_FALL_KEY = 'kratos-air-01';
-/** Roll: crouched on entry and exit, curled ball in between. */
-export const ROLL_CROUCH_KEY = 'kratos-roll-00';
-export const ROLL_BALL_KEY = 'kratos-roll-01';
-/** Ticks at each end of the roll that show the crouch instead of the ball. */
-export const ROLL_CROUCH_TICKS = 4;
-
+/**
+ * Run frames. Empty until they are drawn as full poses: with fewer than two
+ * frames `PlayerView` shows the static `PLAYER_KEY` while running.
+ */
+export const RUN_KEYS: readonly string[] = [];
 /** Additional grid-derived frames, one PNG each, drawn in full. */
-export const PLAYER_FRAME_KEYS: readonly string[] = [
-  'kratos-idle-01',
-  ...RUN_KEYS,
-  AIR_RISE_KEY,
-  AIR_FALL_KEY,
-  ROLL_CROUCH_KEY,
-  ROLL_BALL_KEY,
-];
+export const PLAYER_FRAME_KEYS: readonly string[] = ['kratos-idle-01', ...RUN_KEYS];
 
 export const ASSETS: Record<AssetDomain, readonly AssetEntry[]> = {
   characters: [
