@@ -122,6 +122,72 @@
       "state": "roll",
       "grounded": true,
       "png": "kratos-roll-04"
+    },
+    {
+      "file": "atk-sa06.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-atk-sa06"
+    },
+    {
+      "file": "atk-sa10.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-atk-sa10"
+    },
+    {
+      "file": "atk-sa14.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-atk-sa14"
+    },
+    {
+      "file": "atk-sa22.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-atk-sa22"
+    },
+    {
+      "file": "atk-sh06.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-atk-sh06"
+    },
+    {
+      "file": "atk-sh14.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-atk-sh14"
+    },
+    {
+      "file": "atk-sx06.txt",
+      "state": "attack",
+      "grounded": false,
+      "png": "kratos-atk-sx06"
+    },
+    {
+      "file": "atk-sx10.txt",
+      "state": "attack",
+      "grounded": false,
+      "png": "kratos-atk-sx10"
+    },
+    {
+      "file": "atk-sx14.txt",
+      "state": "attack",
+      "grounded": false,
+      "png": "kratos-atk-sx14"
+    },
+    {
+      "file": "atk-crouch.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-atk-crouch"
+    },
+    {
+      "file": "atk-rise.txt",
+      "state": "attack",
+      "grounded": false,
+      "png": "kratos-atk-rise"
     }
   ]
 }

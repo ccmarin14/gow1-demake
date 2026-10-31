@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import {
+  ATTACK_FRAMES,
   AIR_DOUBLE_KEY,
   AIR_FALL_KEY,
   AIR_RISE_KEY,
@@ -141,7 +142,7 @@ export class PlayerView {
 
     if (attackPhase !== 'none' && !rolling) {
       this.stopLoop();
-      player.setTexture(PLAYER_KEY, 0);
+      player.setTexture(this.attackFrame(simPlayer), 0);
       player.anims.timeScale = 1;
       player.setAlpha(1);
       player.setRotation(0);
@@ -192,6 +193,22 @@ export class PlayerView {
     } else {
       this.playLoop(IDLE_KEY);
     }
+  }
+
+  /** Body frame of the current strike: the phase's frames spread over its ticks. */
+  private attackFrame(simPlayer: Readonly<EntityState>): string {
+    const move = simPlayer.attackMove;
+    if (move === 'none' || simPlayer.attackPhase === 'none') {
+      return PLAYER_KEY;
+    }
+    const frames = ATTACK_FRAMES[move][simPlayer.attackPhase];
+    const timing = CONFIG.player.attack.moves[move];
+    const ticks =
+      simPlayer.attackPhase === 'startup' ? timing.startup
+        : simPlayer.attackPhase === 'active' ? timing.active
+          : timing.recovery;
+    const index = Math.min(frames.length - 1, Math.floor((simPlayer.attackTicks * frames.length) / ticks));
+    return frames[index];
   }
 
   private stopLoop(): void {
