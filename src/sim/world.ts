@@ -17,6 +17,7 @@ import { isGuarding, startGuard, stepGuard } from './guard';
 import { stepLegionnaire } from './legionnaire';
 import { stepHydra } from './hydra';
 import { isCastingMagic, stepMagic } from './magic';
+import { STRIKES, startStrike, stepStrike, type StrikeState } from './strike';
 import { buildLevel1Map, computeCameraScrollX, getSegmentAtX, type LevelMapData } from './map';
 
 const TICK_DT = 1 / CONFIG.sim.tickRate;
@@ -45,6 +46,12 @@ export class World {
   private jumpHeld = false;
   private dodgeHeld = false;
   private magicHeld = false;
+  private lightAttackHeld = false;
+  /** Kratos' strike in progress (`null` when not striking). */
+  private strike: StrikeState | null = null;
+  /** Ticks the whole world stays frozen after a strike connects. */
+  private hitstopTicks = 0;
+  private strikeHitNotice: { x: number; y: number } | null = null;
   private activeScenario: string = DEFAULT_SCENARIO;
   private targetPhysics = false;
   private orbs: OrbState[] = [];
@@ -276,6 +283,18 @@ export class World {
     return val;
   }
 
+  /** Kratos' strike in progress, read by the view (`null` when not striking). */
+  peekStrike(): Readonly<StrikeState> | null {
+    return this.strike;
+  }
+
+  /** Where the blade last connected, once (for the hit sound and sparks). */
+  consumeStrikeHitNotice(): { x: number; y: number } | null {
+    const notice = this.strikeHitNotice;
+    this.strikeHitNotice = null;
+    return notice;
+  }
+
   consumeHydraDefeatNotice(): boolean {
     const val = this.hydraDefeatedNotice;
     this.hydraDefeatedNotice = false;
@@ -349,6 +368,10 @@ export class World {
     this.jumpHeld = false;
     this.dodgeHeld = false;
     this.magicHeld = false;
+    this.lightAttackHeld = false;
+    this.strike = null;
+    this.hitstopTicks = 0;
+    this.strikeHitNotice = null;
     this.platforms = scenario.platforms;
     this.targetPhysics = Boolean(scenario.targetPhysics);
     this.entities = cloneEntities(scenario.entities);
@@ -481,7 +504,18 @@ export class World {
     const magicEdge = wantsMagic && !this.magicHeld;
     this.magicHeld = wantsMagic;
 
+    const wantsLightAttack = this.input.includes('light-attack');
+    const lightAttackEdge = wantsLightAttack && !this.lightAttackHeld;
+    this.lightAttackHeld = wantsLightAttack;
+
     const wantsUpgrade = this.input.includes('upgrade');
+
+    // A strike that connects freezes the whole world for a few ticks.
+    if (this.hitstopTicks > 0) {
+      this.hitstopTicks -= 1;
+      this.tick += 1;
+      return;
+    }
 
     const player = this.entities.find((entity) => entity.id === PLAYER_ID);
     if (player) {
@@ -503,6 +537,7 @@ export class World {
         player.invulTicks = 0;
         player.magicPhase = 'none';
         player.magicTicks = 0;
+        this.strike = null;
 
         stepVertical(
           player,
@@ -520,8 +555,14 @@ export class World {
         const inHitstun = player.hitstunTicks > 0;
         const isOpeningChest = this.chests.some((c) => c.state === 'opening');
 
+        // Taking a hit or leaving the ground cuts the strike short.
+        if (this.strike && (inHitstun || !player.grounded)) {
+          this.strike = null;
+        }
+        const striking = this.strike !== null;
+
         // Invocación y ejecución de magia 'Ira de Poseidón'
-        if (magicEdge && player.grounded && !inHitstun && !isOpeningChest) {
+        if (magicEdge && player.grounded && !inHitstun && !isOpeningChest && !striking) {
           stepMagic(player, true, this.targets);
         } else if (player.magicPhase !== 'none') {
           stepMagic(player, false, this.targets);
@@ -535,15 +576,23 @@ export class World {
         const rolling = isRolling(player);
         const guarding = isGuarding(player);
 
+        // Square 1: on the J edge, on the ground and free; J does nothing
+        // mid-strike until square 2 exists.
+        if (!striking && lightAttackEdge && player.grounded && !rolling && !guarding
+          && !nowCastingMagic && !inHitstun && !isOpeningChest) {
+          this.strike = startStrike(player, 'square1');
+        }
+        const nowStriking = this.strike !== null;
+
         // Dodge cancels guard immediately
-        if (guarding && dodgeEdge && player.grounded && !inHitstun) {
+        if (guarding && dodgeEdge && player.grounded && !inHitstun && !nowStriking) {
           player.guardPhase = 'none';
           player.guardTicks = 0;
           player.parryActive = false;
         }
 
         // Dodge: only on ground, consume action on new flank (edge), uninterruptible while active
-        if (!rolling && !nowCastingMagic && !isOpeningChest && dodgeEdge && player.grounded && !inHitstun) {
+        if (!rolling && !nowCastingMagic && !isOpeningChest && !nowStriking && dodgeEdge && player.grounded && !inHitstun) {
           const wantsLeft = this.input.includes('move-left');
           const wantsRight = this.input.includes('move-right');
           startRoll(player, wantsLeft === wantsRight ? 0 : wantsRight ? 1 : -1);
@@ -559,10 +608,10 @@ export class World {
         }
 
         // Guard: only on ground, not rolling, not casting, not in hitstun, not opening chest
-        if (!nowRolling && !nowCastingMagic && !isOpeningChest && wantsGuard && player.grounded && player.guardPhase === 'none' && !inHitstun) {
+        if (!nowRolling && !nowCastingMagic && !isOpeningChest && !nowStriking && wantsGuard && player.grounded && player.guardPhase === 'none' && !inHitstun) {
           startGuard(player);
         }
-        stepGuard(player, wantsGuard && !nowRolling && !nowCastingMagic && !inHitstun && !isOpeningChest);
+        stepGuard(player, wantsGuard && !nowRolling && !nowCastingMagic && !inHitstun && !isOpeningChest && !nowStriking);
         const nowGuarding = isGuarding(player);
 
         // Decelerate knockback during hitstun
@@ -576,7 +625,7 @@ export class World {
         }
 
         // Lock horizontal control/facing during rolls, guard, magic, hitstun, and chest opening
-        if (nowGuarding || nowCastingMagic || isOpeningChest) {
+        if (nowGuarding || nowCastingMagic || isOpeningChest || nowStriking) {
           player.vx = 0;
         }
         if (this.mapData && this.arenaManager && !this.arenaTriggered && !this.arenaManager.isActive()) {
@@ -586,7 +635,7 @@ export class World {
             this.arenaManager.activate();
           }
         }
-        const horizontalLocked = nowRolling || nowGuarding || inHitstun || nowCastingMagic || isOpeningChest;
+        const horizontalLocked = nowRolling || nowGuarding || inHitstun || nowCastingMagic || isOpeningChest || nowStriking;
         const marginX = CONFIG.player.bounds.marginX;
         const playerMinX = (this.arenaManager && this.arenaManager.isActive())
           ? this.arenaManager.getMinX() + marginX
@@ -607,7 +656,7 @@ export class World {
           playerMovementParams,
           horizontalLocked,
         );
-        const canJumpEdge = jumpEdge && !nowRolling && !nowGuarding && !inHitstun && !nowCastingMagic && !isOpeningChest;
+        const canJumpEdge = jumpEdge && !nowRolling && !nowGuarding && !inHitstun && !nowCastingMagic && !isOpeningChest && !nowStriking;
         const wantsDown = this.input.includes('move-down');
         stepVertical(
           player,
@@ -619,6 +668,17 @@ export class World {
           1.0,
           wantsDown,
         );
+        // The strike started this tick stays on tick 0; later ticks step it.
+        if (this.strike && striking) {
+          const result = stepStrike(this.strike, player, this.targets, playerMinX, playerMaxX);
+          if (result.done) {
+            this.strike = null;
+          } else if (result.hits.length > 0) {
+            this.hitstopTicks = STRIKES[this.strike.id].hitstopTicks;
+            const last = result.hits[result.hits.length - 1];
+            this.strikeHitNotice = { x: last.x, y: last.y };
+          }
+        }
         if (this.arenaManager && this.arenaManager.isActive()) {
           if (player.x < playerMinX) {
             player.x = playerMinX;
@@ -840,6 +900,8 @@ export class World {
         : {}),
       ...bossPayload,
       stats: this.getCombatStats(),
+      ...(this.strike ? { strike: { ...this.strike, hits: [...this.strike.hits] } } : {}),
+      hitstopTicks: this.hitstopTicks,
       input: [...this.input],
     };
     return {

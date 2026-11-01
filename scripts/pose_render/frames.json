@@ -19,6 +19,11 @@
     "roll-01": { "action": "Roll", "frame": 5, "ground": true },
     "roll-02": { "action": "Roll", "frame": 10, "ground": true },
     "roll-03": { "action": "Roll", "frame": 15, "ground": true },
-    "roll-04": { "action": "Roll", "frame": 20, "ground": true }
+    "roll-04": { "action": "Roll", "frame": 20, "ground": true },
+    "sq1-a": { "action": "Idle_Loop", "frame": 0, "pose": "sq1-a.json", "ground": true },
+    "sq1-b": { "action": "Idle_Loop", "frame": 0, "pose": "sq1-b.json", "ground": true },
+    "sq1-c": { "action": "Idle_Loop", "frame": 0, "pose": "sq1-c.json", "ground": true },
+    "sq1-d": { "action": "Idle_Loop", "frame": 0, "pose": "sq1-d.json", "ground": true },
+    "sq1-e": { "action": "Idle_Loop", "frame": 0, "pose": "sq1-e.json", "ground": true }
   }
 }

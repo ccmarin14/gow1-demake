@@ -1,4 +1,5 @@
 import { CONFIG } from '../config';
+import { damageEnemy } from './damage';
 import type { EntityState } from './types';
 
 export interface MagicHitResult {
@@ -105,17 +106,8 @@ export function stepMagic(
 
         if (distSq <= radiusSq) {
           result.hitTargets.push(target.id);
-          target.hp = Math.max(0, target.hp - cfg.damagePerHit);
           result.totalDamage += cfg.damagePerHit;
-          target.hitstunTicks = Math.max(target.hitstunTicks, cfg.stunTicksPerHit);
-          if (target.kind !== 'hydra') {
-            target.vx = 0;
-          }
-
-          if (target.hp === 0) {
-            target.aiState = target.kind === 'hydra' ? 'hydra_defeat' : 'death';
-            target.aiTicks = 0;
-            target.isDead = true;
+          if (damageEnemy(target, cfg.damagePerHit, cfg.stunTicksPerHit)) {
             result.kills.push(target.id);
             if (onEnemyKilled) {
               onEnemyKilled(target);

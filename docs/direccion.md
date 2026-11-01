@@ -14,13 +14,14 @@
 | --- | --- | --- | --- |
 | `move-left` / `move-right` | `A` / `D` o `←` / `→` | Stick izquierdo | Movimiento horizontal y orientación (`facing`). |
 | `jump` | `Espacio` | Cruz ($\times$) | Salto simple, doble salto y descenso en plataformas (`Abajo + Espacio`). |
+| `light-attack` | `J` (□ en pantalla táctil) | Cuadrado (□) | Golpe □1 en el suelo (D-37). Apretarlo a mitad del golpe no hace nada hasta que exista □2. |
 | `dodge` | `Shift` | Stick derecho | Evasión terrestre con ventana de invulnerabilidad. |
 | `magic` | `U` / `I` | L2 | Magia activa (*Ira de Poseidón*). |
 | `context-action` | `E` | R2 | Interacción con cofres y entorno. |
 | `guard` | `Q` | L1 | Guardia y desvío (*parry*) en los primeros ticks. |
 | `pause` | `Escape` | Start | Pausa. |
 
-Kratos no tiene golpes: Cuadrado, Triángulo y Círculo no tienen acción ni tecla hasta que se rediseñen (D-36).
+Por ahora Kratos solo tiene □1 (D-37); Triángulo y Círculo no tienen acción ni tecla hasta que se diseñen sus golpes.
 
 ## 3. Reglas visuales y de pixel art
 
@@ -43,7 +44,7 @@ Revisión del 2026-10-29 contra el primer *God of War*, hecha sobre código, con
 | --- | --- | --- | --- |
 | **ESE-01** | **Remates contextuales (QTE).** Es el rasgo más reconocible y no existe en `src/sim/`; las capturas de *Betrayal* de `docs/referencias/` ya lo muestran. | Un enemigo aturdido o con poca vida permite un remate con un botón dentro de una ventana de entrada; resultado determinista, con prueba en un escenario del harness. | No (marcador visual provisional). |
 | **ESE-02** | **No hay agarre.** Los golpes de Kratos se descartaron para rediseñarlos (D-36); ○ no tiene acción. | Agarrar sujeta al enemigo unos ticks y permite lanzarlo o rematarlo; se integra con ESE-01. | No. |
-| **ESE-03** | **Sin impacto.** Kratos no tiene golpes (D-36), así que no hay *hitstop*, temblor ni chispas por golpe; solo la hidra sacude la cámara. | *Hitstop* y temblor proporcionales al peso del golpe, valores en `CONFIG` y medidos en el harness; chispas o fragmentos por impacto. | No (efectos en capas del motor). |
+| **ESE-03** | **Poco impacto.** □1 (D-37) tiene 4 ticks de *hitstop* y un destello, pero no hay temblor ni chispas por golpe (las chispas siguen apagadas); solo la hidra sacude la cámara. | *Hitstop* y temblor proporcionales al peso del golpe, valores en `CONFIG` y medidos en el harness; chispas o fragmentos por impacto. | No (efectos en capas del motor). |
 | **ESE-04** | **Enemigos de un solo truco.** El legionario solo tiene un tajo con anticipación. | Al menos un segundo comportamiento que dé sentido a la guardia o a la magia (por ejemplo, un ataque que solo se puede parar). | No. |
 | **ESE-05** | **Sin historia.** El título pasa directo al nivel. | Introducción mínima de texto, sujeta a la regla D-30: nunca puede estorbar las pruebas. | No. |
 | **ESE-06** | **Un solo hechizo y pocos enemigos.** El primer juego tiene cuatro hechizos y más variedad. | Diferido hasta que exista el arte base. | Sí. |
@@ -69,6 +70,6 @@ Revisión del 2026-10-29 contra el primer *God of War*, hecha sobre código, con
 
 1. `blender -b --python scripts/pose_render/render.py -- scripts/pose_render/kratos.json <acción> <carpeta> <cuadros> [poses/<pose>.json]` renderiza la acción con la complejidad de Kratos (volumen por hueso, faldón, cámara a 20°, luz arriba a la izquierda). Un archivo de `poses/` suma rotaciones por hueso cuando la acción no tiene la actitud de Kratos y puede fijar otra cámara (por ejemplo, `idle-pant-*.json` arman el jadeo encorvado del reposo con el pecho a 45°). El modelo se descarga en `docs/tmp/` (fuente en `kratos.json`).
 2. `python3 scripts/pose_render/to_grid.py <render.png> <grid.txt> [--ground 55]` lo reduce a la paleta de Kratos: piel, cuero y sandalias por hueso, lado cercano y lejano, cuatro tonos y contorno; `--ground` apoya en el suelo las poses cuya raíz se despega (salto, rodada).
-3. El borrador entra al juego como revisión pendiente para probar el movimiento. Cada cuadro nuevo se anota con su receta en `scripts/pose_render/frames.json` y se corre `python3 scripts/pose_render/build_anchors.py`, que exporta la mano y la espalda del esqueleto para las espadas.
+3. El borrador entra al juego como revisión pendiente para probar el movimiento. Cada cuadro nuevo se anota con su receta en `scripts/pose_render/frames.json` y se corre `python3 scripts/pose_render/build_anchors.py`, que exporta la espalda, la mano cercana (`hand`), la mano lejana (`farHand`) y el hombro cercano (`shoulder`) del esqueleto para las espadas y las cadenas. En los golpes, la pose puede ubicar cada mano en un punto con IK de dos huesos (`ik` en `poses/*.json`, con un polo para el codo), para que el brazo apunte a la hoja.
 4. La terminación es a mano: la cabeza aprobada de `idle-00` dibujado a mano (`git show 0af23ae:grids/kratos/idle-00.txt`, filas 12 a 17) donde el render pone la cabeza, tatuaje con borde granate, hueco del cuello bajo la mandíbula, faldón y textura de tonos mezclados. La forma la da el render; a mano no se rehace la anatomía.
 

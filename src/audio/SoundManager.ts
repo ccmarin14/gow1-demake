@@ -16,6 +16,7 @@ export class SoundManager {
   private isReady = false;
 
   private readonly playCounts: Record<string, number> = {
+    strikeHit: 0,
     parry: 0,
     magicThunder: 0,
     hydraRoar: 0,
@@ -107,6 +108,32 @@ export class SoundManager {
   // ========================================================
   // PROCEDURAL SOUND GENERATORS (Web Audio API)
   // ========================================================
+
+  /** Short low thud when a blade connects. */
+  playStrikeHit(): void {
+    this.recordSound('strikeHit');
+    if (!this.ctx || !this.sfxGain || this.muted) return;
+
+    try {
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(170, now);
+      osc.frequency.exponentialRampToValueAtTime(45, now + 0.08);
+
+      gain.gain.setValueAtTime(0.4, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+
+      osc.connect(gain);
+      gain.connect(this.sfxGain);
+      osc.start(now);
+      osc.stop(now + 0.09);
+    } catch {
+      // Audio error safety
+    }
+  }
 
   playParry(): void {
     this.recordSound('parry');

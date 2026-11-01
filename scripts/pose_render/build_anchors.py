@@ -9,7 +9,10 @@ reduces it with `to_grid.reduce_render`, FAILS if the grid differs from the
 one in `grids/kratos/` (the recipe would be wrong), and writes
 `src/assets/kratos-anchors.json`: per texture key, the upper back on the
 sprite canvas (x right, y down, origin top-left) and the spine direction in
-radians (from the neck down to the pelvis) for the blades on the back.
+radians (from the neck down to the pelvis) for the blades on the back, plus
+the near hand (`hand`, hand_r), the far hand (`farHand`, hand_l) and the near
+shoulder (`shoulder`, upperarm_r) that the strikes draw the blades and chains
+from.
 """
 
 from __future__ import annotations
@@ -62,9 +65,13 @@ def main() -> int:
         bones = json.loads(bones_path.read_text(encoding="utf-8"))
         at = lambda bone: (bones[bone][0], bones[bone][1] + shift)  # noqa: E731
         neck, pelvis, back = at("neck_01"), at("pelvis"), at("spine_03")
+        point = lambda bone: [round(value, 1) for value in at(bone)]  # noqa: E731
         anchors[f"kratos-{name}"] = {
             "back": [round(back[0], 1), round(back[1], 1)],
             "spineRad": round(math.atan2(pelvis[1] - neck[1], pelvis[0] - neck[0]), 3),
+            "hand": point("hand_r"),
+            "farHand": point("hand_l"),
+            "shoulder": point("upperarm_r"),
         }
         print(f"ok   {name}")
     if mismatches:

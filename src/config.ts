@@ -337,6 +337,20 @@ export const CONFIG = {
       { dx: 0, dy: -1, deg: 6 },
     ],
     /**
+     * Strike art drawn by `WeaponLayer` from the strike track (D-37): the
+     * blade shrunk to `bladeSize` in 16 pre-rotated directions, the chain's
+     * alternating 2 px links, the fire crescent's four flat bands (edge, red,
+     * orange from 25 % of its length, white from 65 %) and the impact glint.
+     */
+    strikeArt: {
+      bladeSize: { w: 12, h: 5 },
+      chainColors: [0x969098, 0x403a46],
+      trail: { edge: 0x5c0e12, red: 0xb22218, orange: 0xe86c24, white: 0xffe2aa },
+      glintColor: 0xffe2aa,
+      /** The glint shows during the first `glintFraction` of the hold phase. */
+      glintFraction: 0.15,
+    },
+    /**
      * `weaponArt` draws the Blades of Chaos on Kratos' back (`WeaponLayer`).
      * `landingSquash`
      * (inherited, undecided) stretches the sprite for a few ticks after landing.

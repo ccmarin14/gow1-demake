@@ -18,12 +18,13 @@ Teclado → InputManager → Acciones de dominio
 
 | Ruta | Responsabilidad |
 | --- | --- |
-| `src/sim/` | Estado autoritativo del mundo (`world.ts`), movimiento, salto y plataformas (`movement.ts`, `vertical.ts`, `roll.ts`), combate (`guard.ts`, `damage.ts`, `magic.ts`; los golpes de Kratos se rediseñan, D-36), IA (`legionnaire.ts`, `archer.ts`, `hydra.ts`), oleadas y arenas (`waves.ts`, `arena.ts`), cofres, orbes y checkpoints (`chests.ts`, `orbs.ts`, `checkpoint.ts`) y escenarios (`scenarios.ts`). |
+| `src/sim/` | Estado autoritativo del mundo (`world.ts`), movimiento, salto y plataformas (`movement.ts`, `vertical.ts`, `roll.ts`), combate (`guard.ts`, `damage.ts`, `magic.ts` y `strike.ts`: los golpes de Kratos como datos, D-37), IA (`legionnaire.ts`, `archer.ts`, `hydra.ts`), oleadas y arenas (`waves.ts`, `arena.ts`), cofres, orbes y checkpoints (`chests.ts`, `orbs.ts`, `checkpoint.ts`) y escenarios (`scenarios.ts`). |
 | `src/input/InputManager.ts` | Conversión de eventos de teclado a acciones de dominio. |
 | `src/assets/manifest.ts` | Claves de texturas y clips del jugador y del escenario. |
 | `src/scene/ShellScene.ts` | Escena Phaser que conecta el bucle de simulación con los sprites, la cámara y las capas visuales. |
 | `src/scene/PlayerView.ts` | Presentación del jugador: sprite de Kratos y selección de animación, sombra de contacto y capa de armas. Es el único punto que cambia al redibujar el personaje. |
-| `src/entities/WeaponLayer.ts` | Renderizado de las Espadas del Caos colgadas a la espalda, ancladas a cada cuadro (`src/assets/kratos-anchors.json`). |
+| `src/sim/strike.ts` | Golpes de Kratos como datos (D-37): fases (pose, ticks, avance) y pista de la hoja (Catmull-Rom desde el hombro). Calcula el avance, la caja de golpe (segmento barrido por la hoja, engrosado) y aplica el daño con `damageEnemy` (`damage.ts`, compartido con la magia). Sus funciones de geometría son puras y las usa también la presentación. |
+| `src/entities/WeaponLayer.ts` | Renderizado de las Espadas del Caos: colgadas a la espalda en reposo, ancladas a cada cuadro (`src/assets/kratos-anchors.json`), y durante un golpe la hoja cercana, la cadena, la estela de fuego, la hoja lejana y el destello, leídos de la pista de `strike.ts` (dibujo en píxeles sin antialias en `strikeArt.ts`). |
 | `src/scene/VfxLayer.ts` | Lluvia marina, relámpagos y chispas de impacto. |
 | `src/ui/` | `HudLayer.ts` (salud, maná, orbes y barra de jefe) y `GameFlowOverlay.ts` (título, pausa, victoria y derrota). |
 | `src/audio/SoundManager.ts` | Efectos de sonido sintetizados con Web Audio API. |

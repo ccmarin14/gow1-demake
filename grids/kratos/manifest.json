@@ -122,6 +122,36 @@
       "state": "roll",
       "grounded": true,
       "png": "kratos-roll-04"
+    },
+    {
+      "file": "sq1-a.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-sq1-a"
+    },
+    {
+      "file": "sq1-b.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-sq1-b"
+    },
+    {
+      "file": "sq1-c.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-sq1-c"
+    },
+    {
+      "file": "sq1-d.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-sq1-d"
+    },
+    {
+      "file": "sq1-e.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-sq1-e"
     }
   ]
 }

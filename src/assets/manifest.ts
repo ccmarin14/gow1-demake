@@ -1,4 +1,5 @@
 import { PLAYER_SPRITE_HEIGHT, PLAYER_SPRITE_WIDTH } from '../config';
+import { STRIKES } from '../sim/strike';
 
 export type AssetDomain =
   | 'characters'
@@ -54,6 +55,15 @@ export const AIR_DOUBLE_KEY = 'kratos-air-02';
 /** Roll blockout (D-34): crouch, dive, hands down, curled, recover; spread over the roll. */
 export const ROLL_KEYS: readonly string[] = Array.from({ length: 5 }, (_, i) => `kratos-roll-0${i}`);
 
+/** Texture of a strike body pose (`StrikePhase.pose`). */
+export function strikeFrameKey(pose: string): string {
+  return `kratos-${pose}`;
+}
+/** Body poses of every strike (D-37 blockouts, `grids/kratos/sq1-*.txt`). */
+export const STRIKE_KEYS: readonly string[] = [
+  ...new Set(Object.values(STRIKES).flatMap((strike) => strike.phases.map((phase) => strikeFrameKey(phase.pose)))),
+];
+
 /** Additional grid-derived frames, one PNG each, drawn in full. */
 export const PLAYER_FRAME_KEYS: readonly string[] = [
   ...IDLE_POSES.slice(1),
@@ -62,6 +72,7 @@ export const PLAYER_FRAME_KEYS: readonly string[] = [
   AIR_FALL_KEY,
   AIR_DOUBLE_KEY,
   ...ROLL_KEYS,
+  ...STRIKE_KEYS,
 ];
 
 export const ASSETS: Record<AssetDomain, readonly AssetEntry[]> = {

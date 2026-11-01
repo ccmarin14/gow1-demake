@@ -6,8 +6,11 @@ Usage:
 `pose.json` (optional) adjusts the action for Kratos' attitude:
     {
       "camera_yaw_deg": 45,                      # optional, overrides the config
-      "rotations": {"spine_02": [[1, 0, 0], -10]} # bone-local axis, degrees
+      "rotations": {"spine_02": [[1, 0, 0], -10]}, # bone-local axis, degrees
+      "ik": {"hand_r": {"target": [x, y, z], "pole": [x, y, z]}}
     }
+`ik` places a hand at a world point (meters; the model faces -Y, up is +Z,
+-X is toward the camera) with a two-bone chain; the pole aims the elbow.
 
 Example:
     blender -b --python scripts/pose_render/render.py -- scripts/pose_render/kratos.json \
@@ -38,17 +41,19 @@ MATERIALS = [("skin", 0.25), ("leather", 0.5), ("foot", 0.75)]
 SIDES = [("near", 0.8), ("far", 0.3)]
 ALWAYS_NEAR = ("Head", "neck_01")
 # Bones exported per frame: the spine, neck and pelvis carry the blades on the back.
-BONES = ("spine_02", "spine_03", "neck_01", "pelvis")
+BONES = ("hand_r", "hand_l", "upperarm_r", "upperarm_l", "spine_02", "spine_03", "neck_01", "pelvis")
 
 args = sys.argv[sys.argv.index("--") + 1:]
 config_path, action_name, out_dir, frame_list = args[:4]
 with open(config_path, encoding="utf-8") as handle:
     cfg = json.load(handle)
 pose_offsets: dict = {}
+pose_ik: dict = {}
 if len(args) > 4:
     with open(args[4], encoding="utf-8") as handle:
         pose = json.load(handle)
     pose_offsets = pose.get("rotations", {})
+    pose_ik = pose.get("ik", {})
     cfg["camera_yaw_deg"] = pose.get("camera_yaw_deg", cfg["camera_yaw_deg"])
 frames = [int(value) for value in frame_list.split(",")]
 os.makedirs(out_dir, exist_ok=True)
@@ -189,6 +194,23 @@ def apply_bulk(_scene, *_args) -> None:
 
 
 bpy.app.handlers.frame_change_post.append(apply_bulk)
+
+
+def add_empty(name: str, location) -> bpy.types.Object:
+    empty = bpy.data.objects.new(name, None)
+    empty.location = location
+    bpy.context.scene.collection.objects.link(empty)
+    return empty
+
+
+for hand, spec in pose_ik.items():
+    forearm = armature.pose.bones[hand.replace("hand", "lowerarm")]
+    constraint = forearm.constraints.new("IK")
+    constraint.target = add_empty(f"ik_{hand}", spec["target"])
+    constraint.chain_count = 2
+    if "pole" in spec:
+        constraint.pole_target = add_empty(f"pole_{hand}", spec["pole"])
+        constraint.pole_angle = math.radians(spec.get("pole_angle", -90))
 def bone_points() -> dict:
     """Head of each exported bone on the sprite canvas (x right, y down)."""
     bpy.context.view_layer.update()

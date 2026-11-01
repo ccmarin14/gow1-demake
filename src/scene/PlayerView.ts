@@ -9,10 +9,12 @@ import {
   ROLL_KEYS,
   RUN_KEY,
   RUN_KEYS,
+  strikeFrameKey,
 } from '../assets/manifest';
 import { CONFIG, ROLL_TICKS } from '../config';
 import { WeaponLayer } from '../entities/WeaponLayer';
-import type { EntityState } from '../sim/types';
+import { STRIKES, strikePoseAt } from '../sim/strike';
+import type { EntityState, StrikeSnapshot } from '../sim/types';
 
 /**
  * Presentation of the player: the Kratos sprite and its animation selection,
@@ -59,10 +61,10 @@ export class PlayerView {
     }
   }
 
-  update(player: Readonly<EntityState>, isOpeningChest: boolean): void {
+  update(player: Readonly<EntityState>, isOpeningChest: boolean, strike: Readonly<StrikeSnapshot> | null = null): void {
     this.sprite.setPosition(player.x, player.y);
     this.sprite.setFlipX(player.facing === -1);
-    this.applyAnimation(player, isOpeningChest);
+    this.applyAnimation(player, isOpeningChest, strike);
     this.shadow.setPosition(player.x, player.y - 1);
     this.shadow.setVisible(CONFIG.presentation.playerShadow.enabled && player.grounded && !player.isDead);
 
@@ -81,8 +83,8 @@ export class PlayerView {
     }
   }
 
-  updateWeapon(player: Readonly<EntityState> | null): void {
-    this.weaponLayer.update(player, this.sprite.texture.key);
+  updateWeapon(player: Readonly<EntityState> | null, strike: Readonly<StrikeSnapshot> | null = null): void {
+    this.weaponLayer.update(player, this.sprite.texture.key, strike);
   }
 
   private createPlayerAnimations(): void {
@@ -110,7 +112,11 @@ export class PlayerView {
     }
   }
 
-  private applyAnimation(simPlayer: Readonly<EntityState>, isOpeningChest: boolean): void {
+  private applyAnimation(
+    simPlayer: Readonly<EntityState>,
+    isOpeningChest: boolean,
+    strike: Readonly<StrikeSnapshot> | null,
+  ): void {
     const player = this.sprite;
 
     if (simPlayer.isDead) {
@@ -133,6 +139,16 @@ export class PlayerView {
       player.setScale(1, 1);
     }
 
+    if (strike) {
+      // Strike body pose by phase (D-37); the weapon layer draws the blades.
+      this.stopLoop();
+      player.setTexture(strikeFrameKey(strikePoseAt(STRIKES[strike.id], strike.tick)), 0);
+      player.setFlipX(strike.facing === -1);
+      player.setRotation(0);
+      player.setAlpha(1);
+      player.anims.timeScale = 1;
+      return;
+    }
     if (simPlayer.guardPhase !== 'none' && !rolling) {
       this.stopLoop();
       player.setTexture(PLAYER_KEY, 0);

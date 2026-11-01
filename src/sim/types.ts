@@ -1,8 +1,11 @@
+import type { StrikeId } from './strike';
+
 export type GameAction =
   | 'move-left'
   | 'move-right'
   | 'move-down'
   | 'jump'
+  | 'light-attack'
   | 'magic'
   | 'dodge'
   | 'guard'
@@ -16,6 +19,7 @@ export const DOMAIN_ACTIONS: readonly GameAction[] = [
   'move-right',
   'move-down',
   'jump',
+  'light-attack',
   'magic',
   'dodge',
   'guard',
@@ -58,6 +62,18 @@ export function sortActions(actions: readonly GameAction[]): GameAction[] {
 }
 
 export const PLAYER_ID = 'player';
+
+/** Kratos' strike in progress (`src/sim/strike.ts`), as the view reads it. */
+export interface StrikeSnapshot {
+  id: StrikeId;
+  /** Ticks since the strike started (0 on its first tick). */
+  tick: number;
+  /** World x of the feet at the strike's start, kept in step with the body. */
+  originX: number;
+  facing: -1 | 1;
+  /** Ids already hit by this strike. */
+  hits: string[];
+}
 
 export interface EntityState {
   id: string;
@@ -239,6 +255,10 @@ export interface SimulationSnapshot {
   bossState?: string;
   bossName?: string;
   stats?: CombatStats;
+  /** Kratos' strike in progress, absent when he is not striking. */
+  strike?: StrikeSnapshot;
+  /** Ticks the world stays frozen after a strike connects (0 = running). */
+  hitstopTicks: number;
   input: GameAction[];
   checksum: string;
 }

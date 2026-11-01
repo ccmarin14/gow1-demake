@@ -10,6 +10,7 @@ const KEY_BINDINGS: Record<GameAction, number[]> = {
   'move-right': [KeyCodes.D, KeyCodes.RIGHT],
   'move-down': [KeyCodes.S, KeyCodes.DOWN],
   jump: [KeyCodes.SPACE],
+  'light-attack': [KeyCodes.J],
   magic: [KeyCodes.U, KeyCodes.I],
   dodge: [KeyCodes.SHIFT],
   guard: [KeyCodes.Q],

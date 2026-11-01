@@ -220,7 +220,7 @@ export class ShellScene extends Phaser.Scene {
     const player = this.simulation.world.peekEntity(PLAYER_ID) ?? null;
     if (player && this.playerView) {
       const isOpeningChest = this.simulation.world.peekChests().some((c) => c.state === 'opening');
-      this.playerView.update(player, isOpeningChest);
+      this.playerView.update(player, isOpeningChest, this.simulation.world.peekStrike());
     }
 
     if (this.defeatText) {
@@ -288,6 +288,12 @@ export class ShellScene extends Phaser.Scene {
       if (this.soundManager) {
         this.soundManager.playHydraSlam();
       }
+    }
+
+    const strikeHit = this.simulation.world.consumeStrikeHitNotice();
+    if (strikeHit) {
+      this.vfxLayer?.emitCombatSparks(strikeHit.x, strikeHit.y, 6);
+      this.soundManager?.playStrikeHit();
     }
 
     if (this.soundManager) {
@@ -363,7 +369,7 @@ export class ShellScene extends Phaser.Scene {
     }
 
     const isPlayerAlive = Boolean(player && !player.isDead);
-    this.playerView?.updateWeapon(isPlayerAlive ? player : null);
+    this.playerView?.updateWeapon(isPlayerAlive ? player : null, this.simulation.world.peekStrike());
     this.updateTargets(player);
     this.updateOrbs();
     this.updateArrows();

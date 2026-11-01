@@ -82,3 +82,24 @@ export function applyDamageToPlayer(
 
   return { hit: true, parried: false, blocked: false, damageDealt };
 }
+
+/**
+ * Damages an enemy hit by Kratos (magic or blades): subtracts `damage`, keeps
+ * the longer hit reaction, stops foot soldiers in place and, at 0 HP, marks
+ * the death (`death`, or `hydra_defeat` for the hydra). Returns whether the
+ * hit killed it.
+ */
+export function damageEnemy(target: EntityState, damage: number, stunTicks: number): boolean {
+  target.hp = Math.max(0, target.hp - damage);
+  target.hitstunTicks = Math.max(target.hitstunTicks, stunTicks);
+  if (target.kind !== 'hydra') {
+    target.vx = 0;
+  }
+  if (target.hp !== 0) {
+    return false;
+  }
+  target.aiState = target.kind === 'hydra' ? 'hydra_defeat' : 'death';
+  target.aiTicks = 0;
+  target.isDead = true;
+  return true;
+}
