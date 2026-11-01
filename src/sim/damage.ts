@@ -37,7 +37,6 @@ export function applyDamageToPlayer(
     attacker.hitstunTicks = CONFIG.enemy.legionnaire.parryStunTicks;
     attacker.vx = -attacker.facing * 120;
     attacker.attackCooldownTicks = CONFIG.enemy.legionnaire.cooldownTicks;
-    player.attackHits.push(attacker.id);
 
     return { hit: false, parried: true, blocked: false, damageDealt: 0 };
   }
@@ -67,14 +66,6 @@ export function applyDamageToPlayer(
   // 4. Impacto directo a Kratos desprotegido
   const damageDealt = baseDamage;
   player.hp = Math.max(0, player.hp - damageDealt);
-
-  // Interrupción de ataques y acciones
-  player.attackPhase = 'none';
-  player.attackMove = 'none';
-  player.attackTicks = 0;
-  player.attackHits = [];
-  player.attackBufferAction = null;
-  player.attackBufferTicks = 0;
 
   // Tiempos de hitstun e invulnerabilidad post-daño
   player.hitstunTicks = CONFIG.player.damage.hurtHitstunTicks;

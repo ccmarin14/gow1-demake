@@ -1,6 +1,5 @@
 import Phaser from 'phaser';
 import {
-  ATTACK_FRAMES,
   AIR_DOUBLE_KEY,
   AIR_FALL_KEY,
   AIR_RISE_KEY,
@@ -13,8 +12,6 @@ import {
 } from '../assets/manifest';
 import { CONFIG, ROLL_TICKS } from '../config';
 import { WeaponLayer } from '../entities/WeaponLayer';
-import type { Platform } from '../sim/scenarios';
-import type { AttackParams } from '../sim/attack';
 import type { EntityState } from '../sim/types';
 
 /**
@@ -84,12 +81,8 @@ export class PlayerView {
     }
   }
 
-  updateWeapon(
-    player: Readonly<EntityState> | null,
-    params: AttackParams | null,
-    platforms: readonly Platform[],
-  ): void {
-    this.weaponLayer.update(player, params, platforms, this.sprite.texture.key);
+  updateWeapon(player: Readonly<EntityState> | null): void {
+    this.weaponLayer.update(player, this.sprite.texture.key);
   }
 
   private createPlayerAnimations(): void {
@@ -129,25 +122,17 @@ export class PlayerView {
       return;
     }
 
-    const { attackPhase, grounded, facing } = simPlayer;
+    const { grounded, facing } = simPlayer;
     const speed = Math.abs(simPlayer.vx);
     const rolling = simPlayer.rollPhase !== 'none';
 
     // Elastic landing compression (squash)
-    if (CONFIG.presentation.landingSquash && simPlayer.landingTicks > 0 && grounded && attackPhase === 'none' && !rolling) {
+    if (CONFIG.presentation.landingSquash && simPlayer.landingTicks > 0 && grounded && !rolling) {
       player.setScale(1.06, 0.92);
     } else {
       player.setScale(1, 1);
     }
 
-    if (attackPhase !== 'none' && !rolling) {
-      this.stopLoop();
-      player.setTexture(this.attackFrame(simPlayer), 0);
-      player.anims.timeScale = 1;
-      player.setAlpha(1);
-      player.setRotation(0);
-      return;
-    }
     if (simPlayer.guardPhase !== 'none' && !rolling) {
       this.stopLoop();
       player.setTexture(PLAYER_KEY, 0);
@@ -193,22 +178,6 @@ export class PlayerView {
     } else {
       this.playLoop(IDLE_KEY);
     }
-  }
-
-  /** Body frame of the current strike: the phase's frames spread over its ticks. */
-  private attackFrame(simPlayer: Readonly<EntityState>): string {
-    const move = simPlayer.attackMove;
-    if (move === 'none' || simPlayer.attackPhase === 'none') {
-      return PLAYER_KEY;
-    }
-    const frames = ATTACK_FRAMES[move][simPlayer.attackPhase];
-    const timing = CONFIG.player.attack.moves[move];
-    const ticks =
-      simPlayer.attackPhase === 'startup' ? timing.startup
-        : simPlayer.attackPhase === 'active' ? timing.active
-          : timing.recovery;
-    const index = Math.min(frames.length - 1, Math.floor((simPlayer.attackTicks * frames.length) / ticks));
-    return frames[index];
   }
 
   private stopLoop(): void {

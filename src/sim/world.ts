@@ -3,7 +3,7 @@ import { checksumOf } from './checksum';
 import { stepHorizontal } from './movement';
 import type { Platform } from './scenarios';
 import { cloneCheckpoints, cloneChests, cloneEntities, DEFAULT_SCENARIO, getScenario, archerAt, legionnaireAt } from './scenarios';
-import type { AttackMoveId, CheckpointState, ChestState, CombatStats, EntityState, GameAction, GameFlowState, OrbState, ArrowState, SavedPlayerData, WaveState, ArenaState, SimulationSnapshot } from './types';
+import type { CheckpointState, ChestState, CombatStats, EntityState, GameAction, GameFlowState, OrbState, ArrowState, SavedPlayerData, WaveState, ArenaState, SimulationSnapshot } from './types';
 import { PLAYER_ID, sortActions } from './types';
 import { stepVertical, type VerticalParams } from './vertical';
 import { spawnOrbsFromDeath, stepOrbs } from './orbs';
@@ -12,16 +12,6 @@ import { stepChests, collectGorgonEye, collectPhoenixFeather, upgradeWeapon } fr
 import { capturePlayerData, respawnAtCheckpoint, stepCheckpoints } from './checkpoint';
 import { WaveManager } from './waves';
 import { ArenaManager } from './arena';
-import {
-  computeAttackHitbox,
-  isEntityAttacking,
-  stepAttack,
-  type AttackHitbox,
-  type AttackInput,
-  type AttackMoveSet,
-  type AttackParams,
-  type AttackRules,
-} from './attack';
 import { isRolling, startRoll, stepRoll } from './roll';
 import { isGuarding, startGuard, stepGuard } from './guard';
 import { stepLegionnaire } from './legionnaire';
@@ -46,42 +36,6 @@ const VERTICAL_PARAMS: VerticalParams = {
   topY: CONFIG.player.vertical.topY,
 };
 
-function buildAttackMoveSet(): AttackMoveSet {
-  const result: Partial<Record<AttackMoveId, AttackParams>> = {};
-  const moveIds = Object.keys(CONFIG.player.attack.moves) as AttackMoveId[];
-  for (let i = 0; i < moveIds.length; i += 1) {
-    const moveId = moveIds[i];
-    const raw = CONFIG.player.attack.moves[moveId];
-    result[moveId] = {
-      moveId,
-      chain: raw.chain,
-      startupTicks: raw.startup,
-      activeTicks: raw.active,
-      recoveryTicks: raw.recovery,
-      gripOffsetY: CONFIG.player.weapon.gripOffsetY,
-      arc: {
-        startRad: (raw.arc.startDeg * Math.PI) / 180,
-        endRad: (raw.arc.endDeg * Math.PI) / 180,
-        radius: raw.arc.radius,
-        width: raw.arc.width,
-        thickness: raw.arc.thickness,
-      },
-      reach: null,
-      targetHalfWidth: CONFIG.player.attack.targetHalfWidth,
-      targetHalfHeight: CONFIG.player.attack.targetHalfHeight,
-      hitstopTicks: raw.hitstop,
-      knockbackVx: raw.knockbackVx,
-      launchVy: raw.launchVy,
-      selfVy: 'selfVy' in raw && typeof raw.selfVy === 'number' ? raw.selfVy : 0,
-      lungeVx: 'lungeVx' in raw && typeof raw.lungeVx === 'number' ? raw.lungeVx : 0,
-      airBrake: 'airBrake' in raw && Boolean(raw.airBrake),
-      groundImpact: 'groundImpact' in raw && Boolean(raw.groundImpact),
-      damage: raw.damage,
-    };
-  }
-  return result as AttackMoveSet;
-}
-
 export class World {
   private tick = 0;
   private entities: EntityState[] = [];
@@ -89,13 +43,10 @@ export class World {
   private platforms: readonly Platform[] = [];
   private input: GameAction[] = [];
   private jumpHeld = false;
-  private lightAttackHeld = false;
-  private heavyAttackHeld = false;
   private dodgeHeld = false;
   private magicHeld = false;
   private activeScenario: string = DEFAULT_SCENARIO;
   private targetPhysics = false;
-  private readonly moveSet: AttackMoveSet = buildAttackMoveSet();
   private orbs: OrbState[] = [];
   private orbIdCounter = 0;
   private arrows: ArrowState[] = [];
@@ -344,8 +295,8 @@ export class World {
     const groundY = this.platforms[0]?.yTop ?? 236;
     let spawnX = x;
     if (this.arenaManager && this.arenaManager.isActive()) {
-      const minX = this.arenaManager.getMinX() + CONFIG.player.attack.targetHalfWidth;
-      const maxX = this.arenaManager.getMaxX() - CONFIG.player.attack.targetHalfWidth;
+      const minX = this.arenaManager.getMinX() + CONFIG.combat.target.halfWidth;
+      const maxX = this.arenaManager.getMaxX() - CONFIG.combat.target.halfWidth;
       spawnX = Math.max(minX, Math.min(maxX, x));
     }
     const enemy = kind === 'archer'
@@ -396,8 +347,6 @@ export class World {
     this.totalKills = 0;
     this.input = [];
     this.jumpHeld = false;
-    this.lightAttackHeld = false;
-    this.heavyAttackHeld = false;
     this.dodgeHeld = false;
     this.magicHeld = false;
     this.platforms = scenario.platforms;
@@ -451,32 +400,6 @@ export class World {
     return this.targets.map((entity) => ({ ...entity }));
   }
 
-  playerAttackHitbox(): AttackHitbox | null {
-    const player = this.peekEntity(PLAYER_ID);
-    if (!player || player.attackPhase === 'none' || player.attackMove === 'none') {
-      return null;
-    }
-    const params = this.moveSet[player.attackMove];
-    if (!params) {
-      return null;
-    }
-    return computeAttackHitbox(player, params, this.platforms);
-  }
-
-  /**
-   * Attack params for the player's current move. Exposed so the render layer
-   * can derive the blade pose from the SAME tick arithmetic the hitbox uses
-   * (`bladePoseForTick`), instead of re-deriving the arc in the presentation
-   * code.
-   */
-  playerAttackParams(): AttackParams | null {
-    const player = this.peekEntity(PLAYER_ID);
-    if (!player || player.attackPhase === 'none' || player.attackMove === 'none') {
-      return null;
-    }
-    return this.moveSet[player.attackMove] ?? null;
-  }
-
   reset(): void {
     this.loadScenario(this.activeScenario);
   }
@@ -512,7 +435,7 @@ export class World {
     }
 
     if (this.flowState === 'title') {
-      const startActions: GameAction[] = ['jump', 'light-attack', 'heavy-attack', 'context-action', 'restart'];
+      const startActions: GameAction[] = ['jump', 'context-action', 'restart'];
       if (this.input.some((a) => startActions.includes(a))) {
         this.flowState = 'playing';
       }
@@ -549,14 +472,6 @@ export class World {
     const jumpEdge = wantsJump && !this.jumpHeld;
     this.jumpHeld = wantsJump;
 
-    const wantsLightAttack = this.input.includes('light-attack');
-    const lightAttackEdge = wantsLightAttack && !this.lightAttackHeld;
-    this.lightAttackHeld = wantsLightAttack;
-
-    const wantsHeavyAttack = this.input.includes('heavy-attack');
-    const heavyAttackEdge = wantsHeavyAttack && !this.heavyAttackHeld;
-    this.heavyAttackHeld = wantsHeavyAttack;
-
     const wantsDodge = this.input.includes('dodge');
     const dodgeEdge = wantsDodge && !this.dodgeHeld;
     this.dodgeHeld = wantsDodge;
@@ -580,12 +495,6 @@ export class World {
       if (player.isDead) {
         this.flowState = 'gameover';
         player.vx = 0;
-        player.attackPhase = 'none';
-        player.attackMove = 'none';
-        player.attackTicks = 0;
-        player.attackHits = [];
-        player.attackBufferAction = null;
-        player.attackBufferTicks = 0;
         player.guardPhase = 'none';
         player.guardTicks = 0;
         player.parryActive = false;
@@ -611,23 +520,6 @@ export class World {
         const inHitstun = player.hitstunTicks > 0;
         const isOpeningChest = this.chests.some((c) => c.state === 'opening');
 
-        // Buffer attack inputs on new flanks (edges) even during startup, recovery or hitstop (unless in hitstun or opening chest)
-        if (!inHitstun && !isOpeningChest) {
-          if (lightAttackEdge) {
-            player.attackBufferAction = 'light-attack';
-            player.attackBufferTicks = CONFIG.player.attack.inputBufferTicks;
-          } else if (heavyAttackEdge) {
-            player.attackBufferAction = 'heavy-attack';
-            player.attackBufferTicks = CONFIG.player.attack.inputBufferTicks;
-          }
-        }
-
-        if (player.hitstopTicks > 0) {
-          player.hitstopTicks -= 1;
-          this.tick += 1;
-          return;
-        }
-
         // Invocación y ejecución de magia 'Ira de Poseidón'
         if (magicEdge && player.grounded && !inHitstun && !isOpeningChest) {
           stepMagic(player, true, this.targets);
@@ -641,7 +533,6 @@ export class World {
         }
 
         const rolling = isRolling(player);
-        const attacking = isEntityAttacking(player);
         const guarding = isGuarding(player);
 
         // Dodge cancels guard immediately
@@ -652,60 +543,27 @@ export class World {
         }
 
         // Dodge: only on ground, consume action on new flank (edge), uninterruptible while active
-        if (!rolling && !attacking && !nowCastingMagic && !isOpeningChest && dodgeEdge && player.grounded && !inHitstun) {
+        if (!rolling && !nowCastingMagic && !isOpeningChest && dodgeEdge && player.grounded && !inHitstun) {
           const wantsLeft = this.input.includes('move-left');
           const wantsRight = this.input.includes('move-right');
           startRoll(player, wantsLeft === wantsRight ? 0 : wantsRight ? 1 : -1);
         }
         stepRoll(player);
-        let nowRolling = isRolling(player);
+        const nowRolling = isRolling(player);
 
-        // Roll recovery cancellation into attack (after invulnerability window closes)
-        if (nowRolling && player.invulTicks === 0 && (lightAttackEdge || heavyAttackEdge) && !inHitstun && !isOpeningChest) {
-          player.rollPhase = 'none';
-          player.rollTicks = 0;
-          nowRolling = false;
-        }
-
-        const hasAttackEdge = lightAttackEdge || heavyAttackEdge;
-
-        // Attack or jump cancels guard (allowing agile counterattack or jump out of guard)
-        if (isGuarding(player) && (hasAttackEdge || jumpEdge) && !inHitstun) {
+        // Jump cancels guard (jump out of guard)
+        if (isGuarding(player) && jumpEdge && !inHitstun) {
           player.guardPhase = 'none';
           player.guardTicks = 0;
           player.parryActive = false;
         }
 
-        // Guard: only on ground, not rolling, not attacking, not attacking on this tick, not in hitstun, not opening chest
-        if (!nowRolling && !attacking && !nowCastingMagic && !isOpeningChest && !hasAttackEdge && wantsGuard && player.grounded && player.guardPhase === 'none' && !inHitstun) {
+        // Guard: only on ground, not rolling, not casting, not in hitstun, not opening chest
+        if (!nowRolling && !nowCastingMagic && !isOpeningChest && wantsGuard && player.grounded && player.guardPhase === 'none' && !inHitstun) {
           startGuard(player);
         }
-        stepGuard(player, wantsGuard && !hasAttackEdge && !nowRolling && !nowCastingMagic && !inHitstun && !isOpeningChest);
+        stepGuard(player, wantsGuard && !nowRolling && !nowCastingMagic && !inHitstun && !isOpeningChest);
         const nowGuarding = isGuarding(player);
-
-        // Attack blocked during active invulnerable roll, while actively guarding, during magic, during hitstun, or while opening chest
-        if (!nowRolling && !nowGuarding && !nowCastingMagic && !inHitstun && !isOpeningChest) {
-          const attackInput: AttackInput = {
-            light: lightAttackEdge,
-            heavy: heavyAttackEdge,
-            heavyHeld: wantsHeavyAttack,
-          };
-          const attackRules: AttackRules = {
-            heavyHoldTicks: CONFIG.player.attack.heavyHoldTicks,
-            hitstunTicks: CONFIG.player.attack.target.hitstunTicks,
-            groundImpactTicks: CONFIG.player.attack.groundImpact.durationTicks,
-            shockRadius: CONFIG.player.attack.groundImpact.shockRadius,
-            targetPhysics: this.targetPhysics,
-          };
-          stepAttack(
-            player,
-            attackInput,
-            this.moveSet,
-            this.targets,
-            this.platforms,
-            attackRules,
-          );
-        }
 
         // Decelerate knockback during hitstun
         if (inHitstun && player.grounded) {
@@ -717,7 +575,7 @@ export class World {
           }
         }
 
-        // Lock horizontal control/facing during rolls, active attack slashes, guard, magic, hitstun, and chest opening
+        // Lock horizontal control/facing during rolls, guard, magic, hitstun, and chest opening
         if (nowGuarding || nowCastingMagic || isOpeningChest) {
           player.vx = 0;
         }
@@ -728,7 +586,7 @@ export class World {
             this.arenaManager.activate();
           }
         }
-        const horizontalLocked = nowRolling || player.attackPhase === 'active' || nowGuarding || inHitstun || nowCastingMagic || isOpeningChest;
+        const horizontalLocked = nowRolling || nowGuarding || inHitstun || nowCastingMagic || isOpeningChest;
         const marginX = CONFIG.player.bounds.marginX;
         const playerMinX = (this.arenaManager && this.arenaManager.isActive())
           ? this.arenaManager.getMinX() + marginX
@@ -749,11 +607,7 @@ export class World {
           playerMovementParams,
           horizontalLocked,
         );
-        const nowAttacking = isEntityAttacking(player);
-        const canJumpEdge = jumpEdge && !nowRolling && !nowAttacking && !nowGuarding && !inHitstun && !nowCastingMagic && !isOpeningChest;
-        // Kratos hangs in the air while an air strike is out, as in GoW 1.
-        const airStriking = !player.grounded && player.attackPhase === 'active';
-        const gravityScale = airStriking ? CONFIG.player.attack.airStrikeGravityScale : 1.0;
+        const canJumpEdge = jumpEdge && !nowRolling && !nowGuarding && !inHitstun && !nowCastingMagic && !isOpeningChest;
         const wantsDown = this.input.includes('move-down');
         stepVertical(
           player,
@@ -762,7 +616,7 @@ export class World {
           canJumpEdge,
           this.platforms,
           nowRolling,
-          gravityScale,
+          1.0,
           wantsDown,
         );
         if (this.arenaManager && this.arenaManager.isActive()) {
@@ -784,14 +638,14 @@ export class World {
     if (this.targetPhysics) {
       const gravity = CONFIG.player.vertical.gravity;
       const maxFallSpeed = CONFIG.player.vertical.maxFallSpeed;
-      const friction = CONFIG.player.attack.target.groundFriction;
-      const targetMargin = this.mapData ? 16 : CONFIG.player.attack.targetHalfWidth;
+      const friction = CONFIG.combat.target.groundFriction;
+      const targetMargin = this.mapData ? 16 : CONFIG.combat.target.halfWidth;
       const minX = (this.arenaManager && this.arenaManager.isActive())
         ? this.arenaManager.getMinX() + targetMargin
-        : (this.mapData ? 16 : CONFIG.player.attack.target.minX);
+        : (this.mapData ? 16 : CONFIG.combat.target.minX);
       const maxX = (this.arenaManager && this.arenaManager.isActive())
         ? this.arenaManager.getMaxX() - targetMargin
-        : (this.mapData ? this.mapData.width - 16 : CONFIG.player.attack.target.maxX);
+        : (this.mapData ? this.mapData.width - 16 : CONFIG.combat.target.maxX);
 
       for (let i = 0; i < this.targets.length; i += 1) {
         const target = this.targets[i];

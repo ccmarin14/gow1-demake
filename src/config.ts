@@ -21,69 +21,6 @@ const PLAYER_BOUNDS = {
   ceilingY: 59,
 } as const;
 
-/**
- * Moves of the Blades of Chaos at level 1 (God of War 1, PS2 -> 2D, D-35):
- * the Square chain (3 hits, count to be confirmed against the game), the
- * Triangle strike, Ascension (Triangle held), Plume of Prometheus (Square,
- * Square, Triangle) and their air versions. Grab is not built yet. Timings
- * are TICKS at 60 Hz; the values come from the inherited table and are
- * pinned by `tests/attack.test.ts`.
- *
- * Arc angles are degrees, `0` = horizontal forward, POSITIVE = UP (sim
- * convention). Per move: `hitstop` (ticks both sides freeze on impact),
- * `knockbackVx` (multiplied by the attacker `facing`), `launchVy` (target vy,
- * 0 = leave), `lungeVx` (attacker vx at active start), `damage` and `hand`
- * (chain origin offset from the feet anchor, facing right: dx forward, dy
- * up-negative; tune against the drawn art).
- */
-const MOVES = {
-  light_1: {
-    chain: 0, startup: 4, active: 7, recovery: 7, hand: { dx: 13, dy: -33 },
-    arc: { startDeg: -30, endDeg: 35, radius: 76, width: 18, thickness: 16 },
-    hitstop: 2, knockbackVx: 85, launchVy: 0, lungeVx: 45, damage: 12,
-  },
-  light_2: {
-    chain: 1, startup: 3, active: 7, recovery: 7, hand: { dx: 13, dy: -33 },
-    arc: { startDeg: 40, endDeg: -28, radius: 82, width: 18, thickness: 16 },
-    hitstop: 2, knockbackVx: 95, launchVy: 0, lungeVx: 55, damage: 12,
-  },
-  light_3: {
-    chain: 2, startup: 4, active: 8, recovery: 10, hand: { dx: 26, dy: -31 },
-    arc: { startDeg: 55, endDeg: -35, radius: 96, width: 22, thickness: 18 },
-    hitstop: 3, knockbackVx: 180, launchVy: 0, lungeVx: 90, damage: 15,
-  },
-  plume_of_prometheus: {
-    chain: 2, startup: 5, active: 9, recovery: 12, hand: { dx: 14, dy: -33 },
-    arc: { startDeg: 85, endDeg: -65, radius: 110, width: 24, thickness: 20 },
-    hitstop: 4, knockbackVx: 140, launchVy: -240, lungeVx: 70, groundImpact: true, damage: 30,
-  },
-  heavy: {
-    chain: 0, startup: 7, active: 8, recovery: 11, hand: { dx: 14, dy: -33 },
-    arc: { startDeg: 75, endDeg: -60, radius: 95, width: 22, thickness: 18 },
-    hitstop: 3, knockbackVx: 130, launchVy: 0, lungeVx: 60, groundImpact: true, damage: 22,
-  },
-  ascension: {
-    chain: 0, startup: 6, active: 8, recovery: 10, hand: { dx: 7, dy: -33 },
-    arc: { startDeg: -35, endDeg: 80, radius: 88, width: 20, thickness: 18 },
-    hitstop: 3, knockbackVx: 40, launchVy: -350, selfVy: -340, damage: 18,
-  },
-  air_light_1: {
-    chain: 0, startup: 3, active: 7, recovery: 6, hand: { dx: 13, dy: -33 },
-    arc: { startDeg: 30, endDeg: -30, radius: 75, width: 18, thickness: 16 },
-    hitstop: 2, knockbackVx: 45, launchVy: -190, airBrake: true, damage: 12,
-  },
-  air_light_2: {
-    chain: 1, startup: 3, active: 7, recovery: 6, hand: { dx: 13, dy: -33 },
-    arc: { startDeg: -30, endDeg: 30, radius: 75, width: 18, thickness: 16 },
-    hitstop: 2, knockbackVx: 45, launchVy: -190, airBrake: true, damage: 12,
-  },
-  air_heavy: {
-    chain: 0, startup: 5, active: 8, recovery: 10, hand: { dx: 14, dy: -33 },
-    arc: { startDeg: 20, endDeg: -65, radius: 95, width: 22, thickness: 18 },
-    hitstop: 3, knockbackVx: 120, launchVy: 280, selfVy: 420, groundImpact: true, damage: 22,
-  },
-} as const;
-
 // Kept as a named constant so CONFIG.player and CONFIG.scale read the same
 // source: the reference scale is derived, never hand-copied.
 const PLAYER = {
@@ -140,51 +77,14 @@ vertical: {
   maxJumps: 2,
   topY: PLAYER_BOUNDS.ceilingY,
 },
-/**
- * Weapon identity. The Blades of Chaos strike with chained blades: the hit
- * area is an arc swept from the grip (hands), not a box glued to the body.
- * Angles in the combo arcs are degrees, `0` = horizontal forward, positive
- * = upward; converted to radians by the consumers (sim and scale).
- */
+/** Weapon identity and its upgrades (the strikes are redesigned, D-36). */
 weapon: {
   id: 'blades-of-chaos',
   name: 'Cuchillas del Caos',
-  /** Height above the feet line where the chains leave the hands. */
-  gripOffsetY: 30,
   upgrades: {
     level2Cost: 100,
     level2DamageMultiplier: 1.3,
     level2Name: 'Cuchillas del Caos Nv. 2',
-  },
-},
-attack: {
-  targetHalfWidth: 14,
-  targetHalfHeight: 24,
-  /**
-   * Input buffering: actions buffered within this many ticks during startup,
-   * hitstop, or early recovery are consumed when chain/attack window opens.
-   */
-  inputBufferTicks: 4,
-  /** Triangle held this many ticks during the heavy startup becomes Ascension. */
-  heavyHoldTicks: 6,
-  /** Gravity multiplier while an air strike is active: Kratos hangs in the air. */
-  airStrikeGravityScale: 0.3,
-  moves: MOVES,
-  /** Hit response of scenario targets (`combat`). */
-  target: {
-    hitstunTicks: 14,
-    groundFriction: 600,
-    minX: 14,
-    maxX: INTERNAL_WIDTH - 14,
-  },
-  /** yTop impact event and its (deterministic, age-driven) presentation. */
-  groundImpact: {
-    durationTicks: 10,
-    shakeTicks: 3,
-    shakePx: 2,
-    shockRadius: 28,
-    sparkCount: 12,
-    sparkGravity: 420,
   },
 },
 dodge: {
@@ -281,6 +181,18 @@ export const CONFIG = {
     },
   },
   combat: {
+    /**
+     * Body of scenario targets and enemies: half extents of their hurt box,
+     * ground friction when knocked back, and the X clamp of scenarios without
+     * a level map.
+     */
+    target: {
+      halfWidth: 14,
+      halfHeight: 24,
+      groundFriction: 600,
+      minX: 14,
+      maxX: INTERNAL_WIDTH - 14,
+    },
     arena: {
       minX: 70,
       maxX: 410,
@@ -362,11 +274,6 @@ export const CONFIG = {
     sprite: PLAYER.sprite,
     movement: { maxSpeed: PLAYER.maxSpeed },
     jump: PLAYER.vertical,
-    attack: {
-      maxChain: 3,
-      gripOffsetY: PLAYER.weapon.gripOffsetY,
-      combo: [PLAYER.attack.moves.light_1, PLAYER.attack.moves.light_2, PLAYER.attack.moves.light_3],
-    },
   }),
   map: {
     level1: {
@@ -418,7 +325,7 @@ export const CONFIG = {
      * together with the first grid drawn without one.
      */
     /**
-     * Blades of Chaos carried on the back while not attacking, as in GoW 1.
+     * Blades of Chaos carried on the back, as in GoW 1.
      * Each blade hangs from the upper back of the frame being shown
      * (`src/assets/kratos-anchors.json`, exported from the 3D skeleton) and
      * follows its spine: `dx`/`dy` shift it from that point (sprite pixels,
@@ -430,8 +337,8 @@ export const CONFIG = {
       { dx: 0, dy: -1, deg: 6 },
     ],
     /**
-     * `weaponArt` draws the Blades of Chaos and their chains (`WeaponLayer`);
-     * while off, an attack shows its hitbox as a neutral box. `landingSquash`
+     * `weaponArt` draws the Blades of Chaos on Kratos' back (`WeaponLayer`).
+     * `landingSquash`
      * (inherited, undecided) stretches the sprite for a few ticks after landing.
      */
     weaponArt: true,
@@ -460,38 +367,12 @@ export const CONFIG = {
     platformThickness: 4,
     targetColor: 0x8a9bb0,
     targetHitColor: 0xff5533,
-    hitboxColor: 0xff0000,
-    hitboxColorChain1: 0xff8800,
-    hitboxColorChain2: 0xffee00,
-    hitboxAlpha: 0.25,
     scaleFeetColor: 0x22d3ee,
     scaleSilhouetteColor: 0xfacc15,
     scaleJumpColor: 0x4ade80,
-    scaleAttackColor: 0xf472b6,
     scaleReferenceAlpha: 0.9,
-    scaleReferenceFillAlpha: 0.12,
     scaleReferenceThickness: 1,
-    /**
-     * Blades of Chaos render layer. The weapon is drawn as a pixel-aligned
-     * chain (integer rectangles) from grip to blade plus a blade rectangle at
-     * the blade center.
-     *
-     * Colors are UNIQUE across `CONFIG.presentation` on purpose: criterion 1 of
-     * the CHAOS-01 plan enumerates unique colors in the arc band to prove the
-     * weapon is rendered, so no weapon color may collide with any existing
-     * one. Checked against `platformColor 0x6b4f2a`, `platformEdgeColor
-     * 0x3f2e18`, `targetColor 0x8a9bb0`, `targetHitColor 0xff5533`,
-     * `hitboxColor 0xff0000`, `hitboxColorChain1 0xff8800`, `hitboxColorChain2
-     * 0xffee00`, `scaleFeetColor 0x22d3ee`, `scaleSilhouetteColor 0xfacc15`,
-     * `scaleJumpColor 0x4ade80`, `scaleAttackColor 0xf472b6` and background
-     * `#111827`:
-     *   - `weaponChainColor` / `weaponChainOutline` — steel and outline of
-     *     `palette/blades.json`, so the chain matches the blade sprite.
-     *   - `weaponTrailColor` — the blade's glowing edge (`edge_glow`).
-     */
-    weaponChainColor: 0x8c8790,
-    weaponChainOutline: 0x1d0717,
-    weaponTrailColor: 0xf2a33a,
+    /** Depth of the Blades of Chaos layer (`WeaponLayer`). */
     weaponDepth: 3,
     hud: {
       x: 16,
@@ -613,8 +494,6 @@ export const CONFIG = {
     musicVolume: 0.50,
     enabled: true,
     profiles: {
-      slash: { startFreq: 440, endFreq: 110, durationMs: 120 },
-      heavySlam: { startFreq: 120, endFreq: 35, durationMs: 250 },
       parry: { harmonics: [880, 1320, 1760], durationMs: 350 },
       magic: { baseFreq: 60, durationMs: 400 },
       roar: { baseFreq: 55, durationMs: 600 },

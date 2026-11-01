@@ -27,13 +27,7 @@ export function startMagic(player: EntityState): boolean {
   player.vx = 0;
   player.vy = 0;
 
-  // Cancela ataques previos, rodada o guardia
-  player.attackPhase = 'none';
-  player.attackMove = 'none';
-  player.attackTicks = 0;
-  player.attackHits = [];
-  player.attackBufferAction = null;
-  player.attackBufferTicks = 0;
+  // Cancela rodada o guardia
   player.rollPhase = 'none';
   player.rollTicks = 0;
   player.guardPhase = 'none';

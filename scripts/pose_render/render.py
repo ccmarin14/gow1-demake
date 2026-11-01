@@ -37,9 +37,8 @@ TONE_STOPS = [(0.0, 0.2), (0.18, 0.4), (0.42, 0.6), (0.7, 0.8)]
 MATERIALS = [("skin", 0.25), ("leather", 0.5), ("foot", 0.75)]
 SIDES = [("near", 0.8), ("far", 0.3)]
 ALWAYS_NEAR = ("Head", "neck_01")
-# Bones exported per frame: the near hand holds the striking blade; the spine
-# and neck carry the blades on the back.
-BONES = ("hand_r", "hand_l", "spine_02", "spine_03", "neck_01", "pelvis")
+# Bones exported per frame: the spine, neck and pelvis carry the blades on the back.
+BONES = ("spine_02", "spine_03", "neck_01", "pelvis")
 
 args = sys.argv[sys.argv.index("--") + 1:]
 config_path, action_name, out_dir, frame_list = args[:4]

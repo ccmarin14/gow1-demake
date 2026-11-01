@@ -123,8 +123,8 @@ export class GameFlowOverlay {
         0,
         0,
         'A/D: Moverse · ESPACIO: Salto / Doble · SHIFT: Rodada\n' +
-        'J: Ligero · K: Pesado · L: Agarre · Q: Guardia/Parry\n' +
-        'U/I: Ira de Poseidón · E: Cofre · P: Mejorar · ESC: Pausa',
+        'Q: Guardia/Parry · U/I: Ira de Poseidón\n' +
+        'E: Cofre · P: Mejorar · ESC: Pausa',
         {
           color: '#cbd5e1',
           fontFamily: CONFIG.ui.fontFamily,

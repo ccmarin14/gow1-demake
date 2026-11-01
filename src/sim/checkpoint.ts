@@ -88,14 +88,6 @@ export function respawnAtCheckpoint(
   player.isDead = false;
   player.hurtInvulTicks = 0;
   player.hitstunTicks = 0;
-  player.hitstopTicks = 0;
-  player.groundImpactTicks = 0;
-  player.attackPhase = 'none';
-  player.attackTicks = 0;
-  player.attackMove = 'none';
-  player.attackBufferAction = null;
-  player.attackBufferTicks = 0;
-  player.heavyHoldTicks = 0;
   player.guardPhase = 'none';
   player.guardTicks = 0;
   player.parryActive = false;

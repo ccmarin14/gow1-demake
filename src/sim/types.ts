@@ -3,9 +3,6 @@ export type GameAction =
   | 'move-right'
   | 'move-down'
   | 'jump'
-  | 'light-attack'
-  | 'heavy-attack'
-  | 'grab'
   | 'magic'
   | 'dodge'
   | 'guard'
@@ -19,9 +16,6 @@ export const DOMAIN_ACTIONS: readonly GameAction[] = [
   'move-right',
   'move-down',
   'jump',
-  'light-attack',
-  'heavy-attack',
-  'grab',
   'magic',
   'dodge',
   'guard',
@@ -63,18 +57,6 @@ export function sortActions(actions: readonly GameAction[]): GameAction[] {
   return [...new Set(actions)].sort((a, b) => ACTION_ORDER[a] - ACTION_ORDER[b]);
 }
 
-/** Level-1 move ids (see `CONFIG.player.attack.moves`). */
-export type AttackMoveId =
-  | 'light_1'
-  | 'light_2'
-  | 'light_3'
-  | 'plume_of_prometheus'
-  | 'heavy'
-  | 'ascension'
-  | 'air_light_1'
-  | 'air_light_2'
-  | 'air_heavy';
-
 export const PLAYER_ID = 'player';
 
 export interface EntityState {
@@ -94,26 +76,14 @@ export interface EntityState {
    * press while airborne.
    */
   jumpsUsed: number;
-  attackPhase: 'none' | 'startup' | 'active' | 'recovery';
-  attackTicks: number;
+  /** Enemy-only: ids already hit by the current legionnaire slash. */
   attackHits: string[];
+  /** Enemy-only: hydra attack cycle (`0` = slam, `1` = sweep). */
   attackChain: number;
-  /** Move in progress (`'none'` when idle). */
-  attackMove: AttackMoveId | 'none';
-  /** Buffered attack action ready to trigger as soon as the attack window opens. */
-  attackBufferAction: GameAction | null;
-  /** Ticks left before the buffered attack action expires. */
-  attackBufferTicks: number;
-  /** Ticks the heavy button has been held (K hold -> Ascension). */
+  /** Enemy-only: hydra HP at its last stagger. */
   heavyHoldTicks: number;
-  /** Ticks the whole simulation freezes after an impact (the world skips the step). */
-  hitstopTicks: number;
-  /** Ticks left of the target's hit reaction. */
+  /** Ticks left of the entity's hit reaction. */
   hitstunTicks: number;
-  /** Ticks left of the last blade-vs-`yTop` impact event; `0` = none. */
-  groundImpactTicks: number;
-  groundImpactX: number;
-  groundImpactY: number;
   /**
    * Roll (dodge) state. Active when rollPhase !== 'none'; ticks count from
    * phase start. invulTicks counts down while entity is invulnerable.

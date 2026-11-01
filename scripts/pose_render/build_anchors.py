@@ -7,9 +7,9 @@ Usage:
 For each entry of `frames.json` it renders the frame into `docs/tmp/anchors/`,
 reduces it with `to_grid.reduce_render`, FAILS if the grid differs from the
 one in `grids/kratos/` (the recipe would be wrong), and writes
-`src/assets/kratos-anchors.json`: per texture key, the near hand and the upper
-back on the sprite canvas (x right, y down, origin top-left), plus the spine
-direction in radians (from the neck down to the pelvis) for blades on the back.
+`src/assets/kratos-anchors.json`: per texture key, the upper back on the
+sprite canvas (x right, y down, origin top-left) and the spine direction in
+radians (from the neck down to the pelvis) for the blades on the back.
 """
 
 from __future__ import annotations
@@ -62,9 +62,7 @@ def main() -> int:
         bones = json.loads(bones_path.read_text(encoding="utf-8"))
         at = lambda bone: (bones[bone][0], bones[bone][1] + shift)  # noqa: E731
         neck, pelvis, back = at("neck_01"), at("pelvis"), at("spine_03")
-        hand = at("hand_r")
         anchors[f"kratos-{name}"] = {
-            "hand": [round(hand[0], 1), round(hand[1], 1)],
             "back": [round(back[0], 1), round(back[1], 1)],
             "spineRad": round(math.atan2(pelvis[1] - neck[1], pelvis[0] - neck[0]), 3),
         }

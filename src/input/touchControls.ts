@@ -2,9 +2,9 @@ import type { GameAction } from '../sim/types';
 
 /**
  * On-screen controls for touch screens: the game reads them exactly like the
- * keyboard, as actions held while a finger is on the button (so holding
- * Triangle still becomes Ascension). Each button tracks its own pointer, so
- * moving and attacking at the same time works with two fingers.
+ * keyboard, as actions held while a finger is on the button. Each button
+ * tracks its own pointer, so moving and jumping at the same time works with
+ * two fingers.
  */
 const held = new Set<GameAction>();
 
@@ -22,8 +22,6 @@ const MOVE_BUTTONS: readonly TouchButton[] = [
 const ACTION_BUTTONS: readonly TouchButton[] = [
   { label: 'Rodar', action: 'dodge' },
   { label: 'Guardia', action: 'guard' },
-  { label: '△', action: 'heavy-attack' },
-  { label: '□', action: 'light-attack' },
   { label: 'Saltar', action: 'jump' },
 ];
 

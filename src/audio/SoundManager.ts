@@ -16,10 +16,6 @@ export class SoundManager {
   private isReady = false;
 
   private readonly playCounts: Record<string, number> = {
-    slash: 0,
-    heavySlash: 0,
-    hit: 0,
-    groundImpact: 0,
     parry: 0,
     magicThunder: 0,
     hydraRoar: 0,
@@ -112,66 +108,6 @@ export class SoundManager {
   // PROCEDURAL SOUND GENERATORS (Web Audio API)
   // ========================================================
 
-  playSlash(heavy: boolean = false): void {
-    this.recordSound(heavy ? 'heavySlash' : 'slash');
-    if (!this.ctx || !this.sfxGain || this.muted) return;
-
-    try {
-      const now = this.ctx.currentTime;
-      const osc = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
-
-      if (heavy) {
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(180, now);
-        osc.frequency.exponentialRampToValueAtTime(35, now + 0.22);
-
-        gain.gain.setValueAtTime(0.4, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
-        osc.connect(gain);
-        gain.connect(this.sfxGain);
-        osc.start(now);
-        osc.stop(now + 0.25);
-      } else {
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(440, now);
-        osc.frequency.exponentialRampToValueAtTime(110, now + 0.11);
-
-        gain.gain.setValueAtTime(0.3, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
-        osc.connect(gain);
-        gain.connect(this.sfxGain);
-        osc.start(now);
-        osc.stop(now + 0.12);
-      }
-    } catch {
-      // Audio error safety
-    }
-  }
-
-  playGroundImpact(): void {
-    this.recordSound('groundImpact');
-    if (!this.ctx || !this.sfxGain || this.muted) return;
-
-    try {
-      const now = this.ctx.currentTime;
-      const osc = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
-
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(120, now);
-      osc.frequency.exponentialRampToValueAtTime(30, now + 0.20);
-
-      gain.gain.setValueAtTime(0.5, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
-
-      osc.connect(gain);
-      gain.connect(this.sfxGain);
-      osc.start(now);
-      osc.stop(now + 0.22);
-    } catch {}
-  }
-
   playParry(): void {
     this.recordSound('parry');
     if (!this.ctx || !this.sfxGain || this.muted) return;
@@ -195,29 +131,6 @@ export class SoundManager {
         osc.start(now);
         osc.stop(now + 0.35);
       }
-    } catch {}
-  }
-
-  playHit(): void {
-    this.recordSound('hit');
-    if (!this.ctx || !this.sfxGain || this.muted) return;
-
-    try {
-      const now = this.ctx.currentTime;
-      const osc = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
-
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(160, now);
-      osc.frequency.exponentialRampToValueAtTime(45, now + 0.08);
-
-      gain.gain.setValueAtTime(0.4, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
-
-      osc.connect(gain);
-      gain.connect(this.sfxGain);
-      osc.start(now);
-      osc.stop(now + 0.09);
     } catch {}
   }
 

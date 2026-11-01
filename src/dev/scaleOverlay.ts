@@ -1,10 +1,10 @@
 import Phaser from 'phaser';
 import { CONFIG } from '../config';
-import { attackEnvelopeForChain, type ScaleReference } from '../scale';
+import type { ScaleReference } from '../scale';
 
 /**
  * DEV-only overlay that draws the reference scale on top of the running scene:
- * feet line, silhouette box, jump envelope and per-hit attack envelopes.
+ * feet line, silhouette box and jump envelope.
  * Toggle with `SCALE_REFERENCE_TOGGLE_KEY`; it never touches the simulation.
  *
  * The module keeps the single active instance, so `ShellScene` needs no DEV
@@ -89,12 +89,11 @@ export class ScaleReferenceOverlay {
   }
 
   private describe(): string {
-    const { jump, attack } = this.reference;
+    const { jump } = this.reference;
     return [
       `scale [${SCALE_REFERENCE_TOGGLE_KEY}]`,
       `apex ${jump.ticks.apexHeight.toFixed(1)}→${jump.doubleTicks.apexHeight.toFixed(1)}px`,
       `jump ${jump.ticks.horizontalReach.toFixed(1)}→${jump.doubleTicks.horizontalReach.toFixed(1)}px`,
-      `attack ${attack.maxReach.toFixed(1)}px`,
     ].join(' · ');
   }
 
@@ -107,12 +106,10 @@ export class ScaleReferenceOverlay {
       scaleFeetColor,
       scaleSilhouetteColor,
       scaleJumpColor,
-      scaleAttackColor,
       scaleReferenceAlpha,
-      scaleReferenceFillAlpha,
       scaleReferenceThickness,
     } = CONFIG.presentation;
-    const { attack, silhouette } = this.reference;
+    const { silhouette } = this.reference;
     const thickness = scaleReferenceThickness;
     graphics.clear();
 
@@ -144,18 +141,5 @@ export class ScaleReferenceOverlay {
       reach - 1,
       rise - 1,
     );
-
-    // Attack envelopes: one box per combo hit, mirrored by `facing`.
-    for (const hit of attack.hits) {
-      const box = attackEnvelopeForChain(attack, hit.chain, facing);
-      const left = Math.round(x + box.x1);
-      const top = Math.round(y + box.y1);
-      const boxWidth = Math.round(box.x2 - box.x1) - 1;
-      const boxHeight = Math.round(box.y2 - box.y1) - 1;
-      graphics.fillStyle(scaleAttackColor, scaleReferenceFillAlpha);
-      graphics.fillRect(left, top, boxWidth, boxHeight);
-      graphics.lineStyle(thickness, scaleAttackColor, scaleReferenceAlpha);
-      graphics.strokeRect(left + 0.5, top + 0.5, boxWidth, boxHeight);
-    }
   }
 }

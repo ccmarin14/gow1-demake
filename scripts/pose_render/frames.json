@@ -19,17 +19,6 @@
     "roll-01": { "action": "Roll", "frame": 5, "ground": true },
     "roll-02": { "action": "Roll", "frame": 10, "ground": true },
     "roll-03": { "action": "Roll", "frame": 15, "ground": true },
-    "roll-04": { "action": "Roll", "frame": 20, "ground": true },
-    "atk-sa06": { "action": "Sword_Attack", "frame": 6, "ground": true },
-    "atk-sa10": { "action": "Sword_Attack", "frame": 10, "ground": true },
-    "atk-sa14": { "action": "Sword_Attack", "frame": 14, "ground": true },
-    "atk-sa22": { "action": "Sword_Attack", "frame": 22, "ground": true },
-    "atk-sh06": { "action": "Sword_Attack", "frame": 6, "pose": "strike-heavy.json", "ground": true },
-    "atk-sh14": { "action": "Sword_Attack", "frame": 14, "pose": "strike-heavy.json", "ground": true },
-    "atk-sx06": { "action": "Sword_Attack", "frame": 6, "pose": "strike-air.json", "ground": true },
-    "atk-sx10": { "action": "Sword_Attack", "frame": 10, "pose": "strike-air.json", "ground": true },
-    "atk-sx14": { "action": "Sword_Attack", "frame": 14, "pose": "strike-air.json", "ground": true },
-    "atk-crouch": { "action": "Jump_Start", "frame": 0, "ground": true },
-    "atk-rise": { "action": "Sword_Attack", "frame": 6, "pose": "jump-rise.json", "ground": true }
+    "roll-04": { "action": "Roll", "frame": 20, "ground": true }
   }
 }

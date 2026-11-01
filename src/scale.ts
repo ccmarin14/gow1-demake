@@ -2,7 +2,7 @@
  * Reference scale derived from the tuning constants.
  *
  * Map, camera and platform stages read these metrics instead of hard-coding
- * sizes, so a change in movement or attack tuning propagates to the geometry.
+ * sizes, so a change in movement tuning propagates to the geometry.
  * Everything here is pure arithmetic over the values passed in `ScaleInput`:
  * no engine state, no clock, no randomness.
  */
@@ -33,32 +33,12 @@ export interface ScaleJump {
   topY: number;
 }
 
-export interface ScaleAttackArc {
-  startDeg: number;
-  endDeg: number;
-  radius: number;
-  width: number;
-  thickness: number;
-}
-
-export interface ScaleAttackHit {
-  arc: ScaleAttackArc;
-}
-
-export interface ScaleAttack {
-  maxChain: number;
-  /** Height above the feet line where the chains leave the hands. */
-  gripOffsetY: number;
-  combo: readonly ScaleAttackHit[];
-}
-
 export interface ScaleInput {
   tickRate: number;
   canvas: ScaleCanvas;
   sprite: ScaleSprite;
   movement: ScaleMovement;
   jump: ScaleJump;
-  attack: ScaleAttack;
 }
 
 export interface FeetLineMetrics {
@@ -147,45 +127,11 @@ export interface JumpReference {
   doubleTicks: DoubleJumpTickMetrics;
 }
 
-export interface AttackHitEnvelope {
-  chain: number;
-  /** Distance in front of the player center where the swept arc starts and ends. */
-  nearX: number;
-  farX: number;
-  /** Top of the swept arc band relative to the feet line (negative = above). */
-  topY: number;
-  /** Bottom of the swept arc band relative to the feet line (negative = above). */
-  bottomY: number;
-}
-
-export interface AttackReference {
-  chainCount: number;
-  hits: readonly AttackHitEnvelope[];
-  /** Farthest front edge of the whole combo. */
-  maxReach: number;
-  /** Closest front edge of the whole combo. */
-  minReach: number;
-  /** Vertical band above the feet line the combo can cover. */
-  bandHeight: number;
-}
-
-/** Offsets relative to the player feet position, already mirrored by `facing`. */
-export interface AttackBoxOffsets {
-  x1: number;
-  x2: number;
-  y1: number;
-  y2: number;
-}
-
 export interface MapEnvelopeReference {
   /** Tallest platform step the full jump cycle (`maxJumps`) can clear. */
   maxStepUp: number;
   /** Widest gap crossable while airborne at `maxSpeed` using every impulse. */
   maxGapWidth: number;
-  /** Farthest target the combo reaches without moving. */
-  maxAttackGap: number;
-  /** Height above the feet line a target can be hit on the same level. */
-  attackBandHeight: number;
 }
 
 export interface ScaleReference {
@@ -193,7 +139,6 @@ export interface ScaleReference {
   silhouette: SilhouetteMetrics;
   horizontalTravel: TravelMetrics;
   jump: JumpReference;
-  attack: AttackReference;
   mapEnvelopes: MapEnvelopeReference;
 }
 
@@ -344,50 +289,8 @@ export function simulateDoubleJumpTicks(
   };
 }
 
-/**
- * Bounding box of the blade box swept along the arc, relative to the feet
- * line and the player center (facing right). Pure trigonometry: the extremes
- * of `cos`/`sin` over the angle interval are its endpoints plus any axis
- * crossing (`0°`, `±90°`, `180°`) contained in the interval.
- */
-export function sweptArcEnvelope(
-  arc: ScaleAttackArc,
-  gripOffsetY: number,
-): { nearX: number; farX: number; topY: number; bottomY: number } {
-  const toRad = (deg: number): number => (deg * Math.PI) / 180;
-  const a = toRad(Math.min(arc.startDeg, arc.endDeg));
-  const b = toRad(Math.max(arc.startDeg, arc.endDeg));
-  const candidates = [a, b];
-  for (const crossing of [0, Math.PI / 2, Math.PI, -Math.PI / 2]) {
-    if (crossing > a && crossing < b) {
-      candidates.push(crossing);
-    }
-  }
-  let minCos = Infinity;
-  let maxCos = -Infinity;
-  let minSin = Infinity;
-  let maxSin = -Infinity;
-  for (const angle of candidates) {
-    const cos = Math.cos(angle);
-    const sin = Math.sin(angle);
-    if (cos < minCos) minCos = cos;
-    if (cos > maxCos) maxCos = cos;
-    if (sin < minSin) minSin = sin;
-    if (sin > maxSin) maxSin = sin;
-  }
-  const halfW = arc.width / 2;
-  const halfH = arc.thickness / 2;
-  return {
-    nearX: minCos * arc.radius - halfW,
-    farX: maxCos * arc.radius + halfW,
-    // Feet-relative Y: negative is above the feet line.
-    topY: -gripOffsetY - maxSin * arc.radius - halfH,
-    bottomY: -gripOffsetY - minSin * arc.radius + halfH,
-  };
-}
-
 export function deriveScaleReference(input: ScaleInput): ScaleReference {
-  const { canvas, sprite, movement, jump, attack, tickRate } = input;
+  const { canvas, sprite, movement, jump, tickRate } = input;
 
   const halfWidth = sprite.width / 2;
 
@@ -400,25 +303,6 @@ export function deriveScaleReference(input: ScaleInput): ScaleReference {
 
   const jumpTicks = simulateJumpTicks(jump, movement.maxSpeed, tickRate);
   const doubleJumpTicks = simulateDoubleJumpTicks(jump, movement.maxSpeed, tickRate);
-
-  const hits: AttackHitEnvelope[] = attack.combo.map((hit, index) => {
-    const envelope = sweptArcEnvelope(hit.arc, attack.gripOffsetY);
-    return {
-      chain: index,
-      nearX: envelope.nearX,
-      farX: envelope.farX,
-      topY: envelope.topY,
-      bottomY: envelope.bottomY,
-    };
-  });
-
-  const attackReference: AttackReference = {
-    chainCount: Math.min(attack.maxChain, hits.length),
-    hits,
-    maxReach: Math.max(...hits.map((hit) => hit.farX)),
-    minReach: Math.min(...hits.map((hit) => hit.nearX)),
-    bandHeight: Math.max(...hits.map((hit) => hit.bottomY - hit.topY)),
-  };
 
   return {
     feetLine: {
@@ -451,27 +335,9 @@ export function deriveScaleReference(input: ScaleInput): ScaleReference {
       ticks: jumpTicks,
       doubleTicks: doubleJumpTicks,
     },
-    attack: attackReference,
     mapEnvelopes: {
       maxStepUp: doubleJumpTicks.apexHeight,
       maxGapWidth: doubleJumpTicks.horizontalReach,
-      maxAttackGap: attackReference.maxReach,
-      attackBandHeight: attackReference.bandHeight,
     },
   };
-}
-
-export function attackEnvelopeForChain(
-  attack: AttackReference,
-  chain: number,
-  facing: -1 | 1,
-): AttackBoxOffsets {
-  if (attack.hits.length === 0) {
-    return { x1: 0, x2: 0, y1: 0, y2: 0 };
-  }
-  const index = Math.min(Math.max(Math.floor(chain), 0), attack.hits.length - 1);
-  const hit = attack.hits[index];
-  return facing >= 0
-    ? { x1: hit.nearX, x2: hit.farX, y1: hit.topY, y2: hit.bottomY }
-    : { x1: -hit.farX, x2: -hit.nearX, y1: hit.topY, y2: hit.bottomY };
 }

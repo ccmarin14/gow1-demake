@@ -5,22 +5,21 @@ Documento único del estado medido de `gow-8b`. Se actualiza en el mismo commit 
 ## 1. Qué funciona hoy (medido el 2026-10-30)
 
 - **Build y navegador:** `pnpm build` pasa sin errores; el servidor de desarrollo carga en Chrome a 480×270 con 0 errores de consola y 0 peticiones HTTP fallidas.
-- **Simulación determinista (60 Hz):** movimiento horizontal (con inercia en el aire, sin derrape; D-32), salto y doble salto, plataformas one-way, rodada con i-frames, ataque ligero y pesado, guardia/parry, magia (*Ira de Poseidón*), orbes, cofres, checkpoints e IA de legionario, arquero e hidra (`src/sim/`).
+- **Simulación determinista (60 Hz):** movimiento horizontal (con inercia en el aire, sin derrape; D-32), salto y doble salto, plataformas one-way, rodada con i-frames, guardia/parry, magia (*Ira de Poseidón*), orbes, cofres, checkpoints e IA de legionario, arquero e hidra (`src/sim/`).
 - **Presentación y audio:** HUD de salud/maná/orbes (`HudLayer.ts`), efectos de lluvia/relámpagos (`VfxLayer.ts`), overlay de flujo (`GameFlowOverlay.ts`) y audio procedural Web Audio (`SoundManager.ts`).
 - **Arranque:** el juego abre en la pantalla de título sobre `level1` (escenario por defecto), que solo tiene a Kratos, la cubierta y sus plataformas (D-33).
-- **Pruebas:** `pnpm test` (runner nativo de Node, sin dependencias, 29 pruebas) cubre el movimiento horizontal (aceleración, frenado, derrape, control en el aire, bloqueos, límites y el recorrido en `level1`; sin derrape) y el vertical (altura del salto, doble salto, caída de un borde, tiempo de coyote, búfer de salto, velocidad máxima de caída, plataformas de un sentido y bajada con abajo + salto) y la rodada (distancia, dirección, invulnerabilidad, solo en el suelo, sin encadenar y cancelación en ataque) y que `level1` contiene solo a Kratos.
+- **Pruebas:** `pnpm test` (runner nativo de Node, sin dependencias, 28 pruebas) cubre el movimiento horizontal (aceleración, frenado, derrape, control en el aire, bloqueos, límites y el recorrido en `level1`; sin derrape) y el vertical (altura del salto, doble salto, caída de un borde, tiempo de coyote, búfer de salto, velocidad máxima de caída, plataformas de un sentido y bajada con abajo + salto) y la rodada (distancia, dirección, invulnerabilidad, solo en el suelo y sin encadenar) y que `level1` contiene solo a Kratos.
 - **Harness DEV:** `window.__GOW8B` expone `snapshot()`, `loadScenario()`, `reset()`, `step()`, `advance()` y `metrics()`.
 - **Sprites activos:**
-  - Kratos solo tiene borradores sin terminar del maniquí 3D (D-34; grids en `grids/kratos/`, 64×56, paleta `palette/kratos.json`, solo cuerpo): reposo `kratos-idle-00..02` (jadeo encorvado, ciclo 0-1-2-1), carrera `kratos-run-00..07`, aire `kratos-air-00..02` (subida, caída y doble salto, por la velocidad vertical y los impulsos usados) y rodada `kratos-roll-00..04` (repartidos en los ticks de la rodada). Los golpes usan los borradores `kratos-atk-*` (`ATTACK_FRAMES` en `src/assets/manifest.ts`); guardia y muerte muestran `idle-00` estático. Las Espadas del Caos son el sprite `blade-of-chaos` (grid `grids/blades/blade.txt`, paleta `palette/blades.json`) que dibuja `WeaponLayer`: en reposo, dos cuelgan cruzadas de la espalda del cuadro que se muestra y siguen su columna (anclajes del esqueleto 3D en `src/assets/kratos-anchors.json`); al golpear, una vuela en su cadena por el arco de la simulación.
+  - Kratos solo tiene borradores sin terminar del maniquí 3D (D-34; grids en `grids/kratos/`, 64×56, paleta `palette/kratos.json`, solo cuerpo): reposo `kratos-idle-00..02` (jadeo encorvado, ciclo 0-1-2-1), carrera `kratos-run-00..07`, aire `kratos-air-00..02` (subida, caída y doble salto, por la velocidad vertical y los impulsos usados) y rodada `kratos-roll-00..04` (repartidos en los ticks de la rodada). Kratos no tiene golpes (D-36); guardia y muerte muestran `idle-00` estático. Las Espadas del Caos son el sprite `blade-of-chaos` (grid `grids/blades/blade.txt`, paleta `palette/blades.json`) que dibuja `WeaponLayer`: en reposo, dos cuelgan cruzadas de la espalda del cuadro que se muestra y siguen su columna (anclajes del esqueleto 3D en `src/assets/kratos-anchors.json`), también en guardia. No hay cadenas.
   - Los enemigos no tienen arte: legionario, arquero e hidra son cajas neutras del tamaño de su zona de golpe (`presentation.enemyPlaceholder`, `hydraPlaceholder`), que se ponen amarillas al preparar un ataque; las flechas son barras.
-  - Los visuales heredados están apagados hasta que la usuaria los decida (ver "Decisiones visuales pendientes"); mientras tanto, un ataque muestra su zona de golpe como caja.
+  - Los visuales heredados están apagados hasta que la usuaria los decida (ver "Decisiones visuales pendientes").
 
 ## 2. Problemas abiertos
 
 | ID | Problema | Impacto |
 | --- | --- | --- |
 | **ESE-01** | Sin remates contextuales (QTE) ni agarre real (ESE-02); impacto poco brutal (ESE-03); enemigos de un solo truco (ESE-04); sin introducción (ESE-05, regla D-30). | El combate se aparta de la esencia de *God of War*. Plan y criterios en `docs/direccion.md` §4. |
-| **ART-02** | Los anclajes de mano de los ataques (`hand` en cada movimiento de `src/config.ts`, entre `dx 7..26`, `dy -31..-33`) conservan valores de una hoja retirada y no coinciden con el puño del reposo actual. No se cambiaron porque también definen el arco de golpe de la simulación. | Las cadenas de ataque salen por encima del puño dibujado. Se re-miden cuando existan los cuadros de ataque, con prueba en el harness. |
 
 ### Revisiones pendientes
 
@@ -28,8 +27,7 @@ Cuadros commiteados sin la aprobación visual de la usuaria (regla en `AGENTS.md
 
 | Cuadro | Qué revisar | Cómo verlo |
 | --- | --- | --- |
-| `atk-sa*`, `atk-sh*`, `atk-sx*`, `atk-crouch`, `atk-rise` | Borradores de los golpes (D-34), de `Sword_Attack`: tajo normal (cadena □□□, alterna de abajo arriba y de arriba abajo), pesado encorvado (△ y *Plume*), aéreo con rodillas recogidas (□□ y △ en el aire) y *Ascension* (agachado y subida con una rodilla). Revisar si cada golpe se lee; la mano de donde sale la cadena (`hand` de cada golpe) no se re-midió contra estos cuadros. | En el juego con `J`, `K`, `K` mantenido y en el aire. |
-| `blade-of-chaos` | Espada del Caos (18×7): hoja recta con punta en gancho, dos muescas en el lomo, filo al rojo; aprobada por la usuaria. Pendiente: cómo se ven la cadena, la estela y las espadas a la espalda en el juego. | En el juego: quieto (espalda) y con `J`. |
+| `blade-of-chaos` | Espada del Caos (18×7): hoja recta con punta en gancho, dos muescas en el lomo, filo al rojo; aprobada por la usuaria. Pendiente: cómo se ven las espadas a la espalda en el juego. | En el juego: quieto, corriendo, en el aire y rodando. |
 | `idle-00..02` | Borrador del reposo: jadeo de cansancio como en GoW 1. `Idle_Loop` con las poses `idle-pant-out/mid/in.json` (cámara a 45°, piernas plantadas con las rodillas flexionadas, brazos caídos con el codo doblado, columna encorvada y cabeza adelantada), en ciclo exhala-intermedia-inhala-intermedia a 4 cuadros por segundo: al exhalar se hunde y dobla más las rodillas; al inhalar se endereza y sube los hombros (2 px). | En el juego, quieto. |
 | `air-00..02`, `roll-00..04` | Borradores del salto (`Jump_Start` 4 con `poses/jump-rise.json` sube con una rodilla arriba y la otra pierna estirada empujando; `Jump_Land` 0 cae erguido y listo para aterrizar; `Jump_Start` 4 con `poses/jump-double.json` es el doble salto, brazos estirados hacia abajo y rodillas arriba, como empujando el aire) y de la rodada (`Roll` 0, 5, 10, 15 y 20: agachado, zambullida, manos al suelo, bola y recuperación), apoyados en la fila de suelo. | En el juego con `Espacio` y `Shift`; capturas en `docs/tmp/navegador/`. |
 | `run-00..07` | Borrador del ciclo de carrera (D-34): render del maniquí 3D reducido a la paleta, todavía sin la cabeza aprobada, el tatuaje ni el faldón terminado. Revisar si el movimiento se lee como la carrera de Kratos antes de la terminación. En `run-03`, `run-06` y `run-07` los dos pies están en el aire (fase de vuelo). | En el juego, corriendo con `D`; capturas en `docs/tmp/navegador/`. |
@@ -43,7 +41,6 @@ Las implementaron agentes anteriores. La usuaria fijó la intención general (D-
 | Correr y frenar (D-32) | Decidida y verificada | Velocidad 140 px/s, aceleración y frenado. Sin caminar y sin derrape. |
 | Salto, doble salto y plataformas (D-32) | Decidida y verificada | Altura fija (no depende de cuánto se mantiene la tecla); se cae del borde cuando sale el centro, no el pie. |
 | Rodada con invulnerabilidad (D-32) | Decidida y verificada | Duración 20 ticks, unos 82 px, invulnerable los primeros 15; solo en el suelo. |
-| Golpes de las Espadas del Caos, nivel 1 (D-35) | Decidido y verificado (15 pruebas) salvo el agarre | Cadena de □ de 3 golpes (a confirmar contra el juego: las fuentes dicen 3 o 4), △, mantener △ = *Ascension*, □□△ = *Plume of Prometheus*, □□ en el aire (Kratos se sostiene: gravedad al 30 %) y △ en el aire (baja en picada). Tiempos, alcances y daños heredados de la tabla anterior. El agarre (○) y *Orion's Harpoon* no están hechos. |
 | Guardia y desvío (*parry*) | Sin verificar | Ventana de desvío y efectos. |
 | Magia (*Ira de Poseidón*) | Sin verificar | Costo, alcance y efecto. |
 | Orbes, cofres, mejora de arma y puntos de control | Sin verificar; fuera del nivel (D-33) | Cantidades y reglas. |
@@ -56,12 +53,12 @@ Para que la usuaria decida cada mecánica antes de auditarla o ampliarla. "GoW 1
 
 | # | Mecánica | Hoy en el juego | En GoW 1 |
 | --- | --- | --- | --- |
-| C1 | Combo ligero | 4 golpes encadenados con `J` (`light_1..4`). | Combate por combos con las Cuchillas; el detalle de cada combo, a confirmar. |
-| C2 | Golpes pesados y finales | `heavy_slam` (golpe al suelo), `ascension` (lanzador al mantener `K`), `plume_of_prometheus` (`J, J, K`), `spirit_of_hercules`. | Nombres y entradas, a confirmar. |
-| C3 | Ataques aéreos | `air_light_1/2`, `air_heavy_slam` y `air_grab`; en el aire el ataque reduce la gravedad al 30 %. | A confirmar. |
-| C4 | Agarre | `chain_grab` con `L`: un golpe que jala (`knockbackVx -150`), no sujeta ni remata (ESE-02). | A confirmar el agarre con círculo; los remates sí existen (C5). |
+| C1 | Combo ligero | No existe (D-36). | Combate por combos con las Cuchillas; el detalle de cada combo, a confirmar. |
+| C2 | Golpes pesados y finales | No existen (D-36). | Nombres y entradas, a confirmar. |
+| C3 | Ataques aéreos | No existen (D-36). | A confirmar. |
+| C4 | Agarre | No existe (D-36). | A confirmar el agarre con círculo; los remates sí existen (C5). |
 | C5 | Remates QTE | No existe (ESE-01). | Sí: al debilitar a un enemigo fuerte se inicia un QTE; fallarlo suele dañar a Kratos. |
-| C6 | Embestida | `dash_attack`. | A confirmar. |
+| C6 | Embestida | No existe (D-36). | A confirmar. |
 | C7 | Guardia y desvío | Guardia con `O`; desvío (*parry*) en los primeros ticks, que aturde al legionario y refleja flechas. | A confirmar. |
 | C8 | Magia | Solo *Ira de Poseidón* (costo 35, radio 90). | Cuatro hechizos: *Furia de Zeus*, *Mirada de Medusa*, *Ira de Poseidón* y *Ejército de Hades*. |
 | C9 | Ira de los Dioses | No existe. | Sí: invulnerabilidad temporal y más daño; se recarga con orbes rojos. |
@@ -77,13 +74,12 @@ Elementos heredados que la usuaria no decidió. Están apagados con un interrupt
 | Elemento | Interruptor | Qué hace al encenderlo |
 | --- | --- | --- |
 | Cuchilla en reposo | `presentation.restPose.enabled` | Una cuchilla del motor cuelga del puño delantero en reposo, al correr y en el aire. |
-| Armas del motor | `presentation.weaponArt` | Cadenas, cuchillas y estelas procedurales en ataques y guardia (en lugar de la caja de la zona de golpe). |
-| Chispas de golpe | `vfx.combatSparks.enabled` | Partículas al acertar, bloquear y en el golpe al suelo. |
+| Chispas de golpe | `vfx.combatSparks.enabled` | Partículas en el golpe al suelo de la hidra. |
 | Aplastamiento al aterrizar | `presentation.landingSquash` | El sprite se ensancha y achata unos ticks al tocar el suelo. |
 
 ## 3. Siguiente paso
 
-Que la usuaria juzgue el borrador de la carrera en movimiento. Ya están los borradores de carrera, aire y rodada; el reposo también pasó a render. Falta terminar a mano todos los cuadros (D-34). Lo siguiente verificable sin ojo humano es el combate (tabla "Mecánicas heredadas").
+Que la usuaria juzgue el borrador de la carrera en movimiento. Ya están los borradores de carrera, aire y rodada; el reposo también pasó a render. Falta terminar a mano todos los cuadros (D-34). Los golpes de Kratos se rediseñan desde cero (D-36): primero una propuesta investigada y auditada, después la implementación.
 
 ## 4. Registro de pasos
 
@@ -140,3 +136,4 @@ Que la usuaria juzgue el borrador de la carrera en movimiento. Ya están los bor
 - `2026-10-31` — **Paso 48 (Cuerpo de los golpes):** 11 borradores de `Sword_Attack` en cuatro familias (`poses/strike-heavy.json` y `strike-air.json` nuevos) repartidos por golpe y fase en `ATTACK_FRAMES`; `PlayerView` reparte los cuadros de cada fase en sus ticks. Antes el cuerpo quedaba en reposo mientras la espada golpeaba. Verificado en Chrome headless: las 11 texturas cargan y el cuerpo cambia en □□△, □□ aéreo y △ aéreo, sin errores.
 - `2026-10-31` — **Paso 49 (Controles táctiles):** la usuaria quería jugar desde el celular. En pantallas táctiles aparecen botones en pantalla (◀ ▼ ▶, Rodar, Guardia, △, □, Saltar) que el juego lee como teclas mantenidas (`src/input/touchControls.ts`, sumados en `InputManager.poll`), así mantener △ sigue siendo *Ascension*; el juego se escala para dejar una franja abajo para los botones y se reajusta al terminar de cargar y al cambiar la vista. En escritorio no cambia nada. Verificado en Chrome headless con un teléfono emulado (844×390, táctil): Saltar arranca, ▶ y □ a la vez corren y golpean, sin errores.
 - `2026-11-01` — **Paso 50 (Espadas ancladas al cuerpo):** la usuaria vio que las espadas de la espalda quedaban fijas respecto de los pies y no acompañaban al cuerpo. `render.py` exporta dónde caen la mano, la columna, el cuello y la pelvis en cada cuadro; `scripts/pose_render/frames.json` guarda la receta de los 30 cuadros y `build_anchors.py` los vuelve a renderizar, falla si algún grid cambia (los 30 se reprodujeron idénticos) y escribe `src/assets/kratos-anchors.json`. `WeaponLayer` cuelga las espadas de la espalda de cada cuadro siguiendo la inclinación de la columna (jadeo, carrera, salto, rodada) y saca la cadena de la mano dibujada del golpe.
+- `2026-11-01` — **Paso 51 (Golpes y cadenas descartados, D-36):** la usuaria pidió descartar todo lo de los golpes; las espadas se quedan y las cadenas no. Salieron `src/sim/attack.ts` y sus 15 pruebas, las acciones `light-attack`, `heavy-attack` y `grab` (teclas `J`, `K`, `L` y botones táctiles △ y □), los campos de ataque del jugador, el *hitstop*, el impacto al suelo con su sacudida y chispas, los sonidos de tajo, golpe e impacto, la caja de la zona de golpe, las envolventes de ataque de la escala, los 11 borradores `kratos-atk-*` (grids, PNG, recetas y `poses/strike-heavy.json` y `strike-air.json`) y el anclaje `hand` de `kratos-anchors.json`. `WeaponLayer` solo dibuja las espadas a la espalda, también en guardia. El tamaño de los blancos pasó a `CONFIG.combat.target`. Los enemigos no cambian, aunque Kratos ya no puede dañarlos salvo con la magia. 28 pruebas.

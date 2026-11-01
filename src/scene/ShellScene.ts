@@ -7,7 +7,6 @@ import {
 import { CONFIG } from '../config';
 import {
   attachScaleReferenceOverlay,
-  isScaleReferenceVisible,
   updateScaleReference,
 } from '../dev/scaleOverlay';
 import { InputManager } from '../input/InputManager';
@@ -29,7 +28,6 @@ export class ShellScene extends Phaser.Scene {
   private playerView: PlayerView | null = null;
   private platformRects: (Phaser.GameObjects.Rectangle | Phaser.GameObjects.Graphics)[] = [];
   private renderedScenario = '';
-  private attackHitboxRect: Phaser.GameObjects.Rectangle | null = null;
   private targetRects = new Map<string, Phaser.GameObjects.Rectangle>();
   private arrowRects = new Map<string, Phaser.GameObjects.Rectangle>();
   private readonly orbSprites = new Map<string, { outer: Phaser.GameObjects.Arc; core: Phaser.GameObjects.Arc; highlight: Phaser.GameObjects.Arc }>();
@@ -62,9 +60,6 @@ export class ShellScene extends Phaser.Scene {
   vfxLayer!: VfxLayer;
   soundManager!: SoundManager;
   private prevParryActive = false;
-  private prevHitsCount = 0;
-  private prevGroundImpactTicks = 0;
-  private prevAttackPhase = 'none';
   private prevMagicPhase = 'none';
   private prevHydraState = 'none';
   private prevAbsorbedOrbsCount = 0;
@@ -297,33 +292,11 @@ export class ShellScene extends Phaser.Scene {
 
     if (this.soundManager) {
       if (player) {
-        // Attack swing sound
-        if (player.attackPhase === 'startup' && this.prevAttackPhase !== 'startup') {
-          const heavy =
-            player.attackMove === 'heavy' ||
-            player.attackMove === 'ascension' ||
-            player.attackMove === 'plume_of_prometheus' ||
-            player.attackMove === 'air_heavy';
-          this.soundManager.playSlash(heavy);
-        }
-        this.prevAttackPhase = player.attackPhase;
-
         // Magic thunder sound
         if (player.magicPhase === 'startup' && this.prevMagicPhase !== 'startup') {
           this.soundManager.playMagicThunder();
         }
         this.prevMagicPhase = player.magicPhase;
-
-        // Hit sound
-        const hitsCount = player.attackHits ? player.attackHits.length : 0;
-        if (hitsCount > this.prevHitsCount && player.attackPhase === 'active') {
-          this.soundManager.playHit();
-        }
-
-        // Ground impact sound
-        if (player.groundImpactTicks > 0 && this.prevGroundImpactTicks === 0) {
-          this.soundManager.playGroundImpact();
-        }
 
         // Parry sound
         if (player.parryActive && !this.prevParryActive) {
@@ -368,25 +341,6 @@ export class ShellScene extends Phaser.Scene {
           this.vfxLayer.emitParryFlash(player.x + player.facing * 18, player.y - 18);
         }
         this.prevParryActive = Boolean(player.parryActive);
-
-        // Detect ground impact
-        if (player.groundImpactTicks > 0 && this.prevGroundImpactTicks === 0) {
-          const impactX = player.x + player.facing * (player.attackMove === 'plume_of_prometheus' ? 45 : 30);
-          this.vfxLayer.emitCombatSparks(impactX, player.groundImpactY, 8);
-        }
-        this.prevGroundImpactTicks = player.groundImpactTicks;
-
-        // Detect new hits on targets
-        const hitsCount = player.attackHits ? player.attackHits.length : 0;
-        if (hitsCount > this.prevHitsCount && player.attackPhase === 'active') {
-          const target = this.simulation.world.peekTargets().find((t) => t.hitstunTicks > 0);
-          if (target) {
-            this.vfxLayer.emitCombatSparks(target.x, target.y - 15, 6);
-          } else {
-            this.vfxLayer.emitCombatSparks(player.x + player.facing * 35, player.y - 20, 6);
-          }
-        }
-        this.prevHitsCount = hitsCount;
       }
 
       this.vfxLayer.update(delta / 1000, flowState === 'paused');
@@ -402,42 +356,14 @@ export class ShellScene extends Phaser.Scene {
       this.hydraVictoryBannerText?.setAlpha(0);
     }
 
-    this.applyCamera(player);
+    this.applyCamera();
 
     if (this.bg) {
       this.bg.tilePositionX = this.cameras.main.scrollX * (CONFIG.map.level1.camera.parallaxFactor ?? 0.25);
     }
 
-    const hitbox = this.simulation.world.playerAttackHitbox();
-    const chain = player ? player.attackChain : 0;
-    const hitboxColor = this.hitboxColorForChain(chain);
-    // Without weapon art the attack shows its hitbox as a neutral placeholder.
-    const showHitbox = !CONFIG.presentation.weaponArt || (import.meta.env.DEV && isScaleReferenceVisible());
-    if (hitbox && showHitbox) {
-      if (!this.attackHitboxRect) {
-        this.attackHitboxRect = this.add
-          .rectangle(
-            hitbox.x1,
-            hitbox.y1,
-            hitbox.x2 - hitbox.x1,
-            hitbox.y2 - hitbox.y1,
-            hitboxColor,
-            CONFIG.presentation.hitboxAlpha,
-          )
-          .setOrigin(0, 0)
-          .setDepth(5);
-      } else {
-        this.attackHitboxRect.setPosition(hitbox.x1, hitbox.y1);
-        this.attackHitboxRect.setSize(hitbox.x2 - hitbox.x1, hitbox.y2 - hitbox.y1);
-        this.attackHitboxRect.setFillStyle(hitboxColor, CONFIG.presentation.hitboxAlpha);
-        this.attackHitboxRect.setVisible(true);
-      }
-    } else if (this.attackHitboxRect) {
-      this.attackHitboxRect.setVisible(false);
-    }
     const isPlayerAlive = Boolean(player && !player.isDead);
-    const attackParams = isPlayerAlive ? this.simulation.world.playerAttackParams() : null;
-    this.playerView?.updateWeapon(isPlayerAlive ? player : null, attackParams, this.simulation.world.surfacePlatforms);
+    this.playerView?.updateWeapon(isPlayerAlive ? player : null);
     this.updateTargets(player);
     this.updateOrbs();
     this.updateArrows();
@@ -481,12 +407,11 @@ export class ShellScene extends Phaser.Scene {
     }
     this.debugText?.setVisible(flowState !== 'title');
     if (this.debugText) {
-      const phase = player ? player.attackPhase : '-';
       const grd = player && player.guardPhase !== 'none' ? ` grd=${player.guardPhase}:${player.guardTicks}${player.parryActive ? '(P)' : ''}` : '';
       const hpInfo = player ? ` hp=${player.hp}` : '';
       const hurtInfo = player && player.hurtInvulTicks > 0 ? ` hurtInv=${player.hurtInvulTicks}` : '';
       const deadInfo = player && player.isDead ? ' [DEAD]' : '';
-      const nextText = `tick ${this.simulation.world.frame} x=${player ? player.x.toFixed(1) : '-'}${hpInfo}${hurtInfo}${deadInfo} atk=${phase} chain=${chain}${grd}`;
+      const nextText = `tick ${this.simulation.world.frame} x=${player ? player.x.toFixed(1) : '-'}${hpInfo}${hurtInfo}${deadInfo}${grd}`;
       if (nextText !== this.lastDebugText) {
         this.lastDebugText = nextText;
         this.debugText.setText(nextText);
@@ -494,19 +419,10 @@ export class ShellScene extends Phaser.Scene {
     }
   }
 
-  private hitboxColorForChain(chain: number): number {
-    const { hitboxColor, hitboxColorChain1, hitboxColorChain2 } = CONFIG.presentation;
-    if (chain <= 0) {
-      return hitboxColor;
-    }
-    return chain === 1 ? hitboxColorChain1 : hitboxColorChain2;
-  }
-
   private updateTargets(player: Readonly<EntityState> | null): void {
-    const hits = player ? player.attackHits : [];
     const targets = this.simulation.world.peekTargets();
-    const halfW = CONFIG.player.attack.targetHalfWidth;
-    const halfH = CONFIG.player.attack.targetHalfHeight;
+    const halfW = CONFIG.combat.target.halfWidth;
+    const halfH = CONFIG.combat.target.halfHeight;
     const enemy = CONFIG.presentation.enemyPlaceholder;
     const hydraBox = CONFIG.presentation.hydraPlaceholder;
 
@@ -536,7 +452,7 @@ export class ShellScene extends Phaser.Scene {
       if (target.kind === 'legionnaire') color = enemy.legionnaireColor;
       if (target.kind === 'archer') color = enemy.archerColor;
       if (telegraphing) color = enemy.telegraphColor;
-      if (target.hitstunTicks > 0 || hits.includes(target.id)) {
+      if (target.hitstunTicks > 0) {
         color = player && player.magicPhase === 'active' ? 0x67e8f9 : CONFIG.presentation.targetHitColor;
       }
       rect.setFillStyle(color);
@@ -545,19 +461,12 @@ export class ShellScene extends Phaser.Scene {
   }
 
   /**
-   * The single place that sets the camera each frame: horizontal scroll from
-   * the simulation (level1 only), vertical offset from the ground-impact
-   * shake. Setting them separately let the shake reset `scrollX` to 0 and the
-   * level camera never moved (CAM-01).
+   * The single place that sets the camera scroll each frame: horizontal
+   * scroll from the simulation (level1 only), no vertical offset (CAM-01).
    */
-  private applyCamera(player: Readonly<EntityState> | null): void {
+  private applyCamera(): void {
     const scrollX = this.simulation.world.scenarioName === 'level1' ? this.simulation.world.cameraScrollX : 0;
-    let scrollY = 0;
-    if (player && player.groundImpactTicks > 0) {
-      const shakePx = CONFIG.player.attack.groundImpact.shakePx;
-      scrollY = player.groundImpactTicks % 2 === 1 ? shakePx : -shakePx;
-    }
-    this.cameras.main.setScroll(scrollX, scrollY);
+    this.cameras.main.setScroll(scrollX, 0);
   }
 
   private redrawPlatforms(): void {

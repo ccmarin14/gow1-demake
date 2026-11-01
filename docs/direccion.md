@@ -14,14 +14,13 @@
 | --- | --- | --- | --- |
 | `move-left` / `move-right` | `A` / `D` o `←` / `→` | Stick izquierdo | Movimiento horizontal y orientación (`facing`). |
 | `jump` | `Espacio` | Cruz ($\times$) | Salto simple, doble salto y descenso en plataformas (`Abajo + Espacio`). |
-| `light-attack` | `J` | Cuadrado ($\square$) | Tajos rápidos encadenados. |
-| `heavy-attack` | `K` | Triángulo ($\triangle$) | Golpe pesado, lanzamiento ascendente y remate *Pluma de Prometeo* (`J, J, K`). |
-| `grab` | `L` | Círculo ($\bigcirc$) | Agarre o remate contextual. |
 | `dodge` | `Shift` | Stick derecho | Evasión terrestre con ventana de invulnerabilidad. |
 | `magic` | `U` / `I` | L2 | Magia activa (*Ira de Poseidón*). |
 | `context-action` | `E` | R2 | Interacción con cofres y entorno. |
-| `guard` | `O` | L1 | Guardia y desvío (*parry*) en los primeros ticks. |
+| `guard` | `Q` | L1 | Guardia y desvío (*parry*) en los primeros ticks. |
 | `pause` | `Escape` | Start | Pausa. |
+
+Kratos no tiene golpes: Cuadrado, Triángulo y Círculo no tienen acción ni tecla hasta que se rediseñen (D-36).
 
 ## 3. Reglas visuales y de pixel art
 
@@ -31,20 +30,20 @@
   - Los sprites de personajes se editan en grids de texto (`grids/`) y se convierten a PNG mediante `scripts/ascii_to_png.py`. El PNG nunca se edita a mano.
   - Cada carácter del grid representa un **material o rol de color** claro (contorno, piel, piel en sombra, marca roja, bronce, cuero, metal) y `.` representa transparencia. Los grids de Kratos usan `palette/kratos.json` (letras mnemónicas con `roles` nombrados, declarada en el campo `palette` del `manifest.json` del personaje).
   - **Estilo de sombreado:** luz desde arriba a la izquierda. Del lado de la luz el borde es de color (granate `c` o bronce `b`); el contorno oscuro `o` va solo del lado de la sombra. Las formas se modelan pasando por los tonos intermedios (`s` → `m` → `b` → `d`), no saltando de claro a contorno. La cara es mínima, como en *Betrayal*: cráneo claro, franja roja con borde granate, oreja, cuenca del ojo granate bajo la ceja iluminada, pómulo con luz y chivera insinuada bajo el mentón; sin nariz ni boca dibujadas. El modelo de la cara y del sombreado es la cabeza aprobada de `idle-00` dibujado a mano (`git show 0af23ae:grids/kratos/idle-00.txt`, filas 12 a 17).
-  - **Separación de capas:** el sprite del personaje contiene únicamente su anatomía y vestimenta. Las cadenas, las hojas extendidas y la sombra de contacto se dibujan en capas separadas del motor (`WeaponLayer` y sombra en escena) para no duplicar armas ni arrastrar la sombra durante el salto.
+  - **Separación de capas:** el sprite del personaje contiene únicamente su anatomía y vestimenta. Las Espadas del Caos y la sombra de contacto se dibujan en capas separadas del motor (`WeaponLayer` y sombra en escena) para no duplicar armas ni arrastrar la sombra durante el salto.
   - **Trabajo incremental:** cada cuadro nuevo se dibuja completo en ASCII, se rasteriza y se presenta ampliado junto al cuadro base para aprobación visual antes de pasar al cuadro siguiente.
 
 ## 4. Esencia de *God of War*: brechas y plan
 
 Revisión del 2026-10-29 contra el primer *God of War*, hecha sobre código, configuración y capturas (sin prueba de sensación a mano). Cada brecha es un trabajo pequeño e independiente; ninguna se ha implementado. El estado vivo de cada una está en `docs/estado.md`.
 
-**Qué ya cumple:** combate con las Cuchillas del Caos (14 movimientos con arcos amplios, combo, lanzador, aéreos, agarre, *hitstop* y buffer de entrada), guardia con parry y rodada con invulnerabilidad, *Ira de Poseidón*, orbes, cofres con Ojos de Gorgona y Plumas de Fénix, mejora de arma, checkpoints y el tramo de la nave con la Hidra.
+**Qué ya cumple:** guardia con parry y rodada con invulnerabilidad, *Ira de Poseidón*, orbes, cofres con Ojos de Gorgona y Plumas de Fénix, mejora de arma, checkpoints y el tramo de la nave con la Hidra.
 
 | ID | Brecha | Criterio de aceptación | Depende del arte |
 | --- | --- | --- | --- |
-| **ESE-01** | **Remates contextuales (QTE).** Es el rasgo más reconocible y no existe en `src/sim/`; las capturas de *Betrayal* de `docs/referencias/` ya lo muestran. | Un enemigo aturdido o con poca vida permite un remate con `L` dentro de una ventana de entrada; resultado determinista, con prueba en un escenario del harness. | No (marcador visual provisional). |
-| **ESE-02** | **No hay agarre.** El golpe heredado `chain_grab` (un arco que jalaba sin sujetar) se quitó al reconstruir el combate (D-35); ○ todavía no hace nada. | Agarrar sujeta al enemigo unos ticks y permite lanzarlo o rematarlo; se integra con ESE-01. | No. |
-| **ESE-03** | **Impacto poco brutal.** *Hitstop* de 2 a 4 ticks, temblor de cámara solo en golpe al suelo y caída fuerte, y sin partículas de golpe más allá de chispas. | *Hitstop* y temblor proporcionales al peso del golpe, valores en `CONFIG` y medidos en el harness; chispas o fragmentos por impacto. | No (efectos en capas del motor). |
+| **ESE-01** | **Remates contextuales (QTE).** Es el rasgo más reconocible y no existe en `src/sim/`; las capturas de *Betrayal* de `docs/referencias/` ya lo muestran. | Un enemigo aturdido o con poca vida permite un remate con un botón dentro de una ventana de entrada; resultado determinista, con prueba en un escenario del harness. | No (marcador visual provisional). |
+| **ESE-02** | **No hay agarre.** Los golpes de Kratos se descartaron para rediseñarlos (D-36); ○ no tiene acción. | Agarrar sujeta al enemigo unos ticks y permite lanzarlo o rematarlo; se integra con ESE-01. | No. |
+| **ESE-03** | **Sin impacto.** Kratos no tiene golpes (D-36), así que no hay *hitstop*, temblor ni chispas por golpe; solo la hidra sacude la cámara. | *Hitstop* y temblor proporcionales al peso del golpe, valores en `CONFIG` y medidos en el harness; chispas o fragmentos por impacto. | No (efectos en capas del motor). |
 | **ESE-04** | **Enemigos de un solo truco.** El legionario solo tiene un tajo con anticipación. | Al menos un segundo comportamiento que dé sentido a la guardia o a la magia (por ejemplo, un ataque que solo se puede parar). | No. |
 | **ESE-05** | **Sin historia.** El título pasa directo al nivel. | Introducción mínima de texto, sujeta a la regla D-30: nunca puede estorbar las pruebas. | No. |
 | **ESE-06** | **Un solo hechizo y pocos enemigos.** El primer juego tiene cuatro hechizos y más variedad. | Diferido hasta que exista el arte base. | Sí. |

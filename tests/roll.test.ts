@@ -73,15 +73,4 @@ describe('roll', () => {
     hold(world, ROLL_TICKS + 10, ['dodge']);
     assert.equal(player(world).rollPhase, 'none');
   });
-
-  it('an attack cancels the roll only after the i-frames end', () => {
-    const world = playingWorld();
-    world.step(['dodge']);
-    hold(world, 3, []);
-    world.step(['light-attack']);
-    assert.notEqual(player(world).rollPhase, 'none', 'no cancel during i-frames');
-    hold(world, ROLL_INVUL_TICKS, []);
-    world.step(['light-attack']);
-    assert.equal(player(world).rollPhase, 'none', 'cancelled into the attack');
-  });
 });

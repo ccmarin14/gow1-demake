@@ -148,8 +148,8 @@ export function stepArcher(
 
     // Si está acorralado contra los extremos del escenario mientras intenta retroceder
     const isCornered =
-      (enemy.facing === 1 && enemy.x <= CONFIG.player.attack.target.minX + 10) ||
-      (enemy.facing === -1 && enemy.x >= CONFIG.player.attack.target.maxX - 10);
+      (enemy.facing === 1 && enemy.x <= CONFIG.combat.target.minX + 10) ||
+      (enemy.facing === -1 && enemy.x >= CONFIG.combat.target.maxX - 10);
 
     if (canShoot && (inPreferredRange || (isCornered && dist < CONFIG.enemy.archer.preferredDistanceMin))) {
       enemy.aiState = 'aim';
@@ -228,7 +228,6 @@ export function stepArrows(
           arrow.reflected = true;
           arrow.vx = -arrow.vx * CONFIG.enemy.archer.parryReflectSpeedMult;
           arrow.x += arrow.vx * dt; // Paso inmediato en la nueva dirección
-          player.attackHits.push(`parry-${arrow.id}`);
           continue;
         }
 
@@ -253,14 +252,6 @@ export function stepArrows(
         // Impacto directo a Kratos desprotegido
         const damageDealt = CONFIG.enemy.archer.arrowDamage;
         player.hp = Math.max(0, player.hp - damageDealt);
-
-        // Interrupción de acciones ofensivas
-        player.attackPhase = 'none';
-        player.attackMove = 'none';
-        player.attackTicks = 0;
-        player.attackHits = [];
-        player.attackBufferAction = null;
-        player.attackBufferTicks = 0;
 
         player.hitstunTicks = CONFIG.player.damage.hurtHitstunTicks;
         player.hurtInvulTicks = CONFIG.player.damage.hurtInvulTicks;
