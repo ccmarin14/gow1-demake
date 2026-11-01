@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { BLADE_KEY } from '../assets/manifest';
+import ANCHORS from '../assets/kratos-anchors.json';
 import { CONFIG } from '../config';
 import { bladePoseForTick, type AttackParams, type BladePose } from '../sim/attack';
 import type { Platform } from '../sim/scenarios';
@@ -15,6 +16,18 @@ const SPARK_COUNT = 16;
  */
 const BLADE_ORIGIN_X = 0.55;
 const GRIP_BACK_PX = 8;
+
+/** Sprite canvas of Kratos; anchors are in its pixels, origin top-left. */
+const CANVAS_W = 64;
+const CANVAS_H = 56;
+
+/** Per-frame hand, upper back and spine direction, from the 3D skeleton. */
+interface FrameAnchors {
+  hand: readonly number[];
+  back: readonly number[];
+  spineRad: number;
+}
+const FRAME_ANCHORS: Readonly<Record<string, FrameAnchors>> = ANCHORS;
 
 /**
  * Blades of Chaos and their chains (D-26: weapons are an engine layer, not
@@ -102,6 +115,7 @@ export class WeaponLayer {
     player: Readonly<EntityState> | null,
     params: AttackParams | null,
     platforms: readonly Platform[] = [],
+    frameKey = '',
   ): void {
     if (!CONFIG.presentation.weaponArt || !player || player.isDead) {
       this.hideAll();
@@ -112,7 +126,8 @@ export class WeaponLayer {
     const facing = player.facing === -1 ? -1 : 1;
     const attacking = params !== null && player.attackPhase !== 'none';
     const guarding = player.guardPhase !== 'none' && !attacking;
-    this.showBackBlades(player, facing, !attacking && !guarding);
+    const anchors = FRAME_ANCHORS[frameKey];
+    this.showBackBlades(player, facing, anchors, !attacking && !guarding);
 
     if (guarding) {
       // Blade held across the chest on a short chain.
@@ -126,7 +141,10 @@ export class WeaponLayer {
       return;
     }
 
-    const hand = CONFIG.player.attack.moves[player.attackMove === 'none' ? 'light_1' : player.attackMove].hand;
+    // The chain leaves the hand drawn in this frame; the move's `hand` is the fallback.
+    const hand = anchors
+      ? toSprite(anchors.hand)
+      : CONFIG.player.attack.moves[player.attackMove === 'none' ? 'light_1' : player.attackMove].hand;
     const handX = player.x + facing * hand.dx;
     const handY = player.y + hand.dy;
     const visual = this.deriveVisualPose(player, params, handX, handY, platforms);
@@ -148,20 +166,26 @@ export class WeaponLayer {
     }
   }
 
-  private showBackBlades(player: Readonly<EntityState>, facing: number, visible: boolean): void {
+  private showBackBlades(
+    player: Readonly<EntityState>,
+    facing: number,
+    anchors: FrameAnchors | undefined,
+    visible: boolean,
+  ): void {
     const slots = CONFIG.presentation.backBlades;
     for (let i = 0; i < this.backBlades.length; i += 1) {
       const image = this.backBlades[i];
-      if (!visible) {
+      if (!visible || !anchors) {
         image.setVisible(false);
         continue;
       }
       const slot = slots[i];
-      const rad = (slot.deg * Math.PI) / 180;
-      // Mirror the direction with the facing: the blades always point back-down.
+      const back = toSprite(anchors.back);
+      // Facing right: spine direction turned toward the back. Facing left mirrors it.
+      const rad = anchors.spineRad + (slot.deg * Math.PI) / 180;
       const angle = facing === 1 ? rad : Math.PI - rad;
       image
-        .setPosition(player.x + facing * slot.dx, player.y + slot.dy)
+        .setPosition(player.x + facing * (back.dx + slot.dx), player.y + back.dy + slot.dy)
         .setRotation(angle)
         .setFlipY(facing === -1)
         .setVisible(true);
@@ -310,4 +334,9 @@ export class WeaponLayer {
     for (const image of this.backBlades) image.setVisible(false);
     for (const spark of this.sparks) spark.setVisible(false);
   }
+}
+
+/** Anchor on the sprite canvas -> offset from the feet anchor, facing right. */
+function toSprite(point: readonly number[]): { dx: number; dy: number } {
+  return { dx: point[0] - CANVAS_W / 2, dy: point[1] - CANVAS_H };
 }

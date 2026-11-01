@@ -49,17 +49,8 @@ def classify(pixel: tuple[int, int, int, int]) -> tuple[str, int, str] | None:
     return material, tone, "near" if blue > 0.55 else "far"
 
 
-def main() -> int:
-    args = sys.argv[1:]
-    ground = None
-    if "--ground" in args:
-        at = args.index("--ground")
-        ground = int(args[at + 1])
-        del args[at : at + 2]
-    if len(args) != 2:
-        print(__doc__)
-        return 2
-    source, target = args
+def reduce_render(source: str, ground: int | None = None) -> tuple[list[str], int]:
+    """Grid rows for a render, and the rows it was shifted down to sit on `ground`."""
     image = Image.open(source).convert("RGBA")
     pixels = image.load()
     assert pixels is not None
@@ -94,16 +85,32 @@ def main() -> int:
                 for dx, dy in NEIGHBORS
             ):
                 outlined[y][x] = "o"
+    shift = 0
     if ground is not None:
         lowest = max(y for y, row in enumerate(outlined) if any(c != "." for c in row))
         shift = ground - lowest
         empty = ["."] * width
         if shift > 0:
-            outlined = [empty[:] for _ in range(shift)] + outlined[:height - shift]
+            outlined = [empty[:] for _ in range(shift)] + outlined[: height - shift]
         elif shift < 0:
             outlined = outlined[-shift:] + [empty[:] for _ in range(-shift)]
+    return ["".join(row) for row in outlined], shift
+
+
+def main() -> int:
+    args = sys.argv[1:]
+    ground = None
+    if "--ground" in args:
+        at = args.index("--ground")
+        ground = int(args[at + 1])
+        del args[at : at + 2]
+    if len(args) != 2:
+        print(__doc__)
+        return 2
+    source, target = args
+    rows, _shift = reduce_render(source, ground)
     with open(target, "w", encoding="utf-8") as handle:
-        handle.write("\n".join("".join(row) for row in outlined) + "\n")
+        handle.write("\n".join(rows) + "\n")
     return 0
 
 

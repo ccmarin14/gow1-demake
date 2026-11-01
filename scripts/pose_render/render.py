@@ -18,6 +18,9 @@ Each pixel encodes what `to_grid.py` needs, not a final color:
     G = tone, four flat steps of a toon ramp (0.2 dark .. 0.8 lit)
     B = side (near 0.8, far 0.3)
 The render is 8x the sprite canvas; `to_grid.py` reduces it to the palette grid.
+Next to each PNG it writes `<name>.bones.json`: where the bones the weapon
+layer needs (`BONES`) fall on the 64x56 sprite canvas, before any `--ground`
+shift (`build_anchors.py` applies it).
 """
 
 import json
@@ -26,6 +29,7 @@ import os
 import sys
 
 import bpy
+from bpy_extras.object_utils import world_to_camera_view
 from mathutils import Quaternion, Vector
 
 SCALE = 8
@@ -33,6 +37,9 @@ TONE_STOPS = [(0.0, 0.2), (0.18, 0.4), (0.42, 0.6), (0.7, 0.8)]
 MATERIALS = [("skin", 0.25), ("leather", 0.5), ("foot", 0.75)]
 SIDES = [("near", 0.8), ("far", 0.3)]
 ALWAYS_NEAR = ("Head", "neck_01")
+# Bones exported per frame: the near hand holds the striking blade; the spine
+# and neck carry the blades on the back.
+BONES = ("hand_r", "hand_l", "spine_02", "spine_03", "neck_01", "pelvis")
 
 args = sys.argv[sys.argv.index("--") + 1:]
 config_path, action_name, out_dir, frame_list = args[:4]
@@ -183,7 +190,21 @@ def apply_bulk(_scene, *_args) -> None:
 
 
 bpy.app.handlers.frame_change_post.append(apply_bulk)
+def bone_points() -> dict:
+    """Head of each exported bone on the sprite canvas (x right, y down)."""
+    bpy.context.view_layer.update()
+    points = {}
+    for name in BONES:
+        world = armature.matrix_world @ armature.pose.bones[name].head
+        view = world_to_camera_view(scene, camera_obj, world)
+        points[name] = [round(view.x * frame["w"], 2), round((1 - view.y) * frame["h"], 2)]
+    return points
+
+
 for number in frames:
     scene.frame_set(number)
-    scene.render.filepath = os.path.join(out_dir, f"{action_name}_{number:03d}.png")
+    stem = os.path.join(out_dir, f"{action_name}_{number:03d}")
+    scene.render.filepath = stem + ".png"
     bpy.ops.render.render(write_still=True)
+    with open(stem + ".bones.json", "w", encoding="utf-8") as handle:
+        json.dump(bone_points(), handle)

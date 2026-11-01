@@ -418,14 +418,16 @@ export const CONFIG = {
      * together with the first grid drawn without one.
      */
     /**
-     * Blades of Chaos carried on the back while not attacking, as in GoW 1:
-     * two blades hanging crossed behind the shoulders. Offsets from the feet
-     * anchor facing right (`dx` forward, `dy` up-negative) and the blade
-     * direction in degrees (0 = forward, 90 = down).
+     * Blades of Chaos carried on the back while not attacking, as in GoW 1.
+     * Each blade hangs from the upper back of the frame being shown
+     * (`src/assets/kratos-anchors.json`, exported from the 3D skeleton) and
+     * follows its spine: `dx`/`dy` shift it from that point (sprite pixels,
+     * facing right) and `deg` turns it from the spine direction toward the
+     * back, so the two blades cross.
      */
     backBlades: [
-      { dx: -9, dy: -34, deg: 128 },
-      { dx: -5, dy: -36, deg: 110 },
+      { dx: -2, dy: 0, deg: 24 },
+      { dx: 0, dy: -1, deg: 6 },
     ],
     /**
      * `weaponArt` draws the Blades of Chaos and their chains (`WeaponLayer`);

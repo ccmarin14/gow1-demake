@@ -1,0 +1,332 @@
+{
+  "kratos-idle-00": {
+    "hand": [
+      23.7,
+      33.5
+    ],
+    "back": [
+      31.9,
+      26.6
+    ],
+    "spineRad": 1.755
+  },
+  "kratos-idle-01": {
+    "hand": [
+      23.1,
+      32.7
+    ],
+    "back": [
+      31.8,
+      26.5
+    ],
+    "spineRad": 1.742
+  },
+  "kratos-idle-02": {
+    "hand": [
+      22.6,
+      31.8
+    ],
+    "back": [
+      31.6,
+      26.4
+    ],
+    "spineRad": 1.716
+  },
+  "kratos-run-00": {
+    "hand": [
+      41.6,
+      33.4
+    ],
+    "back": [
+      35.5,
+      26.2
+    ],
+    "spineRad": 2.227
+  },
+  "kratos-run-01": {
+    "hand": [
+      38.0,
+      34.2
+    ],
+    "back": [
+      35.4,
+      27.7
+    ],
+    "spineRad": 2.192
+  },
+  "kratos-run-02": {
+    "hand": [
+      31.7,
+      29.9
+    ],
+    "back": [
+      35.5,
+      25.4
+    ],
+    "spineRad": 2.253
+  },
+  "kratos-run-03": {
+    "hand": [
+      28.0,
+      27.3
+    ],
+    "back": [
+      35.5,
+      24.8
+    ],
+    "spineRad": 2.247
+  },
+  "kratos-run-04": {
+    "hand": [
+      26.9,
+      27.7
+    ],
+    "back": [
+      35.4,
+      26.1
+    ],
+    "spineRad": 2.208
+  },
+  "kratos-run-05": {
+    "hand": [
+      31.6,
+      33.3
+    ],
+    "back": [
+      35.3,
+      27.7
+    ],
+    "spineRad": 2.181
+  },
+  "kratos-run-06": {
+    "hand": [
+      37.6,
+      33.2
+    ],
+    "back": [
+      35.4,
+      25.3
+    ],
+    "spineRad": 2.206
+  },
+  "kratos-run-07": {
+    "hand": [
+      40.8,
+      32.4
+    ],
+    "back": [
+      35.4,
+      24.8
+    ],
+    "spineRad": 2.222
+  },
+  "kratos-air-00": {
+    "hand": [
+      23.7,
+      31.9
+    ],
+    "back": [
+      29.7,
+      24.5
+    ],
+    "spineRad": 1.509
+  },
+  "kratos-air-01": {
+    "hand": [
+      21.6,
+      23.1
+    ],
+    "back": [
+      31.2,
+      23.2
+    ],
+    "spineRad": 1.816
+  },
+  "kratos-air-02": {
+    "hand": [
+      18.2,
+      41.1
+    ],
+    "back": [
+      30.6,
+      34.5
+    ],
+    "spineRad": 1.614
+  },
+  "kratos-roll-00": {
+    "hand": [
+      25.0,
+      40.9
+    ],
+    "back": [
+      31.4,
+      34.0
+    ],
+    "spineRad": 2.066
+  },
+  "kratos-roll-01": {
+    "hand": [
+      41.4,
+      40.6
+    ],
+    "back": [
+      37.6,
+      33.3
+    ],
+    "spineRad": 2.757
+  },
+  "kratos-roll-02": {
+    "hand": [
+      28.5,
+      45.0
+    ],
+    "back": [
+      38.3,
+      40.6
+    ],
+    "spineRad": -2.155
+  },
+  "kratos-roll-03": {
+    "hand": [
+      21.0,
+      42.9
+    ],
+    "back": [
+      25.8,
+      51.4
+    ],
+    "spineRad": -0.232
+  },
+  "kratos-roll-04": {
+    "hand": [
+      26.3,
+      45.5
+    ],
+    "back": [
+      28.0,
+      39.0
+    ],
+    "spineRad": 1.742
+  },
+  "kratos-atk-sa06": {
+    "hand": [
+      12.7,
+      20.0
+    ],
+    "back": [
+      29.0,
+      26.6
+    ],
+    "spineRad": 1.606
+  },
+  "kratos-atk-sa10": {
+    "hand": [
+      47.9,
+      32.0
+    ],
+    "back": [
+      32.5,
+      31.1
+    ],
+    "spineRad": 1.974
+  },
+  "kratos-atk-sa14": {
+    "hand": [
+      43.6,
+      42.5
+    ],
+    "back": [
+      32.8,
+      33.3
+    ],
+    "spineRad": 1.982
+  },
+  "kratos-atk-sa22": {
+    "hand": [
+      46.9,
+      27.9
+    ],
+    "back": [
+      31.9,
+      28.6
+    ],
+    "spineRad": 1.9
+  },
+  "kratos-atk-sh06": {
+    "hand": [
+      14.4,
+      22.6
+    ],
+    "back": [
+      29.8,
+      30.7
+    ],
+    "spineRad": 1.704
+  },
+  "kratos-atk-sh14": {
+    "hand": [
+      42.7,
+      48.8
+    ],
+    "back": [
+      33.8,
+      36.9
+    ],
+    "spineRad": 2.138
+  },
+  "kratos-atk-sx06": {
+    "hand": [
+      12.7,
+      28.0
+    ],
+    "back": [
+      29.0,
+      34.6
+    ],
+    "spineRad": 1.606
+  },
+  "kratos-atk-sx10": {
+    "hand": [
+      47.9,
+      38.0
+    ],
+    "back": [
+      32.5,
+      37.1
+    ],
+    "spineRad": 1.974
+  },
+  "kratos-atk-sx14": {
+    "hand": [
+      43.6,
+      48.5
+    ],
+    "back": [
+      32.8,
+      39.3
+    ],
+    "spineRad": 1.982
+  },
+  "kratos-atk-crouch": {
+    "hand": [
+      27.5,
+      43.1
+    ],
+    "back": [
+      31.2,
+      33.6
+    ],
+    "spineRad": 2.084
+  },
+  "kratos-atk-rise": {
+    "hand": [
+      12.7,
+      22.0
+    ],
+    "back": [
+      29.0,
+      28.6
+    ],
+    "spineRad": 1.606
+  }
+}

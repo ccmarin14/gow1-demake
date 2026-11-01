@@ -89,7 +89,7 @@ export class PlayerView {
     params: AttackParams | null,
     platforms: readonly Platform[],
   ): void {
-    this.weaponLayer.update(player, params, platforms);
+    this.weaponLayer.update(player, params, platforms, this.sprite.texture.key);
   }
 
   private createPlayerAnimations(): void {
