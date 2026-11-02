@@ -1,4 +1,4 @@
-import type { StrikeId } from './strike';
+import type { StrikeEntry, StrikeId } from './strike';
 
 export type GameAction =
   | 'move-left'
@@ -73,6 +73,10 @@ export interface StrikeSnapshot {
   facing: -1 | 1;
   /** Ids already hit by this strike. */
   hits: string[];
+  /** The attack was pressed again early: the chained strike starts when its window opens. */
+  queued: boolean;
+  /** The strike this one chained from (absent when it started on its own). */
+  entry?: StrikeEntry;
 }
 
 export interface EntityState {

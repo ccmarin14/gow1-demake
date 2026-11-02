@@ -17,7 +17,7 @@ import { isGuarding, startGuard, stepGuard } from './guard';
 import { stepLegionnaire } from './legionnaire';
 import { stepHydra } from './hydra';
 import { isCastingMagic, stepMagic } from './magic';
-import { STRIKES, startStrike, stepStrike, type StrikeState } from './strike';
+import { STRIKES, chainStrike, queueChain, startStrike, stepStrike, type StrikeState } from './strike';
 import { buildLevel1Map, computeCameraScrollX, getSegmentAtX, type LevelMapData } from './map';
 
 const TICK_DT = 1 / CONFIG.sim.tickRate;
@@ -510,8 +510,12 @@ export class World {
 
     const wantsUpgrade = this.input.includes('upgrade');
 
-    // A strike that connects freezes the whole world for a few ticks.
+    // A strike that connects freezes the whole world for a few ticks; a press
+    // made meanwhile still queues the next strike of the combo.
     if (this.hitstopTicks > 0) {
+      if (this.strike && lightAttackEdge) {
+        queueChain(this.strike);
+      }
       this.hitstopTicks -= 1;
       this.tick += 1;
       return;
@@ -576,11 +580,23 @@ export class World {
         const rolling = isRolling(player);
         const guarding = isGuarding(player);
 
-        // Square 1: on the J edge, on the ground and free; J does nothing
-        // mid-strike until square 2 exists.
+        // Square 1: on the J edge, on the ground and free. Mid-strike, J
+        // queues the next strike of the combo, which starts once the chain
+        // window opens (from the strike's pose, not from the guard).
+        let startedNow = false;
         if (!striking && lightAttackEdge && player.grounded && !rolling && !guarding
           && !nowCastingMagic && !inHitstun && !isOpeningChest) {
           this.strike = startStrike(player, 'square1');
+          startedNow = true;
+        } else if (this.strike) {
+          if (lightAttackEdge) {
+            queueChain(this.strike);
+          }
+          const next = chainStrike(this.strike, player);
+          if (next) {
+            this.strike = next;
+            startedNow = true;
+          }
         }
         const nowStriking = this.strike !== null;
 
@@ -669,7 +685,7 @@ export class World {
           wantsDown,
         );
         // The strike started this tick stays on tick 0; later ticks step it.
-        if (this.strike && striking) {
+        if (this.strike && !startedNow) {
           const result = stepStrike(this.strike, player, this.targets, playerMinX, playerMaxX);
           if (result.done) {
             this.strike = null;

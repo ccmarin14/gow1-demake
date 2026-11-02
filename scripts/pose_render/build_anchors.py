@@ -10,9 +10,9 @@ one in `grids/kratos/` (the recipe would be wrong), and writes
 `src/assets/kratos-anchors.json`: per texture key, the upper back on the
 sprite canvas (x right, y down, origin top-left) and the spine direction in
 radians (from the neck down to the pelvis) for the blades on the back, plus
-the near hand (`hand`, hand_r), the far hand (`farHand`, hand_l) and the near
-shoulder (`shoulder`, upperarm_r) that the strikes draw the blades and chains
-from.
+the near hand (`hand`, hand_r), the far hand (`farHand`, hand_l), the near
+shoulder (`shoulder`, upperarm_r) and the far shoulder (`farShoulder`,
+upperarm_l) that the strikes draw the blades and chains from.
 """
 
 from __future__ import annotations
@@ -72,6 +72,7 @@ def main() -> int:
             "hand": point("hand_r"),
             "farHand": point("hand_l"),
             "shoulder": point("upperarm_r"),
+            "farShoulder": point("upperarm_l"),
         }
         print(f"ok   {name}")
     if mismatches:

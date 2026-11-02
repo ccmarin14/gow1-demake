@@ -152,6 +152,36 @@
       "state": "attack",
       "grounded": true,
       "png": "kratos-sq1-e"
+    },
+    {
+      "file": "sq2-a.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-sq2-a"
+    },
+    {
+      "file": "sq2-b.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-sq2-b"
+    },
+    {
+      "file": "sq2-c.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-sq2-c"
+    },
+    {
+      "file": "sq2-d.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-sq2-d"
+    },
+    {
+      "file": "sq2-e.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-sq2-e"
     }
   ]
 }

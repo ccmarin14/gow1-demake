@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import type { Vec2 } from '../sim/strike';
+import type { Depth, StrikeTrail, TrailShape, Vec2 } from '../sim/strike';
 
 /**
  * Pixel drawing for the strikes (D-37), at the logical resolution and without
@@ -131,6 +131,99 @@ export function crescentBands(
     { color: colors.orange, points: band(0.65, 0.25) },
     { color: colors.white, points: band(0.25, 0.65) },
   ];
+}
+
+/** One band piece of a profiled trail, drawn in front of or behind the body. */
+export interface TrailQuad {
+  color: number;
+  points: Vec2[];
+  depth: Depth;
+}
+
+/** Linear interpolation of a width profile (pairs of track parameter and px). */
+function profileWidth(widths: readonly (readonly [number, number])[], s: number): number {
+  if (s <= widths[0][0]) return widths[0][1];
+  for (let i = 1; i < widths.length; i += 1) {
+    const [s1, w1] = widths[i];
+    if (s <= s1) {
+      const [s0, w0] = widths[i - 1];
+      return w0 + ((w1 - w0) * (s - s0)) / Math.max(1e-6, s1 - s0);
+    }
+  }
+  return widths[widths.length - 1][1];
+}
+
+/**
+ * Profiled fire trail (`TrailShape` kind `profile`): the same four flat
+ * bands as the crescent, but cut into one quad per sample so each piece can
+ * go in front of or behind the body (`depthAt`). The width follows the
+ * profile along the track, both ends taper to a point, and inside the fan
+ * range the band reaches toward the shoulder (`trail.pivot`), filling the
+ * sector the chain sweeps. Nothing is drawn while the trail is shorter than
+ * `minLengthPx`. `widthScale` thins it while it fades.
+ */
+export function profiledTrailQuads(
+  trail: StrikeTrail,
+  shape: Extract<TrailShape, { kind: 'profile' }>,
+  depthAt: (s: number) => Depth,
+  colors: { edge: number; red: number; orange: number; white: number },
+  widthScale = 1,
+): TrailQuad[] {
+  const { points, s } = trail;
+  const n = points.length;
+  if (n < 3) return [];
+  const along: number[] = [0];
+  for (let k = 1; k < n; k += 1) {
+    along.push(along[k - 1] + Math.hypot(points[k][0] - points[k - 1][0], points[k][1] - points[k - 1][1]));
+  }
+  const total = along[n - 1];
+  if (total < shape.minLengthPx) return [];
+  const dirs: Vec2[] = [];
+  const widths: number[] = [];
+  for (let k = 0; k < n; k += 1) {
+    const f = along[k] / total;
+    const taper = Math.min(1, f / shape.taperOld, (1 - f) / shape.taperHead);
+    const a = points[Math.max(k - 1, 0)];
+    const b = points[Math.min(k + 1, n - 1)];
+    const length = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+    // Normal on the inner side of a clockwise sweep.
+    let dx = -(b[1] - a[1]) / length;
+    let dy = (b[0] - a[0]) / length;
+    let width = profileWidth(shape.widths, s[k]);
+    const fan = shape.fan;
+    if (fan) {
+      const soft = 0.08;
+      const weight = Math.max(0, Math.min(1, (s[k] - fan.fromS) / soft, (fan.toS - s[k]) / soft));
+      if (weight > 0) {
+        const px = trail.pivot[0] - points[k][0];
+        const py = trail.pivot[1] - points[k][1];
+        const reach = Math.hypot(px, py) || 1;
+        dx = dx * (1 - weight) + (px / reach) * weight;
+        dy = dy * (1 - weight) + (py / reach) * weight;
+        const norm = Math.hypot(dx, dy) || 1;
+        dx /= norm;
+        dy /= norm;
+        width = width * (1 - weight) + Math.max(width, (1 - fan.innerRatio) * reach) * weight;
+      }
+    }
+    dirs.push([dx, dy]);
+    widths.push(Math.max(0, width * widthScale * Math.max(0, taper)));
+  }
+  const bands: [number, number, number][] = [
+    [colors.edge, 1.25, 0],
+    [colors.red, 1, 0],
+    [colors.orange, 0.65, 0.25],
+    [colors.white, 0.25, 0.65],
+  ];
+  const quads: TrailQuad[] = [];
+  for (const [color, scale, lo] of bands) {
+    for (let k = 0; k + 1 < n; k += 1) {
+      if (along[k] / total < lo) continue;
+      const inner = (q: number): Vec2 => [points[q][0] + dirs[q][0] * widths[q] * scale, points[q][1] + dirs[q][1] * widths[q] * scale];
+      quads.push({ color, points: [points[k], points[k + 1], inner(k + 1), inner(k)], depth: depthAt(s[k]) });
+    }
+  }
+  return quads;
 }
 
 /** 1 px line between whole-pixel points (Bresenham). */

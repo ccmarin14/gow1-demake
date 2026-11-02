@@ -162,16 +162,15 @@ describe('square-1 strike in the world', () => {
     assert.equal(guarding.snapshot().strike, undefined);
   });
 
-  it('ignores J pressed again mid-strike (no square-2 yet)', () => {
+  it('ignores J pressed again before the hit window (no buffered square-2)', () => {
     const world = playingWorld();
     world.step(['light-attack']);
-    hold(world, 14, []);
+    hold(world, 2, []);
     world.step(['light-attack']);
-    assert.equal(world.snapshot().strike?.tick, 15);
-    hold(world, 10, []);
-    world.step(['light-attack']);
-    assert.equal(world.snapshot().strike?.tick, 26);
-    hold(world, 7, []);
+    assert.equal(world.snapshot().strike?.tick, 3);
+    hold(world, 30, []);
+    assert.equal(world.snapshot().strike?.id, 'square1');
+    assert.equal(world.snapshot().strike?.tick, 33);
     world.step([]);
     assert.equal(world.snapshot().strike, undefined);
     world.step(['light-attack']);

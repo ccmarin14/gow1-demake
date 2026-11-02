@@ -4,12 +4,12 @@ import ANCHORS from '../assets/kratos-anchors.json';
 import { CONFIG } from '../config';
 import {
   STRIKES,
-  chainSagAt,
-  farBladeAt,
-  nearBladeAt,
-  strikeAnchorAt,
+  bladeAt,
+  strikeHandAt,
   strikePhaseAt,
   strikeTrailAt,
+  trackDepthAt,
+  type Hand,
   type StrikePoseAnchors,
   type Vec2,
 } from '../sim/strike';
@@ -21,6 +21,7 @@ import {
   drawChain,
   drawGlint,
   fillPixelPolygon,
+  profiledTrailQuads,
   type BladeDirections,
 } from './strikeArt';
 
@@ -38,8 +39,14 @@ interface FrameAnchors {
 }
 const FRAME_ANCHORS: Readonly<Record<string, FrameAnchors>> = ANCHORS;
 
-/** Depths: behind the body (0) for the trail and far blade, above the enemies (1) for the thrown blade. */
+/**
+ * Depths: behind the body (0) for the trail, the blades and the chains while
+ * they pass behind it; above the enemies (1) for the trail in front, then
+ * the chains and blades in front.
+ */
 const DEPTH_TRAIL = -0.07;
+const DEPTH_TRAIL_FRONT = 1.09;
+const DEPTH_FAR_CHAIN = -0.06;
 const DEPTH_BEHIND = -0.05;
 const DEPTH_CHAIN = 1.1;
 const DEPTH_BLADE = 1.11;
@@ -55,8 +62,8 @@ const strikeAnchors: StrikePoseAnchors = (pose) => {
  * Blades of Chaos, as in GoW 1 (D-26: weapons are an engine layer, not part
  * of the character grid). At rest two blades hang crossed on Kratos' back.
  * During a strike (D-37) they leave the back: the layer reads the strike
- * track and draws the far blade in the far hand, the fire crescent, the
- * chain and the thrown near blade, and the impact glint. Every display
+ * track and draws the fire crescent, the blade held in one hand, the blade
+ * the other hand throws on its chain, and the impact glint. Every display
  * object is created once and repositioned per frame.
  */
 export class WeaponLayer {
@@ -64,7 +71,9 @@ export class WeaponLayer {
   private nearBlade: Phaser.GameObjects.Image | null = null;
   private farBlade: Phaser.GameObjects.Image | null = null;
   private trail: Phaser.GameObjects.Graphics | null = null;
+  private trailFront: Phaser.GameObjects.Graphics | null = null;
   private chain: Phaser.GameObjects.Graphics | null = null;
+  private farChain: Phaser.GameObjects.Graphics | null = null;
   private glint: Phaser.GameObjects.Graphics | null = null;
   private directions: BladeDirections = { keys: [], sizes: [] };
 
@@ -79,7 +88,9 @@ export class WeaponLayer {
     this.nearBlade = scene.add.image(0, 0, firstKey).setOrigin(0, 0).setVisible(false);
     this.farBlade = scene.add.image(0, 0, firstKey).setOrigin(0, 0).setDepth(DEPTH_BEHIND).setVisible(false);
     this.trail = scene.add.graphics().setDepth(DEPTH_TRAIL);
+    this.trailFront = scene.add.graphics().setDepth(DEPTH_TRAIL_FRONT);
     this.chain = scene.add.graphics().setDepth(DEPTH_CHAIN);
+    this.farChain = scene.add.graphics().setDepth(DEPTH_FAR_CHAIN);
     this.glint = scene.add.graphics().setDepth(DEPTH_GLINT);
   }
 
@@ -125,38 +136,53 @@ export class WeaponLayer {
     const toWorld = (p: Vec2): Vec2 => [strike.originX + facing * p[0], player.y + p[1]];
     const { phase, u } = strikePhaseAt(def, t);
 
-    // Fire crescent, behind the body.
+    // Fire trail: square 1's crescent behind the body; profiled trails
+    // split in front of and behind it along the track.
     const trail = this.trail!;
+    const trailFront = this.trailFront!;
     trail.clear();
-    const { points, widthPx } = strikeTrailAt(def, t, strikeAnchors);
-    for (const band of crescentBands(points, widthPx, art.trail)) {
-      fillPixelPolygon(trail, band.points.map(toWorld), band.color);
+    trailFront.clear();
+    const fire = strikeTrailAt(def, t, strikeAnchors);
+    if (def.trail.kind === 'crescent') {
+      for (const band of crescentBands(fire.points, fire.widthPx, art.trail)) {
+        fillPixelPolygon(trail, band.points.map(toWorld), band.color);
+      }
+    } else {
+      const fading = phase.trail ? 1 : def.trailFadeWidthPx / Math.max(...def.trail.widths.map((w) => w[1]));
+      const quads = profiledTrailQuads(fire, def.trail, (s) => trackDepthAt(def, s), art.trail, fading);
+      for (const quad of quads) {
+        fillPixelPolygon(quad.depth === 'behind' ? trail : trailFront, quad.points.map(toWorld), quad.color);
+      }
     }
 
-    // Far blade: drawn from the back into the far hand, then hanging from it.
-    const far = farBladeAt(def, t, strikeAnchors);
-    this.placeBlade(this.farBlade!, toWorld(far.pos), far.deg, facing);
-
-    // Near blade: behind the body while drawn, then thrown on its chain.
-    const near = nearBladeAt(def, t, strikeAnchors);
-    const nearWorld = toWorld(near.pos);
-    const chain = this.chain!;
-    chain.clear();
-    let deg = phase.blade.kind === 'draw' ? 150 : 100;
-    if (near.chainOut) {
-      const handLocal = strikeAnchorAt(def, t, strikeAnchors, 'hand');
-      const handWorld = toWorld(handLocal);
-      drawChain(chain, handWorld, nearWorld, chainSagAt(def, t), art.chainColors);
-      deg = (Math.atan2(near.pos[1] - handLocal[1], near.pos[0] - handLocal[0]) * 180) / Math.PI;
+    // Each hand's blade: in the hand, drawn from the back, or out on its
+    // chain (the near hand's chain over the body, the far hand's behind it).
+    const chains: Record<Hand, Phaser.GameObjects.Graphics> = { near: this.chain!, far: this.farChain! };
+    const images: Record<Hand, Phaser.GameObjects.Image> = { near: this.nearBlade!, far: this.farBlade! };
+    let thrownWorld: Vec2 = [0, 0];
+    for (const hand of ['far', 'near'] as const) {
+      const blade = bladeAt(def, hand, t, strikeAnchors, strike.entry);
+      const world = toWorld(blade.pos);
+      const chain = chains[hand];
+      chain.clear();
+      // A chain goes at its blade's depth, whichever hand throws it.
+      chain.setDepth(blade.behindBody ? DEPTH_FAR_CHAIN : DEPTH_CHAIN);
+      let deg = blade.deg;
+      if (blade.chainOut) {
+        const handLocal = strikeHandAt(def, t, strikeAnchors, hand);
+        drawChain(chain, toWorld(handLocal), world, blade.sagPx, art.chainColors);
+        deg = (Math.atan2(blade.pos[1] - handLocal[1], blade.pos[0] - handLocal[0]) * 180) / Math.PI;
+      }
+      images[hand].setDepth(blade.behindBody ? DEPTH_BEHIND : DEPTH_BLADE);
+      this.placeBlade(images[hand], world, deg, facing);
+      if (hand === def.hand) thrownWorld = world;
     }
-    this.nearBlade!.setDepth(phase.blade.kind === 'draw' ? DEPTH_BEHIND : DEPTH_BLADE);
-    this.placeBlade(this.nearBlade!, nearWorld, deg, facing);
 
     // Glint at the tip when the throw lands.
     const glint = this.glint!;
     glint.clear();
     if (phase.blade.kind === 'hold' && u < art.glintFraction) {
-      drawGlint(glint, nearWorld, art.glintColor);
+      drawGlint(glint, thrownWorld, art.glintColor);
     }
   }
 
@@ -175,7 +201,9 @@ export class WeaponLayer {
     this.nearBlade?.setVisible(false);
     this.farBlade?.setVisible(false);
     this.trail?.clear();
+    this.trailFront?.clear();
     this.chain?.clear();
+    this.farChain?.clear();
     this.glint?.clear();
   }
 }
