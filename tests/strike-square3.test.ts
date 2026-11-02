@@ -235,13 +235,12 @@ describe('square-3 strike data', () => {
     }
   });
 
-  it('hits from the way down in front to the end of the hold; chains from square 2, not further', () => {
+  it('hits from the way down in front to the end of the hold; chains from square 2', () => {
     const { first, last } = strikeActiveTicks(SQUARE3);
     assert.ok(first >= 12 && first <= 14, `first hit tick ${first} (early in the throw)`);
     assert.equal(last, 21);
     assert.deepEqual(strikeChainTicks(SQUARE2), { opens: 14, buffersFrom: 7 });
     assert.equal(SQUARE2.chain?.into, 'square3');
-    assert.equal(strikeChainTicks(SQUARE3), null);
   });
 });
 
@@ -261,9 +260,12 @@ describe('square 2 -> square 3 in the world', () => {
     assert.ok(Math.abs(player(world.snapshot()).x - x0 - 17) < 1e-6, 'squares 1, 2 and 3 step 7, 5 and 5 px');
   });
 
-  it('does nothing on J during square 3 (no square 4 yet)', () => {
+  it('ignores J pressed in square 3 before its hit window: the combo ends after square 3', () => {
     const { world } = square3World();
-    for (let i = 0; i < 28; i += 1) world.step(i % 3 === 0 ? ['light-attack'] : []);
+    world.step([]);
+    world.step(['light-attack']);
+    assert.equal(world.snapshot().strike?.queued, false);
+    hold(world, 26, []);
     assert.equal(world.snapshot().strike?.id, 'square3');
     world.step([]);
     assert.equal(world.snapshot().strike, undefined);

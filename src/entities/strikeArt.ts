@@ -185,9 +185,10 @@ export function profiledTrailQuads(
     const a = points[Math.max(k - 1, 0)];
     const b = points[Math.min(k + 1, n - 1)];
     const length = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
-    // Normal on the inner side of a clockwise sweep.
-    const dx = -(b[1] - a[1]) / length;
-    const dy = (b[0] - a[0]) / length;
+    // Normal on the inner side of a clockwise sweep (the other side when flipped).
+    const side = shape.flip ? -1 : 1;
+    const dx = (side * -(b[1] - a[1])) / length;
+    const dy = (side * (b[0] - a[0])) / length;
     const width = profileWidth(shape.widths, s[k]);
     dirs.push([dx, dy]);
     widths.push(Math.max(0, width * widthScale * Math.max(0, taper)));

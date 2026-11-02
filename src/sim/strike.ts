@@ -16,7 +16,7 @@ import type { EntityState, StrikeSnapshot } from './types';
  */
 export type Vec2 = readonly [number, number];
 
-export type StrikeId = 'square1' | 'square2' | 'square3';
+export type StrikeId = 'square1' | 'square2' | 'square3' | 'square4';
 
 /** Kratos' hands as the side view shows them: near the camera or behind the body. */
 export type Hand = 'near' | 'far';
@@ -46,6 +46,14 @@ export type TrailShape =
     taperHead: number;
     minLengthPx: number;
     maxLengthPx?: number;
+    /** The sweep turns counter-clockwise on screen: the crescent's inner side is the other one. */
+    flip?: boolean;
+    /**
+     * Once the trail stops growing it is cut as soon as its head is more
+     * than 2 px from the blade, instead of shrinking one tick at a time: a
+     * trail never floats away from its blade.
+     */
+    cutWhenDetached?: boolean;
   };
 
 /** How a blade moves along its track during a phase. */
@@ -55,10 +63,19 @@ export type BladeMotion =
    * blade is drawn) or from under the throwing hand (it already holds it).
    */
   | { kind: 'draw'; from: 'back' | 'hand'; behindBody: true }
+  /**
+   * To the start of the track (ease out), from where the previous strike of
+   * the combo left this blade (or from under the hand when there is none):
+   * both blades are thrown from the first phase on.
+   */
+  | { kind: 'carry' }
   /** Along the track from `from` to `to` (0..1 of its length). */
   | { kind: 'track'; from: number; to: number; ease: 'linear' | 'out' }
-  /** Held at the end of the track, drifting `driftPx` and back. */
-  | { kind: 'hold'; driftPx: number }
+  /**
+   * Held at the end of the track, drifting `driftPx` and back: down, and
+   * `driftX` of it along x (0.3 forward by default).
+   */
+  | { kind: 'hold'; driftPx: number; driftX?: number }
   /** Back to the throwing hand, accelerating, the chain sagging up to `sagPx`. */
   | { kind: 'recall'; sagPx: number };
 
@@ -164,6 +181,7 @@ const CX: Readonly<Record<string, number>> = {
   'sq1-a': -2.5, 'sq1-b': -1.5, 'sq1-c': -3, 'sq1-d': -3, 'sq1-e': -1.5,
   'sq2-a': -3.5, 'sq2-b': -3, 'sq2-c': -1.5, 'sq2-d': -3, 'sq2-e': -1,
   'sq3-a': -2, 'sq3-b': -2, 'sq3-c': 0, 'sq3-d': -0.5, 'sq3-e': -2, 'sq3-f': -0.5,
+  'sq4-a': -3, 'sq4-b': 0.5, 'sq4-b2': 1, 'sq4-c': 0.5, 'sq4-d': 4, 'sq4-e': -1.5,
 };
 
 /**
@@ -344,9 +362,105 @@ const SQUARE3: StrikeDef = {
   hitstopTicks: 4,
   trailSamplesPerTick: 6,
   trailFadeWidthPx: 4,
+  chain: { into: 'square4', from: 'hold', fromTick: 4 },
 };
 
-export const STRIKES: Readonly<Record<StrikeId, StrikeDef>> = { square1: SQUARE1, square2: SQUARE2, square3: SQUARE3 };
+/** Restrained crescent of square 4's two blades, cut as soon as it leaves its blade. */
+const SQUARE4_TRAIL = {
+  widths: [[0, 2], [0.3, 5], [0.6, 6], [0.85, 5], [1, 4]],
+  taperOld: 0.25,
+  taperHead: 0.1,
+  minLengthPx: 12,
+  // One sample may pass the cap: 50 keeps the drawn trail within 55 px.
+  maxLengthPx: 50,
+  cutWhenDetached: true,
+} as const;
+
+/**
+ * Square 4 (draft v2, after the critic; pending user approval): the spin,
+ * chained from square 3's open arms. Kratos turns one way only: profile,
+ * back, inverted profile, front. In side view (D-04, as Betrayal does it)
+ * the orbit is an ellipse at waist height, the near blade passing in front
+ * of the body and the far one behind it; then each blade rises into a
+ * vertical crescent on its own side, out of phase: the near one loops high
+ * over the back and ends overhead, the far one makes a lower, later loop in
+ * front and ends out in front. Both blades hit, so an enemy behind him is
+ * hit too (once per strike).
+ */
+const SQUARE4: StrikeDef = {
+  id: 'square4',
+  hand: 'near',
+  // Both blades are thrown from the first phase on; nothing is only held.
+  heldBlade: { from: 'previous', ticks: 9, sagPx: 5 },
+  phases: [
+    { id: 'load', ticks: 3, advancePx: 0, pose: 'sq4-a', centerX: CX['sq4-a'] },
+    { id: 'orbit', ticks: 5, advancePx: 1, pose: 'sq4-b', centerX: CX['sq4-b'] },
+    { id: 'orbit2', ticks: 5, advancePx: 1, pose: 'sq4-b2', centerX: CX['sq4-b2'] },
+    { id: 'rise', ticks: 8, advancePx: 0, pose: 'sq4-c', centerX: CX['sq4-c'] },
+    { id: 'hold', ticks: 5, advancePx: 0, pose: 'sq4-d', centerX: CX['sq4-d'] },
+    { id: 'recall', ticks: 8, advancePx: 0, pose: 'sq4-e', centerX: CX['sq4-e'] },
+  ],
+  blades: {
+    near: {
+      // Near shoulder of the front pose (sq4-c).
+      shoulder: [-4.4, -31.7],
+      // Front pass of the ellipse (18 px up), across in front of the body to
+      // the back, then up the back side and over toward the head.
+      track: [[64.4, 10], [44.4, 13], [4.4, 14], [-35.6, 13], [-67.6, 4], [-67.6, -22.3], [-43.6, -38.3], [-15.6, -44.3], [-3.6, -45.3]],
+      trackDepth: ['front', 'front', 'front', 'front', 'front', 'front', 'front', 'front', 'front'],
+      chainFrom: 0,
+      motion: {
+        load: { kind: 'carry' },
+        orbit: { kind: 'track', from: 0, to: 0.165, ease: 'linear' },
+        orbit2: { kind: 'track', from: 0.165, to: 0.33, ease: 'linear' },
+        rise: { kind: 'track', from: 0.33, to: 1, ease: 'linear' },
+        // Drifts outward (back) and down while it hangs overhead.
+        hold: { kind: 'hold', driftPx: 4, driftX: -0.5 },
+        recall: { kind: 'recall', sagPx: 5 },
+      },
+      trailGrowth: { orbit: { widthPx: 5 }, orbit2: { widthPx: 5 }, rise: { widthPx: 6 } },
+      trail: { kind: 'profile', ...SQUARE4_TRAIL },
+      active: { fromS: 0.02 },
+    },
+    far: {
+      // Far shoulder of the front pose (sq4-c).
+      shoulder: [5.1, -31.5],
+      // Back pass of the ellipse (26 px up), across behind the body to the
+      // front, then a lower loop up the front side, topping 30 px over the
+      // shoulder and ending out in front, a little below it (where the far
+      // arm of sq4-d points).
+      track: [[-61.1, 10], [-41.1, 7], [-5.1, 6], [34.9, 7], [62.9, 4], [62.9, -22.5], [52, -30], [38, -18], [30, -14]],
+      // Behind the body while it crosses behind it.
+      trackDepth: ['behind', 'behind', 'behind', 'front', 'front', 'front', 'front', 'front', 'front'],
+      chainFrom: 0,
+      motion: {
+        load: { kind: 'carry' },
+        orbit: { kind: 'track', from: 0, to: 0.165, ease: 'linear' },
+        orbit2: { kind: 'track', from: 0.165, to: 0.33, ease: 'linear' },
+        // Out of phase: it is still rising while the near blade hangs overhead.
+        rise: { kind: 'track', from: 0.33, to: 0.8, ease: 'linear' },
+        hold: { kind: 'track', from: 0.8, to: 1, ease: 'out' },
+        recall: { kind: 'recall', sagPx: 5 },
+      },
+      trailGrowth: { orbit: { widthPx: 5 }, orbit2: { widthPx: 5 }, rise: { widthPx: 6 }, hold: { widthPx: 4 } },
+      trail: { kind: 'profile', ...SQUARE4_TRAIL, flip: true },
+      active: { fromS: 0.02 },
+    },
+  },
+  hitRadiusPx: 3.5,
+  damage: 10,
+  hitstunTicks: 14,
+  hitstopTicks: 4,
+  trailSamplesPerTick: 6,
+  trailFadeWidthPx: 4,
+};
+
+export const STRIKES: Readonly<Record<StrikeId, StrikeDef>> = {
+  square1: SQUARE1,
+  square2: SQUARE2,
+  square3: SQUARE3,
+  square4: SQUARE4,
+};
 
 /**
  * Where a chained strike came from: the previous strike and its tick when
@@ -476,7 +590,7 @@ export function trackBladeAt(def: StrikeDef, t: number, hand: Hand = def.hand): 
   if (motion?.kind === 'hold') {
     const drift = motion.driftPx * Math.sin(u * Math.PI);
     const tip = onTrack(def, hand, t, 1);
-    return { pos: [tip[0] + drift * 0.3, tip[1] + drift], s: 1 };
+    return { pos: [tip[0] + drift * (motion.driftX ?? 0.3), tip[1] + drift], s: 1 };
   }
   return null;
 }
@@ -511,12 +625,33 @@ export interface BladeState {
 }
 
 /** `hand`'s blade on its track at strike time `t`: drawn, run along the track, held at its end, recalled. */
-export function thrownBladeAt(def: StrikeDef, t: number, anchors: StrikePoseAnchors, hand: Hand = def.hand): BladeState {
+export function thrownBladeAt(
+  def: StrikeDef,
+  t: number,
+  anchors: StrikePoseAnchors,
+  hand: Hand = def.hand,
+  entry?: StrikeEntry,
+): BladeState {
   const { motion, u } = bladeMotionAt(def, hand, t);
   if (!motion) {
     throw new Error(`strike ${def.id}: the ${hand} blade is not thrown at ${t}`);
   }
   const blade = bladeTrack(def, hand);
+  if (motion.kind === 'carry') {
+    const grip = strikeHandAt(def, t, anchors, hand);
+    const start = entry ? previousBladeAt(entry, hand, anchors) : [grip[0], grip[1] + 5] as Vec2;
+    const end = onTrack(def, hand, t, 0);
+    const e = 1 - (1 - u) * (1 - u);
+    const pos: Vec2 = [start[0] + (end[0] - start[0]) * e, start[1] + (end[1] - start[1]) * e];
+    return {
+      pos,
+      chainOut: Math.hypot(pos[0] - grip[0], pos[1] - grip[1]) > 8,
+      sagPx: 0,
+      deg: 100,
+      behindBody: trackDepthAt(def, 0, hand) === 'behind',
+      s: 0,
+    };
+  }
   if (motion.kind === 'draw') {
     const end = onTrack(def, hand, t, 0);
     const e = u * u;
@@ -589,8 +724,7 @@ export function heldBladeAt(def: StrikeDef, hand: Hand, t: number, anchors: Stri
     };
   }
   if (held.from === 'previous' && entry && t < held.ticks) {
-    const previous = bladeAt(STRIKES[entry.id], hand, entry.tick, anchors, entry.entry).pos;
-    const start: Vec2 = [(previous[0] - entry.offsetPx) * (entry.turned ? -1 : 1), previous[1]];
+    const start = previousBladeAt(entry, hand, anchors);
     // Yanked back at once, settling into the hand (ease out).
     const v = Math.max(0, t) / held.ticks;
     const e = 1 - (1 - v) * (1 - v);
@@ -607,8 +741,14 @@ export function heldBladeAt(def: StrikeDef, hand: Hand, t: number, anchors: Stri
 /** The blade of `hand` at strike time `t`: on its track if it has a motion now, else held. */
 export function bladeAt(def: StrikeDef, hand: Hand, t: number, anchors: StrikePoseAnchors, entry?: StrikeEntry): BladeState {
   return bladeMotionAt(def, hand, t).motion
-    ? thrownBladeAt(def, t, anchors, hand)
+    ? thrownBladeAt(def, t, anchors, hand, entry)
     : heldBladeAt(def, hand, t, anchors, entry);
+}
+
+/** Where the previous strike of the combo left `hand`'s blade, in this strike's coordinates. */
+function previousBladeAt(entry: StrikeEntry, hand: Hand, anchors: StrikePoseAnchors): Vec2 {
+  const previous = bladeAt(STRIKES[entry.id], hand, entry.tick, anchors, entry.entry).pos;
+  return [(previous[0] - entry.offsetPx) * (entry.turned ? -1 : 1), previous[1]];
 }
 
 /** Near blade at strike time `t`. */
@@ -682,6 +822,11 @@ export function strikeTrailAt(def: StrikeDef, tick: number, anchors: StrikePoseA
       samples = keepLast(samples, maxPx);
     } else {
       samples = samples.slice(n);
+      const head = samples[samples.length - 1];
+      if (head && blade.trail.kind === 'profile' && blade.trail.cutWhenDetached) {
+        const at = bladeAt(def, hand, t, anchors).pos;
+        if (Math.hypot(at[0] - head.p[0], at[1] - head.p[1]) > 2) samples = [];
+      }
     }
   }
   const growth = blade?.trailGrowth?.[strikePhaseAt(def, tick).phase.id];

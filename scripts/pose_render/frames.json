@@ -35,6 +35,12 @@
     "sq3-c": { "action": "Idle_Loop", "frame": 0, "pose": "sq3-c.json", "ground": true },
     "sq3-d": { "action": "Idle_Loop", "frame": 0, "pose": "sq3-d.json", "ground": true },
     "sq3-e": { "action": "Idle_Loop", "frame": 0, "pose": "sq3-e.json", "ground": true },
-    "sq3-f": { "action": "Idle_Loop", "frame": 0, "pose": "sq3-f.json", "ground": true }
+    "sq3-f": { "action": "Idle_Loop", "frame": 0, "pose": "sq3-f.json", "ground": true },
+    "sq4-a": { "action": "Idle_Loop", "frame": 0, "pose": "sq4-a.json", "ground": true },
+    "sq4-b": { "action": "Idle_Loop", "frame": 0, "pose": "sq4-b.json", "ground": true },
+    "sq4-b2": { "action": "Idle_Loop", "frame": 0, "pose": "sq4-b2.json", "ground": true },
+    "sq4-c": { "action": "Idle_Loop", "frame": 0, "pose": "sq4-c.json", "ground": true },
+    "sq4-d": { "action": "Idle_Loop", "frame": 0, "pose": "sq4-d.json", "ground": true },
+    "sq4-e": { "action": "Idle_Loop", "frame": 0, "pose": "sq4-e.json", "ground": true }
   }
 }
