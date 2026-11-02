@@ -16,7 +16,7 @@ import type { EntityState, StrikeSnapshot } from './types';
  */
 export type Vec2 = readonly [number, number];
 
-export type StrikeId = 'square1' | 'square2' | 'square3' | 'square4' | 'square5' | 'triangle';
+export type StrikeId = 'square1' | 'square2' | 'square3' | 'square4' | 'square5' | 'square6' | 'triangle';
 
 /** Kratos' hands as the side view shows them: near the camera or behind the body. */
 export type Hand = 'near' | 'far';
@@ -217,6 +217,8 @@ export type HeldBlade = { from: 'back' } | { from: 'previous'; ticks: number; sa
  */
 export interface StrikeChain {
   into: StrikeId;
+  /** What triangle pressed in the same window starts (the plain triangle; Plume after square 2, later). */
+  heavy?: StrikeId;
   from: string;
   fromTick: number;
 }
@@ -270,7 +272,7 @@ export interface StrikeImpact {
 const CX: Readonly<Record<string, number>> = {
   'sq1-a': -2.5, 'sq1-b': -1.5, 'sq1-c': -3, 'sq1-d': -3, 'sq1-e': -1.5,
   'sq2-a': -3.5, 'sq2-b': -3, 'sq2-c': -1.5, 'sq2-d': -3, 'sq2-e': -1,
-  'sq3-a': -2, 'sq3-b': -2, 'sq3-c': 0, 'sq3-d': -0.5, 'sq3-e': -2, 'sq3-f': -0.5,
+  'sq3-a': -2, 'sq3-b': -2, 'sq3-c': 0, 'sq3-d': -0.5, 'sq3-e': -2, 'sq3-f': -0.5, 'sq3-g': -0.5, 'sq3-h': 0,
   'sq4-a': -3, 'sq4-b': 0.5, 'sq4-b2': 1, 'sq4-c': 0.5, 'sq4-d': 4, 'sq4-e': -1.5,
   'sq5-a': -1.5, 'sq5-b': -0.5, 'sq5-c': -1, 'sq5-d': 0, 'sq5-e': 0, 'sq5-f': -1.5, 'sq5-g': 0,
   'tri-a': -1, 'tri-b': -0.5, 'tri-b2': 0, 'tri-c': -2, 'tri-d': -0.5, 'tri-e': 0, 'tri-f': 0.5, 'tri-g': -1.5,
@@ -318,7 +320,7 @@ const SQUARE1: StrikeDef = {
   hitstopTicks: 4,
   trailSamplesPerTick: 6,
   trailFadeWidthPx: 4,
-  chain: { into: 'square2', from: 'hold', fromTick: 4 },
+  chain: { into: 'square2', heavy: 'triangle', from: 'hold', fromTick: 4 },
 };
 
 /**
@@ -376,17 +378,29 @@ const SQUARE2: StrikeDef = {
   hitstopTicks: 4,
   trailSamplesPerTick: 6,
   trailFadeWidthPx: 4,
-  chain: { into: 'square3', from: 'hold', fromTick: 4 },
+  // Triangle after square 2 will be Plume of Prometheus; the plain one for now.
+  chain: { into: 'square3', heavy: 'triangle', from: 'hold', fromTick: 4 },
 };
 
+/** The square chain's restrained crescent, cut as soon as it leaves its blade (squares 3 and 4). */
+const SQUARE_TRAIL = {
+  widths: [[0, 2], [0.3, 6], [0.6, 6], [0.8, 4], [1, 4]],
+  taperOld: 0.25,
+  taperHead: 0.1,
+  minLengthPx: 12,
+  // One sample may pass the cap: 50 keeps the drawn trail within 55 px.
+  maxLengthPx: 50,
+  cutWhenDetached: true,
+} as const;
+
 /**
- * Square 3 (draft v2, after the critic; pending user approval): chained from
- * square 2's hold or recall. Kratos rises out of the lunge and stays upright
- * while the near arm swings its blade from low behind, up behind him to
- * straight overhead, where it lingers, over the head and down in front to
- * stop level at chest height. Only then does he crouch, both arms open: the
- * far blade, yanked back from square 2's throw, goes out behind him on a
- * short chain at chest height, setting up square 4's spin.
+ * Square 3 (draft v1 of the split, pending critic and user approval): the
+ * ascending cut, chained from square 2's hold or recall. Kratos rises out of
+ * the lunge and the near arm cuts upward in front of him, from low ahead,
+ * through a near enemy, up to over the head in front, where it stops high
+ * with Kratos upright: the chain window to square 4's descending cut is
+ * there, at the top. The far blade, yanked back from square 2's throw,
+ * stays in the far hand.
  */
 const SQUARE3: StrikeDef = {
   id: 'square3',
@@ -394,47 +408,79 @@ const SQUARE3: StrikeDef = {
   heldBlade: { from: 'previous', ticks: 9, sagPx: 5 },
   phases: [
     { id: 'load', ticks: 3, advancePx: 0, pose: 'sq3-a', centerX: CX['sq3-a'] },
-    { id: 'rise', ticks: 4, advancePx: 1, pose: 'sq3-b', centerX: CX['sq3-b'] },
-    { id: 'sweep', ticks: 5, advancePx: 1, pose: 'sq3-c', centerX: CX['sq3-c'] },
-    { id: 'throw', ticks: 4, advancePx: 3, pose: 'sq3-d', centerX: CX['sq3-d'] },
+    { id: 'cut', ticks: 5, advancePx: 1, pose: 'sq3-g', centerX: CX['sq3-g'] },
+    { id: 'top', ticks: 3, advancePx: 1, pose: 'sq3-c', centerX: CX['sq3-c'] },
+    { id: 'hold', ticks: 7, advancePx: 0, pose: 'sq3-h', centerX: CX['sq3-h'] },
+    { id: 'recall', ticks: 8, advancePx: 0, pose: 'sq3-a', centerX: CX['sq3-a'] },
+  ],
+  blades: {
+    near: {
+      // Near shoulder of the cut (sq3-g).
+      shoulder: [-4.5, -29.7],
+      // Low ahead (8 px up, 30 px out), up in front through chest height, to
+      // over the head in front (65 px up): where square 4 starts.
+      track: [[28.5, 33.7], [34.5, 21.7], [48.5, -0.3], [40.5, -24.3], [21.5, -35.3], [-1.5, -36.3]],
+      chainFrom: 0.05,
+      motion: {
+        load: { kind: 'draw', from: 'hand', behindBody: true },
+        cut: { kind: 'track', from: 0, to: 0.7, ease: 'linear' },
+        // Eases out: the blade stops high.
+        top: { kind: 'track', from: 0.7, to: 1, ease: 'out' },
+        hold: { kind: 'hold', driftPx: 1 },
+        recall: { kind: 'recall', sagPx: 5 },
+      },
+      trailGrowth: { cut: { widthPx: 6 }, top: { widthPx: 4, tailPx: 20, tailFromU: 0.3 } },
+      trail: { kind: 'profile', ...SQUARE_TRAIL },
+      // The whole rise in front, through the hold at the top.
+      active: { fromS: 0.02 },
+    },
+  },
+  hitRadiusPx: 3.5,
+  damage: 10,
+  hitstunTicks: 14,
+  hitstopTicks: 4,
+  trailSamplesPerTick: 6,
+  trailFadeWidthPx: 4,
+  chain: { into: 'square4', heavy: 'triangle', from: 'hold', fromTick: 3 },
+};
+
+/**
+ * Square 4 (draft v1 of the split, pending critic and user approval): the
+ * descending cut, chained from square 3's top. The near blade comes down
+ * from over the head, a long diagonal in front through chest height, and
+ * stops level at chest height; Kratos crouches with both arms open, the far
+ * blade out behind him on a short chain, setting up square 5's spin. Its
+ * descent, hold and far blade are the approved square 3's second half
+ * (commit af48f18), so square 5 starts from the same place.
+ */
+const SQUARE4: StrikeDef = {
+  id: 'square4',
+  hand: 'near',
+  heldBlade: { from: 'previous', ticks: 9, sagPx: 5 },
+  phases: [
+    { id: 'carry', ticks: 2, advancePx: 0, pose: 'sq3-c', centerX: CX['sq3-c'] },
+    { id: 'throw', ticks: 5, advancePx: 3, pose: 'sq3-d', centerX: CX['sq3-d'] },
     { id: 'hold', ticks: 6, advancePx: 0, pose: 'sq3-e', centerX: CX['sq3-e'] },
     { id: 'recall', ticks: 7, advancePx: 0, pose: 'sq3-f', centerX: CX['sq3-f'] },
   ],
   blades: {
     near: {
+      // Near shoulder of the throw (sq3-d).
       shoulder: [-3.7, -31.7],
-      // From low behind the hip, up behind him to straight overhead, over the
-      // head, then down in front through chest height to stop level there.
-      // The critic's path in feet coordinates, moved onto the upright throw
-      // pose's higher shoulder (+2.7, +4.7).
-      track: [[-16.3, 31.7], [-14.3, 17.7], [-16.3, -8.3], [-2.3, -34.3], [20.7, -33.3], [38.7, -9.3], [72.7, 1.7], [85.7, 3.7]],
-      // Behind the body while it rises behind and overhead, then in front.
-      trackDepth: ['behind', 'behind', 'behind', 'behind', 'front', 'front', 'front', 'front'],
-      chainFrom: 0.1,
+      // From over the head in front (where square 3 stops) down the diagonal
+      // to chest height, 74 px out with the step.
+      track: [[-2.3, -34.3], [20.7, -33.3], [38.7, -9.3], [72.7, 1.7], [85.7, 3.7]],
+      chainFrom: 0.05,
       motion: {
-        load: { kind: 'draw', from: 'hand', behindBody: true },
-        rise: { kind: 'track', from: 0, to: 0.3, ease: 'linear' },
-        // Eases out: the blade lingers over the head.
-        sweep: { kind: 'track', from: 0.3, to: 0.65, ease: 'out' },
-        throw: { kind: 'track', from: 0.65, to: 1, ease: 'out' },
+        carry: { kind: 'carry' },
+        throw: { kind: 'track', from: 0, to: 1, ease: 'out' },
         hold: { kind: 'hold', driftPx: 2 },
         recall: { kind: 'recall', sagPx: 5 },
       },
-      trailGrowth: {
-        rise: { widthPx: 6 },
-        sweep: { widthPx: 6 },
-        throw: { widthPx: 4, tailPx: 20, tailFromU: 0.3 },
-      },
-      trail: {
-        kind: 'profile',
-        widths: [[0, 2], [0.3, 6], [0.6, 6], [0.8, 4], [1, 4]],
-        taperOld: 0.25,
-        taperHead: 0.1,
-        minLengthPx: 12,
-      },
-      // From the way down in front, at chest and shoulder height (not on the
-      // enemy's head on the way in), to the end of the hold.
-      active: { fromS: 0.85 },
+      trailGrowth: { throw: { widthPx: 6, tailPx: 20, tailFromU: 0.5 } },
+      trail: { kind: 'profile', ...SQUARE_TRAIL },
+      // From the way down in front, at chest and shoulder height, to the end of the hold.
+      active: { fromS: 0.3 },
     },
     far: {
       shoulder: [3.4, -24.2],
@@ -454,11 +500,11 @@ const SQUARE3: StrikeDef = {
   hitstopTicks: 4,
   trailSamplesPerTick: 6,
   trailFadeWidthPx: 4,
-  chain: { into: 'square4', from: 'hold', fromTick: 4 },
+  chain: { into: 'square5', heavy: 'triangle', from: 'hold', fromTick: 4 },
 };
 
-/** Restrained crescent of square 4's two blades, cut as soon as it leaves its blade. */
-const SQUARE4_TRAIL = {
+/** Restrained crescent of square 5's two blades, cut as soon as it leaves its blade. */
+const SQUARE5_TRAIL = {
   widths: [[0, 2], [0.3, 5], [0.6, 6], [0.85, 5], [1, 4]],
   taperOld: 0.25,
   taperHead: 0.1,
@@ -469,8 +515,8 @@ const SQUARE4_TRAIL = {
 } as const;
 
 /**
- * Square 4 (draft v2, after the critic; pending user approval): the spin,
- * chained from square 3's open arms. Kratos turns one way only: profile,
+ * Square 5 (draft v2, after the critic; pending user approval): the spin,
+ * chained from square 4's open arms. Kratos turns one way only: profile,
  * back, inverted profile, front. In side view (D-04, as Betrayal does it)
  * the orbit is an ellipse at waist height, the near blade passing in front
  * of the body and the far one behind it; then each blade rises into a
@@ -479,8 +525,8 @@ const SQUARE4_TRAIL = {
  * front and ends out in front. Both blades hit, so an enemy behind him is
  * hit too (once per strike).
  */
-const SQUARE4: StrikeDef = {
-  id: 'square4',
+const SQUARE5: StrikeDef = {
+  id: 'square5',
   hand: 'near',
   // Both blades are thrown from the first phase on; nothing is only held.
   heldBlade: { from: 'previous', ticks: 9, sagPx: 5 },
@@ -511,7 +557,7 @@ const SQUARE4: StrikeDef = {
         recall: { kind: 'recall', sagPx: 5 },
       },
       trailGrowth: { orbit: { widthPx: 5 }, orbit2: { widthPx: 5 }, rise: { widthPx: 6 } },
-      trail: { kind: 'profile', ...SQUARE4_TRAIL },
+      trail: { kind: 'profile', ...SQUARE5_TRAIL },
       active: { fromS: 0.02 },
     },
     far: {
@@ -535,7 +581,7 @@ const SQUARE4: StrikeDef = {
         recall: { kind: 'recall', sagPx: 5 },
       },
       trailGrowth: { orbit: { widthPx: 5 }, orbit2: { widthPx: 5 }, rise: { widthPx: 6 }, hold: { widthPx: 4 } },
-      trail: { kind: 'profile', ...SQUARE4_TRAIL, flip: true },
+      trail: { kind: 'profile', ...SQUARE5_TRAIL, flip: true },
       active: { fromS: 0.02 },
     },
   },
@@ -545,11 +591,11 @@ const SQUARE4: StrikeDef = {
   hitstopTicks: 4,
   trailSamplesPerTick: 6,
   trailFadeWidthPx: 4,
-  chain: { into: 'square5', from: 'hold', fromTick: 3 },
+  chain: { into: 'square6', heavy: 'triangle', from: 'hold', fromTick: 3 },
 };
 
-/** Restrained crescent of square 5's two lashes, cut as soon as it leaves its blade. */
-const SQUARE5_TRAIL = {
+/** Restrained crescent of square 6's two lashes, cut as soon as it leaves its blade. */
+const SQUARE6_TRAIL = {
   widths: [[0, 2], [0.3, 5], [0.6, 5], [0.85, 4], [1, 4]],
   taperOld: 0.25,
   taperHead: 0.1,
@@ -560,24 +606,24 @@ const SQUARE5_TRAIL = {
 } as const;
 
 /**
- * Square 5's track parameters: the loop ends descending in front, the gather
+ * Square 6's track parameters: the loop ends descending in front, the gather
  * reaches the low point, the lash ends at the tip (where it holds), and the
  * sweep runs from the tip around to behind Kratos.
  */
-const SQ5 = { loop: 2 / 9, low: 3 / 9, tip: 5 / 9 } as const;
+const SQ6 = { loop: 2 / 9, low: 3 / 9, tip: 5 / 9 } as const;
 
-/** Square 5's motion, shared by both blades. */
-const SQUARE5_MOTION = {
+/** Square 6's motion, shared by both blades. */
+const SQUARE6_MOTION = {
   load: { kind: 'carry' },
-  loop: { kind: 'track', from: 0, to: SQ5.loop, ease: 'linear' },
+  loop: { kind: 'track', from: 0, to: SQ6.loop, ease: 'linear' },
   // Eases out: the blades linger low before the lash.
-  gather: { kind: 'track', from: SQ5.loop, to: SQ5.low, ease: 'out' },
-  throw: { kind: 'track', from: SQ5.low, to: SQ5.tip, ease: 'out' },
-  hold: { kind: 'hold', driftPx: 2, at: SQ5.tip },
-  sweep: { kind: 'track', from: SQ5.tip, to: 1, ease: 'out' },
+  gather: { kind: 'track', from: SQ6.loop, to: SQ6.low, ease: 'out' },
+  throw: { kind: 'track', from: SQ6.low, to: SQ6.tip, ease: 'out' },
+  hold: { kind: 'hold', driftPx: 2, at: SQ6.tip },
+  sweep: { kind: 'track', from: SQ6.tip, to: 1, ease: 'out' },
 } as const;
 
-const SQUARE5_GROWTH = {
+const SQUARE6_GROWTH = {
   loop: { widthPx: 5 },
   gather: { widthPx: 5 },
   throw: { widthPx: 4, tailPx: 20, tailFromU: 0.3 },
@@ -585,12 +631,12 @@ const SQUARE5_GROWTH = {
 };
 
 /** The lash (from just past the low point to the tip) and the sweep back hit once each. */
-const SQUARE5_HITS = [{ fromS: 0.35, toS: SQ5.tip }, { fromS: 0.6 }] as const;
+const SQUARE6_HITS = [{ fromS: 0.35, toS: SQ6.tip }, { fromS: 0.6 }] as const;
 
 /**
- * Square 5 (draft v2, after the critic; pending user approval): the
+ * Square 6 (draft v2, after the critic; pending user approval): the
  * finisher, the same motion as Valor of Hercules' square. Chained from
- * square 4: both blades loop over the head from behind and drop to linger
+ * square 5: both blades loop over the head from behind and drop to linger
  * low in front, then Kratos lunges (torso up, head high) and lashes both
  * forward as two straight, level lines at chest height, 88 px out (the far
  * one a little lower); he pulls his weight back, sweeps both blades back
@@ -598,8 +644,8 @@ const SQUARE5_HITS = [{ fromS: 0.35, toS: SQ5.tip }, { fromS: 0.6 }] as const;
  * it) and they come back to his arms crossed over the chest. It ends the
  * square chain.
  */
-const SQUARE5: StrikeDef = {
-  id: 'square5',
+const SQUARE6: StrikeDef = {
+  id: 'square6',
   hand: 'near',
   // Both blades are thrown from the first phase on; nothing is only held.
   heldBlade: { from: 'previous', ticks: 9, sagPx: 5 },
@@ -622,12 +668,12 @@ const SQUARE5: StrikeDef = {
       track: [[-27.5, -32.5], [-17.5, -42.5], [12.5, -46.5], [27, -22.7], [31, 13.3], [53, 1.3], [85.5, -4.5], [64.5, 9.5], [27.5, 11.5], [-12.5, 11.5], [-47.5, 7.5], [-57.5, 5.5]],
       trackDepth: ['behind', 'behind', 'front', 'front', 'front', 'front', 'front', 'front', 'front', 'front', 'front', 'front'],
       chainFrom: 0,
-      motion: { ...SQUARE5_MOTION, recall: { kind: 'recall', sagPx: 5, to: [1, -33] } },
-      trailGrowth: SQUARE5_GROWTH,
-      trail: { kind: 'profile', ...SQUARE5_TRAIL },
+      motion: { ...SQUARE6_MOTION, recall: { kind: 'recall', sagPx: 5, to: [1, -33] } },
+      trailGrowth: SQUARE6_GROWTH,
+      trail: { kind: 'profile', ...SQUARE6_TRAIL },
       // The lash starts as a fresh line at the low point; the sweep starts fresh too.
-      trailBreakAt: [SQ5.low, 0.6],
-      active: SQUARE5_HITS,
+      trailBreakAt: [SQ6.low, 0.6],
+      active: SQUARE6_HITS,
     },
     far: {
       // Far shoulder of the lunge (sq5-d).
@@ -637,11 +683,11 @@ const SQUARE5: StrikeDef = {
       track: [[-39.6, -27.9], [-29.6, -37.9], [0.4, -41.9], [14.9, -18.1], [18.9, 17.9], [40.9, 5.9], [73.4, 0.1], [52.4, -2.9], [18.4, -0.9], [-18.6, 0.1], [-53.6, 5.1], [-63.6, 5.1]],
       trackDepth: ['behind', 'behind', 'front', 'front', 'front', 'front', 'front', 'front', 'behind', 'behind', 'behind', 'behind'],
       chainFrom: 0,
-      motion: { ...SQUARE5_MOTION, recall: { kind: 'recall', sagPx: 5, to: [9, -34] } },
-      trailGrowth: SQUARE5_GROWTH,
-      trail: { kind: 'profile', ...SQUARE5_TRAIL },
-      trailBreakAt: [SQ5.low, 0.6],
-      active: SQUARE5_HITS,
+      motion: { ...SQUARE6_MOTION, recall: { kind: 'recall', sagPx: 5, to: [9, -34] } },
+      trailGrowth: SQUARE6_GROWTH,
+      trail: { kind: 'profile', ...SQUARE6_TRAIL },
+      trailBreakAt: [SQ6.low, 0.6],
+      active: SQUARE6_HITS,
     },
   },
   hitRadiusPx: 3.5,
@@ -766,6 +812,7 @@ export const STRIKES: Readonly<Record<StrikeId, StrikeDef>> = {
   square3: SQUARE3,
   square4: SQUARE4,
   square5: SQUARE5,
+  square6: SQUARE6,
   triangle: TRIANGLE,
 };
 
@@ -982,7 +1029,12 @@ export function thrownBladeAt(
     const e = u * u;
     let from: Vec2;
     let mid: Vec2;
-    if (motion.from === 'back') {
+    if (motion.from === 'back' && entry) {
+      // Chained (e.g. triangle from a square): the blades come from where
+      // the previous strike left them, not from the back.
+      from = previousBladeAt(entry, hand, anchors);
+      mid = [(from[0] + end[0]) / 2, (from[1] + end[1]) / 2];
+    } else if (motion.from === 'back') {
       from = strikeAnchorAt(def, tb, anchors, 'back');
       mid = [from[0] - 10, from[1] + 2];
     } else {
@@ -1283,10 +1335,14 @@ export function strikeChainTicks(def: StrikeDef): { opens: number; buffersFrom: 
  * held with the press (`direction`) so the next strike can turn around even
  * if it is released before the window opens. Returns whether it queued.
  */
-export function queueChain(state: StrikeState, direction: HeldDirection = 0): boolean {
-  const ticks = strikeChainTicks(STRIKES[state.id]);
-  if (ticks && state.tick >= ticks.buffersFrom) {
+export function queueChain(state: StrikeState, direction: HeldDirection = 0, button: 'light' | 'heavy' = 'light'): boolean {
+  const def = STRIKES[state.id];
+  const ticks = strikeChainTicks(def);
+  if (ticks && state.tick >= ticks.buffersFrom && (button === 'light' || def.chain?.heavy)) {
     state.queued = true;
+    // The last button pressed decides the next strike.
+    if (button === 'heavy') state.queuedHeavy = true;
+    else delete state.queuedHeavy;
     if (direction !== 0) state.queuedDirection = direction;
   }
   return state.queued;
@@ -1324,7 +1380,7 @@ export function chainStrike(state: StrikeState, player: EntityState, direction: 
     turned: facing !== state.facing,
     ...(state.entry ? { entry: state.entry } : {}),
   };
-  return { ...startStrike(player, def.chain.into), facing, entry };
+  return { ...startStrike(player, state.queuedHeavy && def.chain.heavy ? def.chain.heavy : def.chain.into), facing, entry };
 }
 
 export interface StrikeStepResult {

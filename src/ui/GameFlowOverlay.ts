@@ -191,7 +191,7 @@ export class GameFlowOverlay {
         pauseX + 10,
         pauseY - 45,
         'COMBOS CANÓNICOS:\n' +
-        '• J-J-J-J  : Combo Ligero\n' +
+        '• J ×6     : Combo de cuadro\n' +
         '• J-J-I    : Pluma de Prometeo\n' +
         '• Mant. I  : Ascensión Espartana\n' +
         '• Q impacto: Bloqueo / Parry\n' +

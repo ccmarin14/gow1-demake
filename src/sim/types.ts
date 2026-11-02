@@ -79,6 +79,8 @@ export interface StrikeSnapshot {
   queued: boolean;
   /** Direction held with the queued press: the next strike turns that way. */
   queuedDirection?: -1 | 1;
+  /** The queued press was triangle: the chain's `heavy` strike starts. */
+  queuedHeavy?: boolean;
   /** The strike this one chained from (absent when it started on its own). */
   entry?: StrikeEntry;
 }

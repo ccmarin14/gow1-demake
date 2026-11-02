@@ -648,6 +648,10 @@ export class World {
           if (lightAttackEdge) {
             queueChain(this.strike, steadyDirection);
           }
+          // Triangle in a square's chain window starts the plain triangle.
+          if (heavyAttackPress) {
+            queueChain(this.strike, steadyDirection, 'heavy');
+          }
           const next = chainStrike(this.strike, player, steadyDirection);
           if (next) {
             this.strike = next;

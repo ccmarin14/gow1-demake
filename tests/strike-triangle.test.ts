@@ -30,7 +30,7 @@ import {
 import type { EntityState, GameAction, SimulationSnapshot } from '../src/sim/types';
 import { World } from '../src/sim/world';
 
-const SQUARE5 = STRIKES.square5;
+const SQUARE6 = STRIKES.square6;
 const TRIANGLE = STRIKES.triangle;
 
 const ANCHORS: Record<string, { back: number[]; hand: number[]; farHand: number[]; shoulder: number[]; farShoulder: number[] }> =
@@ -45,8 +45,8 @@ const dist = (a: Vec2, b: Vec2): number => Math.hypot(a[0] - b[0], a[1] - b[1]);
 const close = (a: readonly number[], b: readonly number[]): boolean => dist(a as Vec2, b as Vec2) < 1e-3;
 const pathLength = (points: readonly Vec2[]): number => points.slice(1).reduce((sum, p, i) => sum + dist(p, points[i]), 0);
 
-/** Square-5 values recorded from the approved implementation (commit 8ebd323). */
-const SQ5_FIXTURE: {
+/** Square-6 (formerly square-5) values recorded from the approved implementation (commit 8ebd323). */
+const SQ6_FIXTURE: {
   entry: StrikeEntry;
   samples: {
     t: number; near: number[]; nearChain: boolean; nearSag: number; nearDeg: number; nearBehind: boolean; nearS: number;
@@ -56,7 +56,7 @@ const SQ5_FIXTURE: {
     tick: number; pose: string; nearTrail: number[][]; nearWidth: number;
     farTrail: number[][]; farWidth: number; nearHit: number[][] | null; farHit: number[][] | null;
   }[];
-} = JSON.parse(readFileSync(new URL('./fixtures/square5-track.json', import.meta.url), 'utf-8'));
+} = JSON.parse(readFileSync(new URL('./fixtures/square6-track.json', import.meta.url), 'utf-8'));
 
 function playingWorld(): World {
   const world = new World();
@@ -78,12 +78,12 @@ function hold(world: World, ticks: number, actions: GameAction[]): void {
 
 const SLAM = strikeImpactTick(TRIANGLE);
 
-describe('square-5 is unchanged as approved', () => {
+describe('square-6 (the finisher, formerly square 5) is unchanged as approved', () => {
   it('keeps both blades, both trails and both hit segments of commit 8ebd323', () => {
-    const entry = SQ5_FIXTURE.entry;
-    for (const q of SQ5_FIXTURE.samples) {
-      const near = nearBladeAt(SQUARE5, q.t, poseAnchors, entry);
-      const far = farBladeAt(SQUARE5, q.t, poseAnchors, entry);
+    const entry = SQ6_FIXTURE.entry;
+    for (const q of SQ6_FIXTURE.samples) {
+      const near = nearBladeAt(SQUARE6, q.t, poseAnchors, entry);
+      const far = farBladeAt(SQUARE6, q.t, poseAnchors, entry);
       assert.ok(close(near.pos, q.near), `near blade at ${q.t}`);
       assert.equal(near.chainOut, q.nearChain);
       assert.ok(Math.abs(near.sagPx - q.nearSag) < 1e-3);
@@ -92,19 +92,19 @@ describe('square-5 is unchanged as approved', () => {
       assert.ok(close(far.pos, q.far), `far blade at ${q.t}`);
       assert.equal(far.chainOut, q.farChain);
       assert.equal(far.behindBody, q.farBehind);
-      assert.ok(Math.abs(strikeAdvanceAt(SQUARE5, q.t) - q.adv) < 1e-3);
+      assert.ok(Math.abs(strikeAdvanceAt(SQUARE6, q.t) - q.adv) < 1e-3);
     }
-    for (const k of SQ5_FIXTURE.ticks) {
-      assert.equal(strikePoseAt(SQUARE5, k.tick), k.pose);
+    for (const k of SQ6_FIXTURE.ticks) {
+      assert.equal(strikePoseAt(SQUARE6, k.tick), k.pose);
       for (const [hand, points, widthPx, hit] of [
         ['near', k.nearTrail, k.nearWidth, k.nearHit],
         ['far', k.farTrail, k.farWidth, k.farHit],
       ] as const) {
-        const trail = strikeTrailAt(SQUARE5, k.tick, poseAnchors, hand);
+        const trail = strikeTrailAt(SQUARE6, k.tick, poseAnchors, hand);
         assert.equal(trail.widthPx, widthPx);
         assert.equal(trail.points.length, points.length, `${hand} trail length on tick ${k.tick}`);
         trail.points.forEach((p, i) => assert.ok(close(p, points[i]), `${hand} trail point ${i} on tick ${k.tick}`));
-        const segment = strikeHitSegment(SQUARE5, k.tick, hand);
+        const segment = strikeHitSegment(SQUARE6, k.tick, hand);
         assert.equal(segment === null, hit === null);
         if (segment && hit) assert.ok(close(segment[0], hit[0]) && close(segment[1], hit[1]));
       }

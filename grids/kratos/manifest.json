@@ -220,6 +220,18 @@
       "png": "kratos-sq3-f"
     },
     {
+      "file": "sq3-g.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-sq3-g"
+    },
+    {
+      "file": "sq3-h.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-sq3-h"
+    },
+    {
       "file": "sq4-a.txt",
       "state": "attack",
       "grounded": true,
