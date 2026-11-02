@@ -6,6 +6,8 @@ import {
   STRIKES,
   bladeAt,
   bladeMotionAt,
+  fireballRadius,
+  strikeEffectsAt,
   strikeHandAt,
   strikePhaseAt,
   strikeTrailAt,
@@ -20,7 +22,10 @@ import {
   buildBladeDirections,
   crescentBands,
   drawChain,
+  drawDisc,
+  drawFireball,
   drawGlint,
+  drawGroundFire,
   fillPixelPolygon,
   profiledTrailQuads,
   type BladeDirections,
@@ -76,6 +81,10 @@ export class WeaponLayer {
   private chain: Phaser.GameObjects.Graphics | null = null;
   private farChain: Phaser.GameObjects.Graphics | null = null;
   private glint: Phaser.GameObjects.Graphics | null = null;
+  /** Phase effects: fireballs behind and in front of the body, and the ground fire and flash. */
+  private fireBehind: Phaser.GameObjects.Graphics | null = null;
+  private fireFront: Phaser.GameObjects.Graphics | null = null;
+  private groundEffects: Phaser.GameObjects.Graphics | null = null;
   private directions: BladeDirections = { keys: [], sizes: [] };
 
   create(scene: Phaser.Scene): void {
@@ -93,6 +102,9 @@ export class WeaponLayer {
     this.chain = scene.add.graphics().setDepth(DEPTH_CHAIN);
     this.farChain = scene.add.graphics().setDepth(DEPTH_FAR_CHAIN);
     this.glint = scene.add.graphics().setDepth(DEPTH_GLINT);
+    this.fireBehind = scene.add.graphics().setDepth(DEPTH_BEHIND + 0.001);
+    this.fireFront = scene.add.graphics().setDepth(DEPTH_BLADE + 0.001);
+    this.groundEffects = scene.add.graphics().setDepth(DEPTH_TRAIL_FRONT);
   }
 
   update(player: Readonly<EntityState> | null, frameKey = '', strike: Readonly<StrikeSnapshot> | null = null): void {
@@ -184,6 +196,35 @@ export class WeaponLayer {
       if (hand === def.hand) thrownWorld = world;
     }
 
+    // Phase effects declared as data: fireballs on the blades (at each
+    // blade's depth), the ground fire line and the flash.
+    const fireBehind = this.fireBehind!;
+    const fireFront = this.fireFront!;
+    const ground = this.groundEffects!;
+    fireBehind.clear();
+    fireFront.clear();
+    ground.clear();
+    for (const effect of strikeEffectsAt(def, t)) {
+      if (effect.kind === 'fireball') {
+        for (const hand of ['far', 'near'] as const) {
+          const blade = bladeAt(def, hand, t, strikeAnchors, strike.entry);
+          drawFireball(blade.behindBody ? fireBehind : fireFront, toWorld(blade.pos), fireballRadius(effect, effect.age), {
+            rim: art.trail.orange,
+            core: art.trail.white,
+          });
+        }
+      } else if (effect.kind === 'groundFire') {
+        drawGroundFire(ground, toWorld([effect.from, 0])[0], toWorld([effect.to, 0])[0], player.y, effect.heightPx, effect.age, [
+          art.trail.red,
+          art.trail.orange,
+          art.trail.white,
+          art.trail.orange,
+        ]);
+      } else if (effect.kind === 'flash') {
+        drawDisc(ground, toWorld([effect.x, -3]), effect.radiusPx - effect.age * 2, art.trail.white);
+      }
+    }
+
     // Glint at the tip when the throw lands.
     const glint = this.glint!;
     glint.clear();
@@ -211,6 +252,9 @@ export class WeaponLayer {
     this.chain?.clear();
     this.farChain?.clear();
     this.glint?.clear();
+    this.fireBehind?.clear();
+    this.fireFront?.clear();
+    this.groundEffects?.clear();
   }
 }
 

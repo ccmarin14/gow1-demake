@@ -1102,5 +1102,189 @@
       28.6,
       27.7
     ]
+  },
+  "kratos-tri-a": {
+    "back": [
+      31.1,
+      26.3
+    ],
+    "spineRad": 1.726,
+    "hand": [
+      23.6,
+      15.6
+    ],
+    "farHand": [
+      27.3,
+      16.1
+    ],
+    "shoulder": [
+      28.7,
+      23.4
+    ],
+    "farShoulder": [
+      34.8,
+      23.6
+    ]
+  },
+  "kratos-tri-b": {
+    "back": [
+      31.6,
+      30.4
+    ],
+    "spineRad": 1.692,
+    "hand": [
+      29.0,
+      38.0
+    ],
+    "farHand": [
+      29.3,
+      37.8
+    ],
+    "shoulder": [
+      27.6,
+      27.5
+    ],
+    "farShoulder": [
+      36.9,
+      27.9
+    ]
+  },
+  "kratos-tri-b2": {
+    "back": [
+      31.7,
+      31.4
+    ],
+    "spineRad": 1.698,
+    "hand": [
+      29.0,
+      39.1
+    ],
+    "farHand": [
+      29.5,
+      39.0
+    ],
+    "shoulder": [
+      27.7,
+      28.5
+    ],
+    "farShoulder": [
+      37.0,
+      28.9
+    ]
+  },
+  "kratos-tri-c": {
+    "back": [
+      30.8,
+      29.3
+    ],
+    "spineRad": 1.668,
+    "hand": [
+      15.9,
+      27.5
+    ],
+    "farHand": [
+      23.8,
+      28.2
+    ],
+    "shoulder": [
+      27.0,
+      26.2
+    ],
+    "farShoulder": [
+      35.5,
+      26.7
+    ]
+  },
+  "kratos-tri-d": {
+    "back": [
+      29.9,
+      27.3
+    ],
+    "spineRad": 1.571,
+    "hand": [
+      28.4,
+      11.5
+    ],
+    "farHand": [
+      32.2,
+      11.4
+    ],
+    "shoulder": [
+      26.8,
+      24.4
+    ],
+    "farShoulder": [
+      33.0,
+      24.5
+    ]
+  },
+  "kratos-tri-e": {
+    "back": [
+      31.9,
+      33.5
+    ],
+    "spineRad": 1.817,
+    "hand": [
+      41.3,
+      26.3
+    ],
+    "farHand": [
+      47.4,
+      25.8
+    ],
+    "shoulder": [
+      29.7,
+      30.6
+    ],
+    "farShoulder": [
+      35.9,
+      31.0
+    ]
+  },
+  "kratos-tri-f": {
+    "back": [
+      32.4,
+      34.7
+    ],
+    "spineRad": 1.886,
+    "hand": [
+      38.1,
+      41.8
+    ],
+    "farHand": [
+      44.3,
+      43.0
+    ],
+    "shoulder": [
+      30.5,
+      31.8
+    ],
+    "farShoulder": [
+      36.6,
+      32.3
+    ]
+  },
+  "kratos-tri-g": {
+    "back": [
+      31.5,
+      29.4
+    ],
+    "spineRad": 1.771,
+    "hand": [
+      36.3,
+      32.4
+    ],
+    "farHand": [
+      40.1,
+      31.1
+    ],
+    "shoulder": [
+      29.2,
+      26.4
+    ],
+    "farShoulder": [
+      35.4,
+      26.8
+    ]
   }
 }

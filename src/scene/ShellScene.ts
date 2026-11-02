@@ -290,6 +290,16 @@ export class ShellScene extends Phaser.Scene {
       }
     }
 
+    const strikeImpact = this.simulation.world.consumeStrikeImpactNotice();
+    if (strikeImpact) {
+      // The strike's one-shot effects (flash and fire line are drawn by the weapon layer).
+      if (strikeImpact.shake) {
+        const { width } = CONFIG.internal;
+        this.cameras.main.shake((strikeImpact.shake.ticks * 1000) / 60, strikeImpact.shake.px / width);
+      }
+      for (const x of strikeImpact.dust) this.vfxLayer?.emitDust(x, strikeImpact.y);
+    }
+
     const strikeHit = this.simulation.world.consumeStrikeHitNotice();
     if (strikeHit) {
       this.vfxLayer?.emitCombatSparks(strikeHit.x, strikeHit.y, 6);

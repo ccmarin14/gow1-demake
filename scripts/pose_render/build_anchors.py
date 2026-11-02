@@ -4,7 +4,9 @@
 Usage:
     python3 scripts/pose_render/build_anchors.py [--blender PATH]
 
-For each entry of `frames.json` it renders the frame into `docs/tmp/anchors/`,
+For each entry of `frames.json` it renders the frame into a fresh temporary
+directory under `docs/tmp/` (removed when the run succeeds; only one run at a
+time is allowed, see `LOCK`),
 reduces it with `to_grid.reduce_render`, FAILS if the grid differs from the
 one in `grids/kratos/` (the recipe would be wrong), and writes
 `src/assets/kratos-anchors.json`: per texture key, the upper back on the
@@ -18,10 +20,14 @@ upperarm_l) that the strikes draw the blades and chains from.
 from __future__ import annotations
 
 import argparse
+import fcntl
 import json
 import math
+import shutil
 import subprocess
 import sys
+import tempfile
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent.parent
@@ -30,12 +36,16 @@ sys.path.insert(0, str(HERE))
 from to_grid import reduce_render  # noqa: E402
 
 GROUND_ROW = 55
-OUT_DIR = ROOT / "docs" / "tmp" / "anchors"
+TMP_ROOT = ROOT / "docs" / "tmp"
+# Two runs rendering into the same directories read each other's half-written
+# frames and report random mismatches: each run renders into its own
+# directory, and the lock keeps a second run from starting at all.
+LOCK = TMP_ROOT / "build_anchors.lock"
 TARGET = ROOT / "src" / "assets" / "kratos-anchors.json"
 
 
-def render(blender: str, name: str, recipe: dict) -> tuple[Path, Path]:
-    out = OUT_DIR / name
+def render(blender: str, out_dir: Path, name: str, recipe: dict) -> tuple[Path, Path]:
+    out = out_dir / name
     command = [
         blender, "-b", "--python", str(HERE / "render.py"), "--",
         str(HERE / "kratos.json"), recipe["action"], str(out), str(recipe["frame"]),
@@ -50,13 +60,24 @@ def render(blender: str, name: str, recipe: dict) -> tuple[Path, Path]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--blender", default=str(Path.home() / ".local" / "bin" / "blender"))
+    parser.add_argument("--jobs", type=int, default=4, help="frames rendered at once (each in its own directory)")
     args = parser.parse_args()
 
+    TMP_ROOT.mkdir(parents=True, exist_ok=True)
+    lock = LOCK.open("w")
+    try:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        print("FAIL another build_anchors run is in progress")
+        return 1
+    out_dir = Path(tempfile.mkdtemp(prefix="anchors-", dir=TMP_ROOT))
     recipes = json.loads((HERE / "frames.json").read_text(encoding="utf-8"))["frames"]
     anchors: dict[str, dict] = {}
     mismatches = []
+    with ThreadPoolExecutor(max_workers=max(1, args.jobs)) as pool:
+        rendered = dict(zip(recipes, pool.map(lambda item: render(args.blender, out_dir, *item), recipes.items())))
     for name, recipe in recipes.items():
-        png, bones_path = render(args.blender, name, recipe)
+        png, bones_path = rendered[name]
         rows, shift = reduce_render(str(png), GROUND_ROW if recipe["ground"] else None)
         current = (ROOT / "grids" / "kratos" / f"{name}.txt").read_text(encoding="utf-8").splitlines()
         if rows != current:
@@ -76,8 +97,9 @@ def main() -> int:
         }
         print(f"ok   {name}")
     if mismatches:
-        print("FAIL the recipe does not reproduce these grids:", ", ".join(mismatches))
+        print("FAIL the recipe does not reproduce these grids:", ", ".join(mismatches), f"(renders kept in {out_dir})")
         return 1
+    shutil.rmtree(out_dir)
     TARGET.write_text(json.dumps(anchors, indent=2) + "\n", encoding="utf-8")
     print(f"wrote {TARGET.relative_to(ROOT)} ({len(anchors)} frames)")
     return 0

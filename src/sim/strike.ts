@@ -16,7 +16,7 @@ import type { EntityState, StrikeSnapshot } from './types';
  */
 export type Vec2 = readonly [number, number];
 
-export type StrikeId = 'square1' | 'square2' | 'square3' | 'square4' | 'square5';
+export type StrikeId = 'square1' | 'square2' | 'square3' | 'square4' | 'square5' | 'triangle';
 
 /** Kratos' hands as the side view shows them: near the camera or behind the body. */
 export type Hand = 'near' | 'far';
@@ -70,7 +70,7 @@ export type BladeMotion =
    */
   | { kind: 'carry' }
   /** Along the track from `from` to `to` (0..1 of its length). */
-  | { kind: 'track'; from: number; to: number; ease: 'linear' | 'out' }
+  | { kind: 'track'; from: number; to: number; ease: 'linear' | 'out' | 'in' }
   /**
    * Held at track parameter `at` (default the end), drifting `driftPx` and
    * back: down, and `driftX` of it along x (0.3 forward by default).
@@ -104,6 +104,52 @@ export interface StrikePhase {
    * +x): when the combo turns around, the body is moved so it stays put.
    */
   centerX: number;
+  /** Effects the phase shows (fireballs, ground fire, flash, dust, shake), as data. */
+  effects?: readonly PhaseEffect[];
+  /**
+   * The phase ends early once Kratos is on the ground again, after at least
+   * `minTicks` (its `ticks` are the most it lasts): air strikes landing.
+   */
+  until?: { event: 'grounded'; minTicks: number };
+}
+
+/**
+ * An effect declared on a phase; positions are strike-local px (x ahead of
+ * the feet, on the ground unless stated).
+ * - `fireball`: on each thrown blade while the phase lasts (a disc of
+ *   `radiusPx`, growing `pulsePx` every other `pulseTicks`), at the blade's
+ *   depth; not a trail.
+ * - `groundFire`: a fire line `heightPx` tall from `from` to `to`,
+ *   flickering for `ticks` from the phase start.
+ * - `flash`: a flash at `x` for `ticks` from the phase start.
+ * - `dust`: dust thrown at each of `at` when the phase starts.
+ * - `shake`: the screen shakes `px` for `ticks` when the phase starts.
+ */
+export type PhaseEffect =
+  | { kind: 'fireball'; radiusPx: number; pulsePx: number; pulseTicks: number }
+  | { kind: 'groundFire'; from: number; to: number; heightPx: number; ticks: number }
+  | { kind: 'flash'; x: number; ticks: number; radiusPx: number }
+  | { kind: 'dust'; at: readonly number[] }
+  | { kind: 'shake'; px: number; ticks: number };
+
+/** An effect showing on a tick, with how many ticks it has shown (`age`, 0 on its first). */
+export type ActiveEffect = PhaseEffect & { age: number };
+
+/** Effects showing on whole tick `tick` (the one-shot ones only on their phase's first tick). */
+export function strikeEffectsAt(def: StrikeDef, tick: number): ActiveEffect[] {
+  const { phase, start } = strikePhaseAt(def, tick);
+  const age = Math.floor(tick) - start;
+  const active: ActiveEffect[] = [];
+  for (const effect of phase.effects ?? []) {
+    const lasts = effect.kind === 'fireball' ? phase.ticks : effect.kind === 'dust' || effect.kind === 'shake' ? 1 : effect.ticks;
+    if (age < lasts) active.push({ ...effect, age });
+  }
+  return active;
+}
+
+/** Radius of a fireball effect on its `age`-th tick: it pulses between `radiusPx` and one `pulsePx` more. */
+export function fireballRadius(effect: Extract<PhaseEffect, { kind: 'fireball' }>, age: number): number {
+  return effect.radiusPx + (Math.floor(age / effect.pulseTicks) % 2) * effect.pulsePx;
 }
 
 /** Part of a track where its blade hits (track parameters, `toS` defaults to the end). */
@@ -194,6 +240,27 @@ export interface StrikeDef {
   trailFadeWidthPx: number;
   /** The next strike of the combo, if any. */
   chain?: StrikeChain;
+  /**
+   * Ground impact on the first tick of phase `phase`: a burst hit box on the
+   * ground from `from` to `to` px ahead of the feet, `heightPx` tall. It hits
+   * each target once. What it looks like is the phase's `effects`.
+   */
+  impact?: StrikeImpact;
+  /**
+   * Holding `ifHeld` from the strike's start through the end of phase
+   * `atEndOf` turns it into `into` there (a tap keeps the strike as is):
+   * the triangle's windup doubles as Ascension's hold threshold.
+   */
+  branch?: { atEndOf: string; ifHeld: 'heavy-attack'; into?: StrikeId };
+  /** From tick `fromTick` of phase `from` on, guarding or jumping cuts the strike short. */
+  cancel?: { from: string; fromTick: number };
+}
+
+export interface StrikeImpact {
+  phase: string;
+  from: number;
+  to: number;
+  heightPx: number;
 }
 
 /**
@@ -206,6 +273,7 @@ const CX: Readonly<Record<string, number>> = {
   'sq3-a': -2, 'sq3-b': -2, 'sq3-c': 0, 'sq3-d': -0.5, 'sq3-e': -2, 'sq3-f': -0.5,
   'sq4-a': -3, 'sq4-b': 0.5, 'sq4-b2': 1, 'sq4-c': 0.5, 'sq4-d': 4, 'sq4-e': -1.5,
   'sq5-a': -1.5, 'sq5-b': -0.5, 'sq5-c': -1, 'sq5-d': 0, 'sq5-e': 0, 'sq5-f': -1.5, 'sq5-g': 0,
+  'tri-a': -1, 'tri-b': -0.5, 'tri-b2': 0, 'tri-c': -2, 'tri-d': -0.5, 'tri-e': 0, 'tri-f': 0.5, 'tri-g': -1.5,
 };
 
 /**
@@ -584,12 +652,121 @@ const SQUARE5: StrikeDef = {
   trailFadeWidthPx: 4,
 };
 
+/** Restrained crescent of the triangle's two blades, cut as soon as it leaves its blade. */
+const TRIANGLE_TRAIL = {
+  widths: [[0, 2], [0.4, 6], [0.8, 6], [1, 4]],
+  taperOld: 0.25,
+  taperHead: 0.1,
+  minLengthPx: 12,
+  // One sample may pass the cap: 50 keeps the drawn trail within 55 px.
+  maxLengthPx: 50,
+  cutWhenDetached: true,
+} as const;
+
+/** The triangle's motion, shared by both blades. */
+const TRIANGLE_MOTION = {
+  draw: { kind: 'draw', from: 'back', behindBody: true },
+  // The visible windup: both blades held together at the hands, at the hip.
+  gather1: { kind: 'hold', driftPx: 1, at: 0 },
+  gather2: { kind: 'hold', driftPx: 1, at: 0 },
+  rise: { kind: 'track', from: 0, to: 0.3, ease: 'linear' },
+  // Pauses on top, then accelerates down into the ground.
+  over: { kind: 'track', from: 0.3, to: 0.55, ease: 'out' },
+  down: { kind: 'track', from: 0.55, to: 1, ease: 'in' },
+  slam: { kind: 'hold', driftPx: 0 },
+  recall: { kind: 'recall', sagPx: 5 },
+} as const;
+
+const TRIANGLE_GROWTH = { rise: { widthPx: 6 }, over: { widthPx: 6 }, down: { widthPx: 6 } };
+
+/** Two fireballs at the hands while Kratos gathers the blades. */
+const TRIANGLE_FIREBALL = { kind: 'fireball', radiusPx: 5, pulsePx: 1, pulseTicks: 3 } as const;
+
+/**
+ * Triangle on the ground (draft v2, after the critic; pending user approval):
+ * the first hit of Valor and Spirit of Hercules. Kratos draws both blades
+ * and holds them together at his hip, two pulsing fireballs, in a visible
+ * windup (legs apart, chest toward the camera); then swings them as two
+ * crescents up behind him, pauses over his head and accelerates down in
+ * front into the ground, 80 px ahead: a fire line along the ground, dust at
+ * both ends, a flash where the blades land and a short shake, with a hit box
+ * over the whole line. Holding triangle through the windup will branch into
+ * Ascension. It does not chain; guard or jump cut its recall short.
+ */
+const TRIANGLE: StrikeDef = {
+  id: 'triangle',
+  hand: 'near',
+  heldBlade: { from: 'back' },
+  phases: [
+    { id: 'draw', ticks: 6, advancePx: 0, pose: 'tri-a', centerX: CX['tri-a'] },
+    { id: 'gather1', ticks: 8, advancePx: 0, pose: 'tri-b', centerX: CX['tri-b'], effects: [TRIANGLE_FIREBALL] },
+    { id: 'gather2', ticks: 10, advancePx: 0, pose: 'tri-b2', centerX: CX['tri-b2'], effects: [TRIANGLE_FIREBALL] },
+    { id: 'rise', ticks: 4, advancePx: 0, pose: 'tri-c', centerX: CX['tri-c'] },
+    { id: 'over', ticks: 4, advancePx: 0, pose: 'tri-d', centerX: CX['tri-d'] },
+    { id: 'down', ticks: 4, advancePx: 3, pose: 'tri-e', centerX: CX['tri-e'] },
+    {
+      id: 'slam', ticks: 10, advancePx: 0, pose: 'tri-f', centerX: CX['tri-f'],
+      effects: [
+        { kind: 'groundFire', from: 20, to: 88, heightPx: 3, ticks: 8 },
+        { kind: 'dust', at: [20, 88] },
+        // Where the near blade lands.
+        { kind: 'flash', x: 81, ticks: 2, radiusPx: 6 },
+        { kind: 'shake', px: 2, ticks: 4 },
+      ],
+    },
+    { id: 'recall', ticks: 12, advancePx: 0, pose: 'tri-g', centerX: CX['tri-g'] },
+  ],
+  blades: {
+    near: {
+      // Near shoulder of the arm coming down (tri-e).
+      shoulder: [-2.3, -25.4],
+      // From the hands at the hip, out and up behind Kratos, over the head
+      // and down in front into the ground.
+      track: [[8.3, 11.4], [-0.7, 7.9], [-31.7, -0.6], [-25.7, -30.6], [4.3, -46.6], [38.3, -38.6], [64.3, -12.6], [78.3, 15.4], [80.3, 23.4], [80.3, 29.4]],
+      chainFrom: 0.02,
+      motion: TRIANGLE_MOTION,
+      trailGrowth: TRIANGLE_GROWTH,
+      trail: { kind: 'profile', ...TRIANGLE_TRAIL },
+      // The windup is over: the arc's trail starts fresh.
+      trailBreakAt: [0.02],
+      // The arc on its way down in front.
+      active: { fromS: 0.55 },
+    },
+    far: {
+      // Far shoulder of the arm coming down (tri-e).
+      shoulder: [3.9, -25],
+      // Together with the near blade at the hands, then a second crescent
+      // 16 px behind and 6 px below it, landing 62 px ahead.
+      track: [[0.1, 13], [-6.9, 9], [-53.9, 5], [-47.9, -25], [-17.9, -41], [16.1, -33], [42.1, -7], [56.1, 21], [58.1, 23], [58.1, 29]],
+      trackDepth: ['behind', 'behind', 'behind', 'behind', 'front', 'front', 'front', 'front', 'front', 'front'],
+      chainFrom: 0.02,
+      motion: TRIANGLE_MOTION,
+      trailGrowth: TRIANGLE_GROWTH,
+      trail: { kind: 'profile', ...TRIANGLE_TRAIL },
+      trailBreakAt: [0.02],
+      active: { fromS: 0.55 },
+    },
+  },
+  hitRadiusPx: 3.5,
+  damage: 20,
+  hitstunTicks: 20,
+  hitstopTicks: 6,
+  trailSamplesPerTick: 6,
+  trailFadeWidthPx: 4,
+  // The fire line's whole length hits, so an enemy at Kratos' feet is hit too.
+  impact: { phase: 'slam', from: 20, to: 88, heightPx: 20 },
+  // Held through the windup, triangle becomes Ascension (next to build).
+  branch: { atEndOf: 'gather2', ifHeld: 'heavy-attack' },
+  cancel: { from: 'recall', fromTick: 6 },
+};
+
 export const STRIKES: Readonly<Record<StrikeId, StrikeDef>> = {
   square1: SQUARE1,
   square2: SQUARE2,
   square3: SQUARE3,
   square4: SQUARE4,
   square5: SQUARE5,
+  triangle: TRIANGLE,
 };
 
 /**
@@ -728,7 +905,7 @@ export function trackBladeAt(def: StrikeDef, t: number, hand: Hand = def.hand): 
   // A lagging blade moves on its own clock (the strike's for the others).
   const tb = bladeTime(def, hand, t);
   if (motion?.kind === 'track') {
-    const eased = motion.ease === 'out' ? 1 - (1 - u) * (1 - u) : u;
+    const eased = motion.ease === 'out' ? 1 - (1 - u) * (1 - u) : motion.ease === 'in' ? u * u : u;
     const s = motion.from + (motion.to - motion.from) * eased;
     return { pos: onTrack(def, hand, tb, s), s };
   }
@@ -1154,6 +1331,62 @@ export interface StrikeStepResult {
   done: boolean;
   /** Targets hit on this tick, with the blade's world position. */
   hits: { target: EntityState; x: number; y: number }[];
+  /** The ground impact happened on this tick, at this world point. */
+  impact?: StrikeImpactNotice;
+}
+
+/** What the view needs when a phase with one-shot effects starts (world px). */
+export interface StrikeImpactNotice {
+  x: number;
+  y: number;
+  /** Dust at these world x on the ground. */
+  dust: number[];
+  shake?: { px: number; ticks: number };
+}
+
+/** Tick of the strike's ground impact, or -1 when it has none. */
+export function strikeImpactTick(def: StrikeDef): number {
+  return def.impact ? phaseStart(def, def.impact.phase).start : -1;
+}
+
+/** Whether the target's hurt box overlaps the ground-impact box (world x range, ground y). */
+function impactTouches(minX: number, maxX: number, groundY: number, impact: StrikeImpact, target: EntityState): boolean {
+  const { halfWidth, halfHeight } = CONFIG.combat.target;
+  return target.x + halfWidth >= minX && target.x - halfWidth <= maxX
+    && target.y - halfHeight * 2 <= groundY && target.y >= groundY - impact.heightPx;
+}
+
+/** Whether the strike can be cut short by guarding or jumping on its tick `tick`. */
+export function strikeCancellable(def: StrikeDef, tick: number): boolean {
+  return def.cancel !== undefined && tick >= phaseStart(def, def.cancel.from).start + def.cancel.fromTick;
+}
+
+/**
+ * Turns the strike into its branch if `ifHeld` has been held since it
+ * started (`heldTicks` in a row, counting this tick) when the branch phase
+ * ends; from the body's current place and facing, remembering its blades.
+ * Returns `null` otherwise (a tap, or no branch target yet).
+ */
+export function branchStrike(state: StrikeState, player: EntityState, heldTicks: number): StrikeState | null {
+  const def = STRIKES[state.id];
+  if (!def.branch?.into || state.tick !== strikeBranchTick(def) || heldTicks <= state.tick + 1) {
+    return null;
+  }
+  const entry: StrikeEntry = {
+    id: state.id,
+    tick: Math.min(state.tick + 1, strikeLength(def) - 1),
+    offsetPx: strikeAdvanceAt(def, state.tick),
+    turned: false,
+    ...(state.entry ? { entry: state.entry } : {}),
+  };
+  return { ...startStrike(player, def.branch.into), facing: state.facing, entry };
+}
+
+/** Last tick of the branch phase, or -1 when the strike does not branch. */
+export function strikeBranchTick(def: StrikeDef): number {
+  if (!def.branch) return -1;
+  const end = phaseStart(def, def.branch.atEndOf);
+  return end.start + end.ticks - 1;
 }
 
 /**
@@ -1170,6 +1403,12 @@ export function stepStrike(
 ): StrikeStepResult {
   const def = STRIKES[state.id];
   const result: StrikeStepResult = { done: false, hits: [] };
+  // A phase that ends on landing skips its remaining ticks once Kratos is
+  // on the ground (after its minimum).
+  const current = strikePhaseAt(def, state.tick);
+  if (current.phase.until && player.grounded && state.tick - current.start + 1 >= current.phase.until.minTicks) {
+    state.tick = current.start + current.phase.ticks - 1;
+  }
   state.tick += 1;
   if (state.tick >= strikeLength(def)) {
     result.done = true;
@@ -1207,6 +1446,39 @@ export function stepStrike(
       target.aiTicks = 0;
     }
     result.hits.push({ target, x: b[0], y: b[1] });
+  }
+  // One-shot effects of a phase starting on this tick (flash, dust, shake).
+  const { phase, start } = strikePhaseAt(def, state.tick);
+  if (start === state.tick && phase.effects?.some((e) => e.kind !== 'fireball' && e.kind !== 'groundFire')) {
+    const toX = (x: number): number => state.originX + state.facing * x;
+    const flash = phase.effects.find((e) => e.kind === 'flash');
+    const shake = phase.effects.find((e) => e.kind === 'shake');
+    result.impact = {
+      x: toX(flash?.kind === 'flash' ? flash.x : 0),
+      y: player.y,
+      dust: phase.effects.flatMap((e) => (e.kind === 'dust' ? e.at.map(toX) : [])),
+      ...(shake?.kind === 'shake' ? { shake: { px: shake.px, ticks: shake.ticks } } : {}),
+    };
+  }
+  if (def.impact && state.tick === strikeImpactTick(def)) {
+    const a = state.originX + state.facing * def.impact.from;
+    const b = state.originX + state.facing * def.impact.to;
+    for (const target of targets) {
+      const key = `${target.id}@impact`;
+      if (target.isDead || target.aiState === 'death' || target.aiState === 'hydra_defeat' || state.hits.includes(key)) {
+        continue;
+      }
+      if (!impactTouches(Math.min(a, b), Math.max(a, b), player.y, def.impact, target)) {
+        continue;
+      }
+      state.hits.push(key);
+      const killed = damageEnemy(target, def.damage, def.hitstunTicks);
+      if (!killed && (target.kind === 'legionnaire' || target.kind === 'archer')) {
+        target.aiState = 'hitstun';
+        target.aiTicks = 0;
+      }
+      result.hits.push({ target, x: target.x, y: player.y - 4 });
+    }
   }
   return result;
 }

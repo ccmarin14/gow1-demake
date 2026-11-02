@@ -279,6 +279,47 @@ export function drawChain(g: Phaser.GameObjects.Graphics, a: Vec2, b: Vec2, sag:
   }
 }
 
+/** A filled pixel disc of radius `r` centred on `p`. */
+export function drawDisc(g: Phaser.GameObjects.Graphics, p: Vec2, r: number, color: number): void {
+  const x = Math.round(p[0]);
+  const y = Math.round(p[1]);
+  g.fillStyle(color, 1);
+  for (let dy = -r; dy <= r; dy += 1) {
+    const w = Math.floor(Math.sqrt(r * r - dy * dy));
+    g.fillRect(x - w, y + dy, 2 * w + 1, 1);
+  }
+}
+
+/** A fireball on a blade: a pale core with an orange rim. */
+export function drawFireball(g: Phaser.GameObjects.Graphics, p: Vec2, r: number, colors: { rim: number; core: number }): void {
+  drawDisc(g, p, r, colors.rim);
+  drawDisc(g, p, r - 1, colors.core);
+}
+
+/**
+ * A flickering fire line along the ground from world x `a` to `b` (either
+ * order), `heightPx` tall above `groundY`: every column alternates its
+ * height and colour with the tick, so it reads as flames, not a bar.
+ */
+export function drawGroundFire(
+  g: Phaser.GameObjects.Graphics,
+  a: number,
+  b: number,
+  groundY: number,
+  heightPx: number,
+  tick: number,
+  colors: readonly number[],
+): void {
+  const from = Math.round(Math.min(a, b));
+  const to = Math.round(Math.max(a, b));
+  for (let x = from; x <= to; x += 1) {
+    const phase = (x * 7 + tick * 3) % 5;
+    const h = heightPx - (phase === 0 ? 1 : 0);
+    g.fillStyle(colors[(x + tick) % colors.length], 1);
+    g.fillRect(x, groundY - h, 1, h);
+  }
+}
+
 /** Impact glint: a 5x5 rounded spark centred on `p`. */
 export function drawGlint(g: Phaser.GameObjects.Graphics, p: Vec2, color: number): void {
   const x = Math.round(p[0]);

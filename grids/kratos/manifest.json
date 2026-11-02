@@ -296,6 +296,54 @@
       "state": "attack",
       "grounded": true,
       "png": "kratos-sq5-g"
+    },
+    {
+      "file": "tri-a.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-tri-a"
+    },
+    {
+      "file": "tri-b.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-tri-b"
+    },
+    {
+      "file": "tri-b2.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-tri-b2"
+    },
+    {
+      "file": "tri-c.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-tri-c"
+    },
+    {
+      "file": "tri-d.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-tri-d"
+    },
+    {
+      "file": "tri-e.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-tri-e"
+    },
+    {
+      "file": "tri-f.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-tri-f"
+    },
+    {
+      "file": "tri-g.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-tri-g"
     }
   ]
 }

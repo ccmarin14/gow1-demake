@@ -48,6 +48,14 @@
     "sq5-d": { "action": "Idle_Loop", "frame": 0, "pose": "sq5-d.json", "ground": true },
     "sq5-e": { "action": "Idle_Loop", "frame": 0, "pose": "sq5-e.json", "ground": true },
     "sq5-f": { "action": "Idle_Loop", "frame": 0, "pose": "sq5-f.json", "ground": true },
-    "sq5-g": { "action": "Idle_Loop", "frame": 0, "pose": "sq5-g.json", "ground": true }
+    "sq5-g": { "action": "Idle_Loop", "frame": 0, "pose": "sq5-g.json", "ground": true },
+    "tri-a": { "action": "Idle_Loop", "frame": 0, "pose": "tri-a.json", "ground": true },
+    "tri-b": { "action": "Idle_Loop", "frame": 0, "pose": "tri-b.json", "ground": true },
+    "tri-b2": { "action": "Idle_Loop", "frame": 0, "pose": "tri-b2.json", "ground": true },
+    "tri-c": { "action": "Idle_Loop", "frame": 0, "pose": "tri-c.json", "ground": true },
+    "tri-d": { "action": "Idle_Loop", "frame": 0, "pose": "tri-d.json", "ground": true },
+    "tri-e": { "action": "Idle_Loop", "frame": 0, "pose": "tri-e.json", "ground": true },
+    "tri-f": { "action": "Idle_Loop", "frame": 0, "pose": "tri-f.json", "ground": true },
+    "tri-g": { "action": "Idle_Loop", "frame": 0, "pose": "tri-g.json", "ground": true }
   }
 }

@@ -6,6 +6,7 @@ export type GameAction =
   | 'move-down'
   | 'jump'
   | 'light-attack'
+  | 'heavy-attack'
   | 'magic'
   | 'dodge'
   | 'guard'
@@ -20,6 +21,7 @@ export const DOMAIN_ACTIONS: readonly GameAction[] = [
   'move-down',
   'jump',
   'light-attack',
+  'heavy-attack',
   'magic',
   'dodge',
   'guard',

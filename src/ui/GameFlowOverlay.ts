@@ -123,7 +123,7 @@ export class GameFlowOverlay {
         0,
         0,
         'A/D: Moverse · ESPACIO: Salto / Doble · SHIFT: Rodada\n' +
-        'J: Golpe · Q: Guardia/Parry · U/I: Ira de Poseidón\n' +
+        'J: Golpe □ · I: Golpe △ · Q: Guardia/Parry · U: Ira de Poseidón\n' +
         'E: Cofre · P: Mejorar · ESC: Pausa',
         {
           color: '#cbd5e1',
@@ -192,11 +192,11 @@ export class GameFlowOverlay {
         pauseY - 45,
         'COMBOS CANÓNICOS:\n' +
         '• J-J-J-J  : Combo Ligero\n' +
-        '• J-J-K    : Pluma de Prometeo\n' +
-        '• Mant. K  : Ascensión Espartana\n' +
+        '• J-J-I    : Pluma de Prometeo\n' +
+        '• Mant. I  : Ascensión Espartana\n' +
         '• Q impacto: Bloqueo / Parry\n' +
         '• SHIFT    : Rodada Evasiva\n' +
-        '• U / I    : Ira de Poseidón',
+        '• U        : Ira de Poseidón',
         {
           color: '#cbd5e1',
           fontFamily: CONFIG.ui.fontFamily,

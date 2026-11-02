@@ -21,7 +21,7 @@
 | `guard` | `Q` | L1 | Guardia y desvío (*parry*) en los primeros ticks. |
 | `pause` | `Escape` | Start | Pausa. |
 
-Por ahora Kratos tiene el combo □1 a □5 (D-37); △ irá en la tecla `I`; Triángulo y Círculo no tienen acción ni tecla hasta que se diseñen sus golpes.
+Por ahora Kratos tiene el combo □1 a □5 y △ en la tecla `I` (D-37); Triángulo y Círculo no tienen acción ni tecla hasta que se diseñen sus golpes.
 
 ## 3. Reglas visuales y de pixel art
 

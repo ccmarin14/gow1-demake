@@ -485,6 +485,17 @@ export const CONFIG = {
       color: 0xe0f2fe,
       depth: -2,
     },
+    /**
+     * Dust of a strike's ground impact (D-37; the flash, fire line and shake
+     * are declared on the strike's phase).
+     */
+    groundImpact: {
+      dustCount: 6,
+      dustSpeedMin: 30,
+      dustSpeedMax: 70,
+      dustLifeTicks: 16,
+      dustColors: [0x8a7a62, 0xb8a888, 0x5c4c3a],
+    },
     combatSparks: {
       /** Inherited effect, off until the user decides on it. */
       enabled: false,

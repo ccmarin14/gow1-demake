@@ -170,6 +170,24 @@ export class VfxLayer {
     }
   }
 
+  /** Dust thrown low to both sides on the ground (a strike's ground impact). */
+  emitDust(worldX: number, worldY: number): void {
+    const cfg = CONFIG.vfx.groundImpact;
+    for (let i = 0; i < cfg.dustCount; i += 1) {
+      const angle = Math.PI + this.rnd() * Math.PI;
+      const speed = cfg.dustSpeedMin + this.rnd() * (cfg.dustSpeedMax - cfg.dustSpeedMin);
+      this.sparks.push({
+        x: worldX + (this.rnd() - 0.5) * 6,
+        y: worldY - 1,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed * 0.5,
+        color: cfg.dustColors[Math.floor(this.rnd() * cfg.dustColors.length)],
+        life: cfg.dustLifeTicks,
+        maxLife: cfg.dustLifeTicks,
+      });
+    }
+  }
+
   emitParryFlash(worldX: number, worldY: number): void {
     this.parryFlashes.push({
       x: worldX,

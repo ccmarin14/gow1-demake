@@ -11,7 +11,9 @@ const KEY_BINDINGS: Record<GameAction, number[]> = {
   'move-down': [KeyCodes.S, KeyCodes.DOWN],
   jump: [KeyCodes.SPACE],
   'light-attack': [KeyCodes.J],
-  magic: [KeyCodes.U, KeyCodes.I],
+  // Triangle (user: "triangulo mapealo con la letra i del teclado").
+  'heavy-attack': [KeyCodes.I],
+  magic: [KeyCodes.U],
   dodge: [KeyCodes.SHIFT],
   guard: [KeyCodes.Q],
   'context-action': [KeyCodes.E],

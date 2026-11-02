@@ -17,7 +17,7 @@ import { isGuarding, startGuard, stepGuard } from './guard';
 import { stepLegionnaire } from './legionnaire';
 import { stepHydra } from './hydra';
 import { isCastingMagic, stepMagic } from './magic';
-import { STRIKES, chainStrike, queueChain, startStrike, stepStrike, type HeldDirection, type StrikeState } from './strike';
+import { STRIKES, branchStrike, chainStrike, queueChain, startStrike, stepStrike, strikeCancellable, type HeldDirection, type StrikeImpactNotice, type StrikeState } from './strike';
 import { buildLevel1Map, computeCameraScrollX, getSegmentAtX, type LevelMapData } from './map';
 
 const TICK_DT = 1 / CONFIG.sim.tickRate;
@@ -47,6 +47,14 @@ export class World {
   private dodgeHeld = false;
   private magicHeld = false;
   private lightAttackHeld = false;
+  /**
+   * Triangle: held on the previous tick, and for how many ticks in a row.
+   * The tap fires on the press for now; Ascension (hold triangle) will fire
+   * once `heavyHeldTicks` passes a threshold and the tap will move to the
+   * release.
+   */
+  private heavyAttackHeld = false;
+  private heavyHeldTicks = 0;
   /** Kratos' strike in progress (`null` when not striking). */
   private strike: StrikeState | null = null;
   /** Left/right held on this tick and for how many ticks in a row (a combo turns only on a steady hold). */
@@ -55,6 +63,8 @@ export class World {
   /** Ticks the whole world stays frozen after a strike connects. */
   private hitstopTicks = 0;
   private strikeHitNotice: { x: number; y: number } | null = null;
+  /** A strike's ground impact on the last tick (the view adds flash, dust and a shake). */
+  private strikeImpactNotice: StrikeImpactNotice | null = null;
   private activeScenario: string = DEFAULT_SCENARIO;
   private targetPhysics = false;
   private orbs: OrbState[] = [];
@@ -292,6 +302,13 @@ export class World {
   }
 
   /** Where the blade last connected, once (for the hit sound and sparks). */
+  /** The last strike ground impact, once (for the view's flash, dust and shake). */
+  consumeStrikeImpactNotice(): StrikeImpactNotice | null {
+    const notice = this.strikeImpactNotice;
+    this.strikeImpactNotice = null;
+    return notice;
+  }
+
   consumeStrikeHitNotice(): { x: number; y: number } | null {
     const notice = this.strikeHitNotice;
     this.strikeHitNotice = null;
@@ -372,6 +389,9 @@ export class World {
     this.dodgeHeld = false;
     this.magicHeld = false;
     this.lightAttackHeld = false;
+    this.heavyAttackHeld = false;
+    this.heavyHeldTicks = 0;
+    this.strikeImpactNotice = null;
     this.strike = null;
     this.direction = 0;
     this.directionTicks = 0;
@@ -513,6 +533,11 @@ export class World {
     const lightAttackEdge = wantsLightAttack && !this.lightAttackHeld;
     this.lightAttackHeld = wantsLightAttack;
 
+    const wantsHeavyAttack = this.input.includes('heavy-attack');
+    const heavyAttackPress = wantsHeavyAttack && !this.heavyAttackHeld;
+    this.heavyAttackHeld = wantsHeavyAttack;
+    this.heavyHeldTicks = wantsHeavyAttack ? this.heavyHeldTicks + 1 : 0;
+
     // A combo turns around only on a direction held for a few ticks, so a
     // touch stick grazed sideways does not flip it.
     const direction = heldDirection(this.input);
@@ -572,8 +597,13 @@ export class World {
         const inHitstun = player.hitstunTicks > 0;
         const isOpeningChest = this.chests.some((c) => c.state === 'opening');
 
-        // Taking a hit or leaving the ground cuts the strike short.
+        // Taking a hit or leaving the ground cuts the strike short; so do
+        // guarding or jumping in its cancel window (the guard or jump then
+        // starts below as usual).
         if (this.strike && (inHitstun || !player.grounded)) {
+          this.strike = null;
+        }
+        if (this.strike && strikeCancellable(STRIKES[this.strike.id], this.strike.tick) && (wantsGuard || jumpEdge)) {
           this.strike = null;
         }
         const striking = this.strike !== null;
@@ -597,11 +627,24 @@ export class World {
         // queues the next strike of the combo, which starts once the chain
         // window opens (from the strike's pose, not from the guard).
         let startedNow = false;
-        if (!striking && lightAttackEdge && player.grounded && !rolling && !guarding
-          && !nowCastingMagic && !inHitstun && !isOpeningChest) {
+        const free = player.grounded && !rolling && !guarding && !nowCastingMagic && !inHitstun && !isOpeningChest;
+        if (!striking && heavyAttackPress && free) {
+          // Triangle from the ground, on the press (see `heavyHeldTicks`); a
+          // direction held as it starts turns Kratos that way first. It does
+          // not chain (triangle triangle is a level-3 combo).
+          if (direction !== 0) player.facing = direction;
+          this.strike = startStrike(player, 'triangle');
+          startedNow = true;
+        } else if (!striking && lightAttackEdge && free) {
           this.strike = startStrike(player, 'square1');
           startedNow = true;
         } else if (this.strike) {
+          // Triangle held through its windup branches (Ascension).
+          const branched = branchStrike(this.strike, player, this.heavyHeldTicks);
+          if (branched) {
+            this.strike = branched;
+            startedNow = true;
+          }
           if (lightAttackEdge) {
             queueChain(this.strike, steadyDirection);
           }
@@ -700,6 +743,9 @@ export class World {
         // The strike started this tick stays on tick 0; later ticks step it.
         if (this.strike && !startedNow) {
           const result = stepStrike(this.strike, player, this.targets, playerMinX, playerMaxX);
+          if (result.impact) {
+            this.strikeImpactNotice = result.impact;
+          }
           if (result.done) {
             this.strike = null;
           } else if (result.hits.length > 0) {
