@@ -16,7 +16,7 @@ import type { EntityState, StrikeSnapshot } from './types';
  */
 export type Vec2 = readonly [number, number];
 
-export type StrikeId = 'square1' | 'square2' | 'square3' | 'square4';
+export type StrikeId = 'square1' | 'square2' | 'square3' | 'square4' | 'square5';
 
 /** Kratos' hands as the side view shows them: near the camera or behind the body. */
 export type Hand = 'near' | 'far';
@@ -72,12 +72,15 @@ export type BladeMotion =
   /** Along the track from `from` to `to` (0..1 of its length). */
   | { kind: 'track'; from: number; to: number; ease: 'linear' | 'out' }
   /**
-   * Held at the end of the track, drifting `driftPx` and back: down, and
-   * `driftX` of it along x (0.3 forward by default).
+   * Held at track parameter `at` (default the end), drifting `driftPx` and
+   * back: down, and `driftX` of it along x (0.3 forward by default).
    */
-  | { kind: 'hold'; driftPx: number; driftX?: number }
-  /** Back to the throwing hand, accelerating, the chain sagging up to `sagPx`. */
-  | { kind: 'recall'; sagPx: number };
+  | { kind: 'hold'; driftPx: number; driftX?: number; at?: number }
+  /**
+   * Back to the throwing hand (or to `to`, a feet-relative point of the
+   * pose, e.g. crossed arms), accelerating, the chain sagging up to `sagPx`.
+   */
+  | { kind: 'recall'; sagPx: number; to?: Vec2 };
 
 /**
  * The fire trail grows during a phase: max width (`crescent` trails), and
@@ -103,6 +106,12 @@ export interface StrikePhase {
   centerX: number;
 }
 
+/** Part of a track where its blade hits (track parameters, `toS` defaults to the end). */
+export interface HitWindow {
+  fromS: number;
+  toS?: number;
+}
+
 /** One hand's blade on its track. */
 export interface BladeTrack {
   /**
@@ -121,15 +130,29 @@ export interface BladeTrack {
   chainFrom: number;
   /** Motion per phase id; on the phases not listed the blade is held in its hand. */
   motion: Readonly<Record<string, BladeMotion>>;
+  /**
+   * The blade runs `ticks` behind the strike's clock until phase `until`,
+   * catching up evenly over that phase: two blades thrown together read as
+   * two lashes instead of one.
+   */
+  lag?: { ticks: number; until: string };
   /** Phases on which the trail grows; no trail when `trail` is absent. */
   trailGrowth?: Readonly<Record<string, PhaseTrail>>;
   trail?: TrailShape;
   /**
-   * Hit window on the curve, not on ticks: while the blade is on the track
-   * (thrown or held at its end) at track parameter `fromS` or further, so a
-   * retimed strike still hits where the blade is drawn. No hits when absent.
+   * Hit windows on the curve, not on ticks: while the blade is on the track
+   * (thrown or held) between track parameters `fromS` and `toS` (default the
+   * end), so a retimed strike still hits where the blade is drawn. Each
+   * window hits a target once; several windows (e.g. a lash and a sweep) can
+   * hit it once each. No hits when absent.
    */
-  active?: { fromS: number };
+  active?: HitWindow | readonly HitWindow[];
+  /**
+   * Track parameters where the trail breaks: once the blade passes one, the
+   * trail behind it is dropped and a fresh one starts (e.g. at the low point
+   * of a gather, so the lash reads as a straight line, not a hook).
+   */
+  trailBreakAt?: readonly number[];
 }
 
 /**
@@ -182,6 +205,7 @@ const CX: Readonly<Record<string, number>> = {
   'sq2-a': -3.5, 'sq2-b': -3, 'sq2-c': -1.5, 'sq2-d': -3, 'sq2-e': -1,
   'sq3-a': -2, 'sq3-b': -2, 'sq3-c': 0, 'sq3-d': -0.5, 'sq3-e': -2, 'sq3-f': -0.5,
   'sq4-a': -3, 'sq4-b': 0.5, 'sq4-b2': 1, 'sq4-c': 0.5, 'sq4-d': 4, 'sq4-e': -1.5,
+  'sq5-a': -1.5, 'sq5-b': -0.5, 'sq5-c': -1, 'sq5-d': 0, 'sq5-e': 0, 'sq5-f': -1.5, 'sq5-g': 0,
 };
 
 /**
@@ -453,6 +477,111 @@ const SQUARE4: StrikeDef = {
   hitstopTicks: 4,
   trailSamplesPerTick: 6,
   trailFadeWidthPx: 4,
+  chain: { into: 'square5', from: 'hold', fromTick: 3 },
+};
+
+/** Restrained crescent of square 5's two lashes, cut as soon as it leaves its blade. */
+const SQUARE5_TRAIL = {
+  widths: [[0, 2], [0.3, 5], [0.6, 5], [0.85, 4], [1, 4]],
+  taperOld: 0.25,
+  taperHead: 0.1,
+  minLengthPx: 12,
+  // One sample may pass the cap: 50 keeps the drawn trail within 55 px.
+  maxLengthPx: 50,
+  cutWhenDetached: true,
+} as const;
+
+/**
+ * Square 5's track parameters: the loop ends descending in front, the gather
+ * reaches the low point, the lash ends at the tip (where it holds), and the
+ * sweep runs from the tip around to behind Kratos.
+ */
+const SQ5 = { loop: 2 / 9, low: 3 / 9, tip: 5 / 9 } as const;
+
+/** Square 5's motion, shared by both blades. */
+const SQUARE5_MOTION = {
+  load: { kind: 'carry' },
+  loop: { kind: 'track', from: 0, to: SQ5.loop, ease: 'linear' },
+  // Eases out: the blades linger low before the lash.
+  gather: { kind: 'track', from: SQ5.loop, to: SQ5.low, ease: 'out' },
+  throw: { kind: 'track', from: SQ5.low, to: SQ5.tip, ease: 'out' },
+  hold: { kind: 'hold', driftPx: 2, at: SQ5.tip },
+  sweep: { kind: 'track', from: SQ5.tip, to: 1, ease: 'out' },
+} as const;
+
+const SQUARE5_GROWTH = {
+  loop: { widthPx: 5 },
+  gather: { widthPx: 5 },
+  throw: { widthPx: 4, tailPx: 20, tailFromU: 0.3 },
+  sweep: { widthPx: 5 },
+};
+
+/** The lash (from just past the low point to the tip) and the sweep back hit once each. */
+const SQUARE5_HITS = [{ fromS: 0.35, toS: SQ5.tip }, { fromS: 0.6 }] as const;
+
+/**
+ * Square 5 (draft v2, after the critic; pending user approval): the
+ * finisher, the same motion as Valor of Hercules' square. Chained from
+ * square 4: both blades loop over the head from behind and drop to linger
+ * low in front, then Kratos lunges (torso up, head high) and lashes both
+ * forward as two straight, level lines at chest height, 88 px out (the far
+ * one a little lower); he pulls his weight back, sweeps both blades back
+ * around him in a wide half-ellipse (near in front of the body, far behind
+ * it) and they come back to his arms crossed over the chest. It ends the
+ * square chain.
+ */
+const SQUARE5: StrikeDef = {
+  id: 'square5',
+  hand: 'near',
+  // Both blades are thrown from the first phase on; nothing is only held.
+  heldBlade: { from: 'previous', ticks: 9, sagPx: 5 },
+  phases: [
+    { id: 'load', ticks: 4, advancePx: 0, pose: 'sq5-a', centerX: CX['sq5-a'] },
+    { id: 'loop', ticks: 5, advancePx: 0, pose: 'sq5-b', centerX: CX['sq5-b'] },
+    { id: 'gather', ticks: 4, advancePx: 1, pose: 'sq5-c', centerX: CX['sq5-c'] },
+    { id: 'throw', ticks: 5, advancePx: 4, pose: 'sq5-d', centerX: CX['sq5-d'] },
+    { id: 'hold', ticks: 4, advancePx: 0, pose: 'sq5-e', centerX: CX['sq5-e'] },
+    { id: 'sweep', ticks: 9, advancePx: 0, pose: 'sq5-g', centerX: CX['sq5-g'] },
+    { id: 'recall', ticks: 7, advancePx: 0, pose: 'sq5-f', centerX: CX['sq5-f'] },
+  ],
+  blades: {
+    near: {
+      // Near shoulder of the lunge (sq5-d).
+      shoulder: [-2.5, -27.5],
+      // Behind and above the head, over the top, down to linger low in front,
+      // lashed forward level at chest height (88 px out with the step), then
+      // swept back in front of the body, low, to behind Kratos.
+      track: [[-27.5, -32.5], [-17.5, -42.5], [12.5, -46.5], [27, -22.7], [31, 13.3], [53, 1.3], [85.5, -4.5], [64.5, 9.5], [27.5, 11.5], [-12.5, 11.5], [-47.5, 7.5], [-57.5, 5.5]],
+      trackDepth: ['behind', 'behind', 'front', 'front', 'front', 'front', 'front', 'front', 'front', 'front', 'front', 'front'],
+      chainFrom: 0,
+      motion: { ...SQUARE5_MOTION, recall: { kind: 'recall', sagPx: 5, to: [1, -33] } },
+      trailGrowth: SQUARE5_GROWTH,
+      trail: { kind: 'profile', ...SQUARE5_TRAIL },
+      // The lash starts as a fresh line at the low point; the sweep starts fresh too.
+      trailBreakAt: [SQ5.low, 0.6],
+      active: SQUARE5_HITS,
+    },
+    far: {
+      // Far shoulder of the lunge (sq5-d).
+      shoulder: [3.6, -27.1],
+      // The same lash a little lower and shorter (two lines), then swept back
+      // behind the body, higher, to behind Kratos.
+      track: [[-39.6, -27.9], [-29.6, -37.9], [0.4, -41.9], [14.9, -18.1], [18.9, 17.9], [40.9, 5.9], [73.4, 0.1], [52.4, -2.9], [18.4, -0.9], [-18.6, 0.1], [-53.6, 5.1], [-63.6, 5.1]],
+      trackDepth: ['behind', 'behind', 'front', 'front', 'front', 'front', 'front', 'front', 'behind', 'behind', 'behind', 'behind'],
+      chainFrom: 0,
+      motion: { ...SQUARE5_MOTION, recall: { kind: 'recall', sagPx: 5, to: [9, -34] } },
+      trailGrowth: SQUARE5_GROWTH,
+      trail: { kind: 'profile', ...SQUARE5_TRAIL },
+      trailBreakAt: [SQ5.low, 0.6],
+      active: SQUARE5_HITS,
+    },
+  },
+  hitRadiusPx: 3.5,
+  damage: 10,
+  hitstunTicks: 14,
+  hitstopTicks: 4,
+  trailSamplesPerTick: 6,
+  trailFadeWidthPx: 4,
 };
 
 export const STRIKES: Readonly<Record<StrikeId, StrikeDef>> = {
@@ -460,6 +589,7 @@ export const STRIKES: Readonly<Record<StrikeId, StrikeDef>> = {
   square2: SQUARE2,
   square3: SQUARE3,
   square4: SQUARE4,
+  square5: SQUARE5,
 };
 
 /**
@@ -542,9 +672,22 @@ function bladeTrack(def: StrikeDef, hand: Hand): BladeTrack {
   return blade;
 }
 
+/**
+ * The time `hand`'s blade is at when the strike is at `t`: behind by its
+ * `lag` until the cut-off phase, catching up during it, on time after it.
+ */
+export function bladeTime(def: StrikeDef, hand: Hand, t: number): number {
+  const lag = def.blades[hand]?.lag;
+  if (!lag) return t;
+  const until = phaseStart(def, lag.until);
+  if (t < until.start) return Math.max(0, t - lag.ticks);
+  if (t < until.start + until.ticks) return t - lag.ticks * (1 - (t - until.start) / until.ticks);
+  return t;
+}
+
 /** Motion of `hand`'s blade at strike time `t`, or `undefined` while it is held in the hand. */
 export function bladeMotionAt(def: StrikeDef, hand: Hand, t: number): { motion: BladeMotion | undefined; u: number } {
-  const { phase, u } = strikePhaseAt(def, t);
+  const { phase, u } = strikePhaseAt(def, bladeTime(def, hand, t));
   return { motion: def.blades[hand]?.motion[phase.id], u };
 }
 
@@ -582,15 +725,18 @@ function onTrack(def: StrikeDef, hand: Hand, t: number, s: number): Vec2 {
  */
 export function trackBladeAt(def: StrikeDef, t: number, hand: Hand = def.hand): { pos: Vec2; s: number } | null {
   const { motion, u } = bladeMotionAt(def, hand, t);
+  // A lagging blade moves on its own clock (the strike's for the others).
+  const tb = bladeTime(def, hand, t);
   if (motion?.kind === 'track') {
     const eased = motion.ease === 'out' ? 1 - (1 - u) * (1 - u) : u;
     const s = motion.from + (motion.to - motion.from) * eased;
-    return { pos: onTrack(def, hand, t, s), s };
+    return { pos: onTrack(def, hand, tb, s), s };
   }
   if (motion?.kind === 'hold') {
     const drift = motion.driftPx * Math.sin(u * Math.PI);
-    const tip = onTrack(def, hand, t, 1);
-    return { pos: [tip[0] + drift * (motion.driftX ?? 0.3), tip[1] + drift], s: 1 };
+    const at = motion.at ?? 1;
+    const tip = onTrack(def, hand, tb, at);
+    return { pos: [tip[0] + drift * (motion.driftX ?? 0.3), tip[1] + drift], s: at };
   }
   return null;
 }
@@ -633,14 +779,16 @@ export function thrownBladeAt(
   entry?: StrikeEntry,
 ): BladeState {
   const { motion, u } = bladeMotionAt(def, hand, t);
+  // A lagging blade moves on its own clock (the strike's for the others).
+  const tb = bladeTime(def, hand, t);
   if (!motion) {
     throw new Error(`strike ${def.id}: the ${hand} blade is not thrown at ${t}`);
   }
   const blade = bladeTrack(def, hand);
   if (motion.kind === 'carry') {
-    const grip = strikeHandAt(def, t, anchors, hand);
+    const grip = strikeHandAt(def, tb, anchors, hand);
     const start = entry ? previousBladeAt(entry, hand, anchors) : [grip[0], grip[1] + 5] as Vec2;
-    const end = onTrack(def, hand, t, 0);
+    const end = onTrack(def, hand, tb, 0);
     const e = 1 - (1 - u) * (1 - u);
     const pos: Vec2 = [start[0] + (end[0] - start[0]) * e, start[1] + (end[1] - start[1]) * e];
     return {
@@ -653,15 +801,15 @@ export function thrownBladeAt(
     };
   }
   if (motion.kind === 'draw') {
-    const end = onTrack(def, hand, t, 0);
+    const end = onTrack(def, hand, tb, 0);
     const e = u * u;
     let from: Vec2;
     let mid: Vec2;
     if (motion.from === 'back') {
-      from = strikeAnchorAt(def, t, anchors, 'back');
+      from = strikeAnchorAt(def, tb, anchors, 'back');
       mid = [from[0] - 10, from[1] + 2];
     } else {
-      const grip = strikeHandAt(def, t, anchors, hand);
+      const grip = strikeHandAt(def, tb, anchors, hand);
       from = [grip[0], grip[1] + 5];
       mid = [(from[0] + end[0]) / 2, (from[1] + end[1]) / 2];
     }
@@ -678,8 +826,8 @@ export function thrownBladeAt(
     };
   }
   if (motion.kind === 'recall') {
-    const grip = strikeHandAt(def, t, anchors, hand);
-    const tip = onTrack(def, hand, t, 1);
+    const grip: Vec2 = motion.to ? [motion.to[0] + strikeAdvanceAt(def, tb), motion.to[1]] : strikeHandAt(def, tb, anchors, hand);
+    const tip = onTrack(def, hand, tb, 1);
     const e = u * u;
     const sagPx = motion.sagPx * Math.sin(Math.PI * u);
     return {
@@ -800,11 +948,15 @@ export function strikeTrailAt(def: StrikeDef, tick: number, anchors: StrikePoseA
   let samples: { p: Vec2; s: number }[] = [];
   const maxPx = blade?.trail?.maxLengthPx ?? TRAIL_MAX_LENGTH_PX;
   for (let t = 0; blade?.trail && t <= tick; t += 1) {
-    const { phase, u } = strikePhaseAt(def, t);
+    // A lagging blade's trail grows on its own clock.
+    const { phase, u } = strikePhaseAt(def, bladeTime(def, hand, t));
     const growth = blade.trailGrowth?.[phase.id];
     if (growth) {
       for (let k = 1; t > 0 && k <= n; k += 1) {
         const at = thrownBladeAt(def, t - 1 + k / n, anchors, hand);
+        const before = samples[samples.length - 1];
+        // Passing a break point starts a fresh trail.
+        if (before && blade.trailBreakAt?.some((b) => before.s < b && at.s >= b)) samples = [];
         samples.push({ p: at.pos, s: at.s });
       }
       const { tailPx, tailFromU } = growth;
@@ -829,7 +981,7 @@ export function strikeTrailAt(def: StrikeDef, tick: number, anchors: StrikePoseA
       }
     }
   }
-  const growth = blade?.trailGrowth?.[strikePhaseAt(def, tick).phase.id];
+  const growth = blade?.trailGrowth?.[strikePhaseAt(def, bladeTime(def, hand, tick)).phase.id];
   return {
     points: samples.map((q) => q.p),
     s: samples.map((q) => q.s),
@@ -847,30 +999,49 @@ function phaseStart(def: StrikeDef, id: string): { start: number; ticks: number 
   throw new Error(`strike ${def.id}: unknown phase ${id}`);
 }
 
+/** The hit windows of `hand`'s blade (none when it does not hit). */
+function hitWindows(def: StrikeDef, hand: Hand): readonly HitWindow[] {
+  const active = def.blades[hand]?.active;
+  if (!active) return [];
+  return 'fromS' in active ? [active as HitWindow] : (active as readonly HitWindow[]);
+}
+
+/**
+ * Hit window `hand`'s blade is in on whole tick `tick` (its index in the
+ * blade's windows), or -1: the blade must be on its track between the
+ * window's `fromS` and `toS`.
+ */
+export function strikeHitWindowAt(def: StrikeDef, tick: number, hand: Hand = def.hand): number {
+  const b = trackBladeAt(def, tick, hand);
+  if (!b) return -1;
+  return hitWindows(def, hand).findIndex((w) => b.s >= w.fromS && b.s <= (w.toS ?? 1));
+}
+
 /**
  * Swept segment of `hand`'s blade on whole tick `tick` (from the previous
- * tick's position), or `null` outside its hit window: the blade must be on
- * its track at `active.fromS` or further.
+ * tick's position), or `null` outside its hit windows.
  */
 export function strikeHitSegment(def: StrikeDef, tick: number, hand: Hand = def.hand): readonly [Vec2, Vec2] | null {
-  const active = def.blades[hand]?.active;
-  if (!active) return null;
-  const b = trackBladeAt(def, tick, hand);
-  if (!b || b.s < active.fromS) {
+  if (strikeHitWindowAt(def, tick, hand) < 0) {
     return null;
   }
+  const b = trackBladeAt(def, tick, hand)!;
   const a = trackBladeAt(def, tick - 1, hand) ?? b;
   return [a.pos, b.pos];
 }
 
-/** Swept segments of every blade that can hit on whole tick `tick`. */
+/** Swept segments of every blade that can hit on whole tick `tick`, with their window index. */
 export function strikeHitSegments(def: StrikeDef, tick: number): (readonly [Vec2, Vec2])[] {
-  const segments: (readonly [Vec2, Vec2])[] = [];
+  return strikeHitSegmentsWithWindow(def, tick).map((h) => h.segment);
+}
+
+function strikeHitSegmentsWithWindow(def: StrikeDef, tick: number): { segment: readonly [Vec2, Vec2]; window: number }[] {
+  const out: { segment: readonly [Vec2, Vec2]; window: number }[] = [];
   for (const hand of ['near', 'far'] as const) {
     const segment = strikeHitSegment(def, tick, hand);
-    if (segment) segments.push(segment);
+    if (segment) out.push({ segment, window: strikeHitWindowAt(def, tick, hand) });
   }
-  return segments;
+  return out;
 }
 
 /** First and last whole ticks on which any blade can hit. */
@@ -1011,18 +1182,24 @@ export function stepStrike(
   state.originX = player.x - state.facing * strikeAdvanceAt(def, state.tick);
 
   const toWorld = (p: Vec2): Vec2 => [state.originX + state.facing * p[0], player.y + p[1]];
-  const segments = strikeHitSegments(def, state.tick).map(([a, b]) => [toWorld(a), toWorld(b)] as const);
+  const segments = strikeHitSegmentsWithWindow(def, state.tick).map(({ segment: [a, b], window }) => ({
+    a: toWorld(a),
+    b: toWorld(b),
+    window,
+  }));
   for (const target of targets) {
-    if (target.isDead || target.aiState === 'death' || target.aiState === 'hydra_defeat' || state.hits.includes(target.id)) {
+    if (target.isDead || target.aiState === 'death' || target.aiState === 'hydra_defeat') {
       continue;
     }
-    // One hit per target per strike, whichever blade touches it.
-    const touching = segments.find(([a, b]) => segmentTouches(a, b, def.hitRadiusPx, target));
+    // One hit per target per hit window, whichever blade touches it (the
+    // first window's key is the bare id).
+    const key = (window: number): string => (window === 0 ? target.id : `${target.id}@${window}`);
+    const touching = segments.find(({ a, b, window }) => !state.hits.includes(key(window)) && segmentTouches(a, b, def.hitRadiusPx, target));
     if (!touching) {
       continue;
     }
-    const b = touching[1];
-    state.hits.push(target.id);
+    const b = touching.b;
+    state.hits.push(key(touching.window));
     const killed = damageEnemy(target, def.damage, def.hitstunTicks);
     // A blade hit staggers foot soldiers (the magic only stuns them).
     if (!killed && (target.kind === 'legionnaire' || target.kind === 'archer')) {

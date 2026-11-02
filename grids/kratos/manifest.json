@@ -254,6 +254,48 @@
       "state": "attack",
       "grounded": true,
       "png": "kratos-sq4-e"
+    },
+    {
+      "file": "sq5-a.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-sq5-a"
+    },
+    {
+      "file": "sq5-b.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-sq5-b"
+    },
+    {
+      "file": "sq5-c.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-sq5-c"
+    },
+    {
+      "file": "sq5-d.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-sq5-d"
+    },
+    {
+      "file": "sq5-e.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-sq5-e"
+    },
+    {
+      "file": "sq5-f.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-sq5-f"
+    },
+    {
+      "file": "sq5-g.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-sq5-g"
     }
   ]
 }

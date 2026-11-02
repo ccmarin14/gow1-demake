@@ -257,12 +257,11 @@ describe('square-4 strike data', () => {
     }
   });
 
-  it('hits with both blades from the orbit to the end of the hold; chains from square 3, not further', () => {
+  it('hits with both blades from the orbit to the end of the hold; chains from square 3', () => {
     assert.deepEqual(strikeActiveTicks(SQUARE4), { first: 4, last: 25 });
     assert.ok(strikeHitSegment(SQUARE4, 6, 'near') && strikeHitSegment(SQUARE4, 6, 'far'));
     assert.deepEqual(strikeChainTicks(SQUARE3), { opens: 20, buffersFrom: 14 });
     assert.equal(SQUARE3.chain?.into, 'square4');
-    assert.equal(strikeChainTicks(SQUARE4), null);
   });
 });
 
@@ -304,9 +303,11 @@ describe('square 3 -> square 4 in the world', () => {
     assert.ok(Math.abs(player(world.snapshot()).x - x0 - 19) < 1e-6, 'squares 1 to 4 step 7, 5, 5 and 2 px');
   });
 
-  it('does nothing on J during square 4 (no square 5 yet)', () => {
+  it('ignores J pressed in square 4 before its hit window: the combo ends after square 4', () => {
     const { world } = square4World();
-    for (let i = 0; i < 33; i += 1) world.step(i % 3 === 0 ? ['light-attack'] : []);
+    world.step(['light-attack']);
+    assert.equal(world.snapshot().strike?.queued, false);
+    hold(world, 32, []);
     assert.equal(world.snapshot().strike?.id, 'square4');
     world.step([]);
     assert.equal(world.snapshot().strike, undefined);

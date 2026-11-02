@@ -14,14 +14,14 @@
 | --- | --- | --- | --- |
 | `move-left` / `move-right` | `A` / `D` o `←` / `→` | Stick izquierdo | Movimiento horizontal y orientación (`facing`). |
 | `jump` | `Espacio` | Cruz ($\times$) | Salto simple, doble salto y descenso en plataformas (`Abajo + Espacio`). |
-| `light-attack` | `J` (□ en pantalla táctil) | Cuadrado (□) | Golpe □1 en el suelo; apretarlo en el final de □1 encadena □2 (D-37). En □2 no hace nada hasta que exista □3. |
+| `light-attack` | `J` (□ en pantalla táctil) | Cuadrado (□) | Combo □1 a □5 en el suelo: cada `J` en el final del golpe anterior encadena el siguiente, y mantener la dirección contraria da vuelta a Kratos (D-37). En □5 no hace nada. |
 | `dodge` | `Shift` | Stick derecho | Evasión terrestre con ventana de invulnerabilidad. |
 | `magic` | `U` / `I` | L2 | Magia activa (*Ira de Poseidón*). |
 | `context-action` | `E` | R2 | Interacción con cofres y entorno. |
 | `guard` | `Q` | L1 | Guardia y desvío (*parry*) en los primeros ticks. |
 | `pause` | `Escape` | Start | Pausa. |
 
-Por ahora Kratos tiene □1 y □2 (D-37); △ irá en la tecla `I`; Triángulo y Círculo no tienen acción ni tecla hasta que se diseñen sus golpes.
+Por ahora Kratos tiene el combo □1 a □5 (D-37); △ irá en la tecla `I`; Triángulo y Círculo no tienen acción ni tecla hasta que se diseñen sus golpes.
 
 ## 3. Reglas visuales y de pixel art
 
