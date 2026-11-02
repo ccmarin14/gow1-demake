@@ -75,6 +75,8 @@ export interface StrikeSnapshot {
   hits: string[];
   /** The attack was pressed again early: the chained strike starts when its window opens. */
   queued: boolean;
+  /** Direction held with the queued press: the next strike turns that way. */
+  queuedDirection?: -1 | 1;
   /** The strike this one chained from (absent when it started on its own). */
   entry?: StrikeEntry;
 }

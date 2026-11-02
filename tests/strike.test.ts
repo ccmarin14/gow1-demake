@@ -70,7 +70,7 @@ describe('square-1 strike data', () => {
 
   it('anchors the blade track on the near shoulder of the throw pose', () => {
     const shoulder = feet(ANCHORS['kratos-sq1-c'].shoulder);
-    assert.ok(dist(shoulder, SQUARE1.shoulder) < 0.2, `shoulder ${SQUARE1.shoulder} vs anchors ${shoulder}`);
+    assert.ok(dist(shoulder, SQUARE1.blades.near!.shoulder) < 0.2, `shoulder ${SQUARE1.blades.near!.shoulder} vs anchors ${shoulder}`);
   });
 
   it('moves the near blade continuously: no jump over 22 px per tick, none at phase changes', () => {

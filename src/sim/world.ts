@@ -17,7 +17,7 @@ import { isGuarding, startGuard, stepGuard } from './guard';
 import { stepLegionnaire } from './legionnaire';
 import { stepHydra } from './hydra';
 import { isCastingMagic, stepMagic } from './magic';
-import { STRIKES, chainStrike, queueChain, startStrike, stepStrike, type StrikeState } from './strike';
+import { STRIKES, chainStrike, queueChain, startStrike, stepStrike, type HeldDirection, type StrikeState } from './strike';
 import { buildLevel1Map, computeCameraScrollX, getSegmentAtX, type LevelMapData } from './map';
 
 const TICK_DT = 1 / CONFIG.sim.tickRate;
@@ -49,6 +49,9 @@ export class World {
   private lightAttackHeld = false;
   /** Kratos' strike in progress (`null` when not striking). */
   private strike: StrikeState | null = null;
+  /** Left/right held on this tick and for how many ticks in a row (a combo turns only on a steady hold). */
+  private direction: HeldDirection = 0;
+  private directionTicks = 0;
   /** Ticks the whole world stays frozen after a strike connects. */
   private hitstopTicks = 0;
   private strikeHitNotice: { x: number; y: number } | null = null;
@@ -370,6 +373,8 @@ export class World {
     this.magicHeld = false;
     this.lightAttackHeld = false;
     this.strike = null;
+    this.direction = 0;
+    this.directionTicks = 0;
     this.hitstopTicks = 0;
     this.strikeHitNotice = null;
     this.platforms = scenario.platforms;
@@ -508,13 +513,21 @@ export class World {
     const lightAttackEdge = wantsLightAttack && !this.lightAttackHeld;
     this.lightAttackHeld = wantsLightAttack;
 
+    // A combo turns around only on a direction held for a few ticks, so a
+    // touch stick grazed sideways does not flip it.
+    const direction = heldDirection(this.input);
+    this.directionTicks = direction !== 0 && direction === this.direction ? this.directionTicks + 1 : 1;
+    this.direction = direction;
+    const steadyDirection: HeldDirection =
+      direction !== 0 && this.directionTicks >= COMBO_TURN_MIN_TICKS ? direction : 0;
+
     const wantsUpgrade = this.input.includes('upgrade');
 
     // A strike that connects freezes the whole world for a few ticks; a press
     // made meanwhile still queues the next strike of the combo.
     if (this.hitstopTicks > 0) {
       if (this.strike && lightAttackEdge) {
-        queueChain(this.strike);
+        queueChain(this.strike, steadyDirection);
       }
       this.hitstopTicks -= 1;
       this.tick += 1;
@@ -590,9 +603,9 @@ export class World {
           startedNow = true;
         } else if (this.strike) {
           if (lightAttackEdge) {
-            queueChain(this.strike);
+            queueChain(this.strike, steadyDirection);
           }
-          const next = chainStrike(this.strike, player);
+          const next = chainStrike(this.strike, player, steadyDirection);
           if (next) {
             this.strike = next;
             startedNow = true;
@@ -925,4 +938,14 @@ export class World {
       checksum: checksumOf(payload),
     };
   }
+}
+
+/** Ticks a direction must be held before a combo link turns toward it. */
+const COMBO_TURN_MIN_TICKS = 4;
+
+/** Left or right held (-1 / 1), or neither or both (0). */
+function heldDirection(input: readonly GameAction[]): HeldDirection {
+  const left = input.includes('move-left');
+  const right = input.includes('move-right');
+  return left === right ? 0 : right ? 1 : -1;
 }

@@ -4,19 +4,19 @@ import type { EntityState, StrikeSnapshot } from './types';
 
 /**
  * Kratos' strikes as data (D-37). Each strike is a table of phases (body
- * pose, ticks, forward step) plus a blade track: a Catmull-Rom curve the near
- * blade runs at 60 Hz. The body changes pose in steps; the blade moves
- * continuously. The hit box is the blade's swept segment, so what hits is
- * what is drawn. Adding a strike (square 2..5, triangle) means adding a table.
- * A strike throws the blade of one hand (`hand`) and holds the other; a
- * strike can chain into the next one (`chain`).
+ * pose, ticks, forward step) plus, per hand, a blade track: a Catmull-Rom
+ * curve the blade runs at 60 Hz. The body changes pose in steps; the blades
+ * move continuously. The hit box is a blade's swept segment, so what hits is
+ * what is drawn. A hand without a track on a phase holds its blade (drawn
+ * from the back, returning from the previous strike, or hanging from the
+ * hand). A strike can chain into the next one (`chain`).
  *
  * Coordinates are pixels relative to Kratos' feet when the strike started,
  * facing +x, y down. Phase time `u` runs 0 -> 1 inside each phase.
  */
 export type Vec2 = readonly [number, number];
 
-export type StrikeId = 'square1' | 'square2';
+export type StrikeId = 'square1' | 'square2' | 'square3';
 
 /** Kratos' hands as the side view shows them: near the camera or behind the body. */
 export type Hand = 'near' | 'far';
@@ -24,30 +24,31 @@ export type Hand = 'near' | 'far';
 /** Whether a blade, its chain or its trail is drawn in front of the body (and enemies) or behind it. */
 export type Depth = 'front' | 'behind';
 
+/** Default cap of a fire trail's length (px): the user wants restrained trails. */
+export const TRAIL_MAX_LENGTH_PX = 55;
+
 /**
- * How the fire trail is drawn.
- * - `crescent`: square 1 as approved: each phase's `trail.widthPx`, the
- *   whole crescent behind the body.
+ * How the fire trail is drawn. Either kind keeps only its newest
+ * `maxLengthPx` (default `TRAIL_MAX_LENGTH_PX`).
+ * - `crescent`: square 1 as approved: each phase's `widthPx`, the whole
+ *   crescent behind the body.
  * - `profile`: width along the track (`widths`, pairs of track parameter s
  *   and px, linear between them), both ends tapered (`taperOld` and
  *   `taperHead`, fractions of the trail's length), nothing drawn until it is
- *   `minLengthPx` long, depth per sample from `trackDepth`. Optionally a
- *   filled fan between `fan.fromS` and `fan.toS`: the band reaches from the
- *   blade toward the shoulder down to `innerRatio` of its distance (the
- *   sector the chain sweeps).
+ *   `minLengthPx` long, depth per sample from the track.
  */
 export type TrailShape =
-  | { kind: 'crescent' }
+  | { kind: 'crescent'; maxLengthPx?: number }
   | {
     kind: 'profile';
     widths: readonly (readonly [number, number])[];
     taperOld: number;
     taperHead: number;
     minLengthPx: number;
-    fan?: { fromS: number; toS: number; innerRatio: number };
+    maxLengthPx?: number;
   };
 
-/** How the thrown blade moves during a phase. */
+/** How a blade moves along its track during a phase. */
 export type BladeMotion =
   /**
    * To the start of the track (quadratic, ease in), from the upper back (the
@@ -61,6 +62,16 @@ export type BladeMotion =
   /** Back to the throwing hand, accelerating, the chain sagging up to `sagPx`. */
   | { kind: 'recall'; sagPx: number };
 
+/**
+ * The fire trail grows during a phase: max width (`crescent` trails), and
+ * optionally only its last `tailPx` once the phase passes `tailFromU`.
+ */
+export interface PhaseTrail {
+  widthPx: number;
+  tailPx?: number;
+  tailFromU?: number;
+}
+
 export interface StrikePhase {
   id: string;
   ticks: number;
@@ -68,20 +79,47 @@ export interface StrikePhase {
   advancePx: number;
   /** Body frame of the phase (`grids/kratos/<pose>.txt`). */
   pose: string;
-  blade: BladeMotion;
   /**
-   * The fire trail grows during this phase: max width (`crescent` trails),
-   * and optionally only its last `tailPx` once the phase passes `tailFromU`.
+   * Centre x of the pose's opaque pixels relative to the feet (px, facing
+   * +x): when the combo turns around, the body is moved so it stays put.
    */
-  trail?: { widthPx: number; tailPx?: number; tailFromU?: number };
+  centerX: number;
+}
+
+/** One hand's blade on its track. */
+export interface BladeTrack {
+  /**
+   * Shoulder of that hand in its throw pose, relative to the feet: the
+   * origin of the track (anchor `shoulder` or `farShoulder`).
+   */
+  shoulder: Vec2;
+  /** Catmull-Rom control points relative to `shoulder`; the blade runs points 1..n-2. */
+  track: readonly Vec2[];
+  /**
+   * Depth of the blade, its chain and its trail at each control point of
+   * `track` (the nearest one counts); all in front when absent.
+   */
+  trackDepth?: readonly Depth[];
+  /** The chain shows once the blade passes this fraction of the track. */
+  chainFrom: number;
+  /** Motion per phase id; on the phases not listed the blade is held in its hand. */
+  motion: Readonly<Record<string, BladeMotion>>;
+  /** Phases on which the trail grows; no trail when `trail` is absent. */
+  trailGrowth?: Readonly<Record<string, PhaseTrail>>;
+  trail?: TrailShape;
+  /**
+   * Hit window on the curve, not on ticks: while the blade is on the track
+   * (thrown or held at its end) at track parameter `fromS` or further, so a
+   * retimed strike still hits where the blade is drawn. No hits when absent.
+   */
+  active?: { fromS: number };
 }
 
 /**
- * The blade the strike does not throw: drawn from the back into its hand on
+ * A held blade (a hand off its track): drawn from the back into its hand on
  * the first phase, or carried over from the strike this one chained from
  * (it is yanked back to its hand over `ticks`, on its chain, sagging up to
- * `sagPx`).
- * Either way it then hangs from that hand.
+ * `sagPx`). Either way it then hangs from that hand.
  */
 export type HeldBlade = { from: 'back' } | { from: 'previous'; ticks: number; sagPx: number };
 
@@ -100,42 +138,33 @@ export interface StrikeChain {
 export interface StrikeDef {
   id: StrikeId;
   phases: readonly StrikePhase[];
-  /** Hand that throws the blade along the track; the other hand holds its blade. */
+  /** The hand of the main blade: the one that hits, glints and that the defaults refer to. */
   hand: Hand;
+  /** Blade tracks per hand; a hand without one only holds its blade. */
+  blades: Readonly<Partial<Record<Hand, BladeTrack>>>;
   heldBlade: HeldBlade;
-  /**
-   * Shoulder of the throwing hand in the throw pose, relative to the feet:
-   * the origin of the track (anchor `shoulder` or `farShoulder`).
-   */
-  shoulder: Vec2;
-  /** Catmull-Rom control points relative to `shoulder`; the blade runs points 1..n-2. */
-  track: readonly Vec2[];
-  /**
-   * Depth of the thrown blade, its chain and its trail at each control point
-   * of `track` (the nearest one counts); all in front when absent.
-   */
-  trackDepth?: readonly Depth[];
-  /** The chain shows once the blade passes this fraction of the track. */
-  chainFrom: number;
-  /**
-   * Hit window on the curve, not on ticks: while the blade is on the track
-   * (thrown or held at its end) at track parameter `fromS` or further, so a
-   * retimed strike still hits where the blade is drawn.
-   */
-  active: { fromS: number };
-  /** Half thickness of the blade's swept segment (px). */
+  /** Half thickness of the blades' swept segments (px). */
   hitRadiusPx: number;
   damage: number;
   hitstunTicks: number;
   /** Ticks the whole world freezes when the strike connects. */
   hitstopTicks: number;
-  trail: TrailShape;
   /** Trail sub-samples per tick and the width it fades with after the sweep. */
   trailSamplesPerTick: number;
   trailFadeWidthPx: number;
   /** The next strike of the combo, if any. */
   chain?: StrikeChain;
 }
+
+/**
+ * Centre x of each strike pose's opaque pixels relative to the feet (px,
+ * facing +x), measured on `grids/kratos/*.txt` (a test keeps them in sync).
+ */
+const CX: Readonly<Record<string, number>> = {
+  'sq1-a': -2.5, 'sq1-b': -1.5, 'sq1-c': -3, 'sq1-d': -3, 'sq1-e': -1.5,
+  'sq2-a': -3.5, 'sq2-b': -3, 'sq2-c': -1.5, 'sq2-d': -3, 'sq2-e': -1,
+  'sq3-a': -2, 'sq3-b': -2, 'sq3-c': 0, 'sq3-d': -0.5, 'sq3-e': -2, 'sq3-f': -0.5,
+};
 
 /**
  * Square 1 (user-approved preview `docs/tmp/golpes/sq1-v4.gif`): draw the
@@ -148,88 +177,176 @@ const SQUARE1: StrikeDef = {
   hand: 'near',
   heldBlade: { from: 'back' },
   phases: [
-    { id: 'draw', ticks: 5, advancePx: 0, pose: 'sq1-a', blade: { kind: 'draw', from: 'back', behindBody: true } },
-    {
-      id: 'sweep', ticks: 4, advancePx: 4, pose: 'sq1-b',
-      blade: { kind: 'track', from: 0, to: 0.5, ease: 'linear' },
-      trail: { widthPx: 6 },
-    },
-    {
-      id: 'throw', ticks: 5, advancePx: 3, pose: 'sq1-c',
-      blade: { kind: 'track', from: 0.5, to: 1, ease: 'out' },
-      trail: { widthPx: 4, tailPx: 20, tailFromU: 0.3 },
-    },
-    { id: 'hold', ticks: 12, advancePx: 0, pose: 'sq1-d', blade: { kind: 'hold', driftPx: 2 } },
-    { id: 'recall', ticks: 8, advancePx: 0, pose: 'sq1-e', blade: { kind: 'recall', sagPx: 5 } },
+    { id: 'draw', ticks: 5, advancePx: 0, pose: 'sq1-a', centerX: CX['sq1-a'] },
+    { id: 'sweep', ticks: 4, advancePx: 4, pose: 'sq1-b', centerX: CX['sq1-b'] },
+    { id: 'throw', ticks: 5, advancePx: 3, pose: 'sq1-c', centerX: CX['sq1-c'] },
+    { id: 'hold', ticks: 12, advancePx: 0, pose: 'sq1-d', centerX: CX['sq1-d'] },
+    { id: 'recall', ticks: 8, advancePx: 0, pose: 'sq1-e', centerX: CX['sq1-e'] },
   ],
-  shoulder: [-2.3, -25.6],
-  track: [[-24, -4], [-22, 4], [-8, 15], [14, 9], [42, 7], [80, 12], [84, 12]],
-  chainFrom: 0.45,
-  // From the last sweep tick (s 0.375) to the end of the hold.
-  active: { fromS: 0.3 },
+  blades: {
+    near: {
+      shoulder: [-2.3, -25.6],
+      track: [[-24, -4], [-22, 4], [-8, 15], [14, 9], [42, 7], [80, 12], [84, 12]],
+      chainFrom: 0.45,
+      motion: {
+        draw: { kind: 'draw', from: 'back', behindBody: true },
+        sweep: { kind: 'track', from: 0, to: 0.5, ease: 'linear' },
+        throw: { kind: 'track', from: 0.5, to: 1, ease: 'out' },
+        hold: { kind: 'hold', driftPx: 2 },
+        recall: { kind: 'recall', sagPx: 5 },
+      },
+      trailGrowth: { sweep: { widthPx: 6 }, throw: { widthPx: 4, tailPx: 20, tailFromU: 0.3 } },
+      // Approved at up to 73 px long.
+      trail: { kind: 'crescent', maxLengthPx: 80 },
+      // From the last sweep tick (s 0.375) to the end of the hold.
+      active: { fromS: 0.3 },
+    },
+  },
   hitRadiusPx: 3.5,
   damage: 10,
   hitstunTicks: 14,
   hitstopTicks: 4,
-  trail: { kind: 'crescent' },
   trailSamplesPerTick: 6,
   trailFadeWidthPx: 4,
   chain: { into: 'square2', from: 'hold', fromTick: 4 },
 };
 
 /**
- * Square 2 (draft v2, after the critic; pending user approval): chained from
- * square 1's hold or recall. The far arm, cocked low behind, swings its blade
- * up and forward to a wide fire fan in front of and above Kratos, then cuts a
- * long steep diagonal down through waist height, while he twists into it
- * (showing his back) and drops into a lunge. The near blade is yanked back
- * from square 1's throw into the near hand.
+ * Square 2 (user-approved, commit 517c25e): chained from square 1's hold or
+ * recall. The far arm, cocked low behind, swings its blade up and forward
+ * over the head, then cuts a long steep diagonal down through waist height,
+ * while he twists into it (showing his back) and drops into a lunge. The
+ * near blade is yanked back from square 1's throw into the near hand.
  */
 const SQUARE2: StrikeDef = {
   id: 'square2',
   hand: 'far',
   heldBlade: { from: 'previous', ticks: 9, sagPx: 5 },
   phases: [
-    { id: 'load', ticks: 3, advancePx: 0, pose: 'sq2-a', blade: { kind: 'draw', from: 'hand', behindBody: true } },
-    {
-      id: 'sweep', ticks: 3, advancePx: 2, pose: 'sq2-b',
-      blade: { kind: 'track', from: 0, to: 0.55, ease: 'linear' },
-      trail: { widthPx: 6 },
-    },
-    {
-      id: 'throw', ticks: 4, advancePx: 3, pose: 'sq2-c',
-      blade: { kind: 'track', from: 0.55, to: 1, ease: 'out' },
-      trail: { widthPx: 4, tailPx: 20, tailFromU: 0.3 },
-    },
-    { id: 'hold', ticks: 7, advancePx: 0, pose: 'sq2-d', blade: { kind: 'hold', driftPx: 2 } },
-    { id: 'recall', ticks: 6, advancePx: 0, pose: 'sq2-e', blade: { kind: 'recall', sagPx: 5 } },
+    { id: 'load', ticks: 3, advancePx: 0, pose: 'sq2-a', centerX: CX['sq2-a'] },
+    { id: 'sweep', ticks: 3, advancePx: 2, pose: 'sq2-b', centerX: CX['sq2-b'] },
+    { id: 'throw', ticks: 4, advancePx: 3, pose: 'sq2-c', centerX: CX['sq2-c'] },
+    { id: 'hold', ticks: 7, advancePx: 0, pose: 'sq2-d', centerX: CX['sq2-d'] },
+    { id: 'recall', ticks: 6, advancePx: 0, pose: 'sq2-e', centerX: CX['sq2-e'] },
   ],
-  shoulder: [1, -22],
-  // From low behind, up and forward to a peak above and ahead of the head
-  // (x +15..20), then a long steep diagonal down through waist height.
-  track: [[-24, 4], [-14, -20], [0, -34], [20, -36], [40, -15], [57, 2], [66, 14], [64, 18]],
-  // Behind the body while it rises behind and over the head, then in front.
-  trackDepth: ['behind', 'behind', 'behind', 'front', 'front', 'front', 'front', 'front'],
-  chainFrom: 0.1,
-  // From the start of the descent (first throw tick) to the end of the hold.
-  active: { fromS: 0.6 },
+  blades: {
+    far: {
+      shoulder: [1, -22],
+      // From low behind, up and forward to a peak above and ahead of the head
+      // (x +15..20), then a long steep diagonal down through waist height.
+      track: [[-24, 4], [-14, -20], [0, -34], [20, -36], [40, -15], [57, 2], [66, 14], [64, 18]],
+      // Behind the body while it rises behind and over the head, then in front.
+      trackDepth: ['behind', 'behind', 'behind', 'front', 'front', 'front', 'front', 'front'],
+      chainFrom: 0.1,
+      motion: {
+        load: { kind: 'draw', from: 'hand', behindBody: true },
+        sweep: { kind: 'track', from: 0, to: 0.55, ease: 'linear' },
+        throw: { kind: 'track', from: 0.55, to: 1, ease: 'out' },
+        hold: { kind: 'hold', driftPx: 2 },
+        recall: { kind: 'recall', sagPx: 5 },
+      },
+      trailGrowth: { sweep: { widthPx: 6 }, throw: { widthPx: 4, tailPx: 20, tailFromU: 0.3 } },
+      trail: {
+        kind: 'profile',
+        // As restrained as square 1's crescent (user: the fan read too big).
+        widths: [[0, 2], [0.3, 6], [0.55, 6], [0.7, 4], [1, 4]],
+        taperOld: 0.25,
+        taperHead: 0.1,
+        minLengthPx: 12,
+        // Approved at up to 100 px long.
+        maxLengthPx: 110,
+      },
+      // From the start of the descent (first throw tick) to the end of the hold.
+      active: { fromS: 0.6 },
+    },
+  },
   hitRadiusPx: 3.5,
   damage: 10,
   hitstunTicks: 14,
   hitstopTicks: 4,
-  trail: {
-    kind: 'profile',
-    // As restrained as square 1's crescent (user: the fan read too big).
-    widths: [[0, 2], [0.3, 6], [0.55, 6], [0.7, 4], [1, 4]],
-    taperOld: 0.25,
-    taperHead: 0.1,
-    minLengthPx: 12,
+  trailSamplesPerTick: 6,
+  trailFadeWidthPx: 4,
+  chain: { into: 'square3', from: 'hold', fromTick: 4 },
+};
+
+/**
+ * Square 3 (draft v2, after the critic; pending user approval): chained from
+ * square 2's hold or recall. Kratos rises out of the lunge and stays upright
+ * while the near arm swings its blade from low behind, up behind him to
+ * straight overhead, where it lingers, over the head and down in front to
+ * stop level at chest height. Only then does he crouch, both arms open: the
+ * far blade, yanked back from square 2's throw, goes out behind him on a
+ * short chain at chest height, setting up square 4's spin.
+ */
+const SQUARE3: StrikeDef = {
+  id: 'square3',
+  hand: 'near',
+  heldBlade: { from: 'previous', ticks: 9, sagPx: 5 },
+  phases: [
+    { id: 'load', ticks: 3, advancePx: 0, pose: 'sq3-a', centerX: CX['sq3-a'] },
+    { id: 'rise', ticks: 4, advancePx: 1, pose: 'sq3-b', centerX: CX['sq3-b'] },
+    { id: 'sweep', ticks: 5, advancePx: 1, pose: 'sq3-c', centerX: CX['sq3-c'] },
+    { id: 'throw', ticks: 4, advancePx: 3, pose: 'sq3-d', centerX: CX['sq3-d'] },
+    { id: 'hold', ticks: 6, advancePx: 0, pose: 'sq3-e', centerX: CX['sq3-e'] },
+    { id: 'recall', ticks: 7, advancePx: 0, pose: 'sq3-f', centerX: CX['sq3-f'] },
+  ],
+  blades: {
+    near: {
+      shoulder: [-3.7, -31.7],
+      // From low behind the hip, up behind him to straight overhead, over the
+      // head, then down in front through chest height to stop level there.
+      // The critic's path in feet coordinates, moved onto the upright throw
+      // pose's higher shoulder (+2.7, +4.7).
+      track: [[-16.3, 31.7], [-14.3, 17.7], [-16.3, -8.3], [-2.3, -34.3], [20.7, -33.3], [38.7, -9.3], [72.7, 1.7], [85.7, 3.7]],
+      // Behind the body while it rises behind and overhead, then in front.
+      trackDepth: ['behind', 'behind', 'behind', 'behind', 'front', 'front', 'front', 'front'],
+      chainFrom: 0.1,
+      motion: {
+        load: { kind: 'draw', from: 'hand', behindBody: true },
+        rise: { kind: 'track', from: 0, to: 0.3, ease: 'linear' },
+        // Eases out: the blade lingers over the head.
+        sweep: { kind: 'track', from: 0.3, to: 0.65, ease: 'out' },
+        throw: { kind: 'track', from: 0.65, to: 1, ease: 'out' },
+        hold: { kind: 'hold', driftPx: 2 },
+        recall: { kind: 'recall', sagPx: 5 },
+      },
+      trailGrowth: {
+        rise: { widthPx: 6 },
+        sweep: { widthPx: 6 },
+        throw: { widthPx: 4, tailPx: 20, tailFromU: 0.3 },
+      },
+      trail: {
+        kind: 'profile',
+        widths: [[0, 2], [0.3, 6], [0.6, 6], [0.8, 4], [1, 4]],
+        taperOld: 0.25,
+        taperHead: 0.1,
+        minLengthPx: 12,
+      },
+      // From the way down in front, at chest and shoulder height (not on the
+      // enemy's head on the way in), to the end of the hold.
+      active: { fromS: 0.85 },
+    },
+    far: {
+      shoulder: [3.4, -24.2],
+      // Out behind at chest height on a short chain once the arms open.
+      track: [[-6, 5], [-11.7, 4.7], [-22, -1], [-33, -3], [-36, -3]],
+      trackDepth: ['behind', 'behind', 'behind', 'behind', 'behind'],
+      chainFrom: 0,
+      motion: {
+        hold: { kind: 'track', from: 0, to: 1, ease: 'out' },
+        recall: { kind: 'recall', sagPx: 3 },
+      },
+    },
   },
+  hitRadiusPx: 3.5,
+  damage: 10,
+  hitstunTicks: 14,
+  hitstopTicks: 4,
   trailSamplesPerTick: 6,
   trailFadeWidthPx: 4,
 };
 
-export const STRIKES: Readonly<Record<StrikeId, StrikeDef>> = { square1: SQUARE1, square2: SQUARE2 };
+export const STRIKES: Readonly<Record<StrikeId, StrikeDef>> = { square1: SQUARE1, square2: SQUARE2, square3: SQUARE3 };
 
 /**
  * Where a chained strike came from: the previous strike and its tick when
@@ -241,6 +358,8 @@ export interface StrikeEntry {
   tick: number;
   /** Feet advance of the previous strike at that tick (px): its origin is this far behind. */
   offsetPx: number;
+  /** Kratos turned around when this strike started: the previous strike's x is mirrored. */
+  turned: boolean;
   entry?: StrikeEntry;
 }
 
@@ -302,47 +421,61 @@ function catmull(p0: Vec2, p1: Vec2, p2: Vec2, p3: Vec2, u: number): Vec2 {
   return [axis(0), axis(1)];
 }
 
-/** Point at `s` (0..1) of the track, relative to the shoulder. */
-function trackPoint(def: StrikeDef, s: number): Vec2 {
-  const segments = def.track.length - 3;
+/** The track of `hand`'s blade; throws if the strike has none. */
+function bladeTrack(def: StrikeDef, hand: Hand): BladeTrack {
+  const blade = def.blades[hand];
+  if (!blade) throw new Error(`strike ${def.id}: no ${hand} blade track`);
+  return blade;
+}
+
+/** Motion of `hand`'s blade at strike time `t`, or `undefined` while it is held in the hand. */
+export function bladeMotionAt(def: StrikeDef, hand: Hand, t: number): { motion: BladeMotion | undefined; u: number } {
+  const { phase, u } = strikePhaseAt(def, t);
+  return { motion: def.blades[hand]?.motion[phase.id], u };
+}
+
+/** Point at `s` (0..1) of a track, relative to its shoulder. */
+function trackPoint(blade: BladeTrack, s: number): Vec2 {
+  const segments = blade.track.length - 3;
   const seg = Math.min(Math.floor(s * segments), segments - 1);
   const u = s * segments - seg;
-  return catmull(def.track[seg], def.track[seg + 1], def.track[seg + 2], def.track[seg + 3], u);
+  return catmull(blade.track[seg], blade.track[seg + 1], blade.track[seg + 2], blade.track[seg + 3], u);
 }
 
-/** Depth of the track at `s` (its nearest control point). */
-export function trackDepthAt(def: StrikeDef, s: number): Depth {
-  if (!def.trackDepth) return 'front';
-  const segments = def.track.length - 3;
-  return def.trackDepth[Math.round(Math.max(0, Math.min(1, s)) * segments) + 1] ?? 'front';
+/** Depth of `hand`'s track at `s` (its nearest control point). */
+export function trackDepthAt(def: StrikeDef, s: number, hand: Hand = def.hand): Depth {
+  const blade = def.blades[hand];
+  if (!blade?.trackDepth) return 'front';
+  const segments = blade.track.length - 3;
+  return blade.trackDepth[Math.round(Math.max(0, Math.min(1, s)) * segments) + 1] ?? 'front';
 }
 
-/** Shoulder of the throwing hand at strike time `t` (the track's origin), moved with the body's step. */
-export function shoulderAt(def: StrikeDef, t: number): Vec2 {
-  return [def.shoulder[0] + strikeAdvanceAt(def, t), def.shoulder[1]];
+/** Shoulder of `hand` at strike time `t` (its track's origin), moved with the body's step. */
+export function shoulderAt(def: StrikeDef, t: number, hand: Hand = def.hand): Vec2 {
+  const shoulder = bladeTrack(def, hand).shoulder;
+  return [shoulder[0] + strikeAdvanceAt(def, t), shoulder[1]];
 }
 
-function onTrack(def: StrikeDef, t: number, s: number): Vec2 {
-  const sh = shoulderAt(def, t);
-  const p = trackPoint(def, s);
+function onTrack(def: StrikeDef, hand: Hand, t: number, s: number): Vec2 {
+  const sh = shoulderAt(def, t, hand);
+  const p = trackPoint(bladeTrack(def, hand), s);
   return [sh[0] + p[0], sh[1] + p[1]];
 }
 
 /**
- * Near blade while it runs the track or holds at its end (no anchors needed),
- * `null` while it is drawn or recalled.
+ * `hand`'s blade while it runs its track or holds at its end (no anchors
+ * needed), `null` while it is drawn, recalled or held in the hand.
  */
-export function trackBladeAt(def: StrikeDef, t: number): { pos: Vec2; s: number } | null {
-  const { phase, u } = strikePhaseAt(def, t);
-  const blade = phase.blade;
-  if (blade.kind === 'track') {
-    const eased = blade.ease === 'out' ? 1 - (1 - u) * (1 - u) : u;
-    const s = blade.from + (blade.to - blade.from) * eased;
-    return { pos: onTrack(def, t, s), s };
+export function trackBladeAt(def: StrikeDef, t: number, hand: Hand = def.hand): { pos: Vec2; s: number } | null {
+  const { motion, u } = bladeMotionAt(def, hand, t);
+  if (motion?.kind === 'track') {
+    const eased = motion.ease === 'out' ? 1 - (1 - u) * (1 - u) : u;
+    const s = motion.from + (motion.to - motion.from) * eased;
+    return { pos: onTrack(def, hand, t, s), s };
   }
-  if (blade.kind === 'hold') {
-    const drift = blade.driftPx * Math.sin(u * Math.PI);
-    const tip = onTrack(def, t, 1);
+  if (motion?.kind === 'hold') {
+    const drift = motion.driftPx * Math.sin(u * Math.PI);
+    const tip = onTrack(def, hand, t, 1);
     return { pos: [tip[0] + drift * 0.3, tip[1] + drift], s: 1 };
   }
   return null;
@@ -373,25 +506,28 @@ export interface BladeState {
   sagPx: number;
   deg: number;
   behindBody: boolean;
-  /** Track parameter of the thrown blade (0 while drawn, 1 held or recalled); 0 for the held blade. */
+  /** Track parameter of a thrown blade (0 while drawn, 1 held or recalled); 0 for a held blade. */
   s: number;
 }
 
-/** The thrown blade at strike time `t`: drawn, run along the track, held, recalled. */
-export function thrownBladeAt(def: StrikeDef, t: number, anchors: StrikePoseAnchors): BladeState {
-  const { phase, u } = strikePhaseAt(def, t);
-  const blade = phase.blade;
-  if (blade.kind === 'draw') {
-    const end = onTrack(def, t, 0);
+/** `hand`'s blade on its track at strike time `t`: drawn, run along the track, held at its end, recalled. */
+export function thrownBladeAt(def: StrikeDef, t: number, anchors: StrikePoseAnchors, hand: Hand = def.hand): BladeState {
+  const { motion, u } = bladeMotionAt(def, hand, t);
+  if (!motion) {
+    throw new Error(`strike ${def.id}: the ${hand} blade is not thrown at ${t}`);
+  }
+  const blade = bladeTrack(def, hand);
+  if (motion.kind === 'draw') {
+    const end = onTrack(def, hand, t, 0);
     const e = u * u;
     let from: Vec2;
     let mid: Vec2;
-    if (blade.from === 'back') {
+    if (motion.from === 'back') {
       from = strikeAnchorAt(def, t, anchors, 'back');
       mid = [from[0] - 10, from[1] + 2];
     } else {
-      const hand = strikeHandAt(def, t, anchors, def.hand);
-      from = [hand[0], hand[1] + 5];
+      const grip = strikeHandAt(def, t, anchors, hand);
+      from = [grip[0], grip[1] + 5];
       mid = [(from[0] + end[0]) / 2, (from[1] + end[1]) / 2];
     }
     const k0 = (1 - e) * (1 - e);
@@ -402,51 +538,49 @@ export function thrownBladeAt(def: StrikeDef, t: number, anchors: StrikePoseAnch
       chainOut: false,
       sagPx: 0,
       deg: 150,
-      behindBody: blade.behindBody,
+      behindBody: motion.behindBody,
       s: 0,
     };
   }
-  if (blade.kind === 'recall') {
-    const hand = strikeHandAt(def, t, anchors, def.hand);
-    const tip = onTrack(def, t, 1);
+  if (motion.kind === 'recall') {
+    const grip = strikeHandAt(def, t, anchors, hand);
+    const tip = onTrack(def, hand, t, 1);
     const e = u * u;
-    const sagPx = blade.sagPx * Math.sin(Math.PI * u);
+    const sagPx = motion.sagPx * Math.sin(Math.PI * u);
     return {
-      pos: [tip[0] + (hand[0] - tip[0]) * e, tip[1] + (hand[1] - tip[1]) * e + sagPx],
+      pos: [tip[0] + (grip[0] - tip[0]) * e, tip[1] + (grip[1] - tip[1]) * e + sagPx],
       chainOut: true,
       sagPx,
       deg: 100,
-      behindBody: false,
+      behindBody: trackDepthAt(def, 1, hand) === 'behind',
       s: 1,
     };
   }
-  const onCurve = trackBladeAt(def, t);
-  if (!onCurve) {
-    throw new Error(`strike ${def.id}: no blade motion at ${t}`);
-  }
+  const onCurve = trackBladeAt(def, t, hand)!;
   return {
     pos: onCurve.pos,
-    chainOut: onCurve.s > def.chainFrom,
+    chainOut: onCurve.s > blade.chainFrom,
     sagPx: 0,
     deg: 100,
-    behindBody: trackDepthAt(def, onCurve.s) === 'behind',
+    behindBody: trackDepthAt(def, onCurve.s, hand) === 'behind',
     s: onCurve.s,
   };
 }
 
 /**
- * The blade the strike does not throw: drawn from the back into its hand, or
- * returning from where the previous strike (`entry`) left it; then hanging
- * from its hand. Hanging from the far hand it is behind the body.
+ * `hand`'s blade while it is off its track: drawn from the back into the hand
+ * on the first phase, or returning from where the previous strike (`entry`)
+ * left it; then hanging from the hand. Hanging from the far hand it is
+ * behind the body; returning after a turn, it is behind the body while it is
+ * still behind Kratos' new front.
  */
-export function heldBladeAt(def: StrikeDef, t: number, anchors: StrikePoseAnchors, entry?: StrikeEntry): BladeState {
-  const hand: Hand = def.hand === 'near' ? 'far' : 'near';
-  const { phase, u } = strikePhaseAt(def, t);
+export function heldBladeAt(def: StrikeDef, hand: Hand, t: number, anchors: StrikePoseAnchors, entry?: StrikeEntry): BladeState {
+  const { index, u } = strikePhaseAt(def, t);
   const grip = strikeHandAt(def, t, anchors, hand);
   const hanging: Vec2 = [grip[0], grip[1] + 5];
   const behindBody = hand === 'far';
   const held = def.heldBlade;
-  if (held.from === 'back' && phase.blade.kind === 'draw') {
+  if (held.from === 'back' && index === 0) {
     const back = strikeAnchorAt(def, t, anchors, 'back');
     const e = u * u;
     return {
@@ -456,23 +590,25 @@ export function heldBladeAt(def: StrikeDef, t: number, anchors: StrikePoseAnchor
   }
   if (held.from === 'previous' && entry && t < held.ticks) {
     const previous = bladeAt(STRIKES[entry.id], hand, entry.tick, anchors, entry.entry).pos;
-    const start: Vec2 = [previous[0] - entry.offsetPx, previous[1]];
+    const start: Vec2 = [(previous[0] - entry.offsetPx) * (entry.turned ? -1 : 1), previous[1]];
     // Yanked back at once, settling into the hand (ease out).
     const v = Math.max(0, t) / held.ticks;
     const e = 1 - (1 - v) * (1 - v);
     const sagPx = held.sagPx * Math.sin(Math.PI * v);
     const pos: Vec2 = [start[0] + (hanging[0] - start[0]) * e, start[1] + (hanging[1] - start[1]) * e + sagPx];
     if (Math.hypot(start[0] - grip[0], start[1] - grip[1]) > 8) {
-      return { pos, chainOut: true, sagPx, deg: 90, behindBody: false, s: 0 };
+      return { pos, chainOut: true, sagPx, deg: 90, behindBody: entry.turned && pos[0] < 0, s: 0 };
     }
     return { pos, chainOut: false, sagPx: 0, deg: 90, behindBody, s: 0 };
   }
   return { pos: hanging, chainOut: false, sagPx: 0, deg: 90, behindBody, s: 0 };
 }
 
-/** The blade of `hand` at strike time `t` (thrown or held). */
+/** The blade of `hand` at strike time `t`: on its track if it has a motion now, else held. */
 export function bladeAt(def: StrikeDef, hand: Hand, t: number, anchors: StrikePoseAnchors, entry?: StrikeEntry): BladeState {
-  return hand === def.hand ? thrownBladeAt(def, t, anchors) : heldBladeAt(def, t, anchors, entry);
+  return bladeMotionAt(def, hand, t).motion
+    ? thrownBladeAt(def, t, anchors, hand)
+    : heldBladeAt(def, hand, t, anchors, entry);
 }
 
 /** Near blade at strike time `t`. */
@@ -485,38 +621,55 @@ export function farBladeAt(def: StrikeDef, t: number, anchors: StrikePoseAnchors
   return bladeAt(def, 'far', t, anchors, entry);
 }
 
-/** Sag of the thrown blade's chain at strike time `t` (px, at its middle). */
-export function chainSagAt(def: StrikeDef, t: number): number {
-  const { phase, u } = strikePhaseAt(def, t);
-  return phase.blade.kind === 'recall' ? phase.blade.sagPx * Math.sin(Math.PI * u) : 0;
+/** Sag of `hand`'s chain while it is recalled at strike time `t` (px, at its middle). */
+export function chainSagAt(def: StrikeDef, t: number, hand: Hand = def.hand): number {
+  const { motion, u } = bladeMotionAt(def, hand, t);
+  return motion?.kind === 'recall' ? motion.sagPx * Math.sin(Math.PI * u) : 0;
 }
 
 /** A fire trail: the blade's recent positions (oldest first) with their track parameter, and its max width. */
 export interface StrikeTrail {
   points: Vec2[];
   s: number[];
-  /** Shoulder of the throwing hand on this tick (the fan's pivot). */
+  /** Shoulder of the hand on this tick. */
   pivot: Vec2;
   widthPx: number;
 }
 
+/** Keeps the newest samples whose path is at most `maxPx` long. */
+function keepLast(samples: { p: Vec2; s: number }[], maxPx: number): { p: Vec2; s: number }[] {
+  const keep: { p: Vec2; s: number }[] = [];
+  let length = 0;
+  for (let q = samples.length - 1; q > 0; q -= 1) {
+    length += Math.hypot(samples[q].p[0] - samples[q - 1].p[0], samples[q].p[1] - samples[q - 1].p[1]);
+    keep.push(samples[q]);
+    if (length > maxPx) break;
+  }
+  if (length <= maxPx && samples.length > 0) keep.push(samples[0]);
+  return keep.reverse();
+}
+
 /**
- * Fire trail on whole tick `tick`: the blade's recent sub-sampled positions
- * (oldest first) and the crescent's max width. Replayed from tick 0, so the
- * view keeps no state.
+ * Fire trail of `hand`'s blade on whole tick `tick`: its recent sub-sampled
+ * positions (oldest first) and the max width. Replayed from tick 0, so the
+ * view keeps no state. Empty for a blade without a trail.
  */
-export function strikeTrailAt(def: StrikeDef, tick: number, anchors: StrikePoseAnchors): StrikeTrail {
+export function strikeTrailAt(def: StrikeDef, tick: number, anchors: StrikePoseAnchors, hand: Hand = def.hand): StrikeTrail {
+  const blade = def.blades[hand];
   const n = def.trailSamplesPerTick;
   let samples: { p: Vec2; s: number }[] = [];
-  for (let t = 0; t <= tick; t += 1) {
+  const maxPx = blade?.trail?.maxLengthPx ?? TRAIL_MAX_LENGTH_PX;
+  for (let t = 0; blade?.trail && t <= tick; t += 1) {
     const { phase, u } = strikePhaseAt(def, t);
-    if (phase.trail) {
+    const growth = blade.trailGrowth?.[phase.id];
+    if (growth) {
       for (let k = 1; t > 0 && k <= n; k += 1) {
-        const blade = thrownBladeAt(def, t - 1 + k / n, anchors);
-        samples.push({ p: blade.pos, s: blade.s });
+        const at = thrownBladeAt(def, t - 1 + k / n, anchors, hand);
+        samples.push({ p: at.pos, s: at.s });
       }
-      const { tailPx, tailFromU } = phase.trail;
+      const { tailPx, tailFromU } = growth;
       if (tailPx !== undefined && u > (tailFromU ?? 0)) {
+        // Square 1's approved tail keeps one sample past `tailPx`.
         const keep: { p: Vec2; s: number }[] = [];
         let length = 0;
         for (let q = samples.length - 1; q > 0; q -= 1) {
@@ -526,16 +679,17 @@ export function strikeTrailAt(def: StrikeDef, tick: number, anchors: StrikePoseA
         }
         samples = keep.reverse();
       }
+      samples = keepLast(samples, maxPx);
     } else {
       samples = samples.slice(n);
     }
   }
-  const current = strikePhaseAt(def, tick).phase;
+  const growth = blade?.trailGrowth?.[strikePhaseAt(def, tick).phase.id];
   return {
     points: samples.map((q) => q.p),
     s: samples.map((q) => q.s),
-    pivot: shoulderAt(def, tick),
-    widthPx: current.trail?.widthPx ?? def.trailFadeWidthPx,
+    pivot: blade ? shoulderAt(def, tick, hand) : [0, 0],
+    widthPx: growth?.widthPx ?? def.trailFadeWidthPx,
   };
 }
 
@@ -549,25 +703,37 @@ function phaseStart(def: StrikeDef, id: string): { start: number; ticks: number 
 }
 
 /**
- * Swept segment of the blade on whole tick `tick` (from the previous tick's
- * position), or `null` outside the hit window: the blade must be on the
- * track at `active.fromS` or further.
+ * Swept segment of `hand`'s blade on whole tick `tick` (from the previous
+ * tick's position), or `null` outside its hit window: the blade must be on
+ * its track at `active.fromS` or further.
  */
-export function strikeHitSegment(def: StrikeDef, tick: number): readonly [Vec2, Vec2] | null {
-  const b = trackBladeAt(def, tick);
-  if (!b || b.s < def.active.fromS) {
+export function strikeHitSegment(def: StrikeDef, tick: number, hand: Hand = def.hand): readonly [Vec2, Vec2] | null {
+  const active = def.blades[hand]?.active;
+  if (!active) return null;
+  const b = trackBladeAt(def, tick, hand);
+  if (!b || b.s < active.fromS) {
     return null;
   }
-  const a = trackBladeAt(def, tick - 1) ?? b;
+  const a = trackBladeAt(def, tick - 1, hand) ?? b;
   return [a.pos, b.pos];
 }
 
-/** First and last whole ticks of the hit window. */
+/** Swept segments of every blade that can hit on whole tick `tick`. */
+export function strikeHitSegments(def: StrikeDef, tick: number): (readonly [Vec2, Vec2])[] {
+  const segments: (readonly [Vec2, Vec2])[] = [];
+  for (const hand of ['near', 'far'] as const) {
+    const segment = strikeHitSegment(def, tick, hand);
+    if (segment) segments.push(segment);
+  }
+  return segments;
+}
+
+/** First and last whole ticks on which any blade can hit. */
 export function strikeActiveTicks(def: StrikeDef): { first: number; last: number } {
   let first = -1;
   let last = -1;
   for (let tick = 0; tick < strikeLength(def); tick += 1) {
-    if (strikeHitSegment(def, tick)) {
+    if (strikeHitSegments(def, tick).length > 0) {
       if (first < 0) first = tick;
       last = tick;
     }
@@ -606,6 +772,9 @@ export function startStrike(player: EntityState, id: StrikeId): StrikeState {
   return { id, tick: 0, originX: player.x, facing: player.facing, hits: [], queued: false };
 }
 
+/** Horizontal direction held on the stick or keys: -1 left, 1 right, 0 none or both. */
+export type HeldDirection = -1 | 0 | 1;
+
 /** First tick of the chain window and of the press buffer, or `null` when the strike does not chain. */
 export function strikeChainTicks(def: StrikeDef): { opens: number; buffersFrom: number } | null {
   if (!def.chain) return null;
@@ -617,37 +786,52 @@ export function strikeChainTicks(def: StrikeDef): { opens: number; buffersFrom: 
 
 /**
  * The attack was pressed (edge) during `state`: queues the next strike if
- * the press falls in the buffer or chain window. Returns whether it queued.
+ * the press falls in the buffer or chain window, remembering a direction
+ * held with the press (`direction`) so the next strike can turn around even
+ * if it is released before the window opens. Returns whether it queued.
  */
-export function queueChain(state: StrikeState): boolean {
+export function queueChain(state: StrikeState, direction: HeldDirection = 0): boolean {
   const ticks = strikeChainTicks(STRIKES[state.id]);
   if (ticks && state.tick >= ticks.buffersFrom) {
     state.queued = true;
+    if (direction !== 0) state.queuedDirection = direction;
   }
   return state.queued;
 }
 
 /**
  * Starts the queued next strike if its window is open on the strike's
- * current tick: from the body's current place and facing, remembering where
- * the previous strike left its blades. Returns `null` otherwise.
+ * current tick: from the body's current place, remembering where the
+ * previous strike left its blades. The combo can turn around at each link:
+ * the direction held now (`direction`), else the one held with the press,
+ * sets the next strike's facing. Returns `null` otherwise.
  */
-export function chainStrike(state: StrikeState, player: EntityState): StrikeState | null {
+export function chainStrike(state: StrikeState, player: EntityState, direction: HeldDirection = 0): StrikeState | null {
   const def = STRIKES[state.id];
   const ticks = strikeChainTicks(def);
   if (!def.chain || !ticks || !state.queued || state.tick < ticks.opens) {
     return null;
   }
+  const wanted = direction !== 0 ? direction : state.queuedDirection ?? 0;
+  const facing: -1 | 1 = wanted === 0 ? state.facing : wanted;
   player.vx = 0;
-  player.facing = state.facing;
+  player.facing = facing;
+  if (facing !== state.facing) {
+    // Mirroring the sprite flips the body around the feet: move the feet so
+    // the body's centre stays where it was.
+    const before = strikePhaseAt(def, state.tick).phase.centerX;
+    const after = STRIKES[def.chain.into].phases[0].centerX;
+    player.x += state.facing * (before + after);
+  }
   const entry: StrikeEntry = {
     id: state.id,
     // The blades keep moving through the tick the next strike starts on.
     tick: Math.min(state.tick + 1, strikeLength(def) - 1),
     offsetPx: strikeAdvanceAt(def, state.tick),
+    turned: facing !== state.facing,
     ...(state.entry ? { entry: state.entry } : {}),
   };
-  return { ...startStrike(player, def.chain.into), facing: state.facing, entry };
+  return { ...startStrike(player, def.chain.into), facing, entry };
 }
 
 export interface StrikeStepResult {
@@ -681,20 +865,18 @@ export function stepStrike(
   player.x = Math.max(minX, Math.min(maxX, player.x + state.facing * step));
   state.originX = player.x - state.facing * strikeAdvanceAt(def, state.tick);
 
-  const segment = strikeHitSegment(def, state.tick);
-  if (!segment) {
-    return result;
-  }
   const toWorld = (p: Vec2): Vec2 => [state.originX + state.facing * p[0], player.y + p[1]];
-  const a = toWorld(segment[0]);
-  const b = toWorld(segment[1]);
+  const segments = strikeHitSegments(def, state.tick).map(([a, b]) => [toWorld(a), toWorld(b)] as const);
   for (const target of targets) {
     if (target.isDead || target.aiState === 'death' || target.aiState === 'hydra_defeat' || state.hits.includes(target.id)) {
       continue;
     }
-    if (!segmentTouches(a, b, def.hitRadiusPx, target)) {
+    // One hit per target per strike, whichever blade touches it.
+    const touching = segments.find(([a, b]) => segmentTouches(a, b, def.hitRadiusPx, target));
+    if (!touching) {
       continue;
     }
+    const b = touching[1];
     state.hits.push(target.id);
     const killed = damageEnemy(target, def.damage, def.hitstunTicks);
     // A blade hit staggers foot soldiers (the magic only stuns them).

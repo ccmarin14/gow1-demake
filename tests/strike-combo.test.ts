@@ -48,6 +48,7 @@ const entryAt = (tick: number): StrikeEntry => ({
   id: 'square1',
   tick: Math.min(tick + 1, strikeLength(SQUARE1) - 1),
   offsetPx: strikeAdvanceAt(SQUARE1, tick),
+  turned: false,
 });
 
 function playingWorld(): World {
@@ -125,7 +126,7 @@ describe('square-2 strike data', () => {
 
   it('anchors the blade track on the far shoulder of the throw pose', () => {
     const shoulder = feet(ANCHORS['kratos-sq2-c'].farShoulder);
-    assert.ok(dist(shoulder, SQUARE2.shoulder) < 0.2, `shoulder ${SQUARE2.shoulder} vs anchors ${shoulder}`);
+    assert.ok(dist(shoulder, SQUARE2.blades.far!.shoulder) < 0.2, `shoulder ${SQUARE2.blades.far!.shoulder} vs anchors ${shoulder}`);
   });
 
   it('peaks in front of and above the head, then reaches 70 to 90 px ahead, low', () => {
@@ -221,10 +222,9 @@ describe('square-2 strike data', () => {
     assert.deepEqual(strikeActiveTicks(SQUARE1), { first: 8, last: 25 });
   });
 
-  it('opens the chain on hold tick 4 of square 1, buffering from its hit window; square 2 does not chain yet', () => {
+  it('opens the chain on hold tick 4 of square 1, buffering from its hit window', () => {
     assert.deepEqual(strikeChainTicks(SQUARE1), { opens: 18, buffersFrom: 8 });
     assert.equal(SQUARE1.chain?.into, 'square2');
-    assert.equal(strikeChainTicks(SQUARE2), null);
   });
 });
 
@@ -256,7 +256,7 @@ describe('square 1 -> square 2 in the world', () => {
     assert.ok(strike);
     assert.equal(strike.id, 'square2');
     assert.equal(strike.tick, 0);
-    assert.deepEqual(strike.entry, { id: 'square1', tick: 21, offsetPx: 7 });
+    assert.deepEqual(strike.entry, { id: 'square1', tick: 21, offsetPx: 7, turned: false });
     assert.ok(Math.abs(strike.originX - x0 - 7) < 1e-6);
     hold(world, 22, []);
     assert.equal(world.snapshot().strike?.tick, 22);
@@ -299,17 +299,16 @@ describe('square 1 -> square 2 in the world', () => {
     assert.ok(Math.abs(player(world.snapshot()).x - x0 + 12) < 1e-6);
   });
 
-  it('does nothing on J during the square-2 hold or recall (no square 3 yet)', () => {
+  it('ignores J pressed in square 2 before its hit window: the combo ends after square 2', () => {
     const world = playingWorld();
     square1At(world, 20);
     world.step(['light-attack']);
-    hold(world, 12, []);
-    world.step(['light-attack']);
-    hold(world, 5, []);
+    hold(world, 2, []);
     world.step(['light-attack']);
     assert.equal(world.snapshot().strike?.id, 'square2');
-    assert.equal(world.snapshot().strike?.tick, 19);
-    hold(world, 3, []);
+    assert.equal(world.snapshot().strike?.queued, false);
+    hold(world, 19, []);
+    assert.equal(world.snapshot().strike?.tick, 22);
     world.step([]);
     assert.equal(world.snapshot().strike, undefined);
     world.step(['light-attack']);
@@ -321,7 +320,7 @@ describe('square 1 -> square 2 in the world', () => {
     world.loadScenario('legionnaire');
     const hp0 = enemy(world.snapshot()).hp;
     world.step(['light-attack']);
-    // Mash J through the combo: the presses queue square 2, then do nothing.
+    // Mash J until square 2 starts: the presses queue it.
     let square2HitTick = -1;
     let hitstopSeen = false;
     let originX = 0;
@@ -329,7 +328,8 @@ describe('square 1 -> square 2 in the world', () => {
     let comboOver = false;
     for (let i = 0; i < 90; i += 1) {
       const before = world.snapshot().strike;
-      comboOver ||= before?.id === 'square2' && before.tick >= strikeLength(SQUARE2) - 1;
+      // Stop once square 2 starts (more presses would chain square 3).
+      comboOver ||= before?.id === 'square2';
       world.step(i % 6 === 0 && !comboOver ? ['light-attack'] : []);
       const snap = world.snapshot();
       if (snap.strike?.id === 'square2' && snap.strike.hits.length > 0 && square2HitTick < 0) {

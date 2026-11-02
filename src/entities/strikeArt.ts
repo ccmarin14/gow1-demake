@@ -157,10 +157,9 @@ function profileWidth(widths: readonly (readonly [number, number])[], s: number)
  * Profiled fire trail (`TrailShape` kind `profile`): the same four flat
  * bands as the crescent, but cut into one quad per sample so each piece can
  * go in front of or behind the body (`depthAt`). The width follows the
- * profile along the track, both ends taper to a point, and inside the fan
- * range the band reaches toward the shoulder (`trail.pivot`), filling the
- * sector the chain sweeps. Nothing is drawn while the trail is shorter than
- * `minLengthPx`. `widthScale` thins it while it fades.
+ * profile along the track and both ends taper to a point. Nothing is drawn
+ * while the trail is shorter than `minLengthPx`. `widthScale` thins it while
+ * it fades.
  */
 export function profiledTrailQuads(
   trail: StrikeTrail,
@@ -187,25 +186,9 @@ export function profiledTrailQuads(
     const b = points[Math.min(k + 1, n - 1)];
     const length = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
     // Normal on the inner side of a clockwise sweep.
-    let dx = -(b[1] - a[1]) / length;
-    let dy = (b[0] - a[0]) / length;
-    let width = profileWidth(shape.widths, s[k]);
-    const fan = shape.fan;
-    if (fan) {
-      const soft = 0.08;
-      const weight = Math.max(0, Math.min(1, (s[k] - fan.fromS) / soft, (fan.toS - s[k]) / soft));
-      if (weight > 0) {
-        const px = trail.pivot[0] - points[k][0];
-        const py = trail.pivot[1] - points[k][1];
-        const reach = Math.hypot(px, py) || 1;
-        dx = dx * (1 - weight) + (px / reach) * weight;
-        dy = dy * (1 - weight) + (py / reach) * weight;
-        const norm = Math.hypot(dx, dy) || 1;
-        dx /= norm;
-        dy /= norm;
-        width = width * (1 - weight) + Math.max(width, (1 - fan.innerRatio) * reach) * weight;
-      }
-    }
+    const dx = -(b[1] - a[1]) / length;
+    const dy = (b[0] - a[0]) / length;
+    const width = profileWidth(shape.widths, s[k]);
     dirs.push([dx, dy]);
     widths.push(Math.max(0, width * widthScale * Math.max(0, taper)));
   }

@@ -29,6 +29,12 @@
     "sq2-b": { "action": "Idle_Loop", "frame": 0, "pose": "sq2-b.json", "ground": true },
     "sq2-c": { "action": "Idle_Loop", "frame": 0, "pose": "sq2-c.json", "ground": true },
     "sq2-d": { "action": "Idle_Loop", "frame": 0, "pose": "sq2-d.json", "ground": true },
-    "sq2-e": { "action": "Idle_Loop", "frame": 0, "pose": "sq2-e.json", "ground": true }
+    "sq2-e": { "action": "Idle_Loop", "frame": 0, "pose": "sq2-e.json", "ground": true },
+    "sq3-a": { "action": "Idle_Loop", "frame": 0, "pose": "sq3-a.json", "ground": true },
+    "sq3-b": { "action": "Idle_Loop", "frame": 0, "pose": "sq3-b.json", "ground": true },
+    "sq3-c": { "action": "Idle_Loop", "frame": 0, "pose": "sq3-c.json", "ground": true },
+    "sq3-d": { "action": "Idle_Loop", "frame": 0, "pose": "sq3-d.json", "ground": true },
+    "sq3-e": { "action": "Idle_Loop", "frame": 0, "pose": "sq3-e.json", "ground": true },
+    "sq3-f": { "action": "Idle_Loop", "frame": 0, "pose": "sq3-f.json", "ground": true }
   }
 }

@@ -5,6 +5,7 @@ import { CONFIG } from '../config';
 import {
   STRIKES,
   bladeAt,
+  bladeMotionAt,
   strikeHandAt,
   strikePhaseAt,
   strikeTrailAt,
@@ -142,16 +143,21 @@ export class WeaponLayer {
     const trailFront = this.trailFront!;
     trail.clear();
     trailFront.clear();
-    const fire = strikeTrailAt(def, t, strikeAnchors);
-    if (def.trail.kind === 'crescent') {
-      for (const band of crescentBands(fire.points, fire.widthPx, art.trail)) {
-        fillPixelPolygon(trail, band.points.map(toWorld), band.color);
-      }
-    } else {
-      const fading = phase.trail ? 1 : def.trailFadeWidthPx / Math.max(...def.trail.widths.map((w) => w[1]));
-      const quads = profiledTrailQuads(fire, def.trail, (s) => trackDepthAt(def, s), art.trail, fading);
-      for (const quad of quads) {
-        fillPixelPolygon(quad.depth === 'behind' ? trail : trailFront, quad.points.map(toWorld), quad.color);
+    for (const hand of ['far', 'near'] as const) {
+      const shape = def.blades[hand]?.trail;
+      if (!shape) continue;
+      const fire = strikeTrailAt(def, t, strikeAnchors, hand);
+      if (shape.kind === 'crescent') {
+        for (const band of crescentBands(fire.points, fire.widthPx, art.trail)) {
+          fillPixelPolygon(trail, band.points.map(toWorld), band.color);
+        }
+      } else {
+        const growing = def.blades[hand]?.trailGrowth?.[phase.id];
+        const fading = growing ? 1 : def.trailFadeWidthPx / Math.max(...shape.widths.map((w) => w[1]));
+        const quads = profiledTrailQuads(fire, shape, (s) => trackDepthAt(def, s, hand), art.trail, fading);
+        for (const quad of quads) {
+          fillPixelPolygon(quad.depth === 'behind' ? trail : trailFront, quad.points.map(toWorld), quad.color);
+        }
       }
     }
 
@@ -181,7 +187,7 @@ export class WeaponLayer {
     // Glint at the tip when the throw lands.
     const glint = this.glint!;
     glint.clear();
-    if (phase.blade.kind === 'hold' && u < art.glintFraction) {
+    if (bladeMotionAt(def, def.hand, t).motion?.kind === 'hold' && u < art.glintFraction) {
       drawGlint(glint, thrownWorld, art.glintColor);
     }
   }
