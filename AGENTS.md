@@ -47,8 +47,29 @@ El backlog vive en `docs/estado.md` §3: cada historia dice qué modelo la traba
 - **Quien delega verifica:** corre `pnpm test`, `pnpm build`, `pnpm art:check` y el navegador (0 errores, 0 404) y mira el diff; no se fía del informe. Antes de esperar un trabajo en segundo plano, comprueba con `pgrep` y las fechas de los archivos que sigue vivo.
 - **Un subagente no commitea ni cierra una revisión visual:** eso lo hace la sesión principal con la aprobación de la usuaria. Cada subagente se lanza con el modelo indicado explícitamente.
 - **Las fuentes mandan sobre la interpretación:** una mecánica de GoW 1 se respalda con el manual oficial de PS2, un video o una wiki, y se anota qué respaldo tiene. Lo que no tiene respaldo y la usuaria pide igual se hace, y se anota como decisión suya (`docs/estado.md`, "Decisiones de combate pendientes").
-- **Otras herramientas de la usuaria (opencode, Copilot CLI, `agy`):** solo se les manda trabajo con autorización explícita de la usuaria, porque el texto del proyecto sale a servicios externos. `copilot` lee este `AGENTS.md` solo; `agy` lista modelos Claude y Gemini (`agy models`) y opencode modelos gratuitos (`opencode models`, uno de visión: `nemotron-3.5-super-vl-free`). En modo no interactivo `agy -p` no puede pedir permisos para ejecutar comandos: se le da el texto dentro del prompt y se le pide que devuelva solo el bloque resultante, y quien delega lo aplica y lo verifica (la regla de `permissions.allow` no se pudo acertar sin la ayuda de la herramienta). Nunca `--dangerously-skip-permissions`.
-- **Prueba de resumen de docs (mismo prompt, 2026-11-03):** `claude-sonnet-5-5-medium` dio 7 líneas equilibradas; `gemini-3.8-flash-medium` (22 s) dio 6 líneas limpias y sin datos inventados, con menos detalle; `gemini-4-argon-medium` (29 s) cumplió las 12 líneas pero con líneas larguísimas y citó un archivo que ya no existe (`tests/attack.test.ts`). Una sola muestra: sirve para elegir candidatos, no para descartar a ningún modelo.
+- **Otras herramientas de la usuaria (opencode, Copilot CLI, `agy`):** solo se les manda trabajo con autorización explícita de la usuaria, porque el texto del proyecto sale a servicios externos. Qué hace cada una y cuándo se usa está en "Carriles de trabajo", abajo. Nunca `--dangerously-skip-permissions`, `--allow-all-tools` ni `opencode --auto`.
+
+## Carriles de trabajo (quién hace qué y cuándo)
+
+Cada historia del backlog (`docs/estado.md` §3) dice su modelo; esta tabla dice qué herramienta lo cubre si ese modelo no está disponible. Se usa el carril **principal** mientras tenga cupo; el **alternativo** solo cuando el principal falta, y la calidad no baja porque la verificación es la misma para todos. Mientras un carril está caído se avanza en las historias de los demás (otra superficie, S1 a S5), no se espera.
+
+| Trabajo | Principal | Alternativo (medido) | Qué verifica quien delega |
+| --- | --- | --- | --- |
+| Cambio mecánico con pruebas existentes (mover, renombrar, ajustar datos) | Haiku | Copilot `--model auto` en modo agente (hizo solo el refactor de prueba: 228/0, `tsc` limpio, solo los dos archivos pedidos) | Pruebas, `tsc`, diff limitado a los archivos pedidos |
+| Escribir una prueba nueva | Haiku o Sonnet | `agy` con `claude-opus-5-5 --effort high` (devuelve el archivo como texto; quien delega lo guarda) | La prueba pasa **y** falla al romper a mano lo que cubre (mutación). Copilot escribió una prueba en verde que no detectaba un cambio en el README: no se acepta una prueba solo porque pase |
+| Refactor con riesgo, sistema nuevo | Sonnet | `agy` con `claude-opus-5-5 --effort high`, como texto (Opus solo con cupo, por la regla de arriba) | Todo lo de "Verificación común" y revisión del diff línea a línea |
+| Juicio visual (poses, estelas, comparar con el video) | Sonnet | opencode `nemotron-3.5-super-vl-free` o Copilot `--model auto` con `--attachment` (ambos acertaron qué cuadros tienen estela) | La usuaria aprueba cada cuadro (flujo §3); el alternativo solo prepara la comparación, no aprueba |
+| Resumir o redactar docs | Haiku | `agy` con `gemini-3.8-flash-medium`; Copilot y opencode también cumplieron (`gemini-4-argon` citó un archivo que no existe) | Comparar cada dato con el original |
+| Segunda opinión de diseño | Sonnet | `agy` con `claude-opus-5-5 --effort high` | La decisión es de la usuaria |
+
+**Cómo invocar cada herramienta** (detalles que fallan si no se saben):
+
+- **Copilot CLI** (`copilot`, lee este `AGENTS.md` solo): `copilot -p "<tarea>" --model auto --allow-tool='write' --allow-tool='shell(node)' --allow-tool='shell(git)'` (añade solo los shells que la tarea necesita). `--model fusion` falla en la versión 1.0.105 ("requires dynamic Auto tiers") y `--fusion-tier` no existe; con `auto` Copilot elige el modelo y no se puede fijar. Es la única herramienta que muestra costo (créditos y tokens al final).
+- **`agy`** (Antigravity): `agy -p="<texto completo>" --model claude-opus-5-5 --effort high`. El prompt va pegado a `-p=`; si va separado, toma la opción siguiente como prompt. Ningún modelo acepta `--effort max` (todos llegan a `high`). En `-p` no ejecuta comandos ni recibe imágenes: se le da el código dentro del prompt y devuelve texto.
+- **opencode**: `opencode run -m opencode/nemotron-3.5-super-vl-free -f <archivo> "<pregunta>"` para visión y texto. Puede escribir archivos, pero en el refactor de prueba no terminó en 9 minutos: no se le da código hasta medirlo de nuevo.
+- **Worktrees de prueba:** `git worktree add /tmp/gow8b-<herramienta>-<tarea> -b prueba/<herramienta>-<tarea> HEAD` y `ln -s` de `node_modules`. Ahí `pnpm test` aborta (pnpm quiere reinstalar sin terminal): se corre el comando de `test` de `package.json` directo. Se borran al terminar.
+
+**Pendiente de medir:** opencode en una tarea de código; si `agy` puede editar con `--settings` y `permissions.allow`; una segunda muestra de visión con otra imagen. Cada carril alternativo se probó una sola vez (2026-11-03): sirve para asignar, no para dejar de verificar.
 
 ## Si se acaba el cupo de un modelo (contingencia)
 
@@ -56,9 +77,9 @@ Quien reciba el proyecto (otro modelo o otra herramienta) retoma desde `git log`
 
 | Si falta... | Se sigue así | Límite |
 | --- | --- | --- |
-| Sonnet y Opus de Claude Code (cupo semanal) | Solo historias de Haiku. Las de Sonnet esperan o se prueban por `agy` (Claude o Gemini del cupo de Antigravity) con el texto dentro del prompt y el resultado devuelto como texto (ver arriba), previa autorización de la usuaria. | El arte (poses) se detiene: nadie mira renders sin un modelo con visión probado. |
-| Haiku | Las historias de Haiku las puede hacer Sonnet (más caro) o, con autorización, `gemini-3.8-flash` por `agy` (mejor probado, solo texto) o un modelo gratuito de opencode (sin probar). | Todo cambio de código exige `pnpm test`, `pnpm build` y `pnpm art:check` en verde y revisión del diff por quien delegó. |
-| Todos los modelos de Claude | `agy` con Gemini sobre historias de datos o docs; la sesión principal la lleva la herramienta que quede. Copilot CLI lee este `AGENTS.md`, pero el plan de la usuaria solo ofrece *Copilot Fusion* (sin saber qué modelo hay debajo ni si ve imágenes). | Copilot CLI y opencode no se han probado en este repositorio. |
+| Sonnet y Opus de Claude Code (cupo semanal) | Haiku sigue con sus historias; las de Sonnet pasan a su carril alternativo (tabla de arriba), previa autorización de la usuaria. | El arte avanza solo hasta la comparación preparada: la aprobación es de la usuaria. |
+| Haiku | Sus historias mecánicas pasan a Copilot `--model auto`; las de redactar docs, a `agy` con Gemini 3.8 Flash. | Copilot ejecuta y verifica en el worktree; quien delega repite la verificación. |
+| Todos los modelos de Claude | Copilot `--model auto` lleva la sesión principal (lee este archivo y ejecuta pruebas) y delega texto a `agy`. | Ningún cambio se commitea sin "Verificación común" en verde y, si hay prueba nueva, sin la mutación. |
 | Ninguna herramienta | La usuaria puede probar el juego (`pnpm dev`, o el túnel de Cloudflare) y anotar la lista de cosas por corregir; no se pierde nada porque el estado está en `docs/estado.md` y en git. | |
 
 **Verificación común a todas las herramientas** (no depende de un modelo): `pnpm test`, `pnpm build`, `pnpm art:check` y la prueba de navegador `scripts/verify/browser-check.sh` (arranca Vite y Chrome sin cabeza, graba la partida y debe imprimir `errors 0 failed 0`); `scripts/verify/perf.mjs` mide cuadros por segundo con la CPU frenada. Los renders 3D necesitan Blender (`~/.local/bin/blender`) y `python3 scripts/pose_render/build_anchors.py --jobs 6`.
