@@ -64,7 +64,7 @@ export class World {
   private directionTicks = 0;
   /** Ticks the whole world stays frozen after a strike connects. */
   private hitstopTicks = 0;
-  private strikeHitNotice: { x: number; y: number; power: number } | null = null;
+  private strikeHitNotice: { x: number; y: number; power: number; kind: 'light' | 'heavy' | 'air' } | null = null;
   /** A jump pressed during a ground strike, remembered for a few ticks (it fires once the strike ends). */
   private jumpQueuedTicks = 0;
   /** The strike that just ended, for a few ticks: a press then still carries the combo on. */
@@ -310,7 +310,7 @@ export class World {
     return notice;
   }
 
-  consumeStrikeHitNotice(): { x: number; y: number; power: number } | null {
+  consumeStrikeHitNotice(): { x: number; y: number; power: number; kind: 'light' | 'heavy' | 'air' } | null {
     const notice = this.strikeHitNotice;
     this.strikeHitNotice = null;
     return notice;
@@ -843,7 +843,12 @@ export class World {
             // A heavy blow holds the world a little longer and throws the target back.
             this.hitstopTicks = def.hitstopTicks + (def.damage >= CONFIG.combat.feel.heavyDamage ? CONFIG.combat.feel.heavyExtraHitstop : 0);
             const last = result.hits[result.hits.length - 1];
-            this.strikeHitNotice = { x: last.x, y: last.y, power: def.damage };
+            const kind = def.air
+              ? 'air'
+              : def.damage >= CONFIG.combat.feel.heavyDamage
+                ? 'heavy'
+                : 'light';
+            this.strikeHitNotice = { x: last.x, y: last.y, power: def.damage, kind };
             if (this.targetPhysics) {
               const knock = def.damage >= CONFIG.combat.feel.heavyDamage
                 ? CONFIG.combat.feel.knockbackHeavy

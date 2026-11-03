@@ -8,6 +8,8 @@ export interface SoundStats {
   isReady: boolean;
 }
 
+export type StrikeSoundProfile = 'light' | 'heavy' | 'air';
+
 export class SoundManager {
   private ctx: AudioContext | null = null;
   private masterGain: GainNode | null = null;
@@ -17,6 +19,10 @@ export class SoundManager {
 
   private readonly playCounts: Record<string, number> = {
     strikeHit: 0,
+    strikeHitLight: 0,
+    strikeHitHeavy: 0,
+    strikeHitAir: 0,
+    strikeWhoosh: 0,
     parry: 0,
     magicThunder: 0,
     hydraRoar: 0,
@@ -109,10 +115,33 @@ export class SoundManager {
   // PROCEDURAL SOUND GENERATORS (Web Audio API)
   // ========================================================
 
-  /** Short low thud when a blade connects. */
-  /** A blade landing; `heavy` is a deeper, longer thud (△, the finisher). */
-  playStrikeHit(heavy = false): void {
+  playStrikeWhoosh(profile: StrikeSoundProfile): void {
+    this.recordSound('strikeWhoosh');
+    if (!this.ctx || !this.sfxGain || this.muted) return;
+
+    try {
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      const start = profile === 'heavy' ? 180 : profile === 'air' ? 520 : 360;
+      const end = profile === 'heavy' ? 70 : profile === 'air' ? 180 : 110;
+      const length = profile === 'heavy' ? 0.16 : profile === 'air' ? 0.11 : 0.09;
+      osc.type = profile === 'air' ? 'sine' : 'sawtooth';
+      osc.frequency.setValueAtTime(start, now);
+      osc.frequency.exponentialRampToValueAtTime(end, now + length);
+      gain.gain.setValueAtTime(profile === 'heavy' ? 0.16 : 0.12, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + length);
+      osc.connect(gain);
+      gain.connect(this.sfxGain);
+      osc.start(now);
+      osc.stop(now + length);
+    } catch {}
+  }
+
+  /** Blade impact, with a distinct weight for light, heavy and aerial attacks. */
+  playStrikeHit(profile: StrikeSoundProfile): void {
     this.recordSound('strikeHit');
+    this.recordSound(`strikeHit${profile[0].toUpperCase()}${profile.slice(1)}`);
     if (!this.ctx || !this.sfxGain || this.muted) return;
 
     try {
@@ -120,12 +149,14 @@ export class SoundManager {
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
 
-      const length = heavy ? 0.18 : 0.09;
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(heavy ? 120 : 170, now);
-      osc.frequency.exponentialRampToValueAtTime(heavy ? 32 : 45, now + length - 0.01);
+      const heavy = profile === 'heavy';
+      const air = profile === 'air';
+      const length = heavy ? 0.18 : air ? 0.12 : 0.09;
+      osc.type = air ? 'sine' : 'triangle';
+      osc.frequency.setValueAtTime(heavy ? 120 : air ? 260 : 170, now);
+      osc.frequency.exponentialRampToValueAtTime(heavy ? 32 : air ? 90 : 45, now + length - 0.01);
 
-      gain.gain.setValueAtTime(heavy ? 0.6 : 0.4, now);
+      gain.gain.setValueAtTime(heavy ? 0.6 : air ? 0.32 : 0.4, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + length);
 
       osc.connect(gain);

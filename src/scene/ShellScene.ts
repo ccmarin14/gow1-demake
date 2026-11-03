@@ -15,6 +15,7 @@ import { GameFlowOverlay } from '../ui/GameFlowOverlay';
 import { PlayerView } from './PlayerView';
 import { VfxLayer } from './VfxLayer';
 import { SoundManager } from '../audio/SoundManager';
+import { STRIKES } from '../sim/strike';
 import type { FrameMetrics } from '../metrics';
 import type { Simulation } from '../sim/engine';
 import type { EntityState } from '../sim/types';
@@ -62,6 +63,7 @@ export class ShellScene extends Phaser.Scene {
   private prevAbsorbedOrbsCount = 0;
   private prevOpenChestsCount = 0;
   private prevFlowState = 'playing';
+  private prevStrikeId: string | null = null;
 
   constructor(
     private readonly simulation: Simulation,
@@ -272,6 +274,18 @@ export class ShellScene extends Phaser.Scene {
       }
     }
 
+    const activeStrike = this.simulation.world.peekStrike();
+    if (activeStrike && activeStrike.tick === 0 && activeStrike.id !== this.prevStrikeId) {
+      const def = STRIKES[activeStrike.id];
+      const profile = def.air
+        ? 'air'
+        : def.damage >= CONFIG.combat.feel.heavyDamage
+          ? 'heavy'
+          : 'light';
+      this.soundManager?.playStrikeWhoosh(profile);
+    }
+    this.prevStrikeId = activeStrike?.id ?? null;
+
     const strikeImpact = this.simulation.world.consumeStrikeImpactNotice();
     if (strikeImpact) {
       // The strike's one-shot effects (flash and fire line are drawn by the weapon layer).
@@ -289,10 +303,10 @@ export class ShellScene extends Phaser.Scene {
     const strikeHit = this.simulation.world.consumeStrikeHitNotice();
     if (strikeHit) {
       // A heavy blow (triangle, plume, the finisher) sparks more, shakes the screen harder and thuds deeper.
-      const heavy = strikeHit.power >= 20;
+      const heavy = strikeHit.kind === 'heavy';
       this.vfxLayer?.emitCombatSparks(strikeHit.x, strikeHit.y, heavy ? 16 : 8, true);
       this.cameras.main.shake(heavy ? 140 : 70, heavy ? 0.006 : 0.0025);
-      this.soundManager?.playStrikeHit(heavy);
+      this.soundManager?.playStrikeHit(strikeHit.kind);
     }
 
     if (this.soundManager) {

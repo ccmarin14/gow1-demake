@@ -114,7 +114,7 @@ Historias de usuario que quedan, con el modelo que las trabaja y qué las bloque
 | **BL-10** | Como jugadora quiero enemigos con más de un truco (ESE-04). | Un segundo comportamiento que dé sentido a la guardia o a la magia. | Haiku | Decisión | S2 |
 | **BL-11** | Como jugadora quiero una introducción mínima (ESE-05). | Texto breve que nunca estorba las pruebas (D-30). | Haiku | Decisión | S3 |
 | **BL-12** | Como jugadora quiero los cuatro hechizos de GoW 1 (ESE-06). | *Furia de Zeus*, *Mirada de Medusa* y *Ejército de Hades* además de *Ira de Poseidón*. | Sonnet | Arte base y decisión | S2, S3 |
-| **BL-13** | Como jugadora quiero oír el peso de cada golpe. | Silbido de la hoja y un golpe por peso (liviano, pesado, aéreo), sintetizados. | Haiku | Lista | S3 |
+| **BL-13** | Como jugadora quiero oír el peso de cada golpe. | Silbido de la hoja y un golpe por peso (liviano, pesado, aéreo), sintetizados. | Haiku | Hecho | S3 |
 | **BL-14** | Como desarrolladora quiero que el repositorio esté limpio. | Hecho el 2026-11-03: 5 poses sin uso, 14 claves de `CONFIG`, helpers de prueba repetidos y controles viejos del README. Queda lo que la encuesta marcó como exportado sin otro importador (unas 70 exportaciones de cofres, checkpoints y la regla de escala), que se revisa con cada historia que toque esa superficie. | Haiku | Hecho (resto, Lista) | S3, S5 |
 | **BL-15** | Como desarrolladora quiero partir `strike.ts` (más de 2.000 líneas) en el motor y un archivo de datos por golpe. | Sin cambios de comportamiento: todos los fixtures y pruebas siguen iguales. | Sonnet | Lista, entre rondas de golpes (bloquea S1 mientras dura) | S1 |
 | **BL-16** | Como desarrolladora quiero un `estado.md` corto. | Hecho el 2026-11-03 como prueba de `agy` con Sonnet 5.5: el registro de pasos (§4) resume los pasos 0 a 45 en 7 líneas; del paso 46 en adelante quedó idéntico. | Sonnet (vía `agy`) | Hecho | S4 |
@@ -127,6 +127,7 @@ Historias de usuario que quedan, con el modelo que las trabaja y qué las bloque
 
 - **2026-11-03** — **BL-05 (Ataque al salir de una rodada):** □ o △ pulsados durante la rodada se guardan y arrancan el golpe normal en el tick en que termina; no se encadenan golpes especiales. Se añadieron pruebas de ambos botones. Verificado con 230 pruebas, build, grids y navegador (0 errores, 0 peticiones fallidas).
 - **2026-11-03** — **BL-04 (Tabla de sensación de combate):** los umbrales de combo, búfer de salto, pausa y empuje, y las reglas de suspensión aérea pasaron a `CONFIG.combat.feel`; se añadieron pruebas de sus valores. Verificado con la suite completa, build, grids y navegador.
+- **2026-11-03** — **BL-13 (Audio de peso por golpe):** cada golpe inicia un silbido sintético y cada impacto se clasifica como liviano, pesado o aéreo con su envolvente y tono propios. Verificado con la suite completa, build, grids y navegador.
 
 ## 4. Registro de pasos
 
