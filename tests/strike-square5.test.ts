@@ -19,26 +19,16 @@ import {
   thrownBladeAt,
   type Hand,
   type StrikeEntry,
-  type StrikePoseAnchors,
   type Vec2,
 } from '../src/sim/strike';
 import type { EntityState, GameAction, SimulationSnapshot } from '../src/sim/types';
 import { World } from '../src/sim/world';
+import { ANCHORS, feet, poseAnchors, dist, pathLength } from './helpers/anchors';
 
 const SQUARE4 = STRIKES.square4;
 const SQUARE5 = STRIKES.square5;
 
-const ANCHORS: Record<string, { back: number[]; hand: number[]; farHand: number[]; shoulder: number[]; farShoulder: number[] }> =
-  JSON.parse(readFileSync(new URL('../src/assets/kratos-anchors.json', import.meta.url), 'utf-8'));
-const feet = (p: number[]): Vec2 => [p[0] - 32, p[1] - 56];
-const poseAnchors: StrikePoseAnchors = (pose) => {
-  const a = ANCHORS[`kratos-${pose}`];
-  assert.ok(a, `anchors for ${pose}`);
-  return { back: feet(a.back), hand: feet(a.hand), farHand: feet(a.farHand) };
-};
-const dist = (a: Vec2, b: Vec2): number => Math.hypot(a[0] - b[0], a[1] - b[1]);
 const close = (a: readonly number[], b: readonly number[]): boolean => dist(a as Vec2, b as Vec2) < 1e-3;
-const pathLength = (points: readonly Vec2[]): number => points.slice(1).reduce((sum, p, i) => sum + dist(p, points[i]), 0);
 
 function playingWorld(): World {
   const world = new World();

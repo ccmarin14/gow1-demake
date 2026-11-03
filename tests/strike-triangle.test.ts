@@ -23,26 +23,16 @@ import {
   type ActiveEffect,
   type StrikeEntry,
   type StrikeImpactNotice,
-  type StrikePoseAnchors,
   type Vec2,
 } from '../src/sim/strike';
 import type { EntityState, GameAction, SimulationSnapshot } from '../src/sim/types';
 import { World } from '../src/sim/world';
+import { ANCHORS, feet, poseAnchors, dist, pathLength } from './helpers/anchors';
 
 const SQUARE6 = STRIKES.square6;
 const TRIANGLE = STRIKES.triangle;
 
-const ANCHORS: Record<string, { back: number[]; hand: number[]; farHand: number[]; shoulder: number[]; farShoulder: number[] }> =
-  JSON.parse(readFileSync(new URL('../src/assets/kratos-anchors.json', import.meta.url), 'utf-8'));
-const feet = (p: number[]): Vec2 => [p[0] - 32, p[1] - 56];
-const poseAnchors: StrikePoseAnchors = (pose) => {
-  const a = ANCHORS[`kratos-${pose}`];
-  assert.ok(a, `anchors for ${pose}`);
-  return { back: feet(a.back), hand: feet(a.hand), farHand: feet(a.farHand) };
-};
-const dist = (a: Vec2, b: Vec2): number => Math.hypot(a[0] - b[0], a[1] - b[1]);
 const close = (a: readonly number[], b: readonly number[]): boolean => dist(a as Vec2, b as Vec2) < 1e-3;
-const pathLength = (points: readonly Vec2[]): number => points.slice(1).reduce((sum, p, i) => sum + dist(p, points[i]), 0);
 
 /** Square-6 (formerly square-5) values recorded from the approved implementation (commit 8ebd323). */
 const SQ6_FIXTURE: {
@@ -122,8 +112,9 @@ describe('triangle strike data', () => {
     assert.deepEqual(TRIANGLE.branch, { atEndOf: 'charge', ifHeld: 'heavy-attack', into: 'launcher' }, 'the hold threshold is the end of the charge (tick 23)');
   });
 
-  it('reads in the windup and the slam: shoulders at least 28 and 24 px above the ground', () => {
-    assert.ok(-feet(ANCHORS['kratos-tri-b'].shoulder)[1] >= 28, 'windup stands, legs apart');
+  it('reads in the draw, the charge and the slam: shoulders at least 28, 22 and 24 px above the ground', () => {
+    assert.ok(-feet(ANCHORS['kratos-tri-a'].shoulder)[1] >= 28, 'the draw stands, legs apart');
+    assert.ok(-feet(ANCHORS['kratos-tri-pc'].shoulder)[1] >= 22, 'the charge behind keeps the head up');
     assert.ok(-feet(ANCHORS['kratos-tri-f'].shoulder)[1] >= 24, 'slam crouch keeps the head up');
   });
 

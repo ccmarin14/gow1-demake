@@ -689,29 +689,6 @@
       32.3
     ]
   },
-  "kratos-sq3-b": {
-    "back": [
-      30.4,
-      27.2
-    ],
-    "spineRad": 1.616,
-    "hand": [
-      15.7,
-      23.6
-    ],
-    "farHand": [
-      44.2,
-      26.7
-    ],
-    "shoulder": [
-      26.1,
-      24.4
-    ],
-    "farShoulder": [
-      35.4,
-      24.5
-    ]
-  },
   "kratos-sq3-c": {
     "back": [
       29.9,
@@ -1011,52 +988,6 @@
       23.5
     ]
   },
-  "kratos-sq5-b": {
-    "back": [
-      30.0,
-      28.3
-    ],
-    "spineRad": 1.593,
-    "hand": [
-      30.9,
-      13.1
-    ],
-    "farHand": [
-      34.9,
-      12.5
-    ],
-    "shoulder": [
-      27.0,
-      25.4
-    ],
-    "farShoulder": [
-      33.2,
-      25.5
-    ]
-  },
-  "kratos-sq5-c": {
-    "back": [
-      31.5,
-      31.4
-    ],
-    "spineRad": 1.771,
-    "hand": [
-      40.0,
-      33.0
-    ],
-    "farHand": [
-      47.1,
-      33.1
-    ],
-    "shoulder": [
-      29.2,
-      28.4
-    ],
-    "farShoulder": [
-      35.4,
-      28.8
-    ]
-  },
   "kratos-sq5-d": {
     "back": [
       31.7,
@@ -1170,52 +1101,6 @@
     "farShoulder": [
       34.8,
       23.6
-    ]
-  },
-  "kratos-tri-b": {
-    "back": [
-      31.6,
-      30.4
-    ],
-    "spineRad": 1.692,
-    "hand": [
-      29.0,
-      38.0
-    ],
-    "farHand": [
-      29.3,
-      37.8
-    ],
-    "shoulder": [
-      27.6,
-      27.5
-    ],
-    "farShoulder": [
-      36.9,
-      27.9
-    ]
-  },
-  "kratos-tri-b2": {
-    "back": [
-      31.7,
-      31.4
-    ],
-    "spineRad": 1.698,
-    "hand": [
-      29.0,
-      39.1
-    ],
-    "farHand": [
-      29.5,
-      39.0
-    ],
-    "shoulder": [
-      27.7,
-      28.5
-    ],
-    "farShoulder": [
-      37.0,
-      28.9
     ]
   },
   "kratos-tri-c": {

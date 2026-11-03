@@ -22,9 +22,8 @@ Los sprites de Kratos se dibujan en `grids/kratos/*.txt` con `palette/kratos.jso
 
 - **Moverse:** `A` / `D` o `←` / `→`
 - **Saltar / Doble salto:** `Espacio` (`Abajo + Espacio` para bajar de plataforma)
-- **Ataque ligero / pesado:** `J` / `K`
-- **Agarre:** `L`
-- **Guardia / Parry:** `O`
+- **Ataque ligero (□) / pesado (△):** `J` / `I` (en el aire también; mantener `I` lanza a los enemigos)
+- **Guardia / Parry:** `Q`
 - **Rodar:** `Shift`
 - **Magia:** `U`
 - **Interactuar (cofres):** `E`
@@ -35,7 +34,7 @@ Los sprites de Kratos se dibujan en `grids/kratos/*.txt` con `palette/kratos.jso
 - `src/` — Simulación determinista (`src/sim/`), escena Phaser (`src/scene/`), capas de armas/UI/audio y configuración (`src/config.ts`).
 - `grids/` y `palette/` — Fuente de verdad en texto ASCII y paleta para los sprites de personajes.
 - `public/assets/` — Texturas cargadas por el juego.
-- `scripts/` — Herramientas de arte: rasterizado y validación (`ascii_to_png.py`, `check_grid.py`), puntos de referencia (`check_landmarks.py`), vista previa (`preview_grid.py`), referencia cuantizada (`quantize_reference.py`) y el hook de pruebas (`scripts/test/`).
+- `scripts/` — Herramientas de arte: rasterizado y validación (`ascii_to_png.py`, `check_grid.py`), vista previa (`preview_grid.py`), referencia cuantizada (`quantize_reference.py`) y el hook de pruebas (`scripts/test/`).
 - `tests/` — Pruebas de la simulación (`pnpm test`).
 - `docs/` — Documentación vigente:
   - [`docs/estado.md`](docs/estado.md) — Estado actual, problemas abiertos y registro de pasos.

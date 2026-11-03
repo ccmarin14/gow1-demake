@@ -302,10 +302,10 @@ export interface StrikeImpact {
 const CX: Readonly<Record<string, number>> = {
   'sq1-a': -2.5, 'sq1-b': -1.5, 'sq1-c': -3, 'sq1-d': -3, 'sq1-e': -1.5,
   'sq2-a': -3.5, 'sq2-b': -3, 'sq2-c': -1.5, 'sq2-d': -3, 'sq2-e': -1,
-  'sq3-a': -2, 'sq3-b': -2, 'sq3-c': 0, 'sq3-d': -0.5, 'sq3-e': -2, 'sq3-f': -0.5, 'sq3-g': -0.5, 'sq3-h': 0, 'air-00': -1, 'air-01': 0.5, 'air-02': -4.5,
+  'sq3-a': -2, 'sq3-c': 0, 'sq3-d': -0.5, 'sq3-e': -2, 'sq3-f': -0.5, 'sq3-g': -0.5, 'sq3-h': 0, 'air-00': -1, 'air-01': 0.5, 'air-02': -4.5,
   'sq4-a': -3, 'sq4-b': 0.5, 'sq4-b2': 1, 'sq4-c': 0.5, 'sq4-d': 4, 'sq4-e': -1.5,
-  'sq5-a': -1.5, 'sq5-b': -0.5, 'sq5-c': -1, 'sq5-d': 0, 'sq5-e': 0, 'sq5-f': -1.5, 'sq5-g': 0,
-  'tri-pc': -1, 'asc-b': 0.5, 'tri-pb': -1.5, 'tri-a': -1, 'tri-b': -0.5, 'tri-b2': 0, 'tri-c': -2, 'tri-d': -0.5, 'tri-e': 0, 'tri-f': 0.5, 'tri-g': -1.5,
+  'sq5-a': -1.5, 'sq5-d': 0, 'sq5-e': 0, 'sq5-f': -1.5, 'sq5-g': 0,
+  'tri-pc': -1, 'asc-b': 0.5, 'tri-pb': -1.5, 'tri-a': -1, 'tri-c': -2, 'tri-d': -0.5, 'tri-e': 0, 'tri-f': 0.5, 'tri-g': -1.5,
   'airtri-m1': -5.5, 'airtri-e': 1, 'aq2-c': 0, 'aq3-m': -0.5, 'airtri-a': -5, 'airtri-b': -1.5, 'airtri-c': 5, 'airtri-d': 5.5,
   'aq1-a': -1.5, 'aq1-b': 1, 'aq2-a': -1.5, 'aq2-b': 0.5, 'aq3-a': -4, 'aq3-b': 3.5,
   'plume-a': -2, 'plume-b': -1, 'plume-c': -1, 'plume-d': 0, 'plume-e': 1.5, 'plume-f': -1.5,

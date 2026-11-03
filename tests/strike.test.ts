@@ -1,5 +1,4 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
 
 import {
@@ -7,24 +6,12 @@ import {
   nearBladeAt,
   strikeHitSegment,
   strikeLength,
-  type StrikePoseAnchors,
-  type Vec2,
 } from '../src/sim/strike';
 import type { EntityState, GameAction, SimulationSnapshot } from '../src/sim/types';
 import { World } from '../src/sim/world';
+import { ANCHORS, feet, poseAnchors, dist } from './helpers/anchors';
 
 const SQUARE1 = STRIKES.square1;
-
-/** Per-frame anchors exported from the 3D skeleton (canvas px, 64x56, feet at 32,56). */
-const ANCHORS: Record<string, { back: number[]; hand: number[]; farHand: number[]; shoulder: number[] }> = JSON.parse(
-  readFileSync(new URL('../src/assets/kratos-anchors.json', import.meta.url), 'utf-8'),
-);
-const feet = (p: number[]): Vec2 => [p[0] - 32, p[1] - 56];
-const poseAnchors: StrikePoseAnchors = (pose) => {
-  const a = ANCHORS[`kratos-${pose}`];
-  assert.ok(a, `anchors for ${pose}`);
-  return { back: feet(a.back), hand: feet(a.hand), farHand: feet(a.farHand) };
-};
 
 function playingWorld(scenario = 'movement'): World {
   const world = new World();
@@ -56,8 +43,6 @@ function enemy(snapshot: SimulationSnapshot): EntityState {
 function hold(world: World, ticks: number, actions: GameAction[]): void {
   for (let i = 0; i < ticks; i += 1) world.step(actions);
 }
-
-const dist = (a: Vec2, b: Vec2): number => Math.hypot(a[0] - b[0], a[1] - b[1]);
 
 describe('square-1 strike data', () => {
   it('runs draw 5, sweep 4, throw 5, hold 12 and recall 8 ticks (34 in total)', () => {

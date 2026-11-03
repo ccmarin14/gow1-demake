@@ -205,7 +205,6 @@ export const CONFIG = {
        * (barrier at `map.level1.segments.centralArena.barrierLeftX`).
        */
       transitionDelayTicks: 60,
-      spawnTelegraphTicks: 24,
       encounters: [
         {
           name: 'Vanguardia',
@@ -242,18 +241,15 @@ export const CONFIG = {
       openDurationTicks: 24,
       gorgonEyesPerUpgrade: 6,
       healthUpgradeBonus: 20,
-      eyeRiseSpeed: -80,
       eyeMagnetSpeed: 260,
       phoenixFeathersPerUpgrade: 6,
       manaUpgradeBonus: 20,
-      featherRiseSpeed: -80,
       featherMagnetSpeed: 260,
       redOrbsChestValue: 50,
     },
   },
   checkpoints: {
     activationRadius: 32,
-    respawnDelayTicks: 45,
     lightPillarWidth: 28,
     lightPillarHeight: 270,
     level1: [
@@ -381,8 +377,6 @@ export const CONFIG = {
     scaleJumpColor: 0x4ade80,
     scaleReferenceAlpha: 0.9,
     scaleReferenceThickness: 1,
-    /** Depth of the Blades of Chaos layer (`WeaponLayer`). */
-    weaponDepth: 3,
     hud: {
       x: 16,
       y: 14,
@@ -417,10 +411,8 @@ export const CONFIG = {
       emeraldGlowColor: 0x4ade80,
       sapphireColor: 0x38bdf8,
       sapphireGlowColor: 0x60a5fa,
-      sapphireShadowColor: 0x1e40af,
       redOrbsColor: 0xef4444,
       redOrbsGlowColor: 0xf87171,
-      redOrbsShadowColor: 0x991b1b,
       depth: 2,
     },
     checkpoint: {
@@ -448,20 +440,13 @@ export const CONFIG = {
       panelShadow: 0x0c0705,
       overlayBg: 0x000000,
     },
-    stats: {
-      totalEnemiesLabel: 'ENEMIGOS ABATIDOS',
-      chestsFoundLabel: 'COFRES DESCUBIERTOS',
-      redOrbsLabel: 'ORBES ROJOS',
-    },
     depth: 150,
   },
   vfx: {
     rain: {
       dropCount: 60,
-      angleDeg: 15,
       fallSpeed: 320,
       driftSpeed: 70,
-      dropLength: 6,
       dropThickness: 1,
       color: 0x94a3b8,
       alphaBack: 0.25,
@@ -474,7 +459,6 @@ export const CONFIG = {
     lightning: {
       intervalTicksMin: 360,
       intervalTicksMax: 600,
-      flashDurationTicks: 3,
       flashAlpha: 0.30,
       color: 0xe0f2fe,
       depth: -2,
@@ -510,7 +494,6 @@ export const CONFIG = {
   audio: {
     masterVolume: 0.70,
     sfxVolume: 0.85,
-    musicVolume: 0.50,
     enabled: true,
     profiles: {
       parry: { harmonics: [880, 1320, 1760], durationMs: 350 },
