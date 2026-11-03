@@ -16,7 +16,7 @@ import {
   type StrikePoseAnchors,
   type Vec2,
 } from '../sim/strike';
-import type { EntityState, StrikeSnapshot } from '../sim/types';
+import type { EntityState, GroundFireState, StrikeSnapshot } from '../sim/types';
 import {
   bladeDirection,
   buildBladeDirections,
@@ -30,6 +30,8 @@ import {
   profiledTrailQuads,
   type BladeDirections,
 } from './strikeArt';
+import { PixelLayer } from './pixelLayer';
+import { WINDOW_ABOVE, WINDOW_H, WINDOW_LEFT, WINDOW_W } from './strikeWindow';
 
 /** Sprite canvas of Kratos; anchors are in its pixels, origin top-left. */
 const CANVAS_W = 64;
@@ -58,6 +60,7 @@ const DEPTH_CHAIN = 1.1;
 const DEPTH_BLADE = 1.11;
 const DEPTH_GLINT = 1.12;
 
+
 /** Feet-relative anchors of each strike pose, facing right. */
 const strikeAnchors: StrikePoseAnchors = (pose) => {
   const anchors = FRAME_ANCHORS[strikeFrameKey(pose)];
@@ -76,15 +79,17 @@ export class WeaponLayer {
   private backBlades: Phaser.GameObjects.Image[] = [];
   private nearBlade: Phaser.GameObjects.Image | null = null;
   private farBlade: Phaser.GameObjects.Image | null = null;
-  private trail: Phaser.GameObjects.Graphics | null = null;
-  private trailFront: Phaser.GameObjects.Graphics | null = null;
-  private chain: Phaser.GameObjects.Graphics | null = null;
-  private farChain: Phaser.GameObjects.Graphics | null = null;
-  private glint: Phaser.GameObjects.Graphics | null = null;
+  private trail: PixelLayer | null = null;
+  private trailFront: PixelLayer | null = null;
+  private chain: PixelLayer | null = null;
+  private farChain: PixelLayer | null = null;
+  private glint: PixelLayer | null = null;
   /** Phase effects: fireballs behind and in front of the body, and the ground fire and flash. */
-  private fireBehind: Phaser.GameObjects.Graphics | null = null;
-  private fireFront: Phaser.GameObjects.Graphics | null = null;
-  private groundEffects: Phaser.GameObjects.Graphics | null = null;
+  private fireBehind: PixelLayer | null = null;
+  private fireFront: PixelLayer | null = null;
+  private groundEffects: PixelLayer | null = null;
+  /** Fire left burning on the ground (world entities, they outlive the strike). */
+  private groundFires: Phaser.GameObjects.Graphics | null = null;
   private directions: BladeDirections = { keys: [], sizes: [] };
 
   create(scene: Phaser.Scene): void {
@@ -97,14 +102,17 @@ export class WeaponLayer {
     const firstKey = this.directions.keys[0] ?? BLADE_KEY;
     this.nearBlade = scene.add.image(0, 0, firstKey).setOrigin(0, 0).setVisible(false);
     this.farBlade = scene.add.image(0, 0, firstKey).setOrigin(0, 0).setDepth(DEPTH_BEHIND).setVisible(false);
-    this.trail = scene.add.graphics().setDepth(DEPTH_TRAIL);
-    this.trailFront = scene.add.graphics().setDepth(DEPTH_TRAIL_FRONT);
-    this.chain = scene.add.graphics().setDepth(DEPTH_CHAIN);
-    this.farChain = scene.add.graphics().setDepth(DEPTH_FAR_CHAIN);
-    this.glint = scene.add.graphics().setDepth(DEPTH_GLINT);
-    this.fireBehind = scene.add.graphics().setDepth(DEPTH_BEHIND + 0.001);
-    this.fireFront = scene.add.graphics().setDepth(DEPTH_BLADE + 0.001);
-    this.groundEffects = scene.add.graphics().setDepth(DEPTH_TRAIL_FRONT);
+    const layer = (name: string, depth: number): PixelLayer =>
+      new PixelLayer(scene, `strike-layer-${name}`, depth, WINDOW_W, WINDOW_H);
+    this.trail = layer('trail', DEPTH_TRAIL);
+    this.trailFront = layer('trail-front', DEPTH_TRAIL_FRONT);
+    this.chain = layer('chain', DEPTH_CHAIN);
+    this.farChain = layer('far-chain', DEPTH_FAR_CHAIN);
+    this.glint = layer('glint', DEPTH_GLINT);
+    this.fireBehind = layer('fire-behind', DEPTH_BEHIND + 0.001);
+    this.fireFront = layer('fire-front', DEPTH_BLADE + 0.001);
+    this.groundEffects = layer('ground', DEPTH_TRAIL_FRONT);
+    this.groundFires = scene.add.graphics().setDepth(DEPTH_TRAIL_FRONT);
   }
 
   update(player: Readonly<EntityState> | null, frameKey = '', strike: Readonly<StrikeSnapshot> | null = null): void {
@@ -148,6 +156,9 @@ export class WeaponLayer {
     const facing = strike.facing;
     const toWorld = (p: Vec2): Vec2 => [strike.originX + facing * p[0], player.y + p[1]];
     const { phase, u } = strikePhaseAt(def, t);
+    const windowX = Math.round(strike.originX) - WINDOW_LEFT;
+    const windowY = Math.round(player.y) - WINDOW_ABOVE;
+    for (const layer of this.pixelLayers()) layer.setWindow(windowX, windowY);
 
     // Fire trail: square 1's crescent behind the body; profiled trails
     // split in front of and behind it along the track.
@@ -175,7 +186,7 @@ export class WeaponLayer {
 
     // Each hand's blade: in the hand, drawn from the back, or out on its
     // chain (the near hand's chain over the body, the far hand's behind it).
-    const chains: Record<Hand, Phaser.GameObjects.Graphics> = { near: this.chain!, far: this.farChain! };
+    const chains: Record<Hand, PixelLayer> = { near: this.chain!, far: this.farChain! };
     const images: Record<Hand, Phaser.GameObjects.Image> = { near: this.nearBlade!, far: this.farBlade! };
     let thrownWorld: Vec2 = [0, 0];
     for (const hand of ['far', 'near'] as const) {
@@ -209,17 +220,14 @@ export class WeaponLayer {
         for (const hand of ['far', 'near'] as const) {
           const blade = bladeAt(def, hand, t, strikeAnchors, strike.entry);
           drawFireball(blade.behindBody ? fireBehind : fireFront, toWorld(blade.pos), fireballRadius(effect, effect.age), {
+            edge: art.trail.edge,
             rim: art.trail.orange,
             core: art.trail.white,
           });
         }
-      } else if (effect.kind === 'groundFire') {
-        drawGroundFire(ground, toWorld([effect.from, 0])[0], toWorld([effect.to, 0])[0], player.y, effect.heightPx, effect.age, [
-          art.trail.red,
-          art.trail.orange,
-          art.trail.white,
-          art.trail.orange,
-        ]);
+      } else if (effect.kind === 'groundFire' && !effect.linger) {
+        // A lingering fire is a world entity (`drawGroundFires`); this one is the strike's own.
+        drawGroundFire(ground, toWorld([effect.from, 0])[0], toWorld([effect.to, 0])[0], player.y, effect.heightPx, effect.age, effect.ticks, strike.originX, art.trail);
       } else if (effect.kind === 'flash') {
         drawDisc(ground, toWorld([effect.x, -3]), effect.radiusPx - effect.age * 2, art.trail.white);
       }
@@ -230,6 +238,25 @@ export class WeaponLayer {
     glint.clear();
     if (bladeMotionAt(def, def.hand, t).motion?.kind === 'hold' && u < art.glintFraction) {
       drawGlint(glint, thrownWorld, art.glintColor);
+    }
+    for (const layer of this.pixelLayers()) layer.flush();
+  }
+
+  /** Every per-frame pixel layer of the strike effects. */
+  private pixelLayers(): PixelLayer[] {
+    return [this.trail, this.trailFront, this.chain, this.farChain, this.glint, this.fireBehind, this.fireFront, this.groundEffects].filter(
+      (layer): layer is PixelLayer => layer !== null,
+    );
+  }
+
+  /** Draws the fires burning on the ground (from the world snapshot). */
+  drawGroundFires(fires: readonly GroundFireState[]): void {
+    const g = this.groundFires;
+    if (!g) return;
+    g.clear();
+    const art = CONFIG.presentation.strikeArt;
+    for (const fire of fires) {
+      drawGroundFire(g, fire.x0, fire.x1, fire.y, fire.heightPx, fire.age, fire.ticks, fire.x0, art.trail);
     }
   }
 
@@ -247,14 +274,10 @@ export class WeaponLayer {
   private hideStrike(): void {
     this.nearBlade?.setVisible(false);
     this.farBlade?.setVisible(false);
-    this.trail?.clear();
-    this.trailFront?.clear();
-    this.chain?.clear();
-    this.farChain?.clear();
-    this.glint?.clear();
-    this.fireBehind?.clear();
-    this.fireFront?.clear();
-    this.groundEffects?.clear();
+    for (const layer of this.pixelLayers()) {
+      layer.clear();
+      layer.flush();
+    }
   }
 }
 

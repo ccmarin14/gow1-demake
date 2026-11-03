@@ -222,8 +222,8 @@ describe('square-2 strike data', () => {
     assert.deepEqual(strikeActiveTicks(SQUARE1), { first: 8, last: 25 });
   });
 
-  it('opens the chain on hold tick 4 of square 1, buffering from its hit window', () => {
-    assert.deepEqual(strikeChainTicks(SQUARE1), { opens: 18, buffersFrom: 8 });
+  it('opens the chain on hold tick 4 of square 1, remembering a press from its first tick', () => {
+    assert.deepEqual(strikeChainTicks(SQUARE1), { opens: 18, buffersFrom: 0 });
     assert.equal(SQUARE1.chain?.into, 'square2');
   });
 });
@@ -299,20 +299,47 @@ describe('square 1 -> square 2 in the world', () => {
     assert.ok(Math.abs(player(world.snapshot()).x - x0 + 12) < 1e-6);
   });
 
-  it('ignores J pressed in square 2 before its hit window: the combo ends after square 2', () => {
+  it('remembers a J pressed early in square 2 and chains square 3 once its window opens', () => {
     const world = playingWorld();
     square1At(world, 20);
     world.step(['light-attack']);
     hold(world, 2, []);
     world.step(['light-attack']);
     assert.equal(world.snapshot().strike?.id, 'square2');
-    assert.equal(world.snapshot().strike?.queued, false);
-    hold(world, 19, []);
-    assert.equal(world.snapshot().strike?.tick, 22);
-    world.step([]);
-    assert.equal(world.snapshot().strike, undefined);
+    assert.equal(world.snapshot().strike?.queued, true, 'the early press is remembered');
+    let id = 'square2';
+    for (let i = 0; i < 30 && id === 'square2'; i += 1) {
+      world.step([]);
+      id = world.snapshot().strike?.id ?? 'none';
+    }
+    assert.equal(id, 'square3');
+  });
+
+  it('keeps the combo going for a few ticks after a strike ends, then starts over', () => {
+    const late = playingWorld();
+    late.step(['light-attack']);
+    for (let i = 0; i < 200 && late.snapshot().strike; i += 1) late.step([]);
+    assert.equal(late.snapshot().strike, undefined);
+    hold(late, 10, []);
+    late.step(['light-attack']);
+    assert.equal(late.snapshot().strike?.id, 'square2', 'a press 10 ticks after the end carries on to square 2');
+
+    const slow = playingWorld();
+    slow.step(['light-attack']);
+    for (let i = 0; i < 200 && slow.snapshot().strike; i += 1) slow.step([]);
+    hold(slow, 30, []);
+    slow.step(['light-attack']);
+    assert.equal(slow.snapshot().strike?.id, 'square1', 'a press 30 ticks after the end starts a new combo');
+  });
+
+  it('carries triangle on from the grace window too (a plain triangle after square 1 ends)', () => {
+    const world = playingWorld();
     world.step(['light-attack']);
-    assert.equal(world.snapshot().strike?.id, 'square1');
+    for (let i = 0; i < 200 && world.snapshot().strike; i += 1) world.step([]);
+    hold(world, 6, []);
+    world.step(['heavy-attack']);
+    assert.equal(world.snapshot().strike?.id, 'triangle');
+    assert.ok(world.snapshot().strike?.entry, 'it continues from square 1, carrying its blades');
   });
 
   it('hits the legionnaire once with each strike of the combo, with hitstop on the square-2 hold', () => {

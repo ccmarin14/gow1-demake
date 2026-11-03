@@ -3,7 +3,7 @@ import { checksumOf } from './checksum';
 import { stepHorizontal } from './movement';
 import type { Platform } from './scenarios';
 import { cloneCheckpoints, cloneChests, cloneEntities, DEFAULT_SCENARIO, getScenario, archerAt, legionnaireAt } from './scenarios';
-import type { CheckpointState, ChestState, CombatStats, EntityState, GameAction, GameFlowState, OrbState, ArrowState, SavedPlayerData, WaveState, ArenaState, SimulationSnapshot } from './types';
+import type { CheckpointState, ChestState, CombatStats, EntityState, GameAction, GroundFireState, GameFlowState, OrbState, ArrowState, SavedPlayerData, WaveState, ArenaState, SimulationSnapshot } from './types';
 import { PLAYER_ID, sortActions } from './types';
 import { stepVertical, type VerticalParams } from './vertical';
 import { spawnOrbsFromDeath, stepOrbs } from './orbs';
@@ -17,7 +17,7 @@ import { isGuarding, startGuard, stepGuard } from './guard';
 import { stepLegionnaire } from './legionnaire';
 import { stepHydra } from './hydra';
 import { isCastingMagic, stepMagic } from './magic';
-import { STRIKES, branchStrike, chainStrike, queueChain, startStrike, stepStrike, strikeCancellable, type HeldDirection, type StrikeImpactNotice, type StrikeState } from './strike';
+import { STRIKES, branchStrike, chainStrike, stepGroundFires, strikeGravityAt, queueChain, startStrike, stepStrike, strikeCancellable, strikeLength, type HeldDirection, type StrikeImpactNotice, type StrikeState } from './strike';
 import { buildLevel1Map, computeCameraScrollX, getSegmentAtX, type LevelMapData } from './map';
 
 const TICK_DT = 1 / CONFIG.sim.tickRate;
@@ -62,9 +62,15 @@ export class World {
   private directionTicks = 0;
   /** Ticks the whole world stays frozen after a strike connects. */
   private hitstopTicks = 0;
-  private strikeHitNotice: { x: number; y: number } | null = null;
+  private strikeHitNotice: { x: number; y: number; power: number } | null = null;
+  /** A jump pressed during a ground strike, remembered for a few ticks (it fires once the strike ends). */
+  private jumpQueuedTicks = 0;
+  /** The strike that just ended, for a few ticks: a press then still carries the combo on. */
+  private comboGrace: { state: StrikeState; ticks: number } | null = null;
   /** A strike's ground impact on the last tick (the view adds flash, dust and a shake). */
   private strikeImpactNotice: StrikeImpactNotice | null = null;
+  /** Fire left burning on the ground by strikes (Plume), outliving them. */
+  private groundFires: GroundFireState[] = [];
   private activeScenario: string = DEFAULT_SCENARIO;
   private targetPhysics = false;
   private orbs: OrbState[] = [];
@@ -284,6 +290,11 @@ export class World {
     return val;
   }
 
+  /** Fire burning on the ground, read by the view. */
+  peekGroundFires(): readonly GroundFireState[] {
+    return this.groundFires;
+  }
+
   /** Kratos' strike in progress, read by the view (`null` when not striking). */
   peekStrike(): Readonly<StrikeState> | null {
     return this.strike;
@@ -297,7 +308,7 @@ export class World {
     return notice;
   }
 
-  consumeStrikeHitNotice(): { x: number; y: number } | null {
+  consumeStrikeHitNotice(): { x: number; y: number; power: number } | null {
     const notice = this.strikeHitNotice;
     this.strikeHitNotice = null;
     return notice;
@@ -380,11 +391,14 @@ export class World {
     this.heavyAttackHeld = false;
     this.heavyHeldTicks = 0;
     this.strikeImpactNotice = null;
+    this.groundFires = [];
     this.strike = null;
     this.direction = 0;
     this.directionTicks = 0;
     this.hitstopTicks = 0;
     this.strikeHitNotice = null;
+    this.jumpQueuedTicks = 0;
+    this.comboGrace = null;
     this.platforms = scenario.platforms;
     this.targetPhysics = Boolean(scenario.targetPhysics);
     this.entities = cloneEntities(scenario.entities);
@@ -540,11 +554,18 @@ export class World {
       if (this.strike && lightAttackEdge) {
         queueChain(this.strike, steadyDirection);
       }
+      if (this.strike && heavyAttackPress) {
+        queueChain(this.strike, steadyDirection, 'heavy');
+      }
+      if (this.strike && jumpEdge) {
+        this.jumpQueuedTicks = JUMP_QUEUE_TICKS;
+      }
       this.hitstopTicks -= 1;
       this.tick += 1;
       return;
     }
 
+    const newFires: GroundFireState[] = [];
     const player = this.entities.find((entity) => entity.id === PLAYER_ID);
     if (player) {
       if (player.hurtInvulTicks > 0) {
@@ -586,11 +607,23 @@ export class World {
         // Taking a hit or leaving the ground cuts the strike short; so do
         // guarding or jumping in its cancel window (the guard or jump then
         // starts below as usual).
-        if (this.strike && (inHitstun || !player.grounded)) {
+        if (this.strike && (inHitstun || (!player.grounded && !STRIKES[this.strike.id].air))) {
           this.strike = null;
         }
         if (this.strike && strikeCancellable(STRIKES[this.strike.id], this.strike.tick) && (wantsGuard || jumpEdge)) {
           this.strike = null;
+        }
+        // An air strike gives way to the double jump (the jump cancels it, as in GoW 1).
+        if (this.strike && STRIKES[this.strike.id].air && jumpEdge && player.jumpsUsed < VERTICAL_PARAMS.maxJumps) {
+          this.strike = null;
+        }
+        // A jump pressed during a ground strike waits for it to end instead of being lost.
+        if (this.strike && jumpEdge) {
+          this.jumpQueuedTicks = JUMP_QUEUE_TICKS;
+        }
+        const jumpNow = jumpEdge || (this.jumpQueuedTicks > 0 && this.strike === null);
+        if (this.strike === null) {
+          this.jumpQueuedTicks = jumpNow ? 0 : Math.max(0, this.jumpQueuedTicks - 1);
         }
         const striking = this.strike !== null;
 
@@ -610,7 +643,31 @@ export class World {
         // window opens (from the strike's pose, not from the guard).
         let startedNow = false;
         const free = player.grounded && !rolling && !guarding && !nowCastingMagic && !inHitstun && !isOpeningChest;
-        if (!striking && heavyAttackPress && free) {
+        // In the air, square starts the air square and triangle the air triangle.
+        const airFree = !player.grounded && !rolling && !guarding && !nowCastingMagic && !inHitstun && !isOpeningChest;
+        // A press just after a strike ended still carries the combo on, from
+        // that strike's last pose: the chain does not close the instant the
+        // animation does (a finger on a phone is not frame-exact).
+        let graceChained = false;
+        const grace = this.comboGrace;
+        if (grace && !striking && (lightAttackEdge || heavyAttackPress)) {
+          const usable = STRIKES[grace.state.id].air ? airFree : free;
+          if (usable) {
+            const state: StrikeState = { ...grace.state, tick: strikeLength(STRIKES[grace.state.id]) - 1, queued: false };
+            delete state.queuedHeavy;
+            delete state.queuedDirection;
+            queueChain(state, steadyDirection, heavyAttackPress ? 'heavy' : 'light');
+            const next = chainStrike(state, player, steadyDirection);
+            if (next) {
+              this.strike = next;
+              startedNow = true;
+              graceChained = true;
+            }
+          }
+        }
+        if (graceChained) {
+          this.comboGrace = null;
+        } else if (!striking && heavyAttackPress && free) {
           // Triangle from the ground, on the press (see `heavyHeldTicks`); a
           // direction held as it starts turns Kratos that way first. It does
           // not chain (triangle triangle is a level-3 combo).
@@ -619,6 +676,9 @@ export class World {
           startedNow = true;
         } else if (!striking && lightAttackEdge && free) {
           this.strike = startStrike(player, 'square1');
+          startedNow = true;
+        } else if (!striking && airFree && (lightAttackEdge || heavyAttackPress)) {
+          this.strike = startStrike(player, heavyAttackPress ? 'airTriangle' : 'air1');
           startedNow = true;
         } else if (this.strike) {
           // Triangle held through its windup branches (Ascension).
@@ -640,7 +700,17 @@ export class World {
             startedNow = true;
           }
         }
+        // The air lashes and the air triangle's loop hang Kratos: a fall already
+        // under way is cut to a crawl as the strike starts (GoW 1 keeps him
+        // floating through the whole air combo).
+        if (this.strike && startedNow && HOVER_STRIKES.has(this.strike.id)) {
+          player.vy = Math.max(HOVER_VY_MIN, Math.min(HOVER_VY_MAX, player.vy));
+        }
         const nowStriking = this.strike !== null;
+        if (this.comboGrace) {
+          this.comboGrace.ticks -= 1;
+          if (nowStriking || this.comboGrace.ticks <= 0) this.comboGrace = null;
+        }
 
         // Dodge cancels guard immediately
         if (guarding && dodgeEdge && player.grounded && !inHitstun && !nowStriking) {
@@ -714,8 +784,12 @@ export class World {
           playerMovementParams,
           horizontalLocked,
         );
-        const canJumpEdge = jumpEdge && !nowRolling && !nowGuarding && !inHitstun && !nowCastingMagic && !isOpeningChest && !nowStriking;
+        const canJumpEdge = jumpNow && !nowRolling && !nowGuarding && !inHitstun && !nowCastingMagic && !isOpeningChest && !nowStriking;
         const wantsDown = this.input.includes('move-down');
+        // An air strike sets how fast Kratos falls for its next tick (hang time, a drop).
+        // Between air lashes (the combo grace window) he keeps floating too.
+        const graceGravity = !this.strike && this.comboGrace && HOVER_STRIKES.has(this.comboGrace.state.id) ? GRACE_AIR_GRAVITY : 1;
+        const strikeGravity = this.strike && !startedNow ? strikeGravityAt(STRIKES[this.strike.id], this.strike.tick + 1) : graceGravity;
         stepVertical(
           player,
           VERTICAL_PARAMS,
@@ -723,7 +797,7 @@ export class World {
           canJumpEdge,
           this.platforms,
           nowRolling,
-          1.0,
+          strikeGravity,
           wantsDown,
         );
         // The strike started this tick stays on tick 0; later ticks step it.
@@ -732,12 +806,25 @@ export class World {
           if (result.impact) {
             this.strikeImpactNotice = result.impact;
           }
+          if (result.fires) {
+            // Added after this tick's burn: a fire hits from the tick after it appears.
+            newFires.push(...result.fires);
+          }
           if (result.done) {
+            this.comboGrace = STRIKES[this.strike.id].chain ? { state: { ...this.strike }, ticks: COMBO_GRACE_TICKS } : null;
             this.strike = null;
           } else if (result.hits.length > 0) {
-            this.hitstopTicks = STRIKES[this.strike.id].hitstopTicks;
+            const def = STRIKES[this.strike.id];
+            // A heavy blow holds the world a little longer and throws the target back.
+            this.hitstopTicks = def.hitstopTicks + (def.damage >= HEAVY_DAMAGE ? HEAVY_EXTRA_HITSTOP : 0);
             const last = result.hits[result.hits.length - 1];
-            this.strikeHitNotice = { x: last.x, y: last.y };
+            this.strikeHitNotice = { x: last.x, y: last.y, power: def.damage };
+            if (this.targetPhysics) {
+              const knock = def.damage >= HEAVY_DAMAGE ? KNOCKBACK_HEAVY : KNOCKBACK_LIGHT;
+              for (const hit of result.hits) {
+                if (hit.target.kind !== 'hydra' && !hit.target.isDead) hit.target.vx = this.strike.facing * knock;
+              }
+            }
           }
         }
         if (this.arenaManager && this.arenaManager.isActive()) {
@@ -751,6 +838,12 @@ export class World {
         }
       }
     }
+
+    // Fire left on the ground keeps burning, even after the strike.
+    if (this.groundFires.length > 0) {
+      this.groundFires = stepGroundFires(this.groundFires, this.targets, this.targetPhysics).fires;
+    }
+    this.groundFires.push(...newFires);
 
     if (this.waveManager) {
       this.waveManager.step(this.targets, this.spawnWaveEnemy.bind(this));
@@ -962,6 +1055,7 @@ export class World {
       ...bossPayload,
       stats: this.getCombatStats(),
       ...(this.strike ? { strike: { ...this.strike, hits: [...this.strike.hits] } } : {}),
+      ...(this.groundFires.length > 0 ? { groundFires: this.groundFires.map((f) => ({ ...f, hits: [...f.hits] })) } : {}),
       hitstopTicks: this.hitstopTicks,
       input: [...this.input],
     };
@@ -974,6 +1068,23 @@ export class World {
 
 /** Ticks a direction must be held before a combo link turns toward it. */
 const COMBO_TURN_MIN_TICKS = 4;
+
+/** Ticks after a strike ends in which a press still continues its combo (about 0.27 s). */
+const COMBO_GRACE_TICKS = 16;
+/** Air strikes that hang Kratos in the air, and the vertical speed (px/s) he is cut to when one starts. */
+const HOVER_STRIKES: ReadonlySet<string> = new Set(['air1', 'air2', 'air3', 'airTriangle']);
+const HOVER_VY_MIN = -140;
+const HOVER_VY_MAX = 40;
+/** Gravity scale while waiting for the next air lash (the combo grace window). */
+const GRACE_AIR_GRAVITY = 0.5;
+/** Ticks a jump pressed during a ground strike waits for it to end. */
+const JUMP_QUEUE_TICKS = 10;
+/** Damage from which a strike counts as heavy: longer hit pause and a harder knockback. */
+const HEAVY_DAMAGE = 20;
+const HEAVY_EXTRA_HITSTOP = 3;
+/** Speed (px/s) a hit target is thrown back, away from Kratos, in scenarios where targets move. */
+const KNOCKBACK_LIGHT = 90;
+const KNOCKBACK_HEAVY = 220;
 
 /** Left or right held (-1 / 1), or neither or both (0). */
 function heldDirection(input: readonly GameAction[]): HeldDirection {

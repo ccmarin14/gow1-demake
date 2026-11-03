@@ -8,6 +8,12 @@ export class Simulation {
 
   private accumulatorMicros = 0;
   private recording: InputTrace | null = null;
+  /**
+   * Actions read in frames that ran no tick (a frame shorter than a tick):
+   * they apply on the next tick instead of being lost, so a quick tap on a
+   * button still counts.
+   */
+  private carried: readonly GameAction[] = [];
 
   fixedStep(actions: readonly GameAction[] = []): void {
     const canonical = sortActions(actions);
@@ -22,15 +28,17 @@ export class Simulation {
       return 0;
     }
     this.accumulatorMicros += Math.round(deltaMs * 1000);
+    const first = this.carried.length > 0 ? [...new Set([...this.carried, ...actions])] : actions;
     let ticks = 0;
     while (
       this.accumulatorMicros >= CONFIG.sim.tickMicros &&
       ticks < CONFIG.sim.maxCatchUpTicks
     ) {
-      this.fixedStep(actions);
+      this.fixedStep(ticks === 0 ? first : actions);
       this.accumulatorMicros -= CONFIG.sim.tickMicros;
       ticks += 1;
     }
+    this.carried = ticks === 0 ? first : [];
     if (this.accumulatorMicros > CONFIG.sim.maxAccumulatorMicros) {
       this.accumulatorMicros = CONFIG.sim.maxAccumulatorMicros;
     }
@@ -69,5 +77,6 @@ export class Simulation {
 
   resetClock(): void {
     this.accumulatorMicros = 0;
+    this.carried = [];
   }
 }

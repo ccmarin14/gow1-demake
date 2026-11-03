@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import type { GameAction } from '../sim/types';
 import { DOMAIN_ACTIONS } from '../sim/types';
-import { touchActions } from './touchControls';
+import { consumeTouchTaps, touchActions } from './touchControls';
 
 const { KeyCodes } = Phaser.Input.Keyboard;
 
@@ -42,9 +42,10 @@ export class InputManager {
 
   poll(): GameAction[] {
     const active: GameAction[] = [];
+    const taps = consumeTouchTaps();
     for (let i = 0; i < this.bindings.length; i += 1) {
       const { action, keys } = this.bindings[i];
-      if (touchActions().has(action)) {
+      if (touchActions().has(action) || taps.has(action)) {
         active.push(action);
         continue;
       }

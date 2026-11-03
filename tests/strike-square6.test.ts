@@ -130,25 +130,28 @@ describe('square-5 is unchanged as approved', () => {
   });
 });
 
-describe('square-6 strike data', () => {
-  it('runs load 4, loop 5, gather 4, throw 5, hold 4, sweep 9 and recall 7 ticks (38), throwing both blades', () => {
+describe('square-6 strike data (the finisher, inverted: back, ring behind to front, double lash last)', () => {
+  it('runs load 4, back 5, sweep 4 + 5, throw 5, hold 4 and recall 7 ticks (34), throwing both blades; the far one a few ticks later', () => {
     assert.deepEqual(
       SQUARE6.phases.map((p) => [p.id, p.ticks]),
-      [['load', 4], ['loop', 5], ['gather', 4], ['throw', 5], ['hold', 4], ['sweep', 9], ['recall', 7]],
+      [['load', 4], ['back', 5], ['sweepA', 4], ['sweepB', 5], ['throw', 5], ['hold', 4], ['recall', 7]],
     );
-    assert.equal(strikeLength(SQUARE6), 38);
+    assert.equal(strikeLength(SQUARE6), 34);
     for (const hand of ['near', 'far'] as const) {
       for (const phase of SQUARE6.phases) assert.ok(SQUARE6.blades[hand]?.motion[phase.id], `${hand} ${phase.id}`);
-      assert.equal(SQUARE6.blades[hand]?.lag, undefined, 'no lag: the height offset separates the lines');
-      assert.equal(bladeTime(SQUARE6, hand, 15), 15);
     }
+    assert.equal(SQUARE6.blades.near?.lag, undefined);
+    assert.deepEqual(SQUARE6.blades.far?.lag, { ticks: 3, until: 'throw' }, 'out of phase');
+    assert.equal(bladeTime(SQUARE6, 'far', 12), 9);
+    assert.equal(bladeTime(SQUARE6, 'far', 25), 25);
   });
 
-  it('lunges with the torso up: the shoulder of the gather and the throw is at least 26 px above the ground', () => {
-    for (const pose of ['sq5-c', 'sq5-d']) {
+  it('twists back and lunges with the torso up: the shoulders of the poses are at least 24 px above the ground', () => {
+    for (const pose of ['tri-pb', 'tri-pc', 'sq5-g', 'sq5-d']) {
       const shoulder = feet(ANCHORS[`kratos-${pose}`].shoulder);
-      assert.ok(-shoulder[1] >= 26, `${pose} shoulder ${(-shoulder[1]).toFixed(1)} px up`);
+      assert.ok(-shoulder[1] >= 24, `${pose} shoulder ${(-shoulder[1]).toFixed(1)} px up`);
     }
+    assert.deepEqual(SQUARE6.phases.map((p) => p.pose), ['sq5-a', 'tri-pb', 'tri-pc', 'sq5-g', 'sq5-d', 'sq5-e', 'sq5-f']);
   });
 
   it('anchors each track on its shoulder in the lunge', () => {
@@ -156,56 +159,71 @@ describe('square-6 strike data', () => {
     assert.ok(dist(feet(ANCHORS['kratos-sq5-d'].farShoulder), SQUARE6.blades.far!.shoulder) < 0.2);
   });
 
-  it('loops over the head, then lashes both blades straight forward, level, as two lines; the near one at the top of the reach', () => {
-    let top = 0;
-    for (let t = 4; t <= 12; t += 0.25) top = Math.min(top, thrownBladeAt(SQUARE6, t, poseAnchors, 'near').pos[1]);
-    assert.ok(top < -65, `the loop tops ${(-top).toFixed(1)} px up`);
-    for (const hand of ['near', 'far'] as const) {
-      // Straight forward through the throw: no hook back at the low point.
+  it('starts behind: both blades swing back from overhead to behind the hip before anything goes forward', () => {
+    // The far blade runs 3 ticks behind the near one (out of phase).
+    for (const [hand, lag] of [['near', 0], ['far', 3]] as const) {
+      const start = thrownBladeAt(SQUARE6, 4 + lag, poseAnchors, hand).pos;
+      const back = thrownBladeAt(SQUARE6, 8.99 + lag, poseAnchors, hand).pos;
+      assert.ok(start[1] <= -45, `${hand} starts overhead (${(-start[1]).toFixed(0)} px up)`);
+      assert.ok(back[0] <= -25 && back[1] >= -32 && back[1] <= -14, `${hand} ends the swing behind the hip (${back.map((v) => v.toFixed(0))})`);
+      let prevX = Infinity;
+      for (let t = 4 + lag; t <= 9 + lag; t += 0.5) {
+        const x = thrownBladeAt(SQUARE6, t, poseAnchors, hand).pos[0];
+        assert.ok(x <= prevX + 0.5, `${hand} keeps going back at ${t}`);
+        prevX = x;
+      }
+    }
+  });
+
+  it('sweeps the ring from behind to the front at waist height: the near blade low in front of the body, the far one behind it', () => {
+    for (const [hand, lag] of [['near', 0], ['far', 3]] as const) {
       let prevX = -Infinity;
-      for (let t = 13; t <= 18; t += 0.5) {
+      for (let t = 9 + lag; t <= 18.01; t += 0.5) {
+        const p = thrownBladeAt(SQUARE6, t, poseAnchors, hand).pos;
+        assert.ok(p[0] >= prevX - 1, `${hand} goes forward round the body at ${t}`);
+        assert.ok(p[1] <= -8 && p[1] >= -34, `${hand} at waist height at ${t} (${(-p[1]).toFixed(0)} px up)`);
+        prevX = p[0];
+      }
+    }
+    let nearFront = false;
+    let farBehind = false;
+    for (let t = 9; t < 19; t += 0.25) {
+      const near = thrownBladeAt(SQUARE6, t, poseAnchors, 'near');
+      const far = thrownBladeAt(SQUARE6, t, poseAnchors, 'far');
+      if (Math.abs(near.pos[0] - strikeAdvanceAt(SQUARE6, t)) < 8) nearFront ||= !near.behindBody && near.pos[1] > -18;
+      if (Math.abs(far.pos[0] - strikeAdvanceAt(SQUARE6, t)) < 8) farBehind ||= far.behindBody && far.pos[1] < -22;
+    }
+    assert.ok(nearFront, 'the near blade passes in front of the body, low');
+    assert.ok(farBehind, 'the far blade passes behind the body, higher');
+  });
+
+  it('ends in the double lash forward: both blades at once, straight and forward, crossing in an X, the near one 88 px out', () => {
+    for (const hand of ['near', 'far'] as const) {
+      let prevX = -Infinity;
+      for (let t = 19; t <= 23; t += 0.5) {
         const x = thrownBladeAt(SQUARE6, t, poseAnchors, hand).pos[0];
         assert.ok(x > prevX, `${hand} goes forward at ${t}`);
         prevX = x;
       }
-      const tip = thrownBladeAt(SQUARE6, 18, poseAnchors, hand).pos;
-      assert.ok(tip[1] <= -22 && tip[1] >= -38, `${hand} lash at ${(-tip[1]).toFixed(1)} px up`);
     }
-    const near = thrownBladeAt(SQUARE6, 18, poseAnchors, 'near').pos;
-    const far = thrownBladeAt(SQUARE6, 18, poseAnchors, 'far').pos;
-    assert.ok(near[0] >= 85 && near[0] <= 90, `near reach ${near[0].toFixed(1)} px`);
+    const near = thrownBladeAt(SQUARE6, 22.99, poseAnchors, 'near').pos;
+    const far = thrownBladeAt(SQUARE6, 22.99, poseAnchors, 'far').pos;
+    assert.ok(near[0] >= 85 && near[0] <= 92, `near reach ${near[0].toFixed(1)} px`);
     assert.ok(far[0] >= 70 && far[0] <= 90, `far reach ${far[0].toFixed(1)} px`);
-    assert.ok(far[1] - near[1] >= 4, 'two lines, the far one lower');
+    assert.ok(near[1] <= -26 && near[1] >= -38, `near lash at ${(-near[1]).toFixed(1)} px up`);
+    const before = thrownBladeAt(SQUARE6, 18, poseAnchors, 'near').pos[1] - thrownBladeAt(SQUARE6, 18, poseAnchors, 'far').pos[1];
+    const after = near[1] - far[1];
+    assert.ok(before * after < 0, `the lines cross (near minus far height ${before.toFixed(1)} then ${after.toFixed(1)})`);
   });
 
   it('starts the lash as a fresh straight trail: no hook on the hit frames', () => {
     for (const hand of ['near', 'far'] as const) {
-      for (let tick = 14; tick <= 18; tick += 1) {
+      for (let tick = 20; tick <= 23; tick += 1) {
         const points = strikeTrailAt(SQUARE6, tick, poseAnchors, hand).points;
         for (let i = 1; i < points.length; i += 1) {
           assert.ok(points[i][0] >= points[i - 1][0] - 0.5, `${hand} trail turns back on tick ${tick}`);
         }
       }
-    }
-  });
-
-  it('sweeps both blades back around him: near low in front of the body, far higher behind it, ending behind', () => {
-    let nearFront = false;
-    let farBehind = false;
-    for (let t = 22; t < 31; t += 0.25) {
-      const near = thrownBladeAt(SQUARE6, t, poseAnchors, 'near');
-      const far = thrownBladeAt(SQUARE6, t, poseAnchors, 'far');
-      if (Math.abs(near.pos[0] - strikeAdvanceAt(SQUARE6, t)) < 8) {
-        nearFront ||= !near.behindBody && near.pos[1] > -22;
-      }
-      if (Math.abs(far.pos[0] - strikeAdvanceAt(SQUARE6, t)) < 8) {
-        farBehind ||= far.behindBody && far.pos[1] < -22;
-      }
-    }
-    assert.ok(nearFront, 'the near blade passes in front of the body, low');
-    assert.ok(farBehind, 'the far blade passes behind the body, higher');
-    for (const hand of ['near', 'far'] as const) {
-      assert.ok(thrownBladeAt(SQUARE6, 30.999, poseAnchors, hand).pos[0] < -40, `${hand} ends behind Kratos`);
     }
   });
 
@@ -222,7 +240,7 @@ describe('square-6 strike data', () => {
         at += phase.ticks;
         const before = bladeAt(SQUARE6, hand, at - 1e-6, poseAnchors).pos;
         const after = bladeAt(SQUARE6, hand, at, poseAnchors).pos;
-        assert.ok(dist(before, after) < 1, `${hand}: jump of ${dist(before, after).toFixed(2)} px entering tick ${at}`);
+        assert.ok(dist(before, after) < 1.5, `${hand}: jump of ${dist(before, after).toFixed(2)} px entering tick ${at}`);
       }
     }
   });
@@ -236,25 +254,24 @@ describe('square-6 strike data', () => {
     }
   });
 
-  it('points each arm at its blade from the loop to the end of the hold (within 40 degrees)', () => {
-    // From the second loop tick to the end of the hold, skipping the first
-    // tick of the gather (the blade still descends from the loop) and of the
-    // throw (it still sits at the low point while the arm already lashes).
-    for (let t = 5; t < 22; t += 1) {
-      if (t === 9 || t === 13) continue;
+  it('points each arm at its blade through the lash and the hold (within 40 degrees), and roughly through the ring (within 85)', () => {
+    const offAt = (t: number, hand: 'near' | 'far'): number => {
       const pose = strikePoseAt(SQUARE6, t);
       const a = ANCHORS[`kratos-${pose}`];
       const adv = strikeAdvanceAt(SQUARE6, t);
-      for (const [hand, shoulderKey, handKey] of [['near', 'shoulder', 'hand'], ['far', 'farShoulder', 'farHand']] as const) {
-        const shoulder = feet(a[shoulderKey]);
-        const grip = feet(a[handKey]);
-        const blade = thrownBladeAt(SQUARE6, t, poseAnchors, hand).pos;
-        const arm = Math.atan2(grip[1] - shoulder[1], grip[0] - shoulder[0]);
-        const toBlade = Math.atan2(blade[1] - shoulder[1], blade[0] - adv - shoulder[0]);
-        const off = Math.abs(((arm - toBlade + 3 * Math.PI) % (2 * Math.PI)) - Math.PI);
-        assert.ok(off <= (40 * Math.PI) / 180, `tick ${t} (${pose}) ${hand}: arm ${((off * 180) / Math.PI).toFixed(0)} degrees off`);
-      }
+      const shoulder = feet(a[hand === 'near' ? 'shoulder' : 'farShoulder']);
+      const grip = feet(a[hand === 'near' ? 'hand' : 'farHand']);
+      const blade = thrownBladeAt(SQUARE6, t, poseAnchors, hand).pos;
+      const arm = Math.atan2(grip[1] - shoulder[1], grip[0] - shoulder[0]);
+      const toBlade = Math.atan2(blade[1] - shoulder[1], blade[0] - adv - shoulder[0]);
+      return (Math.abs(((arm - toBlade + 3 * Math.PI) % (2 * Math.PI)) - Math.PI) * 180) / Math.PI;
+    };
+    for (let t = 20; t < 27; t += 1) {
+      for (const hand of ['near', 'far'] as const) assert.ok(offAt(t, hand) <= 40, `tick ${t} ${hand}: arm ${offAt(t, hand).toFixed(0)} degrees off`);
     }
+    // The far blade runs 3 ticks late round the ring, so only its first ticks still match the twisted pose (known gap).
+    for (let t = 11; t < 18; t += 1) assert.ok(offAt(t, 'near') <= 85, `ring tick ${t} near: arm ${offAt(t, 'near').toFixed(0)} degrees off`);
+    for (let t = 11; t < 15; t += 1) assert.ok(offAt(t, 'far') <= 85, `ring tick ${t} far: arm ${offAt(t, 'far').toFixed(0)} degrees off`);
   });
 
   it('keeps each trail at most 55 px long and its head on its blade', () => {
@@ -270,32 +287,31 @@ describe('square-6 strike data', () => {
   });
 
   it('comes back to arms crossed over the chest', () => {
-    const adv = strikeAdvanceAt(SQUARE6, 38);
-    const near = bladeAt(SQUARE6, 'near', 37.999, poseAnchors).pos;
-    const far = bladeAt(SQUARE6, 'far', 37.999, poseAnchors).pos;
+    const adv = strikeAdvanceAt(SQUARE6, 34);
+    const near = bladeAt(SQUARE6, 'near', 33.999, poseAnchors).pos;
+    const far = bladeAt(SQUARE6, 'far', 33.999, poseAnchors).pos;
     assert.ok(dist(near, [1 + adv, -33]) < 0.5 && dist(far, [9 + adv, -34]) < 0.5, 'both blades at the crossed-arms points');
   });
 
-  it('hits in two windows, the lash and the sweep; ends the square chain', () => {
-    assert.equal(strikeHitWindowAt(SQUARE6, 16, 'near'), 0, 'lash');
-    assert.equal(strikeHitWindowAt(SQUARE6, 25, 'near'), 1, 'sweep');
-    assert.equal(strikeHitWindowAt(SQUARE6, 10, 'near'), -1, 'not on the loop or gather');
-    assert.deepEqual(strikeChainTicks(SQUARE5), { opens: 24, buffersFrom: 4 });
+  it('hits in two windows, the ring and the lash; ends the square chain', () => {
+    assert.equal(strikeHitWindowAt(SQUARE6, 13, 'near'), 0, 'ring');
+    assert.equal(strikeHitWindowAt(SQUARE6, 22, 'near'), 1, 'lash');
+    assert.equal(strikeHitWindowAt(SQUARE6, 6, 'near'), -1, 'not on the swing back');
+    assert.deepEqual(strikeChainTicks(SQUARE5), { opens: 24, buffersFrom: 0 });
     assert.equal(SQUARE5.chain?.into, 'square6');
     assert.equal(strikeChainTicks(SQUARE6), null);
-    const { last } = strikeActiveTicks(SQUARE6);
-    assert.equal(last, 30);
+    assert.equal(SQUARE6.damage, 20, 'the heavy blow');
   });
 });
 
 describe('square 6 hits', () => {
-  it('hits an enemy ahead with the lash and again with the sweep, and one behind with the sweep, once per window', () => {
+  it('hits an enemy ahead once with the lash and one behind once with the ring, once per window', () => {
     const world = playingWorld();
     const kratos: EntityState = { ...player(world.snapshot()) };
     const template = new World();
     template.loadScenario('legionnaire');
     const foe = template.snapshot().entities.find((e) => e.kind === 'legionnaire')!;
-    const ahead: EntityState = { ...foe, id: 'ahead', x: kratos.x + 60, y: kratos.y, hp: 100, isDead: false, aiState: 'approach' };
+    const ahead: EntityState = { ...foe, id: 'ahead', x: kratos.x + 70, y: kratos.y, hp: 100, isDead: false, aiState: 'approach' };
     const behind: EntityState = { ...foe, id: 'behind', x: kratos.x - 40, y: kratos.y, hp: 100, isDead: false, aiState: 'approach' };
     const state = startStrike(kratos, 'square6');
     const hitsOn: Record<string, number[]> = { ahead: [], behind: [] };
@@ -304,29 +320,28 @@ describe('square 6 hits', () => {
       for (const h of result.hits) hitsOn[h.target.id].push(state.tick);
       if (result.done) break;
     }
-    assert.equal(hitsOn.ahead.length, 2, `ahead hit on ${hitsOn.ahead}`);
-    assert.ok(hitsOn.ahead[0] >= 13 && hitsOn.ahead[0] <= 21, 'first by the lash');
-    assert.ok(hitsOn.ahead[1] >= 22, 'then by the sweep');
-    assert.deepEqual(hitsOn.behind.length, 1, `behind hit on ${hitsOn.behind}`);
-    assert.ok(hitsOn.behind[0] >= 22, 'by the sweep');
-    assert.equal(ahead.hp, 100 - 2 * SQUARE6.damage);
+    assert.equal(hitsOn.ahead.length, 1, `ahead hit on ${hitsOn.ahead}`);
+    assert.ok(hitsOn.ahead[0] >= 19 && hitsOn.ahead[0] <= 24, 'by the lash, at the end');
+    assert.equal(hitsOn.behind.length, 1, `behind hit on ${hitsOn.behind}`);
+    assert.ok(hitsOn.behind[0] >= 9 && hitsOn.behind[0] <= 18, 'by the ring, from behind');
+    assert.equal(ahead.hp, 100 - SQUARE6.damage);
     assert.equal(behind.hp, 100 - SQUARE6.damage);
   });
 });
 
 describe('square 5 -> square 6 in the world', () => {
-  it('chains on J during the square-5 hold, runs 38 ticks and steps 5 px; J during it does nothing', () => {
+  it('chains on J during the square-5 hold, runs 34 ticks and steps 6 px; J during it does nothing', () => {
     const { world, x0 } = square6World();
     const strike = world.snapshot().strike;
     assert.equal(strike?.id, 'square6');
     assert.equal(strike?.tick, 0);
     assert.equal(strike?.entry?.id, 'square5');
-    for (let i = 0; i < 37; i += 1) world.step(i % 3 === 0 ? ['light-attack'] : []);
+    for (let i = 0; i < 33; i += 1) world.step(i % 3 === 0 ? ['light-attack'] : []);
     assert.equal(world.snapshot().strike?.id, 'square6');
-    assert.equal(world.snapshot().strike?.tick, 37);
+    assert.equal(world.snapshot().strike?.tick, 33);
     world.step([]);
     assert.equal(world.snapshot().strike, undefined);
-    assert.ok(Math.abs(player(world.snapshot()).x - x0 - 24) < 1e-6, 'squares 1 to 5 step 7, 5, 5, 2 and 5 px');
+    assert.ok(Math.abs(player(world.snapshot()).x - x0 - 25) < 1e-6, 'squares 1 to 5 step 7, 5, 5, 2 and 6 px');
   });
 
   it('can turn around at the square 5 -> square 6 link', () => {

@@ -63,6 +63,25 @@ export function sortActions(actions: readonly GameAction[]): GameAction[] {
 
 export const PLAYER_ID = 'player';
 
+/**
+ * Fire burning on the ground from world x `x0` to `x1` at ground `y`,
+ * `heightPx` tall, for `ticks` (it has burned `age`). Enemies standing in it
+ * are hit once each (and lifted when targets have physics); `hits` are the
+ * ids already hit.
+ */
+export interface GroundFireState {
+  x0: number;
+  x1: number;
+  y: number;
+  heightPx: number;
+  ticks: number;
+  age: number;
+  damage: number;
+  hitstunTicks: number;
+  liftVy: number;
+  hits: string[];
+}
+
 /** Kratos' strike in progress (`src/sim/strike.ts`), as the view reads it. */
 export interface StrikeSnapshot {
   id: StrikeId;
@@ -262,6 +281,8 @@ export interface SimulationSnapshot {
   stats?: CombatStats;
   /** Kratos' strike in progress, absent when he is not striking. */
   strike?: StrikeSnapshot;
+  /** Fire left burning on the ground by strikes (Plume), outliving them. */
+  groundFires?: GroundFireState[];
   /** Ticks the world stays frozen after a strike connects (0 = running). */
   hitstopTicks: number;
   input: GameAction[];

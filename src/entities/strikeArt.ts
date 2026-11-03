@@ -1,5 +1,7 @@
-import Phaser from 'phaser';
+import type Phaser from 'phaser';
 import type { Depth, StrikeTrail, TrailShape, Vec2 } from '../sim/strike';
+import { groundFireColumns, type FirePalette } from './groundFire';
+import type { PixelSink } from './pixelBuffer';
 
 /**
  * Pixel drawing for the strikes (D-37), at the logical resolution and without
@@ -211,7 +213,7 @@ export function profiledTrailQuads(
 }
 
 /** 1 px line between whole-pixel points (Bresenham). */
-function line(g: Phaser.GameObjects.Graphics, x0: number, y0: number, x1: number, y1: number): void {
+function line(g: PixelSink, x0: number, y0: number, x1: number, y1: number): void {
   const dx = Math.abs(x1 - x0);
   const dy = -Math.abs(y1 - y0);
   const sx = x0 < x1 ? 1 : -1;
@@ -230,7 +232,7 @@ function line(g: Phaser.GameObjects.Graphics, x0: number, y0: number, x1: number
  * Fills a polygon on whole pixels (vertices rounded): even-odd rows sampled
  * at pixel centres, plus its outline, so thin tips are never lost.
  */
-export function fillPixelPolygon(g: Phaser.GameObjects.Graphics, polygon: readonly Vec2[], color: number): void {
+export function fillPixelPolygon(g: PixelSink, polygon: readonly Vec2[], color: number): void {
   if (polygon.length < 3) return;
   const pts = polygon.map((p) => [Math.round(p[0]), Math.round(p[1])] as const);
   g.fillStyle(color, 1);
@@ -268,7 +270,7 @@ export function fillPixelPolygon(g: Phaser.GameObjects.Graphics, polygon: readon
  * Chain from `a` to `b` (world px): one pixel per px of length, sagging
  * `sag` px at the middle, in links of 2 px alternating light and dark.
  */
-export function drawChain(g: Phaser.GameObjects.Graphics, a: Vec2, b: Vec2, sag: number, colors: readonly number[]): void {
+export function drawChain(g: PixelSink, a: Vec2, b: Vec2, sag: number, colors: readonly number[]): void {
   const length = Math.max(1, Math.floor(Math.hypot(b[0] - a[0], b[1] - a[1])));
   for (let i = 0; i <= length; i += 1) {
     const u = i / length;
@@ -280,7 +282,7 @@ export function drawChain(g: Phaser.GameObjects.Graphics, a: Vec2, b: Vec2, sag:
 }
 
 /** A filled pixel disc of radius `r` centred on `p`. */
-export function drawDisc(g: Phaser.GameObjects.Graphics, p: Vec2, r: number, color: number): void {
+export function drawDisc(g: PixelSink, p: Vec2, r: number, color: number): void {
   const x = Math.round(p[0]);
   const y = Math.round(p[1]);
   g.fillStyle(color, 1);
@@ -290,38 +292,35 @@ export function drawDisc(g: Phaser.GameObjects.Graphics, p: Vec2, r: number, col
   }
 }
 
-/** A fireball on a blade: a pale core with an orange rim. */
-export function drawFireball(g: Phaser.GameObjects.Graphics, p: Vec2, r: number, colors: { rim: number; core: number }): void {
-  drawDisc(g, p, r, colors.rim);
-  drawDisc(g, p, r - 1, colors.core);
+/** A fireball on a blade: a dark 1 px edge, an orange ring and a pale core. */
+export function drawFireball(g: PixelSink, p: Vec2, r: number, colors: { edge: number; rim: number; core: number }): void {
+  drawDisc(g, p, r, colors.edge);
+  drawDisc(g, p, r - 1, colors.rim);
+  drawDisc(g, p, r - 2, colors.core);
 }
 
-/**
- * A flickering fire line along the ground from world x `a` to `b` (either
- * order), `heightPx` tall above `groundY`: every column alternates its
- * height and colour with the tick, so it reads as flames, not a bar.
- */
+/** A ground fire line: irregular flame tongues from the shared column shape (`groundFire.ts`). */
 export function drawGroundFire(
-  g: Phaser.GameObjects.Graphics,
+  g: PixelSink,
   a: number,
   b: number,
   groundY: number,
   heightPx: number,
-  tick: number,
-  colors: readonly number[],
+  age: number,
+  ticks: number,
+  seed: number,
+  palette: FirePalette,
 ): void {
-  const from = Math.round(Math.min(a, b));
-  const to = Math.round(Math.max(a, b));
-  for (let x = from; x <= to; x += 1) {
-    const phase = (x * 7 + tick * 3) % 5;
-    const h = heightPx - (phase === 0 ? 1 : 0);
-    g.fillStyle(colors[(x + tick) % colors.length], 1);
-    g.fillRect(x, groundY - h, 1, h);
+  for (const column of groundFireColumns(a, b, heightPx, age, ticks, seed, palette)) {
+    column.colors.forEach((color, i) => {
+      g.fillStyle(color, 1);
+      g.fillRect(column.x, Math.round(groundY) - 1 - i, 1, 1);
+    });
   }
 }
 
 /** Impact glint: a 5x5 rounded spark centred on `p`. */
-export function drawGlint(g: Phaser.GameObjects.Graphics, p: Vec2, color: number): void {
+export function drawGlint(g: PixelSink, p: Vec2, color: number): void {
   const x = Math.round(p[0]);
   const y = Math.round(p[1]);
   g.fillStyle(color, 1);

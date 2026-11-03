@@ -110,7 +110,8 @@ export class SoundManager {
   // ========================================================
 
   /** Short low thud when a blade connects. */
-  playStrikeHit(): void {
+  /** A blade landing; `heavy` is a deeper, longer thud (△, the finisher). */
+  playStrikeHit(heavy = false): void {
     this.recordSound('strikeHit');
     if (!this.ctx || !this.sfxGain || this.muted) return;
 
@@ -119,17 +120,18 @@ export class SoundManager {
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
 
+      const length = heavy ? 0.18 : 0.09;
       osc.type = 'triangle';
-      osc.frequency.setValueAtTime(170, now);
-      osc.frequency.exponentialRampToValueAtTime(45, now + 0.08);
+      osc.frequency.setValueAtTime(heavy ? 120 : 170, now);
+      osc.frequency.exponentialRampToValueAtTime(heavy ? 32 : 45, now + length - 0.01);
 
-      gain.gain.setValueAtTime(0.4, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+      gain.gain.setValueAtTime(heavy ? 0.6 : 0.4, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + length);
 
       osc.connect(gain);
       gain.connect(this.sfxGain);
       osc.start(now);
-      osc.stop(now + 0.09);
+      osc.stop(now + length);
     } catch {
       // Audio error safety
     }

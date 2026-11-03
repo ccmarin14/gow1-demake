@@ -145,8 +145,9 @@ export class VfxLayer {
     return this.parryFlashes.length > 0;
   }
 
-  emitCombatSparks(worldX: number, worldY: number, count: number = CONFIG.vfx.combatSparks.sparkCount): void {
-    if (!CONFIG.vfx.combatSparks.enabled) {
+  /** `force` shows the sparks even while the inherited effect is off (Kratos' strike hits). */
+  emitCombatSparks(worldX: number, worldY: number, count: number = CONFIG.vfx.combatSparks.sparkCount, force = false): void {
+    if (!force && !CONFIG.vfx.combatSparks.enabled) {
       return;
     }
     const colors = CONFIG.vfx.combatSparks.colors;

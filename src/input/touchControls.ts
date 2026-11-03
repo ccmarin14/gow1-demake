@@ -7,6 +7,8 @@ import type { GameAction } from '../sim/types';
  * two fingers.
  */
 const held = new Set<GameAction>();
+/** Buttons pressed since the last read: a tap shorter than a frame is not lost. */
+const tapped = new Set<GameAction>();
 
 interface TouchButton {
   label: string;
@@ -32,6 +34,13 @@ export function touchActions(): ReadonlySet<GameAction> {
   return held;
 }
 
+/** Actions pressed since the last call (even if already released), once each. */
+export function consumeTouchTaps(): ReadonlySet<GameAction> {
+  const taps = new Set(tapped);
+  tapped.clear();
+  return taps;
+}
+
 function isTouchScreen(): boolean {
   return window.matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
 }
@@ -46,6 +55,7 @@ function makeButton(button: TouchButton): HTMLButtonElement {
     event.preventDefault();
     element.setPointerCapture(event.pointerId);
     held.add(button.action);
+    tapped.add(button.action);
     element.classList.add('is-held');
   };
   const release = (): void => {
@@ -81,6 +91,7 @@ export function installTouchControls(): void {
   // A finger leaving the page (app switch, notification) must not leave keys stuck.
   window.addEventListener('blur', () => {
     held.clear();
+    tapped.clear();
     for (const element of pad.querySelectorAll('.is-held')) element.classList.remove('is-held');
   });
 }

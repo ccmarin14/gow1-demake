@@ -14,7 +14,7 @@ import {
 import { CONFIG, ROLL_TICKS } from '../config';
 import { WeaponLayer } from '../entities/WeaponLayer';
 import { STRIKES, strikePoseAt } from '../sim/strike';
-import type { EntityState, StrikeSnapshot } from '../sim/types';
+import type { EntityState, GroundFireState, StrikeSnapshot } from '../sim/types';
 
 /**
  * Presentation of the player: the Kratos sprite and its animation selection,
@@ -85,6 +85,11 @@ export class PlayerView {
 
   updateWeapon(player: Readonly<EntityState> | null, strike: Readonly<StrikeSnapshot> | null = null): void {
     this.weaponLayer.update(player, this.sprite.texture.key, strike);
+  }
+
+  /** Fire left burning on the ground by strikes (Plume). */
+  updateGroundFires(fires: readonly GroundFireState[]): void {
+    this.weaponLayer.drawGroundFires(fires);
   }
 
   private createPlayerAnimations(): void {

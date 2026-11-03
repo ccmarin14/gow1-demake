@@ -356,6 +356,144 @@
       "state": "attack",
       "grounded": true,
       "png": "kratos-tri-g"
+    },
+    {
+      "file": "plume-a.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-plume-a"
+    },
+    {
+      "file": "plume-b.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-plume-b"
+    },
+    {
+      "file": "plume-c.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-plume-c"
+    },
+    {
+      "file": "plume-d.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-plume-d"
+    },
+    {
+      "file": "plume-e.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-plume-e"
+    },
+    {
+      "file": "plume-f.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-plume-f"
+    },
+    {
+      "file": "tri-pb.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-tri-pb"
+    },
+    {
+      "file": "airtri-a.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-airtri-a"
+    },
+    {
+      "file": "airtri-b.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-airtri-b"
+    },
+    {
+      "file": "airtri-c.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-airtri-c"
+    },
+    {
+      "file": "airtri-d.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-airtri-d"
+    },
+    {
+      "file": "aq1-a.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-aq1-a"
+    },
+    {
+      "file": "aq1-b.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-aq1-b"
+    },
+    {
+      "file": "aq2-a.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-aq2-a"
+    },
+    {
+      "file": "aq2-b.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-aq2-b"
+    },
+    {
+      "file": "aq3-a.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-aq3-a"
+    },
+    {
+      "file": "aq3-b.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-aq3-b"
+    },
+    {
+      "file": "airtri-m1.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-airtri-m1"
+    },
+    {
+      "file": "airtri-e.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-airtri-e"
+    },
+    {
+      "file": "aq2-c.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-aq2-c"
+    },
+    {
+      "file": "aq3-m.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-aq3-m"
+    },
+    {
+      "file": "tri-pc.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-tri-pc"
+    },
+    {
+      "file": "asc-b.txt",
+      "state": "attack",
+      "grounded": true,
+      "png": "kratos-asc-b"
     }
   ]
 }

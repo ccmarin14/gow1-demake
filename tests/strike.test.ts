@@ -144,12 +144,12 @@ describe('square-1 strike in the world', () => {
     assert.ok(Math.abs(player(world.snapshot()).x - start.x + 7) < 1e-6);
   });
 
-  it('does not start in the air, while rolling or while guarding', () => {
+  it('starts the air square (not the ground square) in the air, and does not start while rolling or guarding', () => {
     const air = playingWorld();
     air.step(['jump']);
     air.step([]);
     air.step(['light-attack']);
-    assert.equal(air.snapshot().strike, undefined);
+    assert.equal(air.snapshot().strike?.id, 'air1');
 
     const rolling = playingWorld();
     rolling.step(['dodge']);
@@ -162,19 +162,19 @@ describe('square-1 strike in the world', () => {
     assert.equal(guarding.snapshot().strike, undefined);
   });
 
-  it('ignores J pressed again before the hit window (no buffered square-2)', () => {
+  it('remembers a J pressed again early (buffered square 2) and chains it', () => {
     const world = playingWorld();
     world.step(['light-attack']);
     hold(world, 2, []);
     world.step(['light-attack']);
     assert.equal(world.snapshot().strike?.tick, 3);
-    hold(world, 30, []);
-    assert.equal(world.snapshot().strike?.id, 'square1');
-    assert.equal(world.snapshot().strike?.tick, 33);
-    world.step([]);
-    assert.equal(world.snapshot().strike, undefined);
-    world.step(['light-attack']);
-    assert.equal(world.snapshot().strike?.tick, 0);
+    assert.equal(world.snapshot().strike?.queued, true);
+    let id = 'square1';
+    for (let i = 0; i < 40 && id === 'square1'; i += 1) {
+      world.step([]);
+      id = world.snapshot().strike?.id ?? 'none';
+    }
+    assert.equal(id, 'square2');
   });
 
   it('hits the legionnaire once per strike and freezes the world 4 ticks on contact', () => {

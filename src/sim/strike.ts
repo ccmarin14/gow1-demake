@@ -1,6 +1,6 @@
 import { CONFIG } from '../config';
 import { damageEnemy } from './damage';
-import type { EntityState, StrikeSnapshot } from './types';
+import type { EntityState, GroundFireState, StrikeSnapshot } from './types';
 
 /**
  * Kratos' strikes as data (D-37). Each strike is a table of phases (body
@@ -16,7 +16,9 @@ import type { EntityState, StrikeSnapshot } from './types';
  */
 export type Vec2 = readonly [number, number];
 
-export type StrikeId = 'square1' | 'square2' | 'square3' | 'square4' | 'square5' | 'square6' | 'triangle';
+export type StrikeId =
+  | 'square1' | 'square2' | 'square3' | 'square4' | 'square5' | 'square6'
+  | 'triangle' | 'launcher' | 'plume' | 'ascension' | 'air1' | 'air2' | 'air3' | 'airTriangle' | 'harpoon';
 
 /** Kratos' hands as the side view shows them: near the camera or behind the body. */
 export type Hand = 'near' | 'far';
@@ -62,7 +64,7 @@ export type BladeMotion =
    * To the start of the track (quadratic, ease in), from the upper back (the
    * blade is drawn) or from under the throwing hand (it already holds it).
    */
-  | { kind: 'draw'; from: 'back' | 'hand'; behindBody: true }
+  | { kind: 'draw'; from: 'back' | 'hand'; behindBody: true; via?: 'ground' }
   /**
    * To the start of the track (ease out), from where the previous strike of
    * the combo left this blade (or from under the hand when there is none):
@@ -111,6 +113,10 @@ export interface StrikePhase {
    * `minTicks` (its `ticks` are the most it lasts): air strikes landing.
    */
   until?: { event: 'grounded'; minTicks: number };
+  /** Gravity scale while the phase lasts (1 by default): below 1 hangs in the air, above 1 drops fast. */
+  gravity?: number;
+  /** On the phase's first tick Kratos leaves the ground with this vertical speed (px/s, negative is up). */
+  leapVy?: number;
 }
 
 /**
@@ -127,10 +133,22 @@ export interface StrikePhase {
  */
 export type PhaseEffect =
   | { kind: 'fireball'; radiusPx: number; pulsePx: number; pulseTicks: number }
-  | { kind: 'groundFire'; from: number; to: number; heightPx: number; ticks: number }
+  | { kind: 'groundFire'; from: number; to: number; heightPx: number; ticks: number; linger?: GroundFireLinger }
   | { kind: 'flash'; x: number; ticks: number; radiusPx: number }
   | { kind: 'dust'; at: readonly number[] }
   | { kind: 'shake'; px: number; ticks: number };
+
+/**
+ * A ground fire that stays as its own entity in the world (Plume's fire
+ * burst): it burns for the effect's `ticks` even after the strike ends and
+ * hits each enemy standing in it once, from the tick after it appears,
+ * lifting it at `liftVy` px/s where targets have physics.
+ */
+export interface GroundFireLinger {
+  damage: number;
+  hitstunTicks: number;
+  liftVy: number;
+}
 
 /** An effect showing on a tick, with how many ticks it has shown (`age`, 0 on its first). */
 export type ActiveEffect = PhaseEffect & { age: number };
@@ -199,6 +217,8 @@ export interface BladeTrack {
    * of a gather, so the lash reads as a straight line, not a hook).
    */
   trailBreakAt?: readonly number[];
+  /** The trail only takes samples from this track parameter on (e.g. not while the blade drags to the start). */
+  trailFromS?: number;
 }
 
 /**
@@ -216,7 +236,8 @@ export type HeldBlade = { from: 'back' } | { from: 'previous'; ticks: number; sa
  * until then.
  */
 export interface StrikeChain {
-  into: StrikeId;
+  /** What a light press in the window starts; absent when only triangle chains. */
+  into?: StrikeId;
   /** What triangle pressed in the same window starts (the plain triangle; Plume after square 2, later). */
   heavy?: StrikeId;
   from: string;
@@ -242,6 +263,15 @@ export interface StrikeDef {
   trailFadeWidthPx: number;
   /** The next strike of the combo, if any. */
   chain?: StrikeChain;
+  /** The strike goes on while Kratos is in the air (air strikes, Ascension's flight). */
+  air?: boolean;
+  /**
+   * A hit launches the target into the air (juggle) with this velocity (px/s,
+   * negative is up; `vx` is in the strike's facing). Foot soldiers only.
+   */
+  launch?: { vy: number; vx?: number };
+  /** Only targets already in the air (juggled) can be hit: the chain grab. */
+  grabsAirborne?: boolean;
   /**
    * Ground impact on the first tick of phase `phase`: a burst hit box on the
    * ground from `from` to `to` px ahead of the feet, `heightPx` tall. It hits
@@ -272,10 +302,13 @@ export interface StrikeImpact {
 const CX: Readonly<Record<string, number>> = {
   'sq1-a': -2.5, 'sq1-b': -1.5, 'sq1-c': -3, 'sq1-d': -3, 'sq1-e': -1.5,
   'sq2-a': -3.5, 'sq2-b': -3, 'sq2-c': -1.5, 'sq2-d': -3, 'sq2-e': -1,
-  'sq3-a': -2, 'sq3-b': -2, 'sq3-c': 0, 'sq3-d': -0.5, 'sq3-e': -2, 'sq3-f': -0.5, 'sq3-g': -0.5, 'sq3-h': 0,
+  'sq3-a': -2, 'sq3-b': -2, 'sq3-c': 0, 'sq3-d': -0.5, 'sq3-e': -2, 'sq3-f': -0.5, 'sq3-g': -0.5, 'sq3-h': 0, 'air-00': -1, 'air-01': 0.5, 'air-02': -4.5,
   'sq4-a': -3, 'sq4-b': 0.5, 'sq4-b2': 1, 'sq4-c': 0.5, 'sq4-d': 4, 'sq4-e': -1.5,
   'sq5-a': -1.5, 'sq5-b': -0.5, 'sq5-c': -1, 'sq5-d': 0, 'sq5-e': 0, 'sq5-f': -1.5, 'sq5-g': 0,
-  'tri-a': -1, 'tri-b': -0.5, 'tri-b2': 0, 'tri-c': -2, 'tri-d': -0.5, 'tri-e': 0, 'tri-f': 0.5, 'tri-g': -1.5,
+  'tri-pc': -1, 'asc-b': 0.5, 'tri-pb': -1.5, 'tri-a': -1, 'tri-b': -0.5, 'tri-b2': 0, 'tri-c': -2, 'tri-d': -0.5, 'tri-e': 0, 'tri-f': 0.5, 'tri-g': -1.5,
+  'airtri-m1': -5.5, 'airtri-e': 1, 'aq2-c': 0, 'aq3-m': -0.5, 'airtri-a': -5, 'airtri-b': -1.5, 'airtri-c': 5, 'airtri-d': 5.5,
+  'aq1-a': -1.5, 'aq1-b': 1, 'aq2-a': -1.5, 'aq2-b': 0.5, 'aq3-a': -4, 'aq3-b': 3.5,
+  'plume-a': -2, 'plume-b': -1, 'plume-c': -1, 'plume-d': 0, 'plume-e': 1.5, 'plume-f': -1.5,
 };
 
 /**
@@ -378,8 +411,8 @@ const SQUARE2: StrikeDef = {
   hitstopTicks: 4,
   trailSamplesPerTick: 6,
   trailFadeWidthPx: 4,
-  // Triangle after square 2 will be Plume of Prometheus; the plain one for now.
-  chain: { into: 'square3', heavy: 'triangle', from: 'hold', fromTick: 4 },
+  // Triangle after square 2 is Plume of Prometheus.
+  chain: { into: 'square3', heavy: 'plume', from: 'hold', fromTick: 4 },
 };
 
 /** The square chain's restrained crescent, cut as soon as it leaves its blade (squares 3 and 4). */
@@ -394,13 +427,13 @@ const SQUARE_TRAIL = {
 } as const;
 
 /**
- * Square 3 (draft v1 of the split, pending critic and user approval): the
- * ascending cut, chained from square 2's hold or recall. Kratos rises out of
- * the lunge and the near arm cuts upward in front of him, from low ahead,
- * through a near enemy, up to over the head in front, where it stops high
- * with Kratos upright: the chain window to square 4's descending cut is
- * there, at the top. The far blade, yanked back from square 2's throw,
- * stays in the far hand.
+ * Square 3 (draft v2, after the critic; pending user approval): the
+ * ascending cut, chained from square 2's hold or recall. The near blade
+ * drags along the floor ahead, then Kratos rises and cuts upward in front of
+ * him, through a near enemy, to over the head in front, upright. It never
+ * stops: the chain window to square 4's descending cut opens as the blade
+ * eases into the top, and square 4 carries on from there as one arc. The far
+ * blade, yanked back from square 2's throw, stays in the far hand.
  */
 const SQUARE3: StrikeDef = {
   id: 'square3',
@@ -408,31 +441,40 @@ const SQUARE3: StrikeDef = {
   heldBlade: { from: 'previous', ticks: 9, sagPx: 5 },
   phases: [
     { id: 'load', ticks: 3, advancePx: 0, pose: 'sq3-a', centerX: CX['sq3-a'] },
-    { id: 'cut', ticks: 5, advancePx: 1, pose: 'sq3-g', centerX: CX['sq3-g'] },
-    { id: 'top', ticks: 3, advancePx: 1, pose: 'sq3-c', centerX: CX['sq3-c'] },
-    { id: 'hold', ticks: 7, advancePx: 0, pose: 'sq3-h', centerX: CX['sq3-h'] },
+    {
+      id: 'cut', ticks: 10, advancePx: 2, pose: 'sq3-g', centerX: CX['sq3-g'],
+      // The blade scrapes the floor ahead as the cut starts: dust where it rises, a flash where it meets the chest.
+      effects: [
+        { kind: 'dust', at: [34, 52] },
+        { kind: 'flash', x: 44, ticks: 3, radiusPx: 6 },
+      ],
+    },
+    // Still moving: the rise and the descent are one arc (GoW1 20.57-20.63); it eases into the top and stays there.
+    { id: 'hold', ticks: 12, advancePx: 0, pose: 'sq3-h', centerX: CX['sq3-h'] },
     { id: 'recall', ticks: 8, advancePx: 0, pose: 'sq3-a', centerX: CX['sq3-a'] },
   ],
   blades: {
     near: {
       // Near shoulder of the cut (sq3-g).
       shoulder: [-4.5, -29.7],
-      // Low ahead (8 px up, 30 px out), up in front through chest height, to
+      // On the floor ahead (30 px out), up in front through chest height, to
       // over the head in front (65 px up): where square 4 starts.
-      track: [[28.5, 33.7], [34.5, 21.7], [48.5, -0.3], [40.5, -24.3], [21.5, -35.3], [-1.5, -36.3]],
+      track: [[26.5, 28.7], [34.5, 27.7], [48.5, -0.3], [40.5, -24.3], [21.5, -35.3], [-1.5, -36.3]],
       chainFrom: 0.05,
       motion: {
-        load: { kind: 'draw', from: 'hand', behindBody: true },
-        cut: { kind: 'track', from: 0, to: 0.7, ease: 'linear' },
-        // Eases out: the blade stops high.
-        top: { kind: 'track', from: 0.7, to: 1, ease: 'out' },
-        hold: { kind: 'hold', driftPx: 1 },
+        // The blade drags along the floor to the start of the cut.
+        load: { kind: 'draw', from: 'hand', behindBody: true, via: 'ground' },
+        cut: { kind: 'track', from: 0, to: 0.88, ease: 'linear' },
+        // Keeps going, easing into the top: square 4 carries on from here.
+        hold: { kind: 'track', from: 0.88, to: 1, ease: 'out' },
         recall: { kind: 'recall', sagPx: 5 },
       },
-      trailGrowth: { cut: { widthPx: 6 }, top: { widthPx: 4, tailPx: 20, tailFromU: 0.3 } },
+      trailGrowth: { cut: { widthPx: 6 }, hold: { widthPx: 6, tailPx: 30, tailFromU: 0.4 } },
+      // No trail while the blade drags along the floor.
+      trailFromS: 0.005,
       trail: { kind: 'profile', ...SQUARE_TRAIL },
-      // The whole rise in front, through the hold at the top.
-      active: { fromS: 0.02 },
+      // Once it rises (not while it drags), through the top.
+      active: { fromS: 0.12 },
     },
   },
   hitRadiusPx: 3.5,
@@ -441,11 +483,11 @@ const SQUARE3: StrikeDef = {
   hitstopTicks: 4,
   trailSamplesPerTick: 6,
   trailFadeWidthPx: 4,
-  chain: { into: 'square4', heavy: 'triangle', from: 'hold', fromTick: 3 },
+  chain: { into: 'square4', heavy: 'triangle', from: 'hold', fromTick: 1 },
 };
 
 /**
- * Square 4 (draft v1 of the split, pending critic and user approval): the
+ * Square 4 (draft v2, after the critic; pending user approval): the
  * descending cut, chained from square 3's top. The near blade comes down
  * from over the head, a long diagonal in front through chest height, and
  * stops level at chest height; Kratos crouches with both arms open, the far
@@ -586,7 +628,7 @@ const SQUARE5: StrikeDef = {
     },
   },
   hitRadiusPx: 3.5,
-  damage: 10,
+  damage: 14,
   hitstunTicks: 14,
   hitstopTicks: 4,
   trailSamplesPerTick: 6,
@@ -606,43 +648,44 @@ const SQUARE6_TRAIL = {
 } as const;
 
 /**
- * Square 6's track parameters: the loop ends descending in front, the gather
- * reaches the low point, the lash ends at the tip (where it holds), and the
- * sweep runs from the tip around to behind Kratos.
+ * Square 6's track parameters: the blades swing back from overhead to behind
+ * Kratos (`back`), sweep round him from behind to the front (`ring`) and end
+ * in the double lash forward (`tip`, where they hold).
  */
-const SQ6 = { loop: 2 / 9, low: 3 / 9, tip: 5 / 9 } as const;
+const SQ6 = { back: 2 / 8, ring: 6 / 8 } as const;
 
 /** Square 6's motion, shared by both blades. */
 const SQUARE6_MOTION = {
   load: { kind: 'carry' },
-  loop: { kind: 'track', from: 0, to: SQ6.loop, ease: 'linear' },
-  // Eases out: the blades linger low before the lash.
-  gather: { kind: 'track', from: SQ6.loop, to: SQ6.low, ease: 'out' },
-  throw: { kind: 'track', from: SQ6.low, to: SQ6.tip, ease: 'out' },
-  hold: { kind: 'hold', driftPx: 2, at: SQ6.tip },
-  sweep: { kind: 'track', from: SQ6.tip, to: 1, ease: 'out' },
+  // Swung back from overhead to behind the hip, torso twisting after them.
+  back: { kind: 'track', from: 0, to: SQ6.back, ease: 'out' },
+  // The ring at waist height, behind to front: the twisted pose first, then the arms spread.
+  sweepA: { kind: 'track', from: SQ6.back, to: (SQ6.back + SQ6.ring) / 2, ease: 'linear' },
+  sweepB: { kind: 'track', from: (SQ6.back + SQ6.ring) / 2, to: SQ6.ring, ease: 'linear' },
+  // Both lash forward at once.
+  throw: { kind: 'track', from: SQ6.ring, to: 1, ease: 'out' },
+  hold: { kind: 'hold', driftPx: 2, at: 1 },
 } as const;
 
 const SQUARE6_GROWTH = {
-  loop: { widthPx: 5 },
-  gather: { widthPx: 5 },
+  back: { widthPx: 5 },
+  sweepA: { widthPx: 5 },
+  sweepB: { widthPx: 5 },
   throw: { widthPx: 4, tailPx: 20, tailFromU: 0.3 },
-  sweep: { widthPx: 5 },
 };
 
-/** The lash (from just past the low point to the tip) and the sweep back hit once each. */
-const SQUARE6_HITS = [{ fromS: 0.35, toS: SQ6.tip }, { fromS: 0.6 }] as const;
+/** The ring sweep (once it is round) and the lash forward hit once each. */
+const SQUARE6_HITS = [{ fromS: SQ6.back + 0.05, toS: SQ6.ring }, { fromS: SQ6.ring + 0.04 }] as const;
 
 /**
- * Square 6 (draft v2, after the critic; pending user approval): the
- * finisher, the same motion as Valor of Hercules' square. Chained from
- * square 5: both blades loop over the head from behind and drop to linger
- * low in front, then Kratos lunges (torso up, head high) and lashes both
- * forward as two straight, level lines at chest height, 88 px out (the far
- * one a little lower); he pulls his weight back, sweeps both blades back
- * around him in a wide half-ellipse (near in front of the body, far behind
- * it) and they come back to his arms crossed over the chest. It ends the
- * square chain.
+ * Square 6 (user: "el ultimo ataque esta al reves"): the finisher, inverted.
+ * Chained from square 5: both blades swing back from overhead to behind
+ * Kratos, torso twisting back; the wide ring sweep goes round him from
+ * behind to the front at waist height (the near blade passing low in front
+ * of the body, the far one behind it, a few ticks later); and it ends in
+ * the double lash forward, both blades at once, crossing in an X, 88 px out:
+ * the heavy blow. Then a short hold and the blades come back to his arms
+ * crossed over the chest. It ends the square chain.
  */
 const SQUARE6: StrikeDef = {
   id: 'square6',
@@ -651,47 +694,48 @@ const SQUARE6: StrikeDef = {
   heldBlade: { from: 'previous', ticks: 9, sagPx: 5 },
   phases: [
     { id: 'load', ticks: 4, advancePx: 0, pose: 'sq5-a', centerX: CX['sq5-a'] },
-    { id: 'loop', ticks: 5, advancePx: 0, pose: 'sq5-b', centerX: CX['sq5-b'] },
-    { id: 'gather', ticks: 4, advancePx: 1, pose: 'sq5-c', centerX: CX['sq5-c'] },
-    { id: 'throw', ticks: 5, advancePx: 4, pose: 'sq5-d', centerX: CX['sq5-d'] },
+    { id: 'back', ticks: 5, advancePx: 0, pose: 'tri-pb', centerX: CX['tri-pb'] },
+    { id: 'sweepA', ticks: 4, advancePx: 0, pose: 'tri-pc', centerX: CX['tri-pc'] },
+    { id: 'sweepB', ticks: 5, advancePx: 1, pose: 'sq5-g', centerX: CX['sq5-g'] },
+    { id: 'throw', ticks: 5, advancePx: 5, pose: 'sq5-d', centerX: CX['sq5-d'] },
     { id: 'hold', ticks: 4, advancePx: 0, pose: 'sq5-e', centerX: CX['sq5-e'] },
-    { id: 'sweep', ticks: 9, advancePx: 0, pose: 'sq5-g', centerX: CX['sq5-g'] },
     { id: 'recall', ticks: 7, advancePx: 0, pose: 'sq5-f', centerX: CX['sq5-f'] },
   ],
   blades: {
     near: {
       // Near shoulder of the lunge (sq5-d).
       shoulder: [-2.5, -27.5],
-      // Behind and above the head, over the top, down to linger low in front,
-      // lashed forward level at chest height (88 px out with the step), then
-      // swept back in front of the body, low, to behind Kratos.
-      track: [[-27.5, -32.5], [-17.5, -42.5], [12.5, -46.5], [27, -22.7], [31, 13.3], [53, 1.3], [85.5, -4.5], [64.5, 9.5], [27.5, 11.5], [-12.5, 11.5], [-47.5, 7.5], [-57.5, 5.5]],
-      trackDepth: ['behind', 'behind', 'front', 'front', 'front', 'front', 'front', 'front', 'front', 'front', 'front', 'front'],
+      // Overhead behind, back and down to behind the hip, round low in front
+      // of the body, then lashed forward at chest height (88 px out with the step).
+      track: [[-15.5, -26.5], [-15.5, -26.5], [-31.5, -10.5], [-37.5, 5.5], [-25.5, 13.5], [2.5, 15.5], [30.5, 13.5], [44.5, 7.5], [64.5, -0.5], [85.5, -4.5], [85.5, -4.5]],
+      trackDepth: ['behind', 'behind', 'behind', 'behind', 'front', 'front', 'front', 'front', 'front', 'front', 'front'],
       chainFrom: 0,
       motion: { ...SQUARE6_MOTION, recall: { kind: 'recall', sagPx: 5, to: [1, -33] } },
       trailGrowth: SQUARE6_GROWTH,
       trail: { kind: 'profile', ...SQUARE6_TRAIL },
-      // The lash starts as a fresh line at the low point; the sweep starts fresh too.
-      trailBreakAt: [SQ6.low, 0.6],
+      // The ring and the lash are fresh lines.
+      trailBreakAt: [SQ6.ring],
       active: SQUARE6_HITS,
     },
     far: {
       // Far shoulder of the lunge (sq5-d).
       shoulder: [3.6, -27.1],
-      // The same lash a little lower and shorter (two lines), then swept back
-      // behind the body, higher, to behind Kratos.
-      track: [[-39.6, -27.9], [-29.6, -37.9], [0.4, -41.9], [14.9, -18.1], [18.9, 17.9], [40.9, 5.9], [73.4, 0.1], [52.4, -2.9], [18.4, -0.9], [-18.6, 0.1], [-53.6, 5.1], [-63.6, 5.1]],
-      trackDepth: ['behind', 'behind', 'front', 'front', 'front', 'front', 'front', 'front', 'behind', 'behind', 'behind', 'behind'],
+      // Out of phase: round behind the body, higher, then the same lash a
+      // little lower and shorter, crossing the near blade.
+      track: [[-29.6, -22.9], [-29.6, -22.9], [-43.6, -8.9], [-47.6, 1.1], [-33.6, -0.9], [-3.6, -2.9], [26.4, -0.9], [38.4, 3.1], [52.4, 5.1], [67.4, 13.1], [67.4, 13.1]],
+      trackDepth: ['behind', 'behind', 'behind', 'behind', 'behind', 'behind', 'behind', 'front', 'front', 'front', 'front'],
       chainFrom: 0,
+      lag: { ticks: 3, until: 'throw' },
       motion: { ...SQUARE6_MOTION, recall: { kind: 'recall', sagPx: 5, to: [9, -34] } },
       trailGrowth: SQUARE6_GROWTH,
       trail: { kind: 'profile', ...SQUARE6_TRAIL },
-      trailBreakAt: [SQ6.low, 0.6],
+      trailBreakAt: [SQ6.ring],
       active: SQUARE6_HITS,
     },
   },
   hitRadiusPx: 3.5,
-  damage: 10,
+  // The finisher: a heavy blow (longer hit pause, harder knockback, bigger shake).
+  damage: 20,
   hitstunTicks: 14,
   hitstopTicks: 4,
   trailSamplesPerTick: 6,
@@ -709,13 +753,17 @@ const TRIANGLE_TRAIL = {
   cutWhenDetached: true,
 } as const;
 
+/** Track parameter of the control point behind the hip (point 2 of 8 on the 10-point tracks): where the blades coil. */
+const TRI_BEHIND = 1 / 7;
+
 /** The triangle's motion, shared by both blades. */
 const TRIANGLE_MOTION = {
   draw: { kind: 'draw', from: 'back', behindBody: true },
-  // The visible windup: both blades held together at the hands, at the hip.
-  gather1: { kind: 'hold', driftPx: 1, at: 0 },
-  gather2: { kind: 'hold', driftPx: 1, at: 0 },
-  rise: { kind: 'track', from: 0, to: 0.3, ease: 'linear' },
+  // Pulled back behind the hip at once as Kratos twists (GoW1 28.90-29.17 s)...
+  pull: { kind: 'track', from: 0, to: TRI_BEHIND, ease: 'out' },
+  // ...and charged there until the arc.
+  charge: { kind: 'hold', driftPx: 2, at: TRI_BEHIND },
+  rise: { kind: 'track', from: TRI_BEHIND, to: 0.3, ease: 'linear' },
   // Pauses on top, then accelerates down into the ground.
   over: { kind: 'track', from: 0.3, to: 0.55, ease: 'out' },
   down: { kind: 'track', from: 0.55, to: 1, ease: 'in' },
@@ -725,28 +773,27 @@ const TRIANGLE_MOTION = {
 
 const TRIANGLE_GROWTH = { rise: { widthPx: 6 }, over: { widthPx: 6 }, down: { widthPx: 6 } };
 
-/** Two fireballs at the hands while Kratos gathers the blades. */
-const TRIANGLE_FIREBALL = { kind: 'fireball', radiusPx: 5, pulsePx: 1, pulseTicks: 3 } as const;
-
 /**
  * Triangle on the ground (draft v2, after the critic; pending user approval):
  * the first hit of Valor and Spirit of Hercules. Kratos draws both blades
- * and holds them together at his hip, two pulsing fireballs, in a visible
+ * and holds them together at his hip, no energy ball (the original shows the blades themselves lit), in a visible
  * windup (legs apart, chest toward the camera); then swings them as two
  * crescents up behind him, pauses over his head and accelerates down in
  * front into the ground, 80 px ahead: a fire line along the ground, dust at
  * both ends, a flash where the blades land and a short shake, with a hit box
- * over the whole line. Holding triangle through the windup will branch into
- * Ascension. It does not chain; guard or jump cut its recall short.
+ * over the whole line. Holding triangle through the charge branches into the
+ * launcher (then Ascension). It does not chain; guard or jump cut its recall short.
  */
 const TRIANGLE: StrikeDef = {
   id: 'triangle',
   hand: 'near',
   heldBlade: { from: 'back' },
   phases: [
-    { id: 'draw', ticks: 6, advancePx: 0, pose: 'tri-a', centerX: CX['tri-a'] },
-    { id: 'gather1', ticks: 8, advancePx: 0, pose: 'tri-b', centerX: CX['tri-b'], effects: [TRIANGLE_FIREBALL] },
-    { id: 'gather2', ticks: 10, advancePx: 0, pose: 'tri-b2', centerX: CX['tri-b2'], effects: [TRIANGLE_FIREBALL] },
+    { id: 'draw', ticks: 5, advancePx: 0, pose: 'tri-a', centerX: CX['tri-a'] },
+    // Both arms and blades swing back and low behind the hip at once, the torso twisting after them...
+    { id: 'pull', ticks: 7, advancePx: 0, pose: 'tri-pb', centerX: CX['tri-pb'] },
+    // ...and the charge happens there, crouched and twisted, the blades trembling behind him.
+    { id: 'charge', ticks: 12, advancePx: 0, pose: 'tri-pc', centerX: CX['tri-pc'] },
     { id: 'rise', ticks: 4, advancePx: 0, pose: 'tri-c', centerX: CX['tri-c'] },
     { id: 'over', ticks: 4, advancePx: 0, pose: 'tri-d', centerX: CX['tri-d'] },
     { id: 'down', ticks: 4, advancePx: 3, pose: 'tri-e', centerX: CX['tri-e'] },
@@ -768,7 +815,7 @@ const TRIANGLE: StrikeDef = {
       shoulder: [-2.3, -25.4],
       // From the hands at the hip, out and up behind Kratos, over the head
       // and down in front into the ground.
-      track: [[8.3, 11.4], [-0.7, 7.9], [-31.7, -0.6], [-25.7, -30.6], [4.3, -46.6], [38.3, -38.6], [64.3, -12.6], [78.3, 15.4], [80.3, 23.4], [80.3, 29.4]],
+      track: [[8.3, 11.4], [-0.7, 7.9], [-20, 5], [-30, -14], [4.3, -46.6], [38.3, -38.6], [64.3, -12.6], [78.3, 15.4], [80.3, 23.4], [80.3, 29.4]],
       chainFrom: 0.02,
       motion: TRIANGLE_MOTION,
       trailGrowth: TRIANGLE_GROWTH,
@@ -783,7 +830,7 @@ const TRIANGLE: StrikeDef = {
       shoulder: [3.9, -25],
       // Together with the near blade at the hands, then a second crescent
       // 16 px behind and 6 px below it, landing 62 px ahead.
-      track: [[0.1, 13], [-6.9, 9], [-53.9, 5], [-47.9, -25], [-17.9, -41], [16.1, -33], [42.1, -7], [56.1, 21], [58.1, 23], [58.1, 29]],
+      track: [[0.1, 13], [-6.9, 9], [-13, 6], [-40, -12], [-17.9, -41], [16.1, -33], [42.1, -7], [56.1, 21], [58.1, 23], [58.1, 29]],
       trackDepth: ['behind', 'behind', 'behind', 'behind', 'front', 'front', 'front', 'front', 'front', 'front'],
       chainFrom: 0.02,
       motion: TRIANGLE_MOTION,
@@ -802,8 +849,509 @@ const TRIANGLE: StrikeDef = {
   // The fire line's whole length hits, so an enemy at Kratos' feet is hit too.
   impact: { phase: 'slam', from: 20, to: 88, heightPx: 20 },
   // Held through the windup, triangle becomes Ascension (next to build).
-  branch: { atEndOf: 'gather2', ifHeld: 'heavy-attack' },
+  branch: { atEndOf: 'charge', ifHeld: 'heavy-attack', into: 'launcher' },
   cancel: { from: 'recall', fromTick: 6 },
+};
+
+/** Plume's motion, shared by both blades. */
+const PLUME_MOTION = {
+  // Both blades come from square 2 to behind the head: no long windup.
+  carry: { kind: 'carry' },
+  top: { kind: 'hold', driftPx: 1, at: 0 },
+  over: { kind: 'track', from: 0, to: 0.4, ease: 'linear' },
+  // Accelerates into the ground.
+  down: { kind: 'track', from: 0.4, to: 1, ease: 'in' },
+  slam: { kind: 'hold', driftPx: 0 },
+  recall: { kind: 'recall', sagPx: 5 },
+} as const;
+
+const PLUME_GROWTH = { over: { widthPx: 6 }, down: { widthPx: 6 } };
+
+/**
+ * Plume of Prometheus (square, square, triangle; draft v1, pending critic
+ * and user approval): triangle pressed in square 2's chain window. Both
+ * blades come from square 2 straight up behind Kratos' head (no crouched
+ * windup), swing over it and slam the ground in front as two crescents,
+ * Kratos crouched; the fire they leave burns on the ground for a while as
+ * its own entity (the "estallido igneo") and hits and lifts enemies standing
+ * in it. He pulls the blades back with his arms open, the hands glowing.
+ */
+const PLUME: StrikeDef = {
+  id: 'plume',
+  hand: 'near',
+  heldBlade: { from: 'previous', ticks: 9, sagPx: 5 },
+  phases: [
+    { id: 'carry', ticks: 7, advancePx: 0, pose: 'plume-a', centerX: CX['plume-a'] },
+    { id: 'top', ticks: 4, advancePx: 0, pose: 'plume-b', centerX: CX['plume-b'] },
+    { id: 'over', ticks: 4, advancePx: 0, pose: 'plume-c', centerX: CX['plume-c'] },
+    { id: 'down', ticks: 4, advancePx: 3, pose: 'plume-d', centerX: CX['plume-d'] },
+    {
+      id: 'slam', ticks: 14, advancePx: 0, pose: 'plume-e', centerX: CX['plume-e'],
+      effects: [
+        // Measured on the reference: 16.53-16.90 s, about 22 ticks, from Kratos' feet to where the blades lie.
+        { kind: 'groundFire', from: 20, to: 80, heightPx: 3, ticks: 22, linger: { damage: 10, hitstunTicks: 16, liftVy: -220 } },
+        { kind: 'dust', at: [20, 80] },
+        // Where the near blade lands.
+        { kind: 'flash', x: 79, ticks: 2, radiusPx: 6 },
+        { kind: 'shake', px: 2, ticks: 4 },
+      ],
+    },
+    {
+      id: 'recall', ticks: 10, advancePx: 0, pose: 'plume-f', centerX: CX['plume-f'],
+    },
+  ],
+  blades: {
+    near: {
+      // Near shoulder of the arms coming down (plume-d).
+      shoulder: [-2, -25.4],
+      // Behind the head, over it and down in front into the ground.
+      track: [[-28, -22.6], [-18, -36.6], [4, -48.6], [36, -36.6], [62, -10.6], [76, 17.4], [78, 23.4], [78, 29.4]],
+      chainFrom: 0.02,
+      motion: PLUME_MOTION,
+      trailGrowth: PLUME_GROWTH,
+      trail: { kind: 'profile', ...TRIANGLE_TRAIL },
+      trailBreakAt: [0.02],
+      active: { fromS: 0.45 },
+    },
+    far: {
+      // Far shoulder of the arms coming down (plume-d).
+      shoulder: [4.1, -24.9],
+      // The same slam, a little behind and below: two crescents.
+      track: [[-40.1, -21.1], [-30.1, -35.1], [-8.1, -47.1], [17.9, -33.1], [43.9, -7.1], [57.9, 18.9], [59.9, 22.9], [59.9, 28.9]],
+      trackDepth: ['behind', 'behind', 'behind', 'front', 'front', 'front', 'front', 'front'],
+      chainFrom: 0.02,
+      motion: PLUME_MOTION,
+      trailGrowth: PLUME_GROWTH,
+      trail: { kind: 'profile', ...TRIANGLE_TRAIL },
+      trailBreakAt: [0.02],
+      active: { fromS: 0.45 },
+    },
+  },
+  hitRadiusPx: 3.5,
+  damage: 20,
+  hitstunTicks: 20,
+  hitstopTicks: 6,
+  trailSamplesPerTick: 6,
+  trailFadeWidthPx: 4,
+  impact: { phase: 'slam', from: 20, to: 80, heightPx: 20 },
+  cancel: { from: 'recall', fromTick: 6 },
+};
+
+/** The launcher's motion, shared by both blades: a low sweep along the ground, a lift up the front, a hold on top. */
+const LAUNCHER_MOTION = {
+  carry: { kind: 'carry' },
+  sweep: { kind: 'track', from: 0, to: 3 / 7, ease: 'linear' },
+  lift: { kind: 'track', from: 3 / 7, to: 1, ease: 'out' },
+  // The enemy hangs in the air: the player decides here whether Kratos goes after it.
+  top: { kind: 'hold', driftPx: 3 },
+  recall: { kind: 'recall', sagPx: 5 },
+} as const;
+
+const LAUNCHER_GROWTH = { sweep: { widthPx: 5 }, lift: { widthPx: 6 } };
+
+/**
+ * The launcher (triangle held through the charge; manual "Lanzar al enemigo
+ * al aire", video 42.6-43.2 s): Kratos stays on the ground, both blades
+ * sweep low along the floor and lift up the front, launching the foot
+ * soldier; they hang over his head (about 0.4 s) while the enemy is in the
+ * air. Still holding triangle through that hold sends Kratos after it
+ * (Ascension); releasing it recalls the blades. No jump here.
+ */
+const LAUNCHER: StrikeDef = {
+  id: 'launcher',
+  hand: 'near',
+  heldBlade: { from: 'previous', ticks: 9, sagPx: 5 },
+  launch: { vy: -380 },
+  phases: [
+    { id: 'carry', ticks: 2, advancePx: 0, pose: 'tri-pc', centerX: CX['tri-pc'] },
+    { id: 'sweep', ticks: 6, advancePx: 3, pose: 'tri-f', centerX: CX['tri-f'] },
+    { id: 'lift', ticks: 6, advancePx: 0, pose: 'sq3-h', centerX: CX['sq3-h'] },
+    { id: 'top', ticks: 24, advancePx: 0, pose: 'tri-d', centerX: CX['tri-d'] },
+    { id: 'recall', ticks: 10, advancePx: 0, pose: 'tri-g', centerX: CX['tri-g'] },
+  ],
+  blades: {
+    near: {
+      // Near shoulder of the low sweep (tri-f).
+      shoulder: [-1.5, -24.2],
+      // From behind the hip, low along the ground ahead, up the front, over the head.
+      track: [[-34.5, 6.2], [-34.5, 6.2], [-8.5, 22.2], [31.5, 28.2], [67.5, 20.2], [57.5, 10.2], [41.5, -9.8], [19.5, -31.8], [-2.5, -51.8], [-2.5, -51.8]],
+      chainFrom: 0,
+      motion: LAUNCHER_MOTION,
+      trailGrowth: LAUNCHER_GROWTH,
+      trail: { kind: 'profile', ...TRIANGLE_TRAIL },
+      trailBreakAt: [3 / 7],
+      // The lift up the front hits and launches.
+      active: { fromS: 0.45 },
+    },
+    far: {
+      // Far shoulder of the low sweep (tri-f).
+      shoulder: [4.6, -23.7],
+      // The same sweep a little behind and lower.
+      track: [[-48.6, 9.7], [-48.6, 9.7], [-24.6, 23.7], [15.4, 29.7], [49.4, 21.7], [41.4, 11.7], [27.4, -8.3], [5.4, -30.3], [-14.6, -48.3], [-14.6, -48.3]],
+      trackDepth: ['behind', 'behind', 'behind', 'front', 'front', 'front', 'front', 'front', 'front', 'front'],
+      chainFrom: 0,
+      motion: LAUNCHER_MOTION,
+      trailGrowth: LAUNCHER_GROWTH,
+      trail: { kind: 'profile', ...TRIANGLE_TRAIL },
+      trailBreakAt: [3 / 7],
+      active: { fromS: 0.45 },
+    },
+  },
+  hitRadiusPx: 3.5,
+  damage: 10,
+  hitstunTicks: 14,
+  hitstopTicks: 4,
+  trailSamplesPerTick: 6,
+  trailFadeWidthPx: 4,
+  // Held through the top hold, Kratos leaps after the enemy.
+  branch: { atEndOf: 'top', ifHeld: 'heavy-attack', into: 'ascension' },
+  cancel: { from: 'recall', fromTick: 4 },
+};
+
+/** Ascension's motion (video 43.2-44.8 s): the blades come down to the ground, point straight down as Kratos leaps, rise overhead, hang there while he falls, then drive into the ground. */
+const ASCENSION_MOTION = {
+  dip: { kind: 'track', from: 0, to: 2 / 9, ease: 'in' },
+  leap: { kind: 'track', from: 2 / 9, to: 4 / 9, ease: 'out' },
+  apex: { kind: 'track', from: 4 / 9, to: 7 / 9, ease: 'linear' },
+  fall: { kind: 'hold', driftPx: 3, at: 7 / 9 },
+  strike: { kind: 'track', from: 7 / 9, to: 1, ease: 'linear' },
+  land: { kind: 'recall', sagPx: 4 },
+} as const;
+
+const ASCENSION_GROWTH = { dip: { widthPx: 5 }, apex: { widthPx: 6 }, strike: { widthPx: 6 } };
+
+/**
+ * Ascension (triangle held through the launcher's top hold; manual "Lanzar
+ * al enemigo al aire y seguirlo" and "Super salto", video 43.2-44.8 s):
+ * the blades come down in front as Kratos crouches, he leaps straight up
+ * after the enemy with both arms and blades pointing down, bends the arms
+ * to raise the blades, falls with both arms straight up holding them
+ * overhead, then drives them down and lands crouched with the blades in the
+ * ground (a vertical blow with the ground impact).
+ */
+const ASCENSION: StrikeDef = {
+  id: 'ascension',
+  hand: 'near',
+  heldBlade: { from: 'previous', ticks: 9, sagPx: 5 },
+  air: true,
+  phases: [
+    { id: 'dip', ticks: 4, advancePx: 0, pose: 'tri-f', centerX: CX['tri-f'] },
+    { id: 'leap', ticks: 8, advancePx: 0, pose: 'airtri-e', centerX: CX['airtri-e'], gravity: 0.6, leapVy: -500 },
+    { id: 'apex', ticks: 8, advancePx: 1, pose: 'asc-b', centerX: CX['asc-b'], gravity: 0.6 },
+    { id: 'fall', ticks: 60, advancePx: 0, pose: 'airtri-b', centerX: CX['airtri-b'], gravity: 1.4, until: { event: 'grounded', minTicks: 3 } },
+    {
+      id: 'strike', ticks: 6, advancePx: 2, pose: 'tri-f', centerX: CX['tri-f'],
+      effects: [
+        { kind: 'groundFire', from: 8, to: 64, heightPx: 3, ticks: 8 },
+        { kind: 'dust', at: [8, 64] },
+        { kind: 'flash', x: 48, ticks: 2, radiusPx: 6 },
+        { kind: 'shake', px: 2, ticks: 4 },
+      ],
+    },
+    { id: 'land', ticks: 8, advancePx: 0, pose: 'tri-g', centerX: CX['tri-g'] },
+  ],
+  blades: {
+    near: {
+      // Near shoulder of the raised arms (asc-b).
+      shoulder: [-6.4, -32.1],
+      // Overhead, down the front to the ground, under his feet (pointing down), up the front, overhead, driven down.
+      track: [[2.4, -43.9], [2.4, -43.9], [52.4, -11.9], [58.4, 26.1], [22.4, 40.1], [14.4, 48.1], [50.4, 18.1], [52.4, -23.9], [20.4, -47.9], [24.4, -47.9], [54.4, 36.1], [54.4, 36.1]],
+      chainFrom: 0,
+      motion: ASCENSION_MOTION,
+      trailGrowth: ASCENSION_GROWTH,
+      trail: { kind: 'profile', ...TRIANGLE_TRAIL },
+      trailBreakAt: [4 / 9, 7 / 9],
+      // The rise past the enemy and the final drive hit.
+      active: [{ fromS: 0.25, toS: 0.76 }, { fromS: 0.8 }],
+    },
+    far: {
+      // Far shoulder of the raised arms (asc-b).
+      shoulder: [1.8, -31.6],
+      track: [[-11.8, -40.4], [-11.8, -40.4], [36.2, -10.4], [42.2, 27.6], [6.2, 41.6], [-1.8, 49.6], [32.2, 19.6], [34.2, -20.4], [2.2, -44.4], [6.2, -44.4], [34.2, 35.6], [34.2, 35.6]],
+      chainFrom: 0,
+      motion: ASCENSION_MOTION,
+      trailGrowth: ASCENSION_GROWTH,
+      trail: { kind: 'profile', ...TRIANGLE_TRAIL },
+      trailBreakAt: [4 / 9, 7 / 9],
+      active: [{ fromS: 0.25, toS: 0.76 }, { fromS: 0.8 }],
+    },
+  },
+  // The blades hit the enemy as they pass it going up and launch it again, so it rises with him.
+  launch: { vy: -330 },
+  hitRadiusPx: 3.5,
+  damage: 14,
+  hitstunTicks: 14,
+  hitstopTicks: 6,
+  trailSamplesPerTick: 6,
+  trailFadeWidthPx: 4,
+  impact: { phase: 'strike', from: 8, to: 64, heightPx: 20 },
+  // J while rising starts Orion's Harpoon. The button is a draft choice (the manual's circle has no key yet).
+  chain: { into: 'harpoon', from: 'apex', fromTick: 0 },
+};
+
+/** What the three air squares share: a light hit, the near-identical trail of the ground strikes. */
+const AIR_SQUARE_BASE = {
+  hitRadiusPx: 3.5,
+  damage: 10,
+  hitstunTicks: 14,
+  hitstopTicks: 4,
+  trailSamplesPerTick: 6,
+  trailFadeWidthPx: 4,
+} as const;
+
+/**
+ * Air square 1 (manual "Ataque horizontal", GoW1 25.07-25.40 s): the near arm
+ * cocks up behind the shoulder, then lashes the blade straight forward at
+ * chest height, torso twisting into the throw, legs trailing; Kratos hangs.
+ */
+const AIR1: StrikeDef = {
+  id: 'air1',
+  hand: 'near',
+  heldBlade: { from: 'previous', ticks: 9, sagPx: 5 },
+  air: true,
+  phases: [
+    { id: 'cock', ticks: 3, advancePx: 0, pose: 'aq1-a', centerX: CX['aq1-a'], gravity: 0.5 },
+    { id: 'lash', ticks: 6, advancePx: 3, pose: 'aq1-b', centerX: CX['aq1-b'], gravity: 0.3 },
+    { id: 'settle', ticks: 5, advancePx: 0, pose: 'air-00', centerX: CX['air-00'], gravity: 0.6 },
+  ],
+  blades: {
+    near: {
+      // Near shoulder of the lash (aq1-b).
+      shoulder: [-4.2, -31.2],
+      // Up behind the shoulder, then straight out at chest height.
+      track: [[-7.8, -8.8], [-7.8, -8.8], [16.2, -4.8], [44.2, -1.8], [74.2, -0.8], [96.2, -0.8], [96.2, -0.8]],
+      chainFrom: 0,
+      motion: {
+        cock: { kind: 'carry' },
+        lash: { kind: 'track', from: 0, to: 1, ease: 'out' },
+        settle: { kind: 'recall', sagPx: 4 },
+      },
+      trailGrowth: { lash: { widthPx: 5 } },
+      trail: { kind: 'profile', ...TRIANGLE_TRAIL },
+      active: { fromS: 0.25 },
+    },
+  },
+  ...AIR_SQUARE_BASE,
+  chain: { into: 'air2', heavy: 'airTriangle', from: 'lash', fromTick: 2 },
+};
+
+/**
+ * Air square 2 (GoW1 25.43-25.77 s): the far arm, with a reverse twist,
+ * sends its blade once round the body in a flat ellipse, passing behind the
+ * back and in front of the chest, arms spread.
+ */
+const AIR2: StrikeDef = {
+  id: 'air2',
+  hand: 'far',
+  heldBlade: { from: 'previous', ticks: 9, sagPx: 5 },
+  air: true,
+  phases: [
+    { id: 'wind', ticks: 3, advancePx: 0, pose: 'aq2-a', centerX: CX['aq2-a'], gravity: 0.4 },
+    // Arms spread as the blade leaves the front-right and passes over the back...
+    { id: 'orbitA', ticks: 3, advancePx: 1, pose: 'aq2-b', centerX: CX['aq2-b'], gravity: 0.25 },
+    // ...the far arm swings back with the reverse twist while it crosses the left side...
+    { id: 'orbitB', ticks: 5, advancePx: 1, pose: 'aq2-c', centerX: CX['aq2-c'], gravity: 0.25 },
+    // ...and the far arm comes forward again as it closes the ellipse in front of the chest.
+    { id: 'orbitC', ticks: 4, advancePx: 1, pose: 'aq2-a', centerX: CX['aq2-a'], gravity: 0.25 },
+    { id: 'settle', ticks: 5, advancePx: 0, pose: 'air-00', centerX: CX['air-00'], gravity: 0.6 },
+  ],
+  blades: {
+    far: {
+      // Far shoulder of the orbit (aq2-b).
+      shoulder: [3.4, -30.6],
+      // Flat ellipse (32 x 6 px) around the chest from the front-right: back (upper), left, front (lower).
+      track: [[26.6, 0.6], [26.6, 0.6], [17.2, -3.6], [-5.4, -5.4], [-28, -3.6], [-37.4, 0.6], [-28, 4.8], [-5.4, 6.6], [17.2, 4.8], [26.6, 0.6], [26.6, 0.6]],
+      trackDepth: ['front', 'front', 'behind', 'behind', 'behind', 'behind', 'front', 'front', 'front', 'front', 'front'],
+      chainFrom: 0,
+      motion: {
+        wind: { kind: 'carry' },
+        orbitA: { kind: 'track', from: 0, to: 0.2, ease: 'linear' },
+        orbitB: { kind: 'track', from: 0.2, to: 0.7, ease: 'linear' },
+        orbitC: { kind: 'track', from: 0.7, to: 1, ease: 'linear' },
+        settle: { kind: 'recall', sagPx: 4 },
+      },
+      trailGrowth: { orbitA: { widthPx: 5 }, orbitB: { widthPx: 5 }, orbitC: { widthPx: 5 } },
+      trail: { kind: 'profile', ...TRIANGLE_TRAIL },
+      active: { fromS: 0.05 },
+    },
+  },
+  ...AIR_SQUARE_BASE,
+  chain: { into: 'air3', heavy: 'airTriangle', from: 'orbitB', fromTick: 2 },
+};
+
+/**
+ * Air square 3 (GoW1 25.80-26.07 s): the near arm winds up high behind the
+ * head, then Kratos lunges forward and the blade cuts a diagonal down and
+ * ahead, the body starting to fall.
+ */
+const AIR3: StrikeDef = {
+  id: 'air3',
+  hand: 'near',
+  heldBlade: { from: 'previous', ticks: 9, sagPx: 5 },
+  air: true,
+  phases: [
+    { id: 'wind', ticks: 3, advancePx: 0, pose: 'aq3-a', centerX: CX['aq3-a'], gravity: 0.4 },
+    // The blade goes over the head, the arm straight up and forward...
+    { id: 'arc', ticks: 3, advancePx: 1, pose: 'aq3-m', centerX: CX['aq3-m'], gravity: 0.3 },
+    // ...then Kratos lunges and cuts down and ahead while he starts to fall.
+    { id: 'slash', ticks: 4, advancePx: 3, pose: 'aq3-b', centerX: CX['aq3-b'], gravity: 1.1 },
+    { id: 'settle', ticks: 5, advancePx: 0, pose: 'air-00', centerX: CX['air-00'], gravity: 0.6 },
+  ],
+  blades: {
+    near: {
+      // Near shoulder of the slash (aq3-b).
+      shoulder: [-1.9, -30.5],
+      // Up behind the head, over it and down ahead in a diagonal.
+      track: [[-11.1, -12.5], [-11.1, -12.5], [3.9, -21.5], [25.9, -19.5], [47.9, -7.5], [67.9, 8.5], [85.9, 24.5], [85.9, 24.5]],
+      chainFrom: 0,
+      motion: {
+        wind: { kind: 'carry' },
+        arc: { kind: 'track', from: 0, to: 0.45, ease: 'linear' },
+        slash: { kind: 'track', from: 0.45, to: 1, ease: 'linear' },
+        settle: { kind: 'recall', sagPx: 4 },
+      },
+      trailGrowth: { arc: { widthPx: 5 }, slash: { widthPx: 6 } },
+      trail: { kind: 'profile', ...TRIANGLE_TRAIL },
+      active: { fromS: 0.5 },
+    },
+  },
+  ...AIR_SQUARE_BASE,
+  chain: { heavy: 'airTriangle', from: 'slash', fromTick: 1 },
+};
+
+/** Air triangle's motion, shared by both blades (GoW1 38.9-40.3 s): one and a quarter turns of a vertical circle. */
+const AIR_TRIANGLE_MOTION = {
+  coil: { kind: 'carry' },
+  // Up behind the back...
+  loop1a: { kind: 'track', from: 0, to: 2 / 12, ease: 'linear' },
+  // ...up over the head, arms straight up...
+  loop1b: { kind: 'track', from: 2 / 12, to: 4 / 12, ease: 'linear' },
+  // ...down the front, arms forward...
+  loop2: { kind: 'track', from: 4 / 12, to: 6 / 12, ease: 'linear' },
+  // ...under the body as he starts to drop...
+  dive: { kind: 'track', from: 6 / 12, to: 8 / 12, ease: 'linear' },
+  // ...and up the back again to over his head as he falls.
+  swing: { kind: 'track', from: 8 / 12, to: 1, ease: 'out' },
+  raise: { kind: 'hold', driftPx: 2 },
+  land: { kind: 'recall', sagPx: 4 },
+} as const;
+
+const AIR_TRIANGLE_GROWTH = {
+  loop1a: { widthPx: 6 }, loop1b: { widthPx: 6 }, loop2: { widthPx: 6 }, dive: { widthPx: 6 }, swing: { widthPx: 6 },
+};
+
+/**
+ * Air triangle (manual "Ataque vertical", video 38.9-40.3 s, studied at 30
+ * fps): at the top of the jump Kratos hangs tucked with both blades lit low
+ * behind him (about 0.25 s), then the blades go once round a big vertical
+ * circle: up behind, over his head, down the front, under his body and up
+ * the back again (about 0.45 s, still hanging) while he drops; he lands
+ * crouched with the blades raised over him and a burst of fire at his feet.
+ * Works after any air square.
+ */
+const AIR_TRIANGLE: StrikeDef = {
+  id: 'airTriangle',
+  hand: 'near',
+  heldBlade: { from: 'previous', ticks: 9, sagPx: 5 },
+  air: true,
+  phases: [
+    { id: 'coil', ticks: 8, advancePx: 0, pose: 'airtri-a', centerX: CX['airtri-a'], gravity: 0.25 },
+    { id: 'loop1a', ticks: 4, advancePx: 0, pose: 'airtri-m1', centerX: CX['airtri-m1'], gravity: 0.15 },
+    { id: 'loop1b', ticks: 6, advancePx: 0, pose: 'airtri-b', centerX: CX['airtri-b'], gravity: 0.15 },
+    { id: 'loop2', ticks: 5, advancePx: 2, pose: 'airtri-c', centerX: CX['airtri-c'], gravity: 0.25 },
+    { id: 'dive', ticks: 5, advancePx: 1, pose: 'airtri-d', centerX: CX['airtri-d'], gravity: 1.8 },
+    { id: 'swing', ticks: 6, advancePx: 0, pose: 'airtri-m1', centerX: CX['airtri-m1'], gravity: 2.2, until: { event: 'grounded', minTicks: 1 } },
+    { id: 'raise', ticks: 20, advancePx: 0, pose: 'airtri-b', centerX: CX['airtri-b'], gravity: 2.2, until: { event: 'grounded', minTicks: 0 } },
+    {
+      id: 'land', ticks: 10, advancePx: 0, pose: 'tri-f', centerX: CX['tri-f'],
+      // The blades fly up over him and a tall burst of fire rises at his feet (GoW1 40.0-40.2 s).
+      effects: [
+        { kind: 'groundFire', from: 2, to: 30, heightPx: 9, ticks: 10 },
+        { kind: 'dust', at: [4, 30] },
+        { kind: 'flash', x: 14, ticks: 2, radiusPx: 7 },
+        { kind: 'shake', px: 2, ticks: 4 },
+      ],
+    },
+  ],
+  blades: {
+    near: {
+      // Near shoulder of the arms coming forward (airtri-c).
+      shoulder: [-2.9, -30.8],
+      // Behind and low, up behind, over the head, down the front, under the body, up behind again to overhead.
+      track: [[-17.1, 6.8], [-17.1, 6.8], [-27.1, -9.2], [-21.1, -29.2], [0.9, -41.2], [26.9, -31.2], [40.9, -5.2], [32.9, 18.8], [10.9, 34.8], [-15.1, 28.8], [-31.1, 8.8], [-27.1, -15.2], [-9.1, -37.2], [8.9, -41.2], [8.9, -41.2]],
+      trackDepth: ['behind', 'behind', 'behind', 'behind', 'front', 'front', 'front', 'front', 'front', 'behind', 'behind', 'behind', 'front', 'front', 'front'],
+      chainFrom: 0,
+      motion: AIR_TRIANGLE_MOTION,
+      trailGrowth: AIR_TRIANGLE_GROWTH,
+      trail: { kind: 'profile', ...TRIANGLE_TRAIL },
+      trailBreakAt: [6 / 12],
+      active: [{ fromS: 0.2, toS: 0.5 }, { fromS: 0.5 }],
+    },
+    far: {
+      // Far shoulder of the arms coming forward (airtri-c).
+      shoulder: [4.5, -30.1],
+      // The same circle a little behind and below, two ticks later: two crescents.
+      track: [[-30.5, 9.1], [-30.5, 9.1], [-40.5, -6.9], [-34.5, -26.9], [-12.5, -38.9], [13.5, -28.9], [27.5, -2.9], [19.5, 21.1], [-2.5, 37.1], [-28.5, 31.1], [-44.5, 11.1], [-40.5, -12.9], [-22.5, -34.9], [-4.5, -38.9], [-4.5, -38.9]],
+      trackDepth: ['behind', 'behind', 'behind', 'behind', 'behind', 'front', 'front', 'front', 'front', 'behind', 'behind', 'behind', 'front', 'front', 'front'],
+      chainFrom: 0,
+      lag: { ticks: 2, until: 'raise' },
+      motion: AIR_TRIANGLE_MOTION,
+      trailGrowth: AIR_TRIANGLE_GROWTH,
+      trail: { kind: 'profile', ...TRIANGLE_TRAIL },
+      trailBreakAt: [6 / 12],
+      active: [{ fromS: 0.2, toS: 0.5 }, { fromS: 0.5 }],
+    },
+  },
+  hitRadiusPx: 3.5,
+  // A heavy blow (the world gives it knockback and extra hitstop from 20 damage).
+  damage: 20,
+  hitstunTicks: 20,
+  hitstopTicks: 6,
+  trailSamplesPerTick: 6,
+  trailFadeWidthPx: 4,
+  impact: { phase: 'land', from: 2, to: 34, heightPx: 20 },
+};
+
+/**
+ * Orion's Harpoon (fandom, level 1; draft): the far chain thrown up to an
+ * airborne (juggled) enemy and pulled toward Kratos. It grabs only enemies
+ * already in the air. Chained from Ascension's follow-up.
+ */
+const HARPOON: StrikeDef = {
+  id: 'harpoon',
+  hand: 'far',
+  heldBlade: { from: 'previous', ticks: 9, sagPx: 5 },
+  air: true,
+  grabsAirborne: true,
+  launch: { vy: -120, vx: -260 },
+  phases: [
+    { id: 'carry', ticks: 2, advancePx: 0, pose: 'air-00', centerX: CX['air-00'], gravity: 0.6 },
+    { id: 'throw', ticks: 5, advancePx: 1, pose: 'air-02', centerX: CX['air-02'], gravity: 0.6 },
+    { id: 'hold', ticks: 4, advancePx: 0, pose: 'air-01', centerX: CX['air-01'], gravity: 0.6 },
+    { id: 'recall', ticks: 6, advancePx: 0, pose: 'air-00', centerX: CX['air-00'], gravity: 0.8 },
+  ],
+  blades: {
+    far: {
+      shoulder: [3.6, -23.6],
+      track: [[6.4, -2.4], [6.4, -2.4], [36.4, -20.4], [66.4, -38.4], [82.4, -42.4], [82.4, -42.4]],
+      chainFrom: 0,
+      motion: {
+        carry: { kind: 'carry' },
+        throw: { kind: 'track', from: 0, to: 1, ease: 'out' },
+        hold: { kind: 'hold', driftPx: 1 },
+        recall: { kind: 'recall', sagPx: 4 },
+      },
+      trailGrowth: { throw: { widthPx: 4, tailPx: 20, tailFromU: 0.5 } },
+      trail: { kind: 'profile', ...TRIANGLE_TRAIL },
+      active: { fromS: 0.2 },
+    },
+  },
+  hitRadiusPx: 3.5,
+  damage: 10,
+  hitstunTicks: 16,
+  hitstopTicks: 4,
+  trailSamplesPerTick: 6,
+  trailFadeWidthPx: 4,
 };
 
 export const STRIKES: Readonly<Record<StrikeId, StrikeDef>> = {
@@ -814,6 +1362,14 @@ export const STRIKES: Readonly<Record<StrikeId, StrikeDef>> = {
   square5: SQUARE5,
   square6: SQUARE6,
   triangle: TRIANGLE,
+  launcher: LAUNCHER,
+  plume: PLUME,
+  ascension: ASCENSION,
+  air1: AIR1,
+  air2: AIR2,
+  air3: AIR3,
+  airTriangle: AIR_TRIANGLE,
+  harpoon: HARPOON,
 };
 
 /**
@@ -846,6 +1402,11 @@ export interface PhaseTime {
   phase: StrikePhase;
   start: number;
   u: number;
+}
+
+/** Gravity scale of Kratos at whole tick `tick` (1 unless the phase says otherwise). */
+export function strikeGravityAt(def: StrikeDef, tick: number): number {
+  return strikePhaseAt(def, Math.min(Math.floor(tick), strikeLength(def) - 1)).phase.gravity ?? 1;
 }
 
 /** Phase and phase time at strike time `t` (ticks, may be fractional). */
@@ -1040,7 +1601,8 @@ export function thrownBladeAt(
     } else {
       const grip = strikeHandAt(def, tb, anchors, hand);
       from = [grip[0], grip[1] + 5];
-      mid = [(from[0] + end[0]) / 2, (from[1] + end[1]) / 2];
+      // `via: 'ground'`: the blade drags along the floor to the start.
+      mid = motion.via === 'ground' ? [(from[0] + end[0]) / 2, -2] : [(from[0] + end[0]) / 2, (from[1] + end[1]) / 2];
     }
     const k0 = (1 - e) * (1 - e);
     const k1 = 2 * (1 - e) * e;
@@ -1186,7 +1748,7 @@ export function strikeTrailAt(def: StrikeDef, tick: number, anchors: StrikePoseA
         const before = samples[samples.length - 1];
         // Passing a break point starts a fresh trail.
         if (before && blade.trailBreakAt?.some((b) => before.s < b && at.s >= b)) samples = [];
-        samples.push({ p: at.pos, s: at.s });
+        if (blade.trailFromS === undefined || at.s >= blade.trailFromS) samples.push({ p: at.pos, s: at.s });
       }
       const { tailPx, tailFromU } = growth;
       if (tailPx !== undefined && u > (tailFromU ?? 0)) {
@@ -1325,7 +1887,8 @@ export function strikeChainTicks(def: StrikeDef): { opens: number; buffersFrom: 
   if (!def.chain) return null;
   return {
     opens: phaseStart(def, def.chain.from).start + def.chain.fromTick,
-    buffersFrom: strikeActiveTicks(def).first,
+    // A press is remembered from the strike's first tick (a phone finger is early or late).
+    buffersFrom: 0,
   };
 }
 
@@ -1338,7 +1901,8 @@ export function strikeChainTicks(def: StrikeDef): { opens: number; buffersFrom: 
 export function queueChain(state: StrikeState, direction: HeldDirection = 0, button: 'light' | 'heavy' = 'light'): boolean {
   const def = STRIKES[state.id];
   const ticks = strikeChainTicks(def);
-  if (ticks && state.tick >= ticks.buffersFrom && (button === 'light' || def.chain?.heavy)) {
+  const accepts = button === 'heavy' ? Boolean(def.chain?.heavy) : Boolean(def.chain?.into);
+  if (ticks && state.tick >= ticks.buffersFrom && accepts) {
     state.queued = true;
     // The last button pressed decides the next strike.
     if (button === 'heavy') state.queuedHeavy = true;
@@ -1361,6 +1925,8 @@ export function chainStrike(state: StrikeState, player: EntityState, direction: 
   if (!def.chain || !ticks || !state.queued || state.tick < ticks.opens) {
     return null;
   }
+  const target = state.queuedHeavy && def.chain.heavy ? def.chain.heavy : def.chain.into;
+  if (!target) return null;
   const wanted = direction !== 0 ? direction : state.queuedDirection ?? 0;
   const facing: -1 | 1 = wanted === 0 ? state.facing : wanted;
   player.vx = 0;
@@ -1369,7 +1935,7 @@ export function chainStrike(state: StrikeState, player: EntityState, direction: 
     // Mirroring the sprite flips the body around the feet: move the feet so
     // the body's centre stays where it was.
     const before = strikePhaseAt(def, state.tick).phase.centerX;
-    const after = STRIKES[def.chain.into].phases[0].centerX;
+    const after = STRIKES[def.chain.into ?? def.chain.heavy ?? state.id].phases[0].centerX;
     player.x += state.facing * (before + after);
   }
   const entry: StrikeEntry = {
@@ -1380,7 +1946,7 @@ export function chainStrike(state: StrikeState, player: EntityState, direction: 
     turned: facing !== state.facing,
     ...(state.entry ? { entry: state.entry } : {}),
   };
-  return { ...startStrike(player, state.queuedHeavy && def.chain.heavy ? def.chain.heavy : def.chain.into), facing, entry };
+  return { ...startStrike(player, target), facing, entry };
 }
 
 export interface StrikeStepResult {
@@ -1389,6 +1955,46 @@ export interface StrikeStepResult {
   hits: { target: EntityState; x: number; y: number }[];
   /** The ground impact happened on this tick, at this world point. */
   impact?: StrikeImpactNotice;
+  /** Fires the strike left burning on the ground on this tick (the world keeps them). */
+  fires?: GroundFireState[];
+}
+
+/**
+ * Burns the ground fires one tick (the world adds a new fire after this,
+ * so it hits from the tick after it appears): each hits the targets
+ * standing in it once (lifting them when `lift`), then ages; returns the
+ * ones still burning and the targets hit.
+ */
+export function stepGroundFires(
+  fires: readonly GroundFireState[],
+  targets: readonly EntityState[],
+  lift: boolean,
+): { fires: GroundFireState[]; hits: EntityState[] } {
+  const { halfWidth, halfHeight } = CONFIG.combat.target;
+  const hits: EntityState[] = [];
+  const burning: GroundFireState[] = [];
+  for (const fire of fires) {
+    for (const target of targets) {
+      if (target.isDead || target.aiState === 'death' || target.aiState === 'hydra_defeat' || fire.hits.includes(target.id)) {
+        continue;
+      }
+      const standing = target.x + halfWidth >= fire.x0 && target.x - halfWidth <= fire.x1
+        && target.y >= fire.y - fire.heightPx - 2 && target.y - halfHeight * 2 <= fire.y;
+      if (!standing) continue;
+      fire.hits.push(target.id);
+      hits.push(target);
+      const killed = damageEnemy(target, fire.damage, fire.hitstunTicks);
+      if (!killed && lift && (target.kind === 'legionnaire' || target.kind === 'archer')) {
+        target.vy = fire.liftVy;
+        target.grounded = false;
+        target.aiState = 'juggle';
+        target.aiTicks = 0;
+      }
+    }
+    fire.age += 1;
+    if (fire.age < fire.ticks) burning.push(fire);
+  }
+  return { fires: burning, hits };
 }
 
 /** What the view needs when a phase with one-shot effects starts (world px). */
@@ -1470,6 +2076,12 @@ export function stepStrike(
     result.done = true;
     return result;
   }
+  // A phase that leaps leaves the ground on its first tick.
+  const starting = strikePhaseAt(def, state.tick);
+  if (starting.start === state.tick && starting.phase.leapVy !== undefined) {
+    player.vy = starting.phase.leapVy;
+    player.grounded = false;
+  }
   player.vx = 0;
   player.facing = state.facing;
   const step = strikeAdvanceAt(def, state.tick) - strikeAdvanceAt(def, state.tick - 1);
@@ -1486,6 +2098,9 @@ export function stepStrike(
     if (target.isDead || target.aiState === 'death' || target.aiState === 'hydra_defeat') {
       continue;
     }
+    if (def.grabsAirborne && target.aiState !== 'juggle') {
+      continue;
+    }
     // One hit per target per hit window, whichever blade touches it (the
     // first window's key is the bare id).
     const key = (window: number): string => (window === 0 ? target.id : `${target.id}@${window}`);
@@ -1496,8 +2111,15 @@ export function stepStrike(
     const b = touching.b;
     state.hits.push(key(touching.window));
     const killed = damageEnemy(target, def.damage, def.hitstunTicks);
-    // A blade hit staggers foot soldiers (the magic only stuns them).
-    if (!killed && (target.kind === 'legionnaire' || target.kind === 'archer')) {
+    if (!killed && def.launch && (target.kind === 'legionnaire' || target.kind === 'archer')) {
+      // A launch lifts the foot soldier into the air (juggle) instead of stunning it.
+      target.vy = def.launch.vy;
+      target.vx = (def.launch.vx ?? 0) * state.facing;
+      target.grounded = false;
+      target.aiState = 'juggle';
+      target.aiTicks = 0;
+    } else if (!killed && (target.kind === 'legionnaire' || target.kind === 'archer')) {
+      // A blade hit staggers foot soldiers (the magic only stuns them).
       target.aiState = 'hitstun';
       target.aiTicks = 0;
     }
@@ -1516,7 +2138,29 @@ export function stepStrike(
       ...(shake?.kind === 'shake' ? { shake: { px: shake.px, ticks: shake.ticks } } : {}),
     };
   }
-  if (def.impact && state.tick === strikeImpactTick(def)) {
+  // Lingering ground fires of a phase starting on this tick become world entities.
+  if (start === state.tick) {
+    for (const effect of phase.effects ?? []) {
+      if (effect.kind !== 'groundFire' || !effect.linger) continue;
+      const a = state.originX + state.facing * effect.from;
+      const b = state.originX + state.facing * effect.to;
+      (result.fires ??= []).push({
+        x0: Math.min(a, b),
+        x1: Math.max(a, b),
+        y: player.y,
+        heightPx: effect.heightPx,
+        ticks: effect.ticks,
+        age: 0,
+        damage: effect.linger.damage,
+        hitstunTicks: effect.linger.hitstunTicks,
+        liftVy: effect.linger.liftVy,
+        hits: [],
+      });
+    }
+  }
+  // The ground impact fires when its phase starts, which a phase that ends on landing moves.
+  const impactNow = strikePhaseAt(def, state.tick);
+  if (def.impact && impactNow.phase.id === def.impact.phase && impactNow.start === state.tick) {
     const a = state.originX + state.facing * def.impact.from;
     const b = state.originX + state.facing * def.impact.to;
     for (const target of targets) {

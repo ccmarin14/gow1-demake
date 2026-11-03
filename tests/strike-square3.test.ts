@@ -130,13 +130,22 @@ describe('square-2 is unchanged as approved', () => {
 });
 
 describe('square-3 strike data (the ascending cut)', () => {
-  it('throws the near blade over load 3, cut 5, top 3, hold 7 and recall 8 (26 ticks)', () => {
+  it('throws the near blade over load 3, cut 10, hold 12 and recall 8 (33 ticks)', () => {
     assert.equal(SQUARE3.hand, 'near');
     assert.deepEqual(
       SQUARE3.phases.map((p) => [p.id, p.ticks]),
-      [['load', 3], ['cut', 5], ['top', 3], ['hold', 7], ['recall', 8]],
+      [['load', 3], ['cut', 10], ['hold', 12], ['recall', 8]],
     );
-    assert.equal(strikeLength(SQUARE3), 26);
+    assert.equal(strikeLength(SQUARE3), 33);
+  });
+
+  it('drags the blade along the floor to the start of the cut, with no trail', () => {
+    // From the second half of the load (the first tick lowers it from the hand).
+    for (let t = 2.25; t <= 3; t += 0.25) {
+      const p = nearBladeAt(SQUARE3, t, poseAnchors).pos;
+      assert.ok(p[1] >= -4, `on the floor at ${t} (${(-p[1]).toFixed(1)} px up)`);
+    }
+    for (let tick = 0; tick <= 3; tick += 1) assert.equal(strikeTrailAt(SQUARE3, tick, poseAnchors).points.length, 0);
   });
 
   it('anchors the blade track on the near shoulder of the cut, and ends with Kratos upright', () => {
@@ -148,19 +157,19 @@ describe('square-3 strike data (the ascending cut)', () => {
     const start = thrownBladeAt(SQUARE3, 3, poseAnchors).pos;
     assert.ok(start[0] >= 25 && start[1] > -14, `starts low ahead (${start.map((v) => v.toFixed(0))})`);
     let prevY = Infinity;
-    for (let t = 3; t <= 11; t += 0.5) {
+    for (let t = 3; t <= 14; t += 0.5) {
       const p = thrownBladeAt(SQUARE3, t, poseAnchors).pos;
       assert.ok(p[0] > 10, `in front of the body at ${t}`);
       assert.ok(p[1] < prevY + 0.5, `rising at ${t}`);
       prevY = p[1];
     }
-    const top = thrownBladeAt(SQUARE3, 11, poseAnchors).pos;
+    const top = thrownBladeAt(SQUARE3, 14, poseAnchors).pos;
     assert.ok(top[1] < -60 && top[0] > 5 && top[0] < 35, `stops high in front (${top.map((v) => v.toFixed(0))})`);
   });
 
   it('points the near arm at its blade from the cut through the hold (within 40 degrees)', () => {
-    for (let t = 4; t < 18; t += 1) {
-      if (t === 8) continue; // first tick of the top: the blade is still mid-cut
+    // From the second cut tick through the hold (the first starts it on the floor).
+    for (let t = 5; t < 25; t += 1) {
       const pose = strikePoseAt(SQUARE3, t);
       const a = ANCHORS[`kratos-${pose}`];
       const shoulder = feet(a.shoulder);
@@ -185,13 +194,14 @@ describe('square-3 strike data (the ascending cut)', () => {
     }
   });
 
-  it('hits from the start of the rise through the hold; its chain window to square 4 is at the top', () => {
+  it('hits once it rises (not while it drags) through the top; its chain window opens as it eases into the top', () => {
     const { first, last } = strikeActiveTicks(SQUARE3);
-    assert.ok(first >= 3 && first <= 5, `first hit tick ${first}`);
-    assert.equal(last, 17);
-    assert.deepEqual(strikeChainTicks(SQUARE3), { opens: 14, buffersFrom: first });
+    assert.ok(thrownBladeAt(SQUARE3, first, poseAnchors).s >= 0.12, `first hit tick ${first}`);
+    assert.ok(first >= 4 && first <= 6);
+    assert.equal(last, 24);
+    assert.deepEqual(strikeChainTicks(SQUARE3), { opens: 14, buffersFrom: 0 });
     assert.equal(SQUARE3.chain?.into, 'square4');
-    assert.deepEqual(strikeChainTicks(SQUARE2), { opens: 14, buffersFrom: 7 });
+    assert.deepEqual(strikeChainTicks(SQUARE2), { opens: 14, buffersFrom: 0 });
     assert.equal(SQUARE2.chain?.into, 'square3');
   });
 
@@ -215,7 +225,7 @@ describe('square-4 strike data (the descending cut)', () => {
   });
 
   it('starts where square 3 stops at the top', () => {
-    const entry = entryFrom(SQUARE3, 14);
+    const entry = entryFrom(SQUARE3, 22);
     const top = nearBladeAt(SQUARE3, entry.tick, poseAnchors).pos;
     const start = nearBladeAt(SQUARE4, 0, poseAnchors, entry).pos;
     assert.ok(dist(start, [top[0] - entry.offsetPx, top[1]]) < 1e-6, 'carried from the top');
@@ -268,6 +278,41 @@ describe('square-4 strike data (the descending cut)', () => {
   });
 });
 
+describe('square 3 -> square 4 is one arc', () => {
+  it('never lets the blade sit still for more than 2 ticks across the link (speed, not only jumps)', () => {
+    const world = playingWorld();
+    world.step(['light-attack']);
+    hold(world, 20, []);
+    world.step(['light-attack']);
+    hold(world, 14, []);
+    world.step(['light-attack']);
+    const positions: Vec2[] = [];
+    const record = (): void => {
+      const s = world.snapshot().strike!;
+      const def = STRIKES[s.id];
+      const p = nearBladeAt(def, s.tick, poseAnchors, s.entry).pos;
+      positions.push([s.originX + s.facing * p[0], p[1]]);
+    };
+    // Square 3 from its cut to its chain window, then square 4 through its throw.
+    for (let i = 0; i < 14; i += 1) {
+      world.step([]);
+      if (world.snapshot().strike!.tick >= 3) record();
+    }
+    world.step(['light-attack']);
+    assert.equal(world.snapshot().strike?.id, 'square4');
+    record();
+    for (let i = 0; i < 7; i += 1) {
+      world.step([]);
+      record();
+    }
+    let still = 0;
+    for (let i = 1; i < positions.length; i += 1) {
+      still = dist(positions[i], positions[i - 1]) < 1 ? still + 1 : 0;
+      assert.ok(still <= 2, `the blade sat still ${still} ticks in a row (step ${i})`);
+    }
+  });
+});
+
 describe('squares 2 -> 3 -> 4 in the world', () => {
   it('chains square 3 on the square-2 hold and square 4 on the square-3 top; steps 2 and 3 px', () => {
     const { world, x0 } = square3World();
@@ -286,7 +331,7 @@ describe('squares 2 -> 3 -> 4 in the world', () => {
 
   it('ends after square 3 when J is not pressed again', () => {
     const { world } = square3World();
-    hold(world, 25, []);
+    hold(world, 32, []);
     assert.equal(world.snapshot().strike?.id, 'square3');
     world.step([]);
     assert.equal(world.snapshot().strike, undefined);
@@ -326,12 +371,13 @@ describe('triangle from the square chain', () => {
     return world;
   };
   for (const n of [1, 2, 3, 4]) {
-    it(`starts the plain triangle when I is pressed in square ${n}'s chain window`, () => {
+    const into = n === 2 ? 'plume' : 'triangle';
+    it(`starts ${into === 'plume' ? 'Plume of Prometheus' : 'the plain triangle'} when I is pressed in square ${n}'s chain window`, () => {
       const world = pressAt(n);
       assert.equal(world.snapshot().strike?.id, `square${n}`);
       world.step(['heavy-attack']);
       const strike = world.snapshot().strike;
-      assert.equal(strike?.id, 'triangle');
+      assert.equal(strike?.id, into);
       assert.equal(strike?.entry?.id, `square${n}`);
     });
   }

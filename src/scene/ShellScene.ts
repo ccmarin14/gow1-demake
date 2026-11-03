@@ -284,8 +284,11 @@ export class ShellScene extends Phaser.Scene {
 
     const strikeHit = this.simulation.world.consumeStrikeHitNotice();
     if (strikeHit) {
-      this.vfxLayer?.emitCombatSparks(strikeHit.x, strikeHit.y, 6);
-      this.soundManager?.playStrikeHit();
+      // A heavy blow (triangle, plume, the finisher) sparks more, shakes the screen harder and thuds deeper.
+      const heavy = strikeHit.power >= 20;
+      this.vfxLayer?.emitCombatSparks(strikeHit.x, strikeHit.y, heavy ? 16 : 8, true);
+      this.cameras.main.shake(heavy ? 140 : 70, heavy ? 0.006 : 0.0025);
+      this.soundManager?.playStrikeHit(heavy);
     }
 
     if (this.soundManager) {
@@ -362,6 +365,7 @@ export class ShellScene extends Phaser.Scene {
 
     const isPlayerAlive = Boolean(player && !player.isDead);
     this.playerView?.updateWeapon(isPlayerAlive ? player : null, this.simulation.world.peekStrike());
+    this.playerView?.updateGroundFires(this.simulation.world.peekGroundFires());
     this.updateTargets(player);
     this.updateOrbs();
     this.updateArrows();
