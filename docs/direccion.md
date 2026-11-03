@@ -21,7 +21,7 @@
 | `guard` | `Q` | L1 | Guardia y desvío (*parry*) en los primeros ticks. |
 | `pause` | `Escape` | Start | Pausa. |
 
-Por ahora Kratos tiene el combo de 6 □ y △ en la tecla `I` (D-37); Triángulo y Círculo no tienen acción ni tecla hasta que se diseñen sus golpes.
+Por ahora Kratos tiene el combo de 6 □ y △ en la tecla `I` (D-37); △ (`I`, o el botón △ táctil) tiene tres niveles por tiempo: tocar es el golpe pesado, mantener hasta el final de la carga lanza a los enemigos sin que Kratos salte y seguir sosteniendo lo hace saltar tras ellos (*Ascension*). En el aire, `J` encadena tres golpes y `I` el golpe vertical; un salto corta un golpe aéreo con el doble salto. Círculo no tiene acción ni tecla (el agarre y *Orion's Harpoon* quedan para después).
 
 ## 3. Reglas visuales y de pixel art
 
