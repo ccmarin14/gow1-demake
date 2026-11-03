@@ -6,8 +6,8 @@ import type { PixelSink } from './pixelBuffer';
 /**
  * Pixel drawing for the strikes (D-37), at the logical resolution and without
  * antialiasing: polygons and lines become 1 px rows of `fillRect`, and the
- * blade is pre-rotated with nearest-neighbour sampling. Mirrors the approved
- * preview generator (`docs/temporal/sq1-preview-reference.py`).
+ * blade is pre-rotated with nearest-neighbour sampling. Written into pixel
+ * buffers (`pixelBuffer.ts`), so every call is a plain whole-pixel rect.
  */
 
 /** Number of pre-rotated blade directions (22.5 degrees apart). */

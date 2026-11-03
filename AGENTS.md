@@ -35,3 +35,15 @@ Juego de acción lateral 2D hecho con **Phaser 3.90.0**, **TypeScript** y **Vite
 - **`tsc` y `pnpm build` no verifican el juego:** un build en verde no detecta texturas 404 ni animaciones rotas. Verifica en navegador real (Chrome DevTools MCP o Chrome headless por CDP) que la consola y la red estén limpias.
 - **Fidelidad de píxel no equivale a calidad visual:** comprobar que un PNG se dibuja idéntico a sí mismo no dice si la pose se entiende. El juicio estético requiere mostrar la imagen ampliada a la usuaria.
 - **No mezclar carga de assets:** registra las texturas en `src/assets/manifest.ts` en lugar de dispersar llamadas `this.load` en `ShellScene.ts`.
+
+## Reparto del trabajo (modelos y bloqueos)
+
+El backlog vive en `docs/estado.md` §3: cada historia dice qué modelo la trabaja, su estado y qué la bloquea. Antes de empezar, elige una historia *Lista* y avisa de la superficie que vas a tocar.
+
+- **Haiku:** trabajo mecánico con verificación automática: ajustar números de datos (tiempos, daños, gravedad, anchos de estela) con una prueba por regla, renombrar o mover, borrar código muerto comprobado con `grep`, correr verificaciones y capturas, actualizar docs desde una lista. Nunca juzga imágenes: si hay que decidir cómo se ve una pose o un golpe, no es Haiku.
+- **Sonnet:** lo que exige mirar renders y compararlos con el video (poses, siluetas, estelas), diseñar sistemas nuevos y los refactors con riesgo.
+- **Opus:** solo si Sonnet falla dos veces seguidas en lo mismo y hay cupo. Hoy el cupo semanal de Sonnet y Opus es limitado: cuando la usuaria avise que se acabó, solo se trabajan historias de Haiku.
+- **Bloqueantes:** una historia en estado *Decisión* o *Lista de la usuaria* no se empieza sin esa respuesta; una *Cupo* espera. Las historias *Lista* de distinta superficie (S1 golpes, S2 simulación, S3 presentación, S4 docs, S5 herramientas) se pueden trabajar a la vez; dos historias de la misma superficie, no (un solo escritor).
+- **Quien delega verifica:** corre `pnpm test`, `pnpm build`, `pnpm art:check` y el navegador (0 errores, 0 404) y mira el diff; no se fía del informe. Antes de esperar un trabajo en segundo plano, comprueba con `pgrep` y las fechas de los archivos que sigue vivo.
+- **Un subagente no commitea ni cierra una revisión visual:** eso lo hace la sesión principal con la aprobación de la usuaria. Cada subagente se lanza con el modelo indicado explícitamente.
+- **Las fuentes mandan sobre la interpretación:** una mecánica de GoW 1 se respalda con el manual oficial de PS2, un video o una wiki, y se anota qué respaldo tiene. Lo que no tiene respaldo y la usuaria pide igual se hace, y se anota como decisión suya (`docs/estado.md`, "Decisiones de combate pendientes").

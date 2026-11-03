@@ -27,11 +27,7 @@ Cuadros commiteados sin la aprobación visual de la usuaria (regla en `AGENTS.md
 
 | Cuadro | Qué revisar | Cómo verlo |
 | --- | --- | --- |
-| `plume-a..f`, `asc-b`, `aq1-a..aq3-b`, `airtri-a..e`, `tri-pb`, `tri-pc` (golpes de la ronda 60) | Borradores de *Plume*, el △ de tres niveles, *Ascension*, los tres □ aéreos y el △ aéreo. El brazo no sigue a la hoja en varias fases; el remate de □ (invertido a pedido), el tercer □ más largo y el nivel intermedio (lanzador) por revisar. | En el juego: `J J I` (*Plume*), `I` tocando o manteniendo, saltar y `J`/`I` en el aire; vistas en `docs/tmp/golpes/`. |
-| `tri-a..g`, `tri-b2` (golpe △) | Borrador de △ tras la crítica: carga de pie con la bola de fuego, arco que se demora arriba y baja acelerando, golpe al suelo con línea de fuego y temblor. | En el juego: `I`; `docs/tmp/golpes/tri-v2.gif`. |
-| `sq5-a..g` (golpe □6, remate) | Borrador del remate tras la crítica: estocada con dos látigos rectos, barrido hacia atrás y brazos cruzados; dos golpes. | En el juego: `J` cinco veces seguidas; `docs/tmp/golpes/sq5-v2.gif`. |
-| `sq4-a..e`, `sq4-b2` (golpe □5, giro) | Borrador del giro tras la crítica: giro en un solo sentido (perfil, espaldas, perfil invertido, frente), órbita en elipse y dos lazos desfasados; golpea adelante y atrás. | En el juego: `J` cuatro veces seguidas; `docs/tmp/golpes/sq4-v2.gif`. |
-| `sq3-a..h` (golpes □3 y □4) | □3 corte ascendente adelante y □4 tajo descendente con agachado de brazos abiertos (combo de 6 □); y el cambio de dirección entre golpes. | En el juego: `J` seis veces (con la dirección contraria para girar); `docs/tmp/golpes/sq34-v1.gif`. |
+| Golpes de Kratos (`sq1-*` a `sq5-*`, `tri-*`, `plume-*`, `asc-b`, `aq1-*` a `aq3-*`, `airtri-*`, `launcher`) | Todo el moveset de nivel 1 (D-37) como borradores del maniquí 3D: combo de 6 □, *Plume* (□□△), △ en tres niveles (golpe, lanzador, *Ascension*), tres □ aéreos y △ aéreo. Lo conocido por corregir está en el backlog (§3). Los tiempos de los niveles de △ y el sentido del remate de □ son decisiones de la usuaria, no de una fuente. | En el juego (`J`, `I`, `Espacio`); vistas previas en `docs/tmp/golpes/` (`*.gif`, comparación con el video en `*-ref-vs-game.png`). |
 | `blade-of-chaos` | Espada del Caos (18×7): hoja recta con punta en gancho, dos muescas en el lomo, filo al rojo; aprobada por la usuaria. Pendiente: cómo se ven las espadas a la espalda en el juego. | En el juego: quieto, corriendo, en el aire y rodando. |
 | `idle-00..02` | Borrador del reposo: jadeo de cansancio como en GoW 1. `Idle_Loop` con las poses `idle-pant-out/mid/in.json` (cámara a 45°, piernas plantadas con las rodillas flexionadas, brazos caídos con el codo doblado, columna encorvada y cabeza adelantada), en ciclo exhala-intermedia-inhala-intermedia a 4 cuadros por segundo: al exhalar se hunde y dobla más las rodillas; al inhalar se endereza y sube los hombros (2 px). | En el juego, quieto. |
 | `air-00..02`, `roll-00..04` | Borradores del salto (`Jump_Start` 4 con `poses/jump-rise.json` sube con una rodilla arriba y la otra pierna estirada empujando; `Jump_Land` 0 cae erguido y listo para aterrizar; `Jump_Start` 4 con `poses/jump-double.json` es el doble salto, brazos estirados hacia abajo y rodillas arriba, como empujando el aire) y de la rodada (`Roll` 0, 5, 10, 15 y 20: agachado, zambullida, manos al suelo, bola y recuperación), apoyados en la fila de suelo. | En el juego con `Espacio` y `Shift`; capturas en `docs/tmp/navegador/`. |
@@ -58,12 +54,12 @@ Para que la usuaria decida cada mecánica antes de auditarla o ampliarla. "GoW 1
 
 | # | Mecánica | Hoy en el juego | En GoW 1 |
 | --- | --- | --- | --- |
-| C1 | Combo ligero | Combo de 6 □ como en GoW 1 (cartel del juego), con giro entre golpes y salida a △ desde la ventana de cualquier □ (D-37). | Combate por combos con las Cuchillas; el detalle de cada combo, a confirmar. |
-| C2 | Golpes pesados y finales | No existen (D-36). | Nombres y entradas, a confirmar. |
-| C3 | Ataques aéreos | No existen (D-36). | A confirmar. |
-| C4 | Agarre | No existe (D-36). | A confirmar el agarre con círculo; los remates sí existen (C5). |
+| C1 | Combo ligero | Combo de 6 □ (cartel del juego) con *Plume* tras □□△, giro entre golpes, gracia de 16 ticks y búfer desde el primer tick (D-37, D-39). | Confirmado por el cartel del juego y el manual. |
+| C2 | Golpes pesados y finales | △ en tres niveles por tiempo: golpe, lanzador y *Ascension* (D-37). Los tiempos de los niveles son de la usuaria; ninguna fuente los da. | Manual: "△ mantener: lanzar al enemigo y seguirlo"; Neoseeker: lanzar, luego saltar. |
+| C3 | Ataques aéreos | Tres □ aéreos (con caída frenada) y △ aéreo con impacto; un salto los corta con el doble salto. | Manual: "ataque horizontal" y "ataque vertical"; cartel del juego: AIR □□□ y AIR △. |
+| C4 | Agarre | No existe (○ sin acción). | Manual: agarre con ○ en el suelo y en el aire; *Orion's Harpoon* (nivel 1) lanza al enemigo contra el suelo. |
 | C5 | Remates QTE | No existe (ESE-01). | Sí: al debilitar a un enemigo fuerte se inicia un QTE; fallarlo suele dañar a Kratos. |
-| C6 | Embestida | No existe (D-36). | A confirmar. |
+| C6 | Embestida | No existe; no es de nivel 1 (*Hermes Rush* es de nivel 2). | Fuera del alcance de nivel 1. |
 | C7 | Guardia y desvío | Guardia con `O`; desvío (*parry*) en los primeros ticks, que aturde al legionario y refleja flechas. | A confirmar. |
 | C8 | Magia | Solo *Ira de Poseidón* (costo 35, radio 90). | Cuatro hechizos: *Furia de Zeus*, *Mirada de Medusa*, *Ira de Poseidón* y *Ejército de Hades*. |
 | C9 | Ira de los Dioses | No existe. | Sí: invulnerabilidad temporal y más daño; se recarga con orbes rojos. |
@@ -82,9 +78,33 @@ Elementos heredados que la usuaria no decidió. Están apagados con un interrupt
 | Chispas de golpe | `vfx.combatSparks.enabled` | Partículas en el golpe al suelo de la hidra. |
 | Aplastamiento al aterrizar | `presentation.landingSquash` | El sprite se ensancha y achata unos ticks al tocar el suelo. |
 
-## 3. Siguiente paso
+## 3. Backlog
 
-Que la usuaria juzgue el borrador de la carrera en movimiento. Ya están los borradores de carrera, aire y rodada; el reposo también pasó a render. Falta terminar a mano todos los cuadros (D-34). El combo □1 a □5 está en el juego (D-37); siguen △ (tecla `I`), *Plume*, *Ascension* y los aéreos, de a uno, cada uno con su vista previa aprobada antes de entrar (`docs/temporal/propuesta-golpes-gow1.md`).
+Historias de usuario que quedan, con el modelo que las trabaja y qué las bloquea (reglas de reparto en `AGENTS.md`). **Estado:** *Lista* se puede empezar ya; *Cupo* espera a que haya cupo de Sonnet (se renueva el sábado 2026-11-07); *Lista de la usuaria* espera la lista de cosas que vea mal al probar en el celular; *Decisión* espera que la usuaria decida. **Superficie:** S1 datos de golpes (`strike.ts`, poses, anclajes, fixtures), S2 simulación y entrada, S3 presentación (`entities`, `scene`, `audio`, `ui`), S4 docs, S5 herramientas. Dos historias de la misma superficie no se trabajan a la vez.
+
+| ID | Historia | Criterio de aceptación | Modelo | Estado | Sup. |
+| --- | --- | --- | --- | --- | --- |
+| **BL-01** | Como jugadora quiero que Kratos acompañe cada golpe con el brazo sobre la hoja. | En todo golpe, el brazo queda a 40° o menos de la hoja salvo los dos primeros ticks de cada pose; en *Ascension*, la bajada y los aéreos se leen en pantalla a 1x. | Sonnet | Cupo y lista de la usuaria | S1 |
+| **BL-02** | Como jugadora quiero ver las hojas encendidas en la carga de △ y fuego en los golpes pesados, sin estelas grandes. | Fuego a lo largo de la hoja en la carga; columnas de fuego en el △ aéreo y en el tercer □; estelas de 55 px o menos. | Sonnet | Cupo | S3 |
+| **BL-03** | Como jugadora en celular quiero que el juego no se trabe. | Con la CPU 4 veces más lenta, el p95 de cuadro es 33 ms o menos y no hay cuadros de más de 50 ms; se evalúa pasar a WebGL sin romper las capturas (`toDataURL`). | Sonnet | Cupo; riesgo en las herramientas de captura | S3 |
+| **BL-04** | Como jugadora quiero ajustar la sensación de los combos (gracia, búfer, tiempos de los niveles de △, pausa, empuje, sacudida). | Los valores están en una tabla de constantes, con una prueba por regla. | Haiku | Lista de la usuaria | S2 |
+| **BL-05** | Como jugadora quiero atacar justo al salir de una rodada. | Pulsar □ o △ durante la rodada o hasta 8 ticks después arranca el golpe en cuanto termina (búfer; sin golpes especiales, no hay fuente). | Haiku | Lista | S2 |
+| **BL-06** | Como jugadora quiero el agarre con cadena (○) y *Orion's Harpoon*, y el súper salto tras lanzar (X). | Agarre en el suelo y en el aire, lanzar al enemigo contra el suelo, súper salto con X tras lanzar; poses nuevas. | Sonnet | Decisión (la tecla de ○) y cupo | S1, S2 |
+| **BL-07** | Como jugadora quiero remates contextuales (QTE) como en GoW 1. | Un enemigo debilitado permite un remate con un botón en una ventana; fallarlo daña a Kratos (ESE-01). | Sonnet | Decisión y BL-08 | S2, S3 |
+| **BL-08** | Como jugadora quiero ver al legionario, al arquero y a la hidra con arte, no como cajas. | Borradores 3D por D-34 aprobados cuadro a cuadro. | Sonnet | Cupo y aprobación visual | S1 |
+| **BL-09** | Como jugadora quiero a Kratos terminado a mano (cabeza aprobada, tatuaje, faldón). | Cada cuadro se aprueba uno a uno (regla de `AGENTS.md`). | Sonnet | La usuaria lo pospuso ("todavía no te metas con el acabado") | S1 |
+| **BL-10** | Como jugadora quiero enemigos con más de un truco (ESE-04). | Un segundo comportamiento que dé sentido a la guardia o a la magia. | Haiku | Decisión | S2 |
+| **BL-11** | Como jugadora quiero una introducción mínima (ESE-05). | Texto breve que nunca estorba las pruebas (D-30). | Haiku | Decisión | S3 |
+| **BL-12** | Como jugadora quiero los cuatro hechizos de GoW 1 (ESE-06). | *Furia de Zeus*, *Mirada de Medusa* y *Ejército de Hades* además de *Ira de Poseidón*. | Sonnet | Arte base y decisión | S2, S3 |
+| **BL-13** | Como jugadora quiero oír el peso de cada golpe. | Silbido de la hoja y un golpe por peso (liviano, pesado, aéreo), sintetizados. | Haiku | Lista | S3 |
+| **BL-14** | Como desarrolladora quiero que el repositorio esté limpio. | Se borra lo que la encuesta de código muerto demuestra sin uso (efecto de bola de fuego, claves de `CONFIG`, helpers de prueba repetidos como `poseAnchors`), sin tocar fixtures. | Haiku | Lista | S3, S5 |
+| **BL-15** | Como desarrolladora quiero partir `strike.ts` (más de 2.000 líneas) en el motor y un archivo de datos por golpe. | Sin cambios de comportamiento: todos los fixtures y pruebas siguen iguales. | Sonnet | Lista, entre rondas de golpes (bloquea S1 mientras dura) | S1 |
+| **BL-16** | Como desarrolladora quiero un `estado.md` corto. | El registro de pasos (§4) resume los pasos 0 a 45 en pocas líneas. | Haiku | Lista | S4 |
+| **BL-17** | Como jugadora quiero botones táctiles cómodos. | Tamaño, zona de pulgares y multitoque ajustados con lo que anote la usuaria. | Haiku | Lista de la usuaria | S3 |
+| **BL-18** | Como jugadora quiero decidir cada mecánica heredada (guardia, magia, orbes, cofres, oleadas, IA, aplastamiento, chispas, cuchilla en reposo). | Una decisión por fila de la tabla "Mecánicas heredadas"; después se audita con pruebas. | Usuaria; después Haiku | Decisión | S2 |
+| **BL-19** | Como jugadora quiero un nivel con enemigos y arena (hoy `level1` solo tiene a Kratos, D-33). | Tramo del Egeo con oleadas y la hidra, jugable de punta a punta. | Sonnet | BL-08 y BL-18 | S2, S3 |
+
+**Siguiente paso:** que la usuaria pruebe los golpes en el celular y mande una sola lista de lo que vea mal. Con esa lista se arman las historias *Lista de la usuaria* (BL-01, BL-04, BL-17), las de Haiku primero.
 
 ## 4. Registro de pasos
 
