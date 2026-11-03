@@ -176,6 +176,19 @@ export const CONFIG = {
     },
   },
   combat: {
+    feel: {
+      comboTurnMinTicks: 4,
+      comboGraceTicks: 16,
+      jumpQueueTicks: 10,
+      hoverStrikes: ['air1', 'air2', 'air3', 'airTriangle'] as const,
+      hoverVyMin: -140,
+      hoverVyMax: 40,
+      graceAirGravity: 0.5,
+      heavyDamage: 20,
+      heavyExtraHitstop: 3,
+      knockbackLight: 90,
+      knockbackHeavy: 220,
+    },
     /**
      * Body of scenario targets and enemies: half extents of their hurt box,
      * ground friction when knocked back, and the X clamp of scenarios without

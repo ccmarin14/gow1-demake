@@ -549,7 +549,7 @@ export class World {
     this.directionTicks = direction !== 0 && direction === this.direction ? this.directionTicks + 1 : 1;
     this.direction = direction;
     const steadyDirection: HeldDirection =
-      direction !== 0 && this.directionTicks >= COMBO_TURN_MIN_TICKS ? direction : 0;
+      direction !== 0 && this.directionTicks >= CONFIG.combat.feel.comboTurnMinTicks ? direction : 0;
 
     // A strike that connects freezes the whole world for a few ticks; a press
     // made meanwhile still queues the next strike of the combo.
@@ -561,7 +561,7 @@ export class World {
         queueChain(this.strike, steadyDirection, 'heavy');
       }
       if (this.strike && jumpEdge) {
-        this.jumpQueuedTicks = JUMP_QUEUE_TICKS;
+        this.jumpQueuedTicks = CONFIG.combat.feel.jumpQueueTicks;
       }
       this.hitstopTicks -= 1;
       this.tick += 1;
@@ -618,7 +618,7 @@ export class World {
         }
         // A jump pressed during a ground strike waits for it to end instead of being lost.
         if (this.strike && jumpEdge) {
-          this.jumpQueuedTicks = JUMP_QUEUE_TICKS;
+          this.jumpQueuedTicks = CONFIG.combat.feel.jumpQueueTicks;
         }
         const jumpNow = jumpEdge || (this.jumpQueuedTicks > 0 && this.strike === null);
         if (this.strike === null) {
@@ -712,8 +712,8 @@ export class World {
         // The air lashes and the air triangle's loop hang Kratos: a fall already
         // under way is cut to a crawl as the strike starts (GoW 1 keeps him
         // floating through the whole air combo).
-        if (this.strike && startedNow && HOVER_STRIKES.has(this.strike.id)) {
-          player.vy = Math.max(HOVER_VY_MIN, Math.min(HOVER_VY_MAX, player.vy));
+        if (this.strike && startedNow && CONFIG.combat.feel.hoverStrikes.includes(this.strike.id as typeof CONFIG.combat.feel.hoverStrikes[number])) {
+          player.vy = Math.max(CONFIG.combat.feel.hoverVyMin, Math.min(CONFIG.combat.feel.hoverVyMax, player.vy));
         }
         let nowStriking = this.strike !== null;
         if (this.comboGrace) {
@@ -810,7 +810,10 @@ export class World {
         const wantsDown = this.input.includes('move-down');
         // An air strike sets how fast Kratos falls for its next tick (hang time, a drop).
         // Between air lashes (the combo grace window) he keeps floating too.
-        const graceGravity = !this.strike && this.comboGrace && HOVER_STRIKES.has(this.comboGrace.state.id) ? GRACE_AIR_GRAVITY : 1;
+        const graceGravity = !this.strike && this.comboGrace
+          && CONFIG.combat.feel.hoverStrikes.includes(this.comboGrace.state.id as typeof CONFIG.combat.feel.hoverStrikes[number])
+          ? CONFIG.combat.feel.graceAirGravity
+          : 1;
         const strikeGravity = this.strike && !startedNow ? strikeGravityAt(STRIKES[this.strike.id], this.strike.tick + 1) : graceGravity;
         stepVertical(
           player,
@@ -833,16 +836,18 @@ export class World {
             newFires.push(...result.fires);
           }
           if (result.done) {
-            this.comboGrace = STRIKES[this.strike.id].chain ? { state: { ...this.strike }, ticks: COMBO_GRACE_TICKS } : null;
+            this.comboGrace = STRIKES[this.strike.id].chain ? { state: { ...this.strike }, ticks: CONFIG.combat.feel.comboGraceTicks } : null;
             this.strike = null;
           } else if (result.hits.length > 0) {
             const def = STRIKES[this.strike.id];
             // A heavy blow holds the world a little longer and throws the target back.
-            this.hitstopTicks = def.hitstopTicks + (def.damage >= HEAVY_DAMAGE ? HEAVY_EXTRA_HITSTOP : 0);
+            this.hitstopTicks = def.hitstopTicks + (def.damage >= CONFIG.combat.feel.heavyDamage ? CONFIG.combat.feel.heavyExtraHitstop : 0);
             const last = result.hits[result.hits.length - 1];
             this.strikeHitNotice = { x: last.x, y: last.y, power: def.damage };
             if (this.targetPhysics) {
-              const knock = def.damage >= HEAVY_DAMAGE ? KNOCKBACK_HEAVY : KNOCKBACK_LIGHT;
+              const knock = def.damage >= CONFIG.combat.feel.heavyDamage
+                ? CONFIG.combat.feel.knockbackHeavy
+                : CONFIG.combat.feel.knockbackLight;
               for (const hit of result.hits) {
                 if (hit.target.kind !== 'hydra' && !hit.target.isDead) hit.target.vx = this.strike.facing * knock;
               }
@@ -1089,25 +1094,6 @@ export class World {
 }
 
 /** Ticks a direction must be held before a combo link turns toward it. */
-const COMBO_TURN_MIN_TICKS = 4;
-
-/** Ticks after a strike ends in which a press still continues its combo (about 0.27 s). */
-const COMBO_GRACE_TICKS = 16;
-/** Air strikes that hang Kratos in the air, and the vertical speed (px/s) he is cut to when one starts. */
-const HOVER_STRIKES: ReadonlySet<string> = new Set(['air1', 'air2', 'air3', 'airTriangle']);
-const HOVER_VY_MIN = -140;
-const HOVER_VY_MAX = 40;
-/** Gravity scale while waiting for the next air lash (the combo grace window). */
-const GRACE_AIR_GRAVITY = 0.5;
-/** Ticks a jump pressed during a ground strike waits for it to end. */
-const JUMP_QUEUE_TICKS = 10;
-/** Damage from which a strike counts as heavy: longer hit pause and a harder knockback. */
-const HEAVY_DAMAGE = 20;
-const HEAVY_EXTRA_HITSTOP = 3;
-/** Speed (px/s) a hit target is thrown back, away from Kratos, in scenarios where targets move. */
-const KNOCKBACK_LIGHT = 90;
-const KNOCKBACK_HEAVY = 220;
-
 /** Left or right held (-1 / 1), or neither or both (0). */
 function heldDirection(input: readonly GameAction[]): HeldDirection {
   const left = input.includes('move-left');

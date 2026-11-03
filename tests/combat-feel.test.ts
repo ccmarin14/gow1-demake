@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
+import { CONFIG } from '../src/config';
 import type { EntityState, GameAction, SimulationSnapshot } from '../src/sim/types';
 import { World } from '../src/sim/world';
 
@@ -54,6 +55,32 @@ describe('jumping around strikes', () => {
     world.step(['jump']);
     hold(world, 2, []);
     assert.ok(player(world.snapshot()).vy < -100, 'jumps again after landing');
+  });
+
+  describe('combat feel constants', () => {
+    it('keeps combo buffering and direction timing in one configuration table', () => {
+      assert.deepEqual(
+        {
+          turn: CONFIG.combat.feel.comboTurnMinTicks,
+          grace: CONFIG.combat.feel.comboGraceTicks,
+          jump: CONFIG.combat.feel.jumpQueueTicks,
+        },
+        { turn: 4, grace: 16, jump: 10 },
+      );
+    });
+
+    it('keeps heavy impact and air-hang rules in the same table', () => {
+      assert.deepEqual(
+        {
+          heavyDamage: CONFIG.combat.feel.heavyDamage,
+          extraHitstop: CONFIG.combat.feel.heavyExtraHitstop,
+          knockback: [CONFIG.combat.feel.knockbackLight, CONFIG.combat.feel.knockbackHeavy],
+          gravity: CONFIG.combat.feel.graceAirGravity,
+        },
+        { heavyDamage: 20, extraHitstop: 3, knockback: [90, 220], gravity: 0.5 },
+      );
+      assert.deepEqual([...CONFIG.combat.feel.hoverStrikes], ['air1', 'air2', 'air3', 'airTriangle']);
+    });
   });
 
   it('a jump pressed during a ground strike waits for it to end instead of being lost', () => {
@@ -112,7 +139,7 @@ describe('weight of a blow', () => {
   });
 
   it('the finishing square and the triangle count as heavy blows', () => {
-    // Heavy blows deal 20 or more damage (see HEAVY_DAMAGE in world.ts).
+    // Heavy blows deal 20 or more damage (see CONFIG.combat.feel).
     const world = foeWorld();
     const hp0 = world.snapshot().entities.find((e) => e.kind === 'legionnaire')!.hp;
     world.step(['heavy-attack']);
