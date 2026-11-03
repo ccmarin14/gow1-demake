@@ -121,13 +121,14 @@ Historias de usuario que quedan, con el modelo que las trabaja y qué las bloque
 | **BL-17** | Como jugadora quiero botones táctiles cómodos. | Tamaño, zona de pulgares y multitoque ajustados con lo que anote la usuaria. | Haiku | Lista de la usuaria | S3 |
 | **BL-18** | Como jugadora quiero decidir cada mecánica heredada (guardia, magia, orbes, cofres, oleadas, IA, aplastamiento, chispas, cuchilla en reposo). | Una decisión por fila de la tabla "Mecánicas heredadas"; después se audita con pruebas. | Usuaria; después Haiku | Decisión | S2 |
 | **BL-19** | Como jugadora quiero un nivel con enemigos y arena (hoy `level1` solo tiene a Kratos, D-33). | Tramo del Egeo con oleadas y la hidra, jugable de punta a punta. | Sonnet | BL-08 y BL-18 | S2, S3 |
-| **BL-20** | Como usuaria quiero ver los △ ajustados antes de juzgarlos. | GIF y tira de comparación con el video de: △ de suelo, lanzador, *Ascension*, △ aéreo y □3, □4, □6, □ aéreo 2 y 3, en `docs/tmp/golpes/`, hechos con `scripts/verify/browser-check.sh` y `scripts/verify/make_preview.py`. | Haiku | Lista | S5 |
+| **BL-20** | Como usuaria quiero ver los △ ajustados antes de juzgarlos. | GIF y tira de los golpes ajustados en `docs/tmp/golpes/`, hechos desde capturas reales de Chrome; las comparaciones con video esperan la recuperación de los fotogramas numerados retirados. | Haiku | Hecho (previews) | S5 |
 
 **Siguiente paso:** la usuaria prueba en el celular la ronda del 2026-11-03 (sección "Lista de la usuaria", §2) y manda una sola lista de lo que siga mal. Mientras no haya cupo de Sonnet o Opus (se renueva el sábado 2026-11-07) se pueden hacer BL-20 y las historias *Lista* de Haiku; lo que pida poses espera. Hoy no se lanzan más subagentes de Claude (decisión de la usuaria).
 
 - **2026-11-03** — **BL-05 (Ataque al salir de una rodada):** □ o △ pulsados durante la rodada se guardan y arrancan el golpe normal en el tick en que termina; no se encadenan golpes especiales. Se añadieron pruebas de ambos botones. Verificado con 230 pruebas, build, grids y navegador (0 errores, 0 peticiones fallidas).
 - **2026-11-03** — **BL-04 (Tabla de sensación de combate):** los umbrales de combo, búfer de salto, pausa y empuje, y las reglas de suspensión aérea pasaron a `CONFIG.combat.feel`; se añadieron pruebas de sus valores. Verificado con la suite completa, build, grids y navegador.
 - **2026-11-03** — **BL-13 (Audio de peso por golpe):** cada golpe inicia un silbido sintético y cada impacto se clasifica como liviano, pesado o aéreo con su envolvente y tono propios. Verificado con la suite completa, build, grids y navegador.
+- **2026-11-03** — **BL-20 (Previews de golpes ajustados):** se capturaron en Chrome y se generaron GIF y tiras ampliadas de □1–□6, △ de suelo, lanzador, *Ascension* y □ aéreo 1–3 en `docs/tmp/golpes/bl20-*.gif` y `bl20-*-strip.png`. Las capturas dieron 0 errores y 0 peticiones fallidas; no se fabricó una comparación con referencias porque los fotogramas numerados del video ya no están en el árbol.
 
 ## 4. Registro de pasos
 
