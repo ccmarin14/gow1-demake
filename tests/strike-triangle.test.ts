@@ -133,7 +133,8 @@ describe('triangle strike data', () => {
     assert.equal(TRIANGLE.phases.some((p) => p.id.startsWith('gather')), false);
     const behind = (hand: 'near' | 'far', t: number): number => bladeAt(TRIANGLE, hand, t, poseAnchors).pos[0];
     for (const hand of ['near', 'far'] as const) {
-      assert.ok(behind(hand, 5) > -8, `${hand} blade still at the hip when the pull starts (${behind(hand, 5).toFixed(1)})`);
+      // The behind points sit 8 px further back than before (user feedback): the pull starts from -11 instead of -3.
+      assert.ok(behind(hand, 5) > -12, `${hand} blade still at the hip when the pull starts (${behind(hand, 5).toFixed(1)})`);
       assert.ok(behind(hand, 11.9) < -8, `${hand} blade behind the hip by the end of the pull (${behind(hand, 11.9).toFixed(1)})`);
       for (let t = 12; t < 24; t += 1) assert.ok(behind(hand, t) < -8, `${hand} blade charges behind the hip on tick ${t}`);
     }
@@ -142,7 +143,9 @@ describe('triangle strike data', () => {
     assert.ok(hand[0] <= -10, `the near hand is back (${hand[0].toFixed(1)})`);
     assert.equal(strikePoseAt(TRIANGLE, 8), 'tri-pb');
     assert.equal(strikePoseAt(TRIANGLE, 15), 'tri-pc', 'a deeper, more twisted crouch for the charge');
-    for (let t = 5; t < 24; t += 1) assert.equal(strikeTrailAt(TRIANGLE, t, poseAnchors, 'near').points.length, 0, 'no trail while charging');
+    // The fire starts as soon as the blades are thrown back: none while drawn, a trail from the pull on, through the charge.
+    for (let t = 0; t < 5; t += 1) assert.equal(strikeTrailAt(TRIANGLE, t, poseAnchors, 'near').points.length, 0, `no trail while drawn on tick ${t}`);
+    for (let t = 6; t < 24; t += 1) assert.ok(strikeTrailAt(TRIANGLE, t, poseAnchors, 'near').points.length > 0, `trail while thrown back on tick ${t}`);
     // No energy ball: the blades themselves are lit.
     for (let t = 0; t < 24; t += 1) assert.equal(strikeEffectsAt(TRIANGLE, t).some((e) => e.kind === 'fireball'), false, `no energy ball on tick ${t}`);
   });
@@ -172,7 +175,8 @@ describe('triangle strike data', () => {
     assert.ok(speed(34.9) > speed(32.1) * 2, 'accelerates into the ground');
     const near = thrownBladeAt(TRIANGLE, SLAM, poseAnchors, 'near').pos;
     const far = thrownBladeAt(TRIANGLE, SLAM, poseAnchors, 'far').pos;
-    assert.ok(near[0] >= 75 && near[0] <= 90, `near lands ${near[0].toFixed(1)} px ahead`);
+    // Landed 20 px further than before (81 px): user feedback, the blades reach further forward.
+    assert.ok(near[0] >= 95 && near[0] <= 106, `near lands ${near[0].toFixed(1)} px ahead`);
     assert.ok(near[0] - far[0] >= 12, 'two crescents: the far one lands behind the near one');
     for (const end of [near, far]) assert.ok(end[1] >= -4, 'on the ground');
   });
@@ -201,6 +205,8 @@ describe('triangle strike data', () => {
     for (let t = 7; t <= SLAM + 1; t += 1) {
       // The first ticks of the pull and of each arc pose: the blade is still catching up with the arm.
       if (t === 5 || t === 6 || t === 12 || t === 24 || t === 28 || t === 32) continue;
+      // From the top of the arc to the slam the blades reach 20 px further forward (user feedback): up to 42 degrees off the arm there.
+      const limitDeg = t >= 31 && t <= 45 ? 42 : 40;
       const pose = strikePoseAt(TRIANGLE, t);
       const a = ANCHORS[`kratos-${pose}`];
       const adv = strikeAdvanceAt(TRIANGLE, t);
@@ -211,7 +217,7 @@ describe('triangle strike data', () => {
         const arm = Math.atan2(grip[1] - shoulder[1], grip[0] - shoulder[0]);
         const toBlade = Math.atan2(blade[1] - shoulder[1], blade[0] - adv - shoulder[0]);
         const off = Math.abs(((arm - toBlade + 3 * Math.PI) % (2 * Math.PI)) - Math.PI);
-        assert.ok(off <= (40 * Math.PI) / 180, `tick ${t} (${pose}) ${hand}: arm ${((off * 180) / Math.PI).toFixed(0)} degrees off`);
+        assert.ok(off <= (limitDeg * Math.PI) / 180, `tick ${t} (${pose}) ${hand}: arm ${((off * 180) / Math.PI).toFixed(0)} degrees off`);
       }
     }
   });
@@ -231,7 +237,7 @@ describe('triangle strike data', () => {
 
   it('slams with a fire line over the whole hit box, dust at both ends, a flash where the near blade lands and a short shake', () => {
     const impact = TRIANGLE.impact!;
-    assert.deepEqual([impact.from, impact.to], [20, 88]);
+    assert.deepEqual([impact.from, impact.to], [40, 108]);
     const effects = strikeEffectsAt(TRIANGLE, SLAM);
     const fire = effects.find((e) => e.kind === 'groundFire') as Extract<ActiveEffect, { kind: 'groundFire' }>;
     const flash = effects.find((e) => e.kind === 'flash') as Extract<ActiveEffect, { kind: 'flash' }>;
@@ -242,6 +248,7 @@ describe('triangle strike data', () => {
     assert.ok(Math.abs(flash.x - landing) <= 2, `flash at ${flash.x}, the near blade lands at ${landing.toFixed(1)}`);
     assert.ok(flash.x >= impact.from && flash.x <= impact.to);
     assert.deepEqual(dust.at, [impact.from, impact.to]);
+    assert.ok(Math.abs(flash.x - 101) <= 1, 'the flash sits at the landing, 101 px ahead');
     assert.deepEqual([shake.px, shake.ticks], [2, 4]);
     assert.equal(fire.ticks, 8);
     assert.equal(strikeEffectsAt(TRIANGLE, SLAM + 7).some((e) => e.kind === 'groundFire'), true, 'flickers 8 ticks');
@@ -264,7 +271,7 @@ describe('triangle hits', () => {
     const template = new World();
     template.loadScenario('legionnaire');
     const foe = template.snapshot().entities.find((e) => e.kind === 'legionnaire')!;
-    const landing: EntityState = { ...foe, id: 'landing', x: kratos.x + 82, y: kratos.y, hp: 100, isDead: false, aiState: 'approach' };
+    const landing: EntityState = { ...foe, id: 'landing', x: kratos.x + 101, y: kratos.y, hp: 100, isDead: false, aiState: 'approach' };
     const state = startStrike(kratos, 'triangle');
     const hitsOn: number[] = [];
     let impact: StrikeImpactNotice | undefined;
@@ -280,8 +287,8 @@ describe('triangle hits', () => {
     }
     assert.equal(impactTick, SLAM);
     assert.ok(impact);
-    assert.ok(Math.abs(impact.x - (state.originX + 81)) < 1e-6 && impact.y === kratos.y);
-    assert.deepEqual(impact.dust, [state.originX + 20, state.originX + 88]);
+    assert.ok(Math.abs(impact.x - (state.originX + 101)) < 1e-6 && impact.y === kratos.y);
+    assert.deepEqual(impact.dust, [state.originX + 40, state.originX + 108]);
     assert.deepEqual(impact.shake, { px: 2, ticks: 4 });
     assert.equal(hitsOn.length, 2, `hit on ${hitsOn}`);
     assert.ok(hitsOn[0] >= 33 && hitsOn[0] <= SLAM, 'first by the arc');
@@ -417,6 +424,22 @@ describe('phases that end on landing', () => {
       assert.equal(state.tick, 5, 'grounded after the minimum: the next phase starts');
     } finally {
       delete phase.until;
+    }
+  });
+});
+
+describe('launcher: the blades retract on top', () => {
+  it('pulls both blades back toward Kratos during the top hold and recalls them from there without a jump', () => {
+    const LAUNCHER = STRIKES.launcher;
+    const top = LAUNCHER.phases.findIndex((p) => p.id === 'top');
+    const start = LAUNCHER.phases.slice(0, top).reduce((n, p) => n + p.ticks, 0);
+    const end = start + LAUNCHER.phases[top].ticks;
+    for (const hand of ['near', 'far'] as const) {
+      const first = bladeAt(LAUNCHER, hand, start, poseAnchors).pos;
+      const last = bladeAt(LAUNCHER, hand, end - 1, poseAnchors).pos;
+      const recall = bladeAt(LAUNCHER, hand, end, poseAnchors).pos;
+      assert.ok(Math.hypot(first[0] - last[0], first[1] - last[1]) >= 15, `${hand} blade comes back on top`);
+      assert.ok(Math.hypot(last[0] - recall[0], last[1] - recall[1]) <= 8, `${hand} recall starts where the retract ended`);
     }
   });
 });

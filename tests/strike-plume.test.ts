@@ -108,7 +108,7 @@ function legionnaireAt(x: number, y: number, id: string): EntityState {
 const SLAM = strikeImpactTick(PLUME);
 
 describe('approved strikes stay as recorded', () => {
-  it('keeps the triangle of commit 44a8172', () => assertMatchesFixture(TRIANGLE, 'triangle-track.json'));
+  it('keeps the triangle as re-recorded after the user feedback (landing 101 px ahead, fire from the pull)', () => assertMatchesFixture(TRIANGLE, 'triangle-track.json'));
   it('keeps Plume of Prometheus as recorded in this draft (chained from square 2)', () => {
     const fixture = JSON.parse(readFileSync(new URL('./fixtures/plume-track.json', import.meta.url), 'utf-8'));
     for (const q of fixture.samples) {

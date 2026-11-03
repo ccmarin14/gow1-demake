@@ -82,7 +82,7 @@ export type BladeMotion =
    * Back to the throwing hand (or to `to`, a feet-relative point of the
    * pose, e.g. crossed arms), accelerating, the chain sagging up to `sagPx`.
    */
-  | { kind: 'recall'; sagPx: number; to?: Vec2 };
+  | { kind: 'recall'; sagPx: number; to?: Vec2; fromS?: number };
 
 /**
  * The fire trail grows during a phase: max width (`crescent` trails), and
@@ -775,7 +775,8 @@ const TRIANGLE_MOTION = {
   recall: { kind: 'recall', sagPx: 5 },
 } as const;
 
-const TRIANGLE_GROWTH = { rise: { widthPx: 6 }, over: { widthPx: 6 }, down: { widthPx: 6 } };
+// The fire starts as soon as the blades are thrown back (pull, charge), not only on the arc.
+const TRIANGLE_GROWTH = { pull: { widthPx: 6 }, charge: { widthPx: 6 }, rise: { widthPx: 6 }, over: { widthPx: 6 }, down: { widthPx: 6 } };
 
 /**
  * Triangle on the ground (draft v2, after the critic; pending user approval):
@@ -783,7 +784,7 @@ const TRIANGLE_GROWTH = { rise: { widthPx: 6 }, over: { widthPx: 6 }, down: { wi
  * and holds them together at his hip, no energy ball (the original shows the blades themselves lit), in a visible
  * windup (legs apart, chest toward the camera); then swings them as two
  * crescents up behind him, pauses over his head and accelerates down in
- * front into the ground, 80 px ahead: a fire line along the ground, dust at
+ * front into the ground, 100 px ahead: a fire line along the ground, dust at
  * both ends, a flash where the blades land and a short shake, with a hit box
  * over the whole line. Holding triangle through the charge branches into the
  * launcher (then Ascension). It does not chain; guard or jump cut its recall short.
@@ -804,10 +805,10 @@ const TRIANGLE: StrikeDef = {
     {
       id: 'slam', ticks: 10, advancePx: 0, pose: 'tri-f', centerX: CX['tri-f'],
       effects: [
-        { kind: 'groundFire', from: 20, to: 88, heightPx: 3, ticks: 8 },
-        { kind: 'dust', at: [20, 88] },
+        { kind: 'groundFire', from: 40, to: 108, heightPx: 3, ticks: 8 },
+        { kind: 'dust', at: [40, 108] },
         // Where the near blade lands.
-        { kind: 'flash', x: 81, ticks: 2, radiusPx: 6 },
+        { kind: 'flash', x: 101, ticks: 2, radiusPx: 6 },
         { kind: 'shake', px: 2, ticks: 4 },
       ],
     },
@@ -819,7 +820,7 @@ const TRIANGLE: StrikeDef = {
       shoulder: [-2.3, -25.4],
       // From the hands at the hip, out and up behind Kratos, over the head
       // and down in front into the ground.
-      track: [[8.3, 11.4], [-0.7, 7.9], [-20, 5], [-30, -14], [4.3, -46.6], [38.3, -38.6], [64.3, -12.6], [78.3, 15.4], [80.3, 23.4], [80.3, 29.4]],
+      track: [[8.3, 11.4], [-8.7, 7.9], [-28, 5], [-30, -14], [5.4, -46.6], [47.9, -38.6], [80.3, -12.6], [97.8, 15.4], [100.3, 23.4], [100.3, 29.4]],
       chainFrom: 0.02,
       motion: TRIANGLE_MOTION,
       trailGrowth: TRIANGLE_GROWTH,
@@ -834,7 +835,7 @@ const TRIANGLE: StrikeDef = {
       shoulder: [3.9, -25],
       // Together with the near blade at the hands, then a second crescent
       // 16 px behind and 6 px below it, landing 62 px ahead.
-      track: [[0.1, 13], [-6.9, 9], [-13, 6], [-40, -12], [-17.9, -41], [16.1, -33], [42.1, -7], [56.1, 21], [58.1, 23], [58.1, 29]],
+      track: [[0.1, 13], [-14.9, 9], [-21, 6], [-40, -12], [-17.9, -41], [21.6, -33], [56.6, -7], [75.4, 21], [78.1, 23], [78.1, 29]],
       trackDepth: ['behind', 'behind', 'behind', 'behind', 'front', 'front', 'front', 'front', 'front', 'front'],
       chainFrom: 0.02,
       motion: TRIANGLE_MOTION,
@@ -851,7 +852,7 @@ const TRIANGLE: StrikeDef = {
   trailSamplesPerTick: 6,
   trailFadeWidthPx: 4,
   // The fire line's whole length hits, so an enemy at Kratos' feet is hit too.
-  impact: { phase: 'slam', from: 20, to: 88, heightPx: 20 },
+  impact: { phase: 'slam', from: 40, to: 108, heightPx: 20 },
   // Held through the windup, triangle becomes Ascension (next to build).
   branch: { atEndOf: 'charge', ifHeld: 'heavy-attack', into: 'launcher' },
   cancel: { from: 'recall', fromTick: 6 },
@@ -947,8 +948,9 @@ const LAUNCHER_MOTION = {
   sweep: { kind: 'track', from: 0, to: 3 / 7, ease: 'linear' },
   lift: { kind: 'track', from: 3 / 7, to: 1, ease: 'out' },
   // The enemy hangs in the air: the player decides here whether Kratos goes after it.
-  top: { kind: 'hold', driftPx: 3 },
-  recall: { kind: 'recall', sagPx: 5 },
+  // The blades do not stay stuck on top: they pull back toward him while the enemy hangs.
+  top: { kind: 'track', from: 1, to: 0.86, ease: 'out' },
+  recall: { kind: 'recall', sagPx: 5, fromS: 0.86 },
 } as const;
 
 const LAUNCHER_GROWTH = { sweep: { widthPx: 5 }, lift: { widthPx: 6 } };
@@ -978,7 +980,7 @@ const LAUNCHER: StrikeDef = {
       // Near shoulder of the low sweep (tri-f).
       shoulder: [-1.5, -24.2],
       // From behind the hip, low along the ground ahead, up the front, over the head.
-      track: [[-34.5, 6.2], [-34.5, 6.2], [-8.5, 22.2], [31.5, 28.2], [67.5, 20.2], [57.5, 10.2], [41.5, -9.8], [19.5, -31.8], [-2.5, -51.8], [-2.5, -51.8]],
+      track: [[-34.5, 6.2], [-34.5, 6.2], [-2.5, 22.2], [43.5, 28.2], [79.5, 20.2], [69.5, 10.2], [53.5, -9.8], [25.5, -31.8], [-2.5, -51.8], [-2.5, -51.8]],
       chainFrom: 0,
       motion: LAUNCHER_MOTION,
       trailGrowth: LAUNCHER_GROWTH,
@@ -991,7 +993,7 @@ const LAUNCHER: StrikeDef = {
       // Far shoulder of the low sweep (tri-f).
       shoulder: [4.6, -23.7],
       // The same sweep a little behind and lower.
-      track: [[-48.6, 9.7], [-48.6, 9.7], [-24.6, 23.7], [15.4, 29.7], [49.4, 21.7], [41.4, 11.7], [27.4, -8.3], [5.4, -30.3], [-14.6, -48.3], [-14.6, -48.3]],
+      track: [[-48.6, 9.7], [-48.6, 9.7], [-18.6, 23.7], [27.4, 29.7], [61.4, 21.7], [53.4, 11.7], [39.4, -8.3], [11.4, -30.3], [-14.6, -48.3], [-14.6, -48.3]],
       trackDepth: ['behind', 'behind', 'behind', 'front', 'front', 'front', 'front', 'front', 'front', 'front'],
       chainFrom: 0,
       motion: LAUNCHER_MOTION,
@@ -1012,26 +1014,12 @@ const LAUNCHER: StrikeDef = {
   cancel: { from: 'recall', fromTick: 4 },
 };
 
-/** Ascension's motion (video 43.2-44.8 s): the blades come down to the ground, point straight down as Kratos leaps, rise overhead, hang there while he falls, then drive into the ground. */
-const ASCENSION_MOTION = {
-  dip: { kind: 'track', from: 0, to: 2 / 9, ease: 'in' },
-  leap: { kind: 'track', from: 2 / 9, to: 4 / 9, ease: 'out' },
-  apex: { kind: 'track', from: 4 / 9, to: 7 / 9, ease: 'linear' },
-  fall: { kind: 'hold', driftPx: 3, at: 7 / 9 },
-  strike: { kind: 'track', from: 7 / 9, to: 1, ease: 'linear' },
-  land: { kind: 'recall', sagPx: 4 },
-} as const;
-
-const ASCENSION_GROWTH = { dip: { widthPx: 5 }, apex: { widthPx: 6 }, strike: { widthPx: 6 } };
-
 /**
- * Ascension (triangle held through the launcher's top hold; manual "Lanzar
- * al enemigo al aire y seguirlo" and "Super salto", video 43.2-44.8 s):
- * the blades come down in front as Kratos crouches, he leaps straight up
- * after the enemy with both arms and blades pointing down, bends the arms
- * to raise the blades, falls with both arms straight up holding them
- * overhead, then drives them down and lands crouched with the blades in the
- * ground (a vertical blow with the ground impact).
+ * Ascension (triangle held through the launcher's top hold; user feedback:
+ * not another attack, a leap). Kratos jumps after the launched enemy at full
+ * strength, hangs for about 0.5 s with low gravity while the blades stay
+ * held in his hands (no track, no trail, no hit), then falls normally and
+ * lands. Nothing on the ground: at most a little dust where he lands.
  */
 const ASCENSION: StrikeDef = {
   id: 'ascension',
@@ -1039,58 +1027,29 @@ const ASCENSION: StrikeDef = {
   heldBlade: { from: 'previous', ticks: 9, sagPx: 5 },
   air: true,
   phases: [
-    { id: 'dip', ticks: 4, advancePx: 0, pose: 'tri-f', centerX: CX['tri-f'] },
-    { id: 'leap', ticks: 8, advancePx: 0, pose: 'airtri-e', centerX: CX['airtri-e'], gravity: 0.6, leapVy: -500 },
-    { id: 'apex', ticks: 8, advancePx: 1, pose: 'asc-b', centerX: CX['asc-b'], gravity: 0.6 },
-    { id: 'fall', ticks: 60, advancePx: 0, pose: 'airtri-b', centerX: CX['airtri-b'], gravity: 1.4, until: { event: 'grounded', minTicks: 3 } },
+    // A short crouch to take off (the leap starts on the phase's first tick, so it cannot be the first phase).
+    { id: 'crouch', ticks: 2, advancePx: 0, pose: 'tri-f', centerX: CX['tri-f'] },
+    // Leaves the ground at 460 px/s: the apex is reached about 20 ticks later.
+    { id: 'leap', ticks: 10, advancePx: 0, pose: 'air-00', centerX: CX['air-00'], gravity: 1.4, leapVy: -460 },
+    { id: 'rise', ticks: 10, advancePx: 0, pose: 'air-02', centerX: CX['air-02'], gravity: 1.4 },
+    // The suspension: low gravity for 30 ticks, his vertical speed stays under 100 px/s.
+    { id: 'hang', ticks: 30, advancePx: 0, pose: 'air-01', centerX: CX['air-01'], gravity: 0.2 },
+    { id: 'fall', ticks: 60, advancePx: 0, pose: 'air-02', centerX: CX['air-02'], gravity: 1.2, until: { event: 'grounded', minTicks: 3 } },
     {
-      id: 'strike', ticks: 6, advancePx: 2, pose: 'tri-f', centerX: CX['tri-f'],
-      effects: [
-        { kind: 'groundFire', from: 8, to: 64, heightPx: 3, ticks: 8 },
-        { kind: 'dust', at: [8, 64] },
-        { kind: 'flash', x: 48, ticks: 2, radiusPx: 6 },
-        { kind: 'shake', px: 2, ticks: 4 },
-      ],
+      id: 'land', ticks: 8, advancePx: 0, pose: 'tri-f', centerX: CX['tri-f'],
+      effects: [{ kind: 'dust', at: [-4, 4] }],
     },
-    { id: 'land', ticks: 8, advancePx: 0, pose: 'tri-g', centerX: CX['tri-g'] },
   ],
-  blades: {
-    near: {
-      // Near shoulder of the raised arms (asc-b).
-      shoulder: [-6.4, -32.1],
-      // Overhead, down the front to the ground, under his feet (pointing down), up the front, overhead, driven down.
-      track: [[2.4, -43.9], [2.4, -43.9], [52.4, -11.9], [58.4, 26.1], [22.4, 40.1], [14.4, 48.1], [50.4, 18.1], [52.4, -23.9], [20.4, -47.9], [24.4, -47.9], [54.4, 36.1], [54.4, 36.1]],
-      chainFrom: 0,
-      motion: ASCENSION_MOTION,
-      trailGrowth: ASCENSION_GROWTH,
-      trail: { kind: 'profile', ...TRIANGLE_TRAIL },
-      trailBreakAt: [4 / 9, 7 / 9],
-      // The rise past the enemy and the final drive hit.
-      active: [{ fromS: 0.25, toS: 0.76 }, { fromS: 0.8 }],
-    },
-    far: {
-      // Far shoulder of the raised arms (asc-b).
-      shoulder: [1.8, -31.6],
-      track: [[-11.8, -40.4], [-11.8, -40.4], [36.2, -10.4], [42.2, 27.6], [6.2, 41.6], [-1.8, 49.6], [32.2, 19.6], [34.2, -20.4], [2.2, -44.4], [6.2, -44.4], [34.2, 35.6], [34.2, 35.6]],
-      chainFrom: 0,
-      motion: ASCENSION_MOTION,
-      trailGrowth: ASCENSION_GROWTH,
-      trail: { kind: 'profile', ...TRIANGLE_TRAIL },
-      trailBreakAt: [4 / 9, 7 / 9],
-      active: [{ fromS: 0.25, toS: 0.76 }, { fromS: 0.8 }],
-    },
-  },
-  // The blades hit the enemy as they pass it going up and launch it again, so it rises with him.
-  launch: { vy: -330 },
+  // The blades stay in his hands for the whole leap: no track, so no trail and no hit window.
+  blades: {},
   hitRadiusPx: 3.5,
   damage: 14,
   hitstunTicks: 14,
   hitstopTicks: 6,
   trailSamplesPerTick: 6,
   trailFadeWidthPx: 4,
-  impact: { phase: 'strike', from: 8, to: 64, heightPx: 20 },
   // J while rising starts Orion's Harpoon. The button is a draft choice (the manual's circle has no key yet).
-  chain: { into: 'harpoon', from: 'apex', fromTick: 0 },
+  chain: { into: 'harpoon', from: 'hang', fromTick: 0 },
 };
 
 /** What the three air squares share: a light hit, the near-identical trail of the ground strikes. */
@@ -1269,13 +1228,8 @@ const AIR_TRIANGLE: StrikeDef = {
     { id: 'raise', ticks: 20, advancePx: 0, pose: 'airtri-b', centerX: CX['airtri-b'], gravity: 2.2, until: { event: 'grounded', minTicks: 0 } },
     {
       id: 'land', ticks: 10, advancePx: 0, pose: 'tri-f', centerX: CX['tri-f'],
-      // The blades fly up over him and a tall burst of fire rises at his feet (GoW1 40.0-40.2 s).
-      effects: [
-        { kind: 'groundFire', from: 2, to: 30, heightPx: 9, ticks: 10 },
-        { kind: 'dust', at: [4, 30] },
-        { kind: 'flash', x: 14, ticks: 2, radiusPx: 7 },
-        { kind: 'shake', px: 2, ticks: 4 },
-      ],
+      // The strike ends with the landing: no fire, flash or shake (it does not hit the ground).
+      effects: [{ kind: 'dust', at: [4, 30] }],
     },
   ],
   blades: {
@@ -1283,7 +1237,7 @@ const AIR_TRIANGLE: StrikeDef = {
       // Near shoulder of the arms coming forward (airtri-c).
       shoulder: [-2.9, -30.8],
       // Behind and low, up behind, over the head, down the front, under the body, up behind again to overhead.
-      track: [[-17.1, 6.8], [-17.1, 6.8], [-27.1, -9.2], [-21.1, -29.2], [0.9, -41.2], [26.9, -31.2], [40.9, -5.2], [32.9, 18.8], [10.9, 34.8], [-15.1, 28.8], [-31.1, 8.8], [-27.1, -15.2], [-9.1, -37.2], [8.9, -41.2], [8.9, -41.2]],
+      track: [[-34.7, 6.8], [-34.7, 6.8], [-54.9, -9.2], [-42.8, -29.2], [1.8, -41.2], [54.4, -31.2], [82.8, -5.2], [66.6, 18.8], [22.0, 34.8], [-30.6, 28.8], [-63.0, 8.8], [-54.9, -15.2], [-18.5, -37.2], [18.0, -41.2], [18.0, -41.2]],
       trackDepth: ['behind', 'behind', 'behind', 'behind', 'front', 'front', 'front', 'front', 'front', 'behind', 'behind', 'behind', 'front', 'front', 'front'],
       chainFrom: 0,
       motion: AIR_TRIANGLE_MOTION,
@@ -1296,7 +1250,7 @@ const AIR_TRIANGLE: StrikeDef = {
       // Far shoulder of the arms coming forward (airtri-c).
       shoulder: [4.5, -30.1],
       // The same circle a little behind and below, two ticks later: two crescents.
-      track: [[-30.5, 9.1], [-30.5, 9.1], [-40.5, -6.9], [-34.5, -26.9], [-12.5, -38.9], [13.5, -28.9], [27.5, -2.9], [19.5, 21.1], [-2.5, 37.1], [-28.5, 31.1], [-44.5, 11.1], [-40.5, -12.9], [-22.5, -34.9], [-4.5, -38.9], [-4.5, -38.9]],
+      track: [[-61.8, 9.1], [-61.8, 9.1], [-82.1, -6.9], [-69.9, -26.9], [-25.3, -38.9], [27.3, -28.9], [55.7, -2.9], [39.5, 21.1], [-5.1, 37.1], [-57.8, 31.1], [-90.2, 11.1], [-82.1, -12.9], [-45.6, -34.9], [-9.1, -38.9], [-9.1, -38.9]],
       trackDepth: ['behind', 'behind', 'behind', 'behind', 'behind', 'front', 'front', 'front', 'front', 'behind', 'behind', 'behind', 'front', 'front', 'front'],
       chainFrom: 0,
       lag: { ticks: 2, until: 'raise' },
@@ -1314,7 +1268,6 @@ const AIR_TRIANGLE: StrikeDef = {
   hitstopTicks: 6,
   trailSamplesPerTick: 6,
   trailFadeWidthPx: 4,
-  impact: { phase: 'land', from: 2, to: 34, heightPx: 20 },
 };
 
 /**
@@ -1623,7 +1576,9 @@ export function thrownBladeAt(
   }
   if (motion.kind === 'recall') {
     const grip: Vec2 = motion.to ? [motion.to[0] + strikeAdvanceAt(def, tb), motion.to[1]] : strikeHandAt(def, tb, anchors, hand);
-    const tip = onTrack(def, hand, tb, 1);
+    // The blade comes back from where its track left it (`fromS`, the end by default).
+    const fromS = motion.fromS ?? 1;
+    const tip = onTrack(def, hand, tb, fromS);
     const e = u * u;
     const sagPx = motion.sagPx * Math.sin(Math.PI * u);
     return {
@@ -1631,8 +1586,8 @@ export function thrownBladeAt(
       chainOut: true,
       sagPx,
       deg: 100,
-      behindBody: trackDepthAt(def, 1, hand) === 'behind',
-      s: 1,
+      behindBody: trackDepthAt(def, fromS, hand) === 'behind',
+      s: fromS,
     };
   }
   const onCurve = trackBladeAt(def, t, hand)!;

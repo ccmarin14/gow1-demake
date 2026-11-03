@@ -279,7 +279,11 @@ export class ShellScene extends Phaser.Scene {
         const { width } = CONFIG.internal;
         this.cameras.main.shake((strikeImpact.shake.ticks * 1000) / 60, strikeImpact.shake.px / width);
       }
-      for (const x of strikeImpact.dust) this.vfxLayer?.emitDust(x, strikeImpact.y);
+      for (const x of strikeImpact.dust) {
+        this.vfxLayer?.emitDust(x, strikeImpact.y);
+        // Sparks where the blades bite the ground.
+        this.vfxLayer?.emitCombatSparks(x, strikeImpact.y - 2, 8, true);
+      }
     }
 
     const strikeHit = this.simulation.world.consumeStrikeHitNotice();

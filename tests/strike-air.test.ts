@@ -4,6 +4,7 @@ import { describe, it } from 'node:test';
 import {
   STRIKES,
   bladeAt,
+  strikeHitWindowAt,
   nearBladeAt,
   startStrike,
   stepStrike,
@@ -182,42 +183,39 @@ describe('launcher in the world (level 2)', () => {
   });
 });
 
-describe('Ascension data', () => {
-  it('runs dip, leap, apex, fall, strike and land, with its own poses (no jump frames) and a leap higher than a launch', () => {
-    assert.deepEqual(ASCENSION.phases.map((p) => p.id), ['dip', 'leap', 'apex', 'fall', 'strike', 'land']);
+describe('Ascension data (user feedback: a leap, not another attack)', () => {
+  it('chains from the launcher\'s top hold and is only a leap: crouch, leap, rise, hang, fall and land', () => {
+    assert.equal(STRIKES.launcher.branch?.into, 'ascension');
+    assert.equal(ASCENSION.air, true);
+    assert.deepEqual(ASCENSION.phases.map((p) => p.id), ['crouch', 'leap', 'rise', 'hang', 'fall', 'land']);
     assert.ok((ASCENSION.phases.find((p) => p.id === 'leap')?.leapVy ?? 0) < -380, 'the leap is higher than a launch');
-    for (const phase of ASCENSION.phases) assert.equal(/^air-0/.test(phase.pose), false, `${phase.id} does not reuse a jump frame`);
-    assert.deepEqual(ASCENSION.phases.map((p) => p.pose), ['tri-f', 'airtri-e', 'asc-b', 'airtri-b', 'tri-f', 'tri-g']);
+    assert.equal(ASCENSION.launch, undefined, 'it does not launch the enemy again');
   });
 
-  it('ends its fall on landing and drives the blades into the ground with the impact, flash, dust and shake', () => {
+  it('reuses the existing jump poses for the leap, the hang and the fall', () => {
+    const pose = (id: string): string => ASCENSION.phases.find((p) => p.id === id)!.pose;
+    assert.deepEqual([pose('leap'), pose('rise'), pose('hang'), pose('fall')], ['air-00', 'air-02', 'air-01', 'air-02']);
+  });
+
+  it('hangs for 30 ticks with low gravity (0.15-0.25), then falls at normal gravity until he lands', () => {
+    const hang = ASCENSION.phases.find((p) => p.id === 'hang')!;
+    assert.equal(hang.ticks, 30);
+    assert.ok(hang.gravity! >= 0.15 && hang.gravity! <= 0.25, `hang gravity ${hang.gravity}`);
     const fall = ASCENSION.phases.find((p) => p.id === 'fall')!;
+    assert.ok(fall.gravity! >= 1 && fall.gravity! <= 1.4, `fall gravity ${fall.gravity}`);
     assert.deepEqual(fall.until, { event: 'grounded', minTicks: 3 });
-    assert.equal(ASCENSION.impact?.phase, 'strike');
-    const strike = ASCENSION.phases.find((p) => p.id === 'strike')!;
-    assert.deepEqual(strike.effects?.map((e) => e.kind).sort(), ['dust', 'flash', 'groundFire', 'shake']);
-    assert.equal(strikeLength(ASCENSION) >= 60, true, 'long enough for the drop from the top');
   });
 
-  it('points the blades down while he rises, raises them overhead, holds them there while he falls, then drives them down', () => {
-    const near = (t: number) => thrownBladeAt(ASCENSION, t, poseAnchors, 'near').pos;
-    assert.ok(near(8)[1] >= -2, `blades below his feet in the leap (${near(8)[1].toFixed(0)})`);
-    assert.ok(near(19.9)[1] <= -60, 'raised overhead at the apex');
-    assert.ok(near(30)[1] <= -65, 'held overhead through the fall');
-    assert.ok(near(strikeLength(ASCENSION) - 8)[1] >= -12, 'driven into the ground at the end');
-  });
-
-  it('keeps its trails at most 55 px long and on their blades', () => {
-    for (const hand of ['near', 'far'] as const) {
-      for (let tick = 0; tick < strikeLength(ASCENSION); tick += 1) {
-        const points = strikeTrailAt(ASCENSION, tick, poseAnchors, hand).points;
-        assert.ok(pathLength(points) <= 55, `${hand} trail ${pathLength(points).toFixed(1)} px on tick ${tick}`);
-        if (points.length) assert.ok(dist(points[points.length - 1], bladeAt(ASCENSION, hand, tick, poseAnchors).pos) <= 2);
-      }
+  it('has no blade track: the blades stay in his hands, so no trail and no hit window on any tick', () => {
+    assert.deepEqual(ASCENSION.blades, {});
+    assert.equal(ASCENSION.impact, undefined, 'no ground impact');
+    for (let tick = 0; tick < strikeLength(ASCENSION); tick += 1) {
+      assert.equal(strikeHitWindowAt(ASCENSION, tick, 'near'), -1, `no hit window on tick ${tick}`);
+      assert.equal(strikeTrailAt(ASCENSION, tick, poseAnchors, 'near').points.length, 0, `no trail on tick ${tick}`);
     }
   });
 
-  it('moves both blades continuously (no jump over 40 px a tick)', () => {
+  it('keeps the held blades continuous (no jump over 40 px a tick, the blades stay in his hands)', () => {
     for (const hand of ['near', 'far'] as const) {
       let prev = bladeAt(ASCENSION, hand, 0, poseAnchors).pos;
       for (let t = 1; t < strikeLength(ASCENSION); t += 1) {
@@ -228,9 +226,10 @@ describe('Ascension data', () => {
     }
   });
 
-  it('has its hit windows on the rise past the enemy and on the drive', () => {
-    const windows = ASCENSION.blades.near!.active as readonly { fromS: number; toS?: number }[];
-    assert.equal(windows.length, 2);
+  it('only a little dust where he lands: no flash, no shake, no fire', () => {
+    const land = ASCENSION.phases.find((p) => p.id === 'land')!;
+    assert.deepEqual(land.effects?.map((e) => e.kind), ['dust']);
+    assert.ok(strikeLength(ASCENSION) >= 80, 'long enough for the hang and the drop');
   });
 });
 
@@ -427,15 +426,20 @@ describe('air triangle (manual: "Ataque vertical")', () => {
       }
     }
     assert.ok(ended, 'the strike ended');
-    assert.equal(impacts, 1, 'one landing impact');
+    assert.equal(impacts, 1, 'one landing notice (its dust only)');
     assert.equal(player(world.snapshot()).grounded, true);
   });
 
-  it('keeps its trails at most 55 px and its impact box covers the drop point', () => {
+  it('keeps its trails at most 55 px and has no ground impact: it does not hit the ground', () => {
     for (let tick = 0; tick < strikeLength(AIR_TRIANGLE); tick += 1) {
       assert.ok(pathLength(strikeTrailAt(AIR_TRIANGLE, tick, poseAnchors).points) <= 55);
     }
-    assert.equal(AIR_TRIANGLE.impact?.phase, 'land');
+    assert.equal(AIR_TRIANGLE.impact, undefined);
+    const land = AIR_TRIANGLE.phases.find((p) => p.id === 'land')!;
+    assert.deepEqual(land.effects?.map((e) => e.kind), ['dust'], 'the landing has no fire, flash or shake');
+    for (let tick = strikeLength(AIR_TRIANGLE) - land.ticks; tick < strikeLength(AIR_TRIANGLE); tick += 1) {
+      assert.equal(strikeHitWindowAt(AIR_TRIANGLE, tick, 'near'), -1, `no hit on the landing (tick ${tick})`);
+    }
   });
 
   it('follows the video: tucked with the blades low behind, one and a quarter turns of a vertical circle while hanging, a drop, a crouched landing with the blades raised', () => {
@@ -456,21 +460,21 @@ describe('air triangle (manual: "Ataque vertical")', () => {
     assert.ok(['coil', 'loop1a', 'loop1b', 'loop2'].every((id) => gravity(id) <= 0.25), 'hangs in the loop');
     assert.ok(['dive', 'swing', 'raise'].every((id) => gravity(id) > 1.5), 'drops hard');
     assert.equal(AIR_TRIANGLE.damage, 20, 'a heavy blow');
-    // Landing effects as for the ground triangle: a burst of fire, dust, flash, shake.
-    const land = AIR_TRIANGLE.phases.find((p) => p.id === 'land')!;
-    assert.deepEqual(land.effects?.map((e) => e.kind).sort(), ['dust', 'flash', 'groundFire', 'shake']);
+    // Reach: the blades are 1.35 times as far from the shoulder as before (user feedback).
+    const reach = Math.max(...AIR_TRIANGLE.blades.near!.track.map((pt) => pt[0]));
+    assert.ok(reach >= 80 && reach <= 84, `track reaches ${reach.toFixed(1)} px ahead of the shoulder (1.5x the first rebuild, user: more reach)`);
   });
 });
 
 describe('Orion\'s Harpoon (draft)', () => {
   it('chains from Ascension\'s follow-up on J', () => {
     assert.equal(ASCENSION.chain?.into, 'harpoon');
-    assert.equal(ASCENSION.chain?.from, 'apex');
+    assert.equal(ASCENSION.chain?.from, 'hang');
     const world = ascensionWorld();
     let started = false;
     for (let i = 0; i < 120 && !started; i += 1) {
       const snap = world.snapshot();
-      if (snap.strike?.id === 'ascension' && snap.strike.tick >= 14) {
+      if (snap.strike?.id === 'ascension' && snap.strike.tick >= 22) {
         world.step(['light-attack']);
         started = world.snapshot().strike?.id === 'harpoon' || world.snapshot().strike?.id === 'ascension' && world.snapshot().strike.queued === true;
       } else {
@@ -524,11 +528,12 @@ describe('air square 2 and 3 reach and reading (user feedback)', () => {
 
 describe('arm and body in the new strikes', () => {
     it('keeps the arm on its blade within 50 degrees in the air strikes, the launcher and Ascension, but for the first two ticks of each pose (the blade catches up); known gaps: the dip, the apex and the final drive (arms rising, blades catching up), the dive and swing (85); the launcher reuses poses whose arms do not follow its blades (not checked)', () => {
-    for (const def of [AIR1, AIR2, AIR3, AIR_TRIANGLE, ASCENSION]) {
+    // Ascension's blades stay in his hands (no track), so it has nothing to check here.
+    for (const def of [AIR1, AIR2, AIR3, AIR_TRIANGLE]) {
       let at = 0;
       for (const phase of def.phases) {
         const hands = def.id === 'airTriangle' || def.id === 'ascension' || def.id === 'launcher' ? (['near', 'far'] as const) : ([def.hand] as const);
-        const blades = phase.pose === 'air-00' || phase.pose === 'tri-g' || phase.id === 'land' || phase.id === 'dip' || (def.id === 'ascension' && (phase.id === 'apex' || phase.id === 'strike')) || phase.id === 'recall' || phase.id === 'top' || phase.id === 'fall' ? [] : hands;
+        const blades = phase.pose === 'air-00' || phase.pose === 'tri-g' || phase.id === 'land' || phase.id === 'recall' || phase.id === 'top' || phase.id === 'fall' ? [] : hands;
         for (let t = at + 2; t < Math.min(at + phase.ticks, strikeLength(def)); t += 1) {
           for (const hand of blades) {
             const a = ANCHORS[`kratos-${phase.pose}`];
@@ -539,7 +544,7 @@ describe('arm and body in the new strikes', () => {
             const arm = Math.atan2(grip[1] - shoulder[1], grip[0] - shoulder[0]);
             const toBlade = Math.atan2(blade[1] - shoulder[1], blade[0] - adv - shoulder[0]);
             const off = Math.abs(((arm - toBlade + 3 * Math.PI) % (2 * Math.PI)) - Math.PI);
-            assert.ok(off <= ((def.id === 'airTriangle' && (phase.id === 'dive' || phase.id === 'swing') ? 85 : def.id === 'launcher' ? 90 : 50) * Math.PI) / 180, `${def.id} tick ${t} (${phase.pose}) ${hand}: arm ${((off * 180) / Math.PI).toFixed(0)} degrees off`);
+            assert.ok(off <= ((def.id === 'airTriangle' && (phase.id === 'dive' || phase.id === 'swing' || phase.id === 'raise') ? 90 : def.id === 'airTriangle' ? 62 : def.id === 'launcher' ? 90 : 50) * Math.PI) / 180, `${def.id} tick ${t} (${phase.pose}) ${hand}: arm ${((off * 180) / Math.PI).toFixed(0)} degrees off`);
           }
         }
         at += phase.ticks;
