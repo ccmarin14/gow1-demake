@@ -62,3 +62,14 @@ Quien reciba el proyecto (otro modelo o otra herramienta) retoma desde `git log`
 | Ninguna herramienta | La usuaria puede probar el juego (`pnpm dev`, o el túnel de Cloudflare) y anotar la lista de cosas por corregir; no se pierde nada porque el estado está en `docs/estado.md` y en git. | |
 
 **Verificación común a todas las herramientas** (no depende de un modelo): `pnpm test`, `pnpm build`, `pnpm art:check` y la prueba de navegador `scripts/verify/browser-check.sh` (arranca Vite y Chrome sin cabeza, graba la partida y debe imprimir `errors 0 failed 0`); `scripts/verify/perf.mjs` mide cuadros por segundo con la CPU frenada. Los renders 3D necesitan Blender (`~/.local/bin/blender`) y `python3 scripts/pose_render/build_anchors.py --jobs 6`.
+
+## Retomar el proyecto en una sesión nueva
+
+Todo lo necesario está en el repositorio y en git; no dependas del contexto de ninguna conversación anterior.
+
+1. Lee este archivo, `docs/estado.md` (§1 qué funciona, §2 problemas y la lista de la usuaria, §3 backlog con modelo y bloqueo de cada historia) y `docs/direccion.md` §6 (fuentes del moveset). Mira `git log --oneline -15` y `git status`.
+2. Comprueba la base: `pnpm test` (verdes), `pnpm build` y `pnpm art:check`.
+3. Elige una historia *Lista* del backlog según el modelo que eres (reglas de "Reparto del trabajo"). Si la usuaria mandó una lista nueva de cosas por corregir, esa va primero: conviértela en historias con su modelo antes de tocar código.
+4. **Ver el juego en un celular:** `pnpm dev` (Vite en el puerto 5173, ya escucha en `0.0.0.0` y acepta `*.trycloudflare.com`) y en otra terminal `~/.local/bin/cloudflared tunnel --no-autoupdate --url http://127.0.0.1:5173`; la URL `https://….trycloudflare.com` sale en la salida y su nombre tarda uno o dos minutos en resolver. Es pública mientras corra el túnel: ciérralo con `Ctrl+C` al terminar.
+5. **Imágenes y videos de trabajo:** viven en `docs/tmp/` (ignorada por git, unos 500 MB; incluye el maniquí 3D que usa `scripts/pose_render/`, `docs/tmp/golpes/` con las vistas previas y `docs/tmp/golpes-ref/` con las fotogramas del video de referencia y `moveset.mp4`). Si faltan, el video se baja de YouTube (`0X9RiODtCB4`) con el binario de yt-dlp (`-f 18`) y el maniquí es el de `scripts/pose_render/kratos.json`.
+6. Al terminar la sesión: todo commiteado, `docs/estado.md` con el paso nuevo y el backlog al día. La memoria del asistente (Engram) ayuda, pero lo que no está en estos archivos o en git no existe para la próxima sesión.

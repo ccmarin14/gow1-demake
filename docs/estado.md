@@ -2,7 +2,7 @@
 
 Documento único del estado medido de `gow-8b`. Se actualiza en el mismo commit de cada paso. El historial previo está en git (`git show c2e8729:archivo/docs/`).
 
-## 1. Qué funciona hoy (medido el 2026-10-30)
+## 1. Qué funciona hoy (medido el 2026-11-03)
 
 - **Build y navegador:** `pnpm build` pasa sin errores; el servidor de desarrollo carga en Chrome a 480×270 con 0 errores de consola y 0 peticiones HTTP fallidas.
 - **Simulación determinista (60 Hz):** movimiento horizontal (con inercia en el aire, sin derrape; D-32), salto y doble salto, plataformas one-way, rodada con i-frames, el combo de 6 □ (con *Plume* tras □□△), el △ en tres niveles por tiempo (golpe, lanzador, *Ascension*), los golpes aéreos (un ataque en el primer salto gasta el doble salto, D-40) y el cambio de dirección entre golpes (D-37), guardia/parry, magia (*Ira de Poseidón*), orbes, cofres, checkpoints e IA de legionario, arquero e hidra (`src/sim/`).
