@@ -457,9 +457,9 @@ const SQUARE3: StrikeDef = {
     near: {
       // Near shoulder of the cut (sq3-g).
       shoulder: [-4.5, -29.7],
-      // On the floor ahead (30 px out), up in front through chest height, to
+      // On the floor ahead (41 px out), up in front through chest height (75 px out), to
       // over the head in front (65 px up): where square 4 starts.
-      track: [[26.5, 28.7], [34.5, 27.7], [48.5, -0.3], [40.5, -24.3], [21.5, -35.3], [-1.5, -36.3]],
+      track: [[41.1, 28.7], [53.5, 27.7], [75.2, -0.3], [62.8, -24.3], [33.3, -35.3], [-2.3, -36.3]],
       chainFrom: 0.05,
       motion: {
         // The blade drags along the floor to the start of the cut.
@@ -502,7 +502,11 @@ const SQUARE4: StrikeDef = {
   phases: [
     { id: 'carry', ticks: 2, advancePx: 0, pose: 'sq3-c', centerX: CX['sq3-c'] },
     { id: 'throw', ticks: 5, advancePx: 3, pose: 'sq3-d', centerX: CX['sq3-d'] },
-    { id: 'hold', ticks: 6, advancePx: 0, pose: 'sq3-e', centerX: CX['sq3-e'] },
+    {
+      id: 'hold', ticks: 6, advancePx: 0, pose: 'sq3-e', centerX: CX['sq3-e'],
+      // The blade meets the chest where the descent ends: a flash, like square 3's cut.
+      effects: [{ kind: 'flash', x: 84, ticks: 3, radiusPx: 6 }],
+    },
     { id: 'recall', ticks: 7, advancePx: 0, pose: 'sq3-f', centerX: CX['sq3-f'] },
   ],
   blades: {
@@ -510,8 +514,8 @@ const SQUARE4: StrikeDef = {
       // Near shoulder of the throw (sq3-d).
       shoulder: [-3.7, -31.7],
       // From over the head in front (where square 3 stops) down the diagonal
-      // to chest height, 74 px out with the step.
-      track: [[-2.3, -34.3], [20.7, -33.3], [38.7, -9.3], [72.7, 1.7], [85.7, 3.7]],
+      // to chest height, 87 px out with the step.
+      track: [[-2.8, -34.3], [32.5, -33.3], [46.4, -9.3], [87.2, 1.7], [102.8, 3.7]],
       chainFrom: 0.05,
       motion: {
         carry: { kind: 'carry' },
@@ -519,7 +523,7 @@ const SQUARE4: StrikeDef = {
         hold: { kind: 'hold', driftPx: 2 },
         recall: { kind: 'recall', sagPx: 5 },
       },
-      trailGrowth: { throw: { widthPx: 6, tailPx: 20, tailFromU: 0.5 } },
+      trailGrowth: { throw: { widthPx: 6, tailPx: 30, tailFromU: 0.4 } },
       trail: { kind: 'profile', ...SQUARE_TRAIL },
       // From the way down in front, at chest and shoulder height, to the end of the hold.
       active: { fromS: 0.3 },
@@ -722,7 +726,7 @@ const SQUARE6: StrikeDef = {
       shoulder: [3.6, -27.1],
       // Out of phase: round behind the body, higher, then the same lash a
       // little lower and shorter, crossing the near blade.
-      track: [[-29.6, -22.9], [-29.6, -22.9], [-43.6, -8.9], [-47.6, 1.1], [-33.6, -0.9], [-3.6, -2.9], [26.4, -0.9], [38.4, 3.1], [52.4, 5.1], [67.4, 13.1], [67.4, 13.1]],
+      track: [[-29.6, -22.9], [-29.6, -22.9], [-43.6, -8.9], [-47.6, 1.1], [-33.6, -0.9], [-3.6, -2.9], [26.4, -0.9], [38.4, 3.1], [52.4, 5.1], [75.4, -0.9], [75.4, -0.9]],
       trackDepth: ['behind', 'behind', 'behind', 'behind', 'behind', 'behind', 'behind', 'front', 'front', 'front', 'front'],
       chainFrom: 0,
       lag: { ticks: 3, until: 'throw' },
@@ -1150,9 +1154,9 @@ const AIR2: StrikeDef = {
     // Arms spread as the blade leaves the front-right and passes over the back...
     { id: 'orbitA', ticks: 3, advancePx: 1, pose: 'aq2-b', centerX: CX['aq2-b'], gravity: 0.25 },
     // ...the far arm swings back with the reverse twist while it crosses the left side...
-    { id: 'orbitB', ticks: 5, advancePx: 1, pose: 'aq2-c', centerX: CX['aq2-c'], gravity: 0.25 },
+    { id: 'orbitB', ticks: 8, advancePx: 1, pose: 'aq2-c', centerX: CX['aq2-c'], gravity: 0.25 },
     // ...and the far arm comes forward again as it closes the ellipse in front of the chest.
-    { id: 'orbitC', ticks: 4, advancePx: 1, pose: 'aq2-a', centerX: CX['aq2-a'], gravity: 0.25 },
+    { id: 'orbitC', ticks: 5, advancePx: 1, pose: 'aq2-a', centerX: CX['aq2-a'], gravity: 0.25 },
     { id: 'settle', ticks: 5, advancePx: 0, pose: 'air-00', centerX: CX['air-00'], gravity: 0.6 },
   ],
   blades: {
@@ -1160,7 +1164,7 @@ const AIR2: StrikeDef = {
       // Far shoulder of the orbit (aq2-b).
       shoulder: [3.4, -30.6],
       // Flat ellipse (32 x 6 px) around the chest from the front-right: back (upper), left, front (lower).
-      track: [[26.6, 0.6], [26.6, 0.6], [17.2, -3.6], [-5.4, -5.4], [-28, -3.6], [-37.4, 0.6], [-28, 4.8], [-5.4, 6.6], [17.2, 4.8], [26.6, 0.6], [26.6, 0.6]],
+      track: [[79.8, 0.6], [79.8, 0.6], [51.6, -3.6], [-16.2, -5.4], [-84, -3.6], [-112.2, 0.6], [-84, 4.8], [-16.2, 6.6], [51.6, 4.8], [79.8, 0.6], [79.8, 0.6]],
       trackDepth: ['front', 'front', 'behind', 'behind', 'behind', 'behind', 'front', 'front', 'front', 'front', 'front'],
       chainFrom: 0,
       motion: {
@@ -1202,7 +1206,7 @@ const AIR3: StrikeDef = {
       // Near shoulder of the slash (aq3-b).
       shoulder: [-1.9, -30.5],
       // Up behind the head, over it and down ahead in a diagonal.
-      track: [[-11.1, -12.5], [-11.1, -12.5], [3.9, -21.5], [25.9, -19.5], [47.9, -7.5], [67.9, 8.5], [85.9, 24.5], [85.9, 24.5]],
+      track: [[-11.5, -12.5], [-11.5, -12.5], [4.1, -21.5], [26.9, -19.5], [49.8, -7.5], [70.6, 8.5], [89.3, 24.5], [89.3, 24.5]],
       chainFrom: 0,
       motion: {
         wind: { kind: 'carry' },
@@ -1210,7 +1214,8 @@ const AIR3: StrikeDef = {
         slash: { kind: 'track', from: 0.45, to: 1, ease: 'linear' },
         settle: { kind: 'recall', sagPx: 4 },
       },
-      trailGrowth: { arc: { widthPx: 5 }, slash: { widthPx: 6 } },
+      // The arc and the slash are one stroke: the same width, so the third hit reads as a line.
+      trailGrowth: { arc: { widthPx: 6 }, slash: { widthPx: 6 } },
       trail: { kind: 'profile', ...TRIANGLE_TRAIL },
       active: { fromS: 0.5 },
     },

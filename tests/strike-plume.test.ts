@@ -124,6 +124,7 @@ describe('approved strikes stay as recorded', () => {
     assertMatchesFixture(STRIKES.square3, 'square3-track.json');
     assertMatchesFixture(STRIKES.square4, 'square4-track.json');
   });
+  it('keeps air square 1 exactly as recorded (approved, not to be changed)', () => assertMatchesFixture(STRIKES.air1, 'air1-track.json'));
 });
 
 describe('ground fire line', () => {

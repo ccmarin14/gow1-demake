@@ -155,7 +155,8 @@ describe('square-3 strike data (the ascending cut)', () => {
       prevY = p[1];
     }
     const top = thrownBladeAt(SQUARE3, 14, poseAnchors).pos;
-    assert.ok(top[1] < -60 && top[0] > 5 && top[0] < 35, `stops high in front (${top.map((v) => v.toFixed(0))})`);
+    // The cut reaches 1.55 times further than before (square 3 reach 70 px): the top sits further out too.
+    assert.ok(top[1] < -60 && top[0] > 5 && top[0] < 45, `stops high in front (${top.map((v) => v.toFixed(0))})`);
   });
 
   it('points the near arm at its blade from the cut through the hold (within 40 degrees)', () => {
@@ -498,6 +499,33 @@ describe('turning around mid-combo', () => {
     const now = player(after).x + after.strike!.facing * centre(strikePoseAt(SQUARE2, 0));
     assert.equal(after.strike?.facing, -1);
     assert.ok(Math.abs(now - was) <= 3, `body centre moved ${Math.abs(now - was).toFixed(1)} px`);
+  });
+});
+
+/** Furthest the blade gets forward (px, feet-relative) over the whole strike, chained on `entry`. */
+const maxForward = (def: typeof SQUARE1, hand: 'near' | 'far', entry?: StrikeEntry): number => {
+  let max = -Infinity;
+  for (let t = 0; t <= strikeLength(def) - 1; t += 0.05) {
+    const p = (hand === 'near' ? nearBladeAt : farBladeAt)(def, t, poseAnchors, entry).pos;
+    max = Math.max(max, p[0]);
+  }
+  return max;
+};
+
+describe('reach and effects after the user feedback (squares 3 and 4)', () => {
+  const SQ3_ENTRY: StrikeEntry = JSON.parse(readFileSync(new URL('./fixtures/square3-track.json', import.meta.url), 'utf-8')).entry;
+
+  it('square 3 reaches at least 70 px forward (it reached 45)', () => {
+    assert.ok(maxForward(SQUARE3, 'near', SQ3_ENTRY) >= 70);
+  });
+
+  it('square 4 reaches at least 85 px forward (it reached 73)', () => {
+    assert.ok(maxForward(SQUARE4, 'near') >= 85);
+  });
+
+  it('square 4 has a flash where its blade meets the chest, like square 3 and its neighbours', () => {
+    const hold = SQUARE4.phases.find((p) => p.id === 'hold');
+    assert.ok(hold?.effects?.some((e) => e.kind === 'flash'), 'a flash on the hold');
   });
 });
 

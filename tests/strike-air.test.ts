@@ -500,6 +500,28 @@ describe('Orion\'s Harpoon (draft)', () => {
   });
 });
 
+describe('air square 2 and 3 reach and reading (user feedback)', () => {
+  /** Furthest the blade gets forward (px, feet-relative) over the whole strike. */
+  const maxForward = (def: typeof AIR1, hand: 'near' | 'far'): number => {
+    let max = -Infinity;
+    for (let t = 0; t <= strikeLength(def) - 1; t += 0.05) max = Math.max(max, bladeAt(def, hand, t, poseAnchors).pos[0]);
+    return max;
+  };
+
+  it('air square 2 reaches at least 85 px forward with its far blade (it reached 33)', () => {
+    assert.ok(maxForward(AIR2, 'far') >= 85);
+  });
+
+  it('air square 3 reaches at least 90 px forward with its near blade (it reached 88)', () => {
+    assert.ok(maxForward(AIR3, 'near') >= 90);
+  });
+
+  it('air square 3 draws its arc and its slash at the same width, so the third hit reads as one stroke', () => {
+    const growth = AIR3.blades.near?.trailGrowth;
+    assert.equal(growth?.arc?.widthPx, growth?.slash?.widthPx);
+  });
+});
+
 describe('arm and body in the new strikes', () => {
     it('keeps the arm on its blade within 50 degrees in the air strikes, the launcher and Ascension, but for the first two ticks of each pose (the blade catches up); known gaps: the dip, the apex and the final drive (arms rising, blades catching up), the dive and swing (85); the launcher reuses poses whose arms do not follow its blades (not checked)', () => {
     for (const def of [AIR1, AIR2, AIR3, AIR_TRIANGLE, ASCENSION]) {

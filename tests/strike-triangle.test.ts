@@ -101,6 +101,17 @@ describe('square-6 (the finisher, formerly square 5) is unchanged as approved', 
   });
 });
 
+describe('square 6 closes its forward lash (user feedback)', () => {
+  it('ends the throw and holds with both blades within 14 px of each other, crossing in an X', () => {
+    // The throw runs from tick 18 to 23 and the hold to 27 (load 4, back 5, sweepA 4, sweepB 5).
+    for (let t = 23; t <= 27; t += 0.5) {
+      const near = nearBladeAt(SQUARE6, t, poseAnchors, SQ6_FIXTURE.entry).pos;
+      const far = farBladeAt(SQUARE6, t, poseAnchors, SQ6_FIXTURE.entry).pos;
+      assert.ok(dist(near, far) <= 14, `blades ${dist(near, far).toFixed(1)} px apart at ${t}`);
+    }
+  });
+});
+
 describe('triangle strike data', () => {
   it('runs draw 5, pull 7, charge 12, rise 4, over 4, down 4, slam 10 and recall 12 ticks (58): a 0.4 s windup, all of it behind the body', () => {
     assert.deepEqual(
