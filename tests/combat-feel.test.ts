@@ -36,30 +36,24 @@ function foeWorld(): World {
 }
 
 describe('jumping around strikes', () => {
-  it('a jump pressed during an air strike double-jumps out of it', () => {
+  it('an attack in the first jump spends the double jump: no jumping again until he lands', () => {
     const world = playingWorld();
     inTheAir(world);
-    world.step(['light-attack']);
-    hold(world, 3, []);
-    assert.equal(world.snapshot().strike?.id, 'air1');
     assert.equal(player(world.snapshot()).jumpsUsed, 1);
-    world.step(['jump']);
-    assert.equal(world.snapshot().strike, undefined, 'the jump cancelled the air strike');
-    const after = player(world.snapshot());
-    assert.equal(after.jumpsUsed, 2);
-    assert.ok(after.vy < -300, `rising again (vy ${after.vy})`);
-  });
-
-  it('with the double jump already spent, an air strike is not cancelled by a jump', () => {
-    const world = playingWorld();
-    inTheAir(world);
-    world.step(['jump']);
-    hold(world, 4, []);
-    assert.equal(player(world.snapshot()).jumpsUsed, 2);
     world.step(['light-attack']);
-    hold(world, 2, []);
-    world.step(['jump']);
     assert.equal(world.snapshot().strike?.id, 'air1');
+    assert.equal(player(world.snapshot()).jumpsUsed, 2, 'the attack used the double jump');
+    world.step(['jump']);
+    assert.equal(world.snapshot().strike?.id, 'air1', 'a jump does not cancel the air strike');
+    for (let i = 0; i < 80 && world.snapshot().strike; i += 1) world.step([]);
+    const vy = player(world.snapshot()).vy;
+    world.step(['jump']);
+    assert.ok(player(world.snapshot()).vy > vy - 100, `no new jump after the strike (vy ${vy.toFixed(0)} -> ${player(world.snapshot()).vy.toFixed(0)})`);
+    for (let i = 0; i < 200 && !player(world.snapshot()).grounded; i += 1) world.step([]);
+    assert.equal(player(world.snapshot()).grounded, true);
+    world.step(['jump']);
+    hold(world, 2, []);
+    assert.ok(player(world.snapshot()).vy < -100, 'jumps again after landing');
   });
 
   it('a jump pressed during a ground strike waits for it to end instead of being lost', () => {
@@ -180,4 +174,20 @@ describe('hanging in the air', () => {
     assert.equal(lash, 3, 'reached the third lash');
     assert.ok(player(world.snapshot()).y - y0 < 45, `lost ${(player(world.snapshot()).y - y0).toFixed(0)} px over the whole air combo`);
   });
+});
+
+describe('the three air lashes', () => {
+  for (const spacing of [8, 12, 16, 20]) {
+    it(`reach the third lash tapping square every ${spacing} ticks`, () => {
+      const world = playingWorld();
+      inTheAir(world);
+      const seen = new Set<string>();
+      for (let i = 0; i < 120 && !player(world.snapshot()).grounded; i += 1) {
+        world.step(i % spacing === 0 ? ['light-attack'] : []);
+        const id = world.snapshot().strike?.id;
+        if (id) seen.add(id);
+      }
+      assert.ok(seen.has('air1') && seen.has('air2') && seen.has('air3'), `lashes seen: ${[...seen].join(', ')}`);
+    });
+  }
 });

@@ -613,10 +613,6 @@ export class World {
         if (this.strike && strikeCancellable(STRIKES[this.strike.id], this.strike.tick) && (wantsGuard || jumpEdge)) {
           this.strike = null;
         }
-        // An air strike gives way to the double jump (the jump cancels it, as in GoW 1).
-        if (this.strike && STRIKES[this.strike.id].air && jumpEdge && player.jumpsUsed < VERTICAL_PARAMS.maxJumps) {
-          this.strike = null;
-        }
         // A jump pressed during a ground strike waits for it to end instead of being lost.
         if (this.strike && jumpEdge) {
           this.jumpQueuedTicks = JUMP_QUEUE_TICKS;
@@ -699,6 +695,10 @@ export class World {
             this.strike = next;
             startedNow = true;
           }
+        }
+        // Attacking in the air spends the double jump: no more jumps until he lands.
+        if (this.strike && startedNow && STRIKES[this.strike.id].air) {
+          player.jumpsUsed = VERTICAL_PARAMS.maxJumps;
         }
         // The air lashes and the air triangle's loop hang Kratos: a fall already
         // under way is cut to a crawl as the strike starts (GoW 1 keeps him
