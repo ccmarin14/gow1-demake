@@ -73,4 +73,22 @@ describe('roll', () => {
     hold(world, ROLL_TICKS + 10, ['dodge']);
     assert.equal(player(world).rollPhase, 'none');
   });
+
+  it('buffers a light attack during the roll and starts it when the roll ends', () => {
+    const world = playingWorld();
+    world.step(['dodge']);
+    world.step(['light-attack']);
+    assert.equal(world.snapshot().strike, undefined);
+    hold(world, ROLL_TICKS, []);
+    assert.equal(world.snapshot().strike?.id, 'square1');
+    assert.equal(player(world).rollPhase, 'none');
+  });
+
+  it('buffers a heavy attack during the roll without creating a special chain', () => {
+    const world = playingWorld();
+    world.step(['dodge']);
+    world.step(['heavy-attack']);
+    hold(world, ROLL_TICKS, []);
+    assert.equal(world.snapshot().strike?.id, 'triangle');
+  });
 });

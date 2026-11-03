@@ -528,6 +528,8 @@ export const CONFIG = {
  */
 export const ROLL_TICKS = 20;
 export const ROLL_INVUL_TICKS = 15;
+/** Attack input buffered during a roll remains valid through its short recovery window. */
+export const ROLL_ATTACK_BUFFER_TICKS = 8;
 export const METRICS_WINDOW_FRAMES = CONFIG.presentation.metricsWindowFrames;
 
 export type GameConfig = typeof CONFIG;

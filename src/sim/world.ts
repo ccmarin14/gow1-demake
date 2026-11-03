@@ -1,4 +1,4 @@
-import { CONFIG } from '../config';
+import { CONFIG, ROLL_ATTACK_BUFFER_TICKS } from '../config';
 import { checksumOf } from './checksum';
 import { stepHorizontal } from './movement';
 import type { Platform } from './scenarios';
@@ -55,6 +55,8 @@ export class World {
    */
   private heavyAttackHeld = false;
   private heavyHeldTicks = 0;
+  /** A ground attack pressed during a roll waits until the roll releases control. */
+  private rollAttackBuffer: { button: 'light' | 'heavy'; ticks: number } | null = null;
   /** Kratos' strike in progress (`null` when not striking). */
   private strike: StrikeState | null = null;
   /** Left/right held on this tick and for how many ticks in a row (a combo turns only on a steady hold). */
@@ -393,6 +395,7 @@ export class World {
     this.strikeImpactNotice = null;
     this.groundFires = [];
     this.strike = null;
+    this.rollAttackBuffer = null;
     this.direction = 0;
     this.directionTicks = 0;
     this.hitstopTicks = 0;
@@ -633,6 +636,12 @@ export class World {
 
         const rolling = isRolling(player);
         const guarding = isGuarding(player);
+        if (rolling && (lightAttackEdge || heavyAttackPress)) {
+          this.rollAttackBuffer = {
+            button: heavyAttackPress ? 'heavy' : 'light',
+            ticks: ROLL_ATTACK_BUFFER_TICKS,
+          };
+        }
 
         // Square 1: on the J edge, on the ground and free. Mid-strike, J
         // queues the next strike of the combo, which starts once the chain
@@ -706,7 +715,7 @@ export class World {
         if (this.strike && startedNow && HOVER_STRIKES.has(this.strike.id)) {
           player.vy = Math.max(HOVER_VY_MIN, Math.min(HOVER_VY_MAX, player.vy));
         }
-        const nowStriking = this.strike !== null;
+        let nowStriking = this.strike !== null;
         if (this.comboGrace) {
           this.comboGrace.ticks -= 1;
           if (nowStriking || this.comboGrace.ticks <= 0) this.comboGrace = null;
@@ -727,6 +736,19 @@ export class World {
         }
         stepRoll(player);
         const nowRolling = isRolling(player);
+        if (!nowRolling && this.strike === null && this.rollAttackBuffer) {
+          const buffered = this.rollAttackBuffer;
+          this.rollAttackBuffer = null;
+          if (player.grounded && !guarding && !nowCastingMagic && !inHitstun && !isOpeningChest) {
+            if (direction !== 0) player.facing = direction;
+            this.strike = startStrike(player, buffered.button === 'heavy' ? 'triangle' : 'square1');
+            startedNow = true;
+          }
+        } else if (!nowRolling && this.rollAttackBuffer) {
+          this.rollAttackBuffer.ticks -= 1;
+          if (this.rollAttackBuffer.ticks <= 0) this.rollAttackBuffer = null;
+        }
+        nowStriking = this.strike !== null;
 
         // Jump cancels guard (jump out of guard)
         if (isGuarding(player) && jumpEdge && !inHitstun) {

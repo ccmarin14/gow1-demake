@@ -106,7 +106,7 @@ Historias de usuario que quedan, con el modelo que las trabaja y qué las bloque
 | **BL-02** | Como jugadora quiero ver las hojas encendidas en la carga de △ y fuego en los golpes pesados, sin estelas grandes. | Fuego a lo largo de la hoja en la carga; columnas de fuego en el △ aéreo y en el tercer □; estelas de 55 px o menos. | Sonnet | Cupo | S3 |
 | **BL-03** | Como jugadora en celular quiero que el juego no se trabe. | Con la CPU 4 veces más lenta, el p95 de cuadro es 33 ms o menos y no hay cuadros de más de 50 ms; se evalúa pasar a WebGL sin romper las capturas (`toDataURL`). | Sonnet | Cupo; riesgo en las herramientas de captura | S3 |
 | **BL-04** | Como jugadora quiero ajustar la sensación de los combos (gracia, búfer, tiempos de los niveles de △, pausa, empuje, sacudida). | Los valores están en una tabla de constantes, con una prueba por regla. Hoy están dispersos: `COMBO_GRACE_TICKS`, `JUMP_QUEUE_TICKS`, `HEAVY_*`, `KNOCKBACK_*` y `HOVER_*` en `world.ts`, y los ticks de cada fase en `strike.ts`. | Haiku | Lista de la usuaria | S2 |
-| **BL-05** | Como jugadora quiero atacar justo al salir de una rodada. | Pulsar □ o △ durante la rodada o hasta 8 ticks después arranca el golpe en cuanto termina (búfer; sin golpes especiales, no hay fuente). | Haiku | Lista | S2 |
+| **BL-05** | Como jugadora quiero atacar justo al salir de una rodada. | Pulsar □ o △ durante la rodada o hasta 8 ticks después arranca el golpe en cuanto termina (búfer; sin golpes especiales, no hay fuente). | Haiku | Hecho | S2 |
 | **BL-06** | Como jugadora quiero el agarre con cadena (○) y *Orion's Harpoon*, y el súper salto tras lanzar (X). | Agarre en el suelo y en el aire, lanzar al enemigo contra el suelo, súper salto con X tras lanzar; poses nuevas. | Sonnet | Decisión (la tecla de ○) y cupo | S1, S2 |
 | **BL-07** | Como jugadora quiero remates contextuales (QTE) como en GoW 1. | Un enemigo debilitado permite un remate con un botón en una ventana; fallarlo daña a Kratos (ESE-01). | Sonnet | Decisión y BL-08 | S2, S3 |
 | **BL-08** | Como jugadora quiero ver al legionario, al arquero y a la hidra con arte, no como cajas. | Borradores 3D por D-34 aprobados cuadro a cuadro. | Sonnet | Cupo y aprobación visual | S1 |
@@ -124,6 +124,8 @@ Historias de usuario que quedan, con el modelo que las trabaja y qué las bloque
 | **BL-20** | Como usuaria quiero ver los △ ajustados antes de juzgarlos. | GIF y tira de comparación con el video de: △ de suelo, lanzador, *Ascension*, △ aéreo y □3, □4, □6, □ aéreo 2 y 3, en `docs/tmp/golpes/`, hechos con `scripts/verify/browser-check.sh` y `scripts/verify/make_preview.py`. | Haiku | Lista | S5 |
 
 **Siguiente paso:** la usuaria prueba en el celular la ronda del 2026-11-03 (sección "Lista de la usuaria", §2) y manda una sola lista de lo que siga mal. Mientras no haya cupo de Sonnet o Opus (se renueva el sábado 2026-11-07) se pueden hacer BL-20 y las historias *Lista* de Haiku; lo que pida poses espera. Hoy no se lanzan más subagentes de Claude (decisión de la usuaria).
+
+- **2026-11-03** — **BL-05 (Ataque al salir de una rodada):** □ o △ pulsados durante la rodada se guardan y arrancan el golpe normal en el tick en que termina; no se encadenan golpes especiales. Se añadieron pruebas de ambos botones. Verificado con 230 pruebas, build, grids y navegador (0 errores, 0 peticiones fallidas).
 
 ## 4. Registro de pasos
 
