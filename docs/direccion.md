@@ -13,7 +13,7 @@
 | Acción de dominio | Tecla | Equivalente PS2 | Uso |
 | --- | --- | --- | --- |
 | `move-left` / `move-right` | `A` / `D` o `←` / `→` | Stick izquierdo | Movimiento horizontal y orientación (`facing`). |
-| `jump` | `Espacio` | Cruz ($\times$) | Salto simple, doble salto y descenso en plataformas (`Abajo + Espacio`). |
+| `jump` | `Espacio` | Cruz ($\times$) | Salto simple, doble salto y descenso en plataformas (`Abajo + Espacio`). Un ataque en el aire gasta el doble salto hasta aterrizar (D-40). |
 | `light-attack` | `J` (□ en pantalla táctil) | Cuadrado (□) | Combo de 6 □ en el suelo: cada `J` en el final del golpe anterior encadena el siguiente, y mantener la dirección contraria da vuelta a Kratos (D-37). En □6 no hace nada. |
 | `dodge` | `Shift` | Stick derecho | Evasión terrestre con ventana de invulnerabilidad. |
 | `heavy-attack` | `I` (△ en pantalla táctil) | Triángulo (△) | △ en tres niveles por tiempo; en el aire, el golpe vertical (D-37). |
