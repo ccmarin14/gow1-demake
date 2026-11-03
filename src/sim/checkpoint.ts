@@ -35,7 +35,6 @@ export function capturePlayerData(player: EntityState): SavedPlayerData {
     hp: player.maxHp,
     maxMp: player.maxMp,
     mp: player.maxMp,
-    weaponLevel: player.weaponLevel,
     redOrbs: player.redOrbs,
     gorgonEyes: player.gorgonEyes,
     gorgonUpgrades: player.gorgonUpgrades,
@@ -72,7 +71,7 @@ export function stepCheckpoints(
 
 /**
  * Respawns player at the given checkpoint, restoring full health & mana while
- * strictly preserving accumulated progression (maxHp, maxMp, weaponLevel, redOrbs, etc.).
+ * strictly preserving accumulated progression (maxHp, maxMp, redOrbs, etc.).
  */
 export function respawnAtCheckpoint(
   player: EntityState,
@@ -100,7 +99,6 @@ export function respawnAtCheckpoint(
   if (savedData) {
     player.maxHp = Math.max(player.maxHp, savedData.maxHp);
     player.maxMp = Math.max(player.maxMp, savedData.maxMp);
-    player.weaponLevel = Math.max(player.weaponLevel, savedData.weaponLevel);
     player.redOrbs = Math.max(player.redOrbs, savedData.redOrbs);
     player.gorgonEyes = Math.max(player.gorgonEyes, savedData.gorgonEyes);
     player.gorgonUpgrades = Math.max(player.gorgonUpgrades, savedData.gorgonUpgrades);

@@ -45,13 +45,10 @@ export class ShellScene extends Phaser.Scene {
   >();
   private defeatText: Phaser.GameObjects.Text | null = null;
   private waveBannerText: Phaser.GameObjects.Text | null = null;
-  private upgradeBannerText: Phaser.GameObjects.Text | null = null;
   private checkpointBannerText: Phaser.GameObjects.Text | null = null;
   private checkpointBannerTimer: number = 0;
   private hydraVictoryBannerText: Phaser.GameObjects.Text | null = null;
   private hydraVictoryTimer: number = 0;
-  private prevWeaponLevel: number = 1;
-  private upgradeBannerTimer: number = 0;
   private barrierGraphics: Phaser.GameObjects.Graphics | null = null;
   private checkpointGraphics: Phaser.GameObjects.Graphics | null = null;
   private magicGraphics: Phaser.GameObjects.Graphics | null = null;
@@ -147,21 +144,6 @@ export class ShellScene extends Phaser.Scene {
       .setDepth(25)
       .setScrollFactor(0)
       .setVisible(false);
-
-    this.upgradeBannerText = this.add
-      .text(CONFIG.internal.width / 2, 75, '¡CUCHILLAS DEL CAOS NIVEL 2!', {
-        color: '#facc15',
-        fontFamily: 'monospace',
-        fontSize: '11px',
-        fontStyle: 'bold',
-        backgroundColor: '#000000bb',
-        padding: { x: 8, y: 3 },
-      })
-      .setOrigin(0.5)
-      .setDepth(26)
-      .setScrollFactor(0)
-      .setAlpha(0)
-      .setVisible(true);
 
     this.checkpointBannerText = this.add
       .text(CONFIG.internal.width / 2, 45, 'PUNTO DE CONTROL ALCANZADO', {
@@ -388,21 +370,6 @@ export class ShellScene extends Phaser.Scene {
     this.updateChests(player);
     this.updateCheckpoints();
 
-    // Banner de mejora de arma a Nivel 2
-    if (player) {
-      if (player.weaponLevel === 2 && this.prevWeaponLevel === 1) {
-        this.upgradeBannerTimer = 2.0;
-      }
-      this.prevWeaponLevel = player.weaponLevel;
-    }
-    if (this.upgradeBannerTimer > 0) {
-      this.upgradeBannerTimer = Math.max(0, this.upgradeBannerTimer - delta / 1000);
-      const alpha = Math.min(1.0, this.upgradeBannerTimer);
-      this.upgradeBannerText?.setAlpha(alpha);
-    } else {
-      this.upgradeBannerText?.setAlpha(0);
-    }
-
     // Banner de punto de control alcanzado
     const chkNotice = this.simulation.world.consumeCheckpointNotice();
     if (chkNotice) {
@@ -512,9 +479,6 @@ export class ShellScene extends Phaser.Scene {
       gfx.eyeHighlight?.destroy();
     }
     this.chestGfx.clear();
-    this.prevWeaponLevel = 1;
-    this.upgradeBannerTimer = 0;
-    this.upgradeBannerText?.setAlpha(0);
     this.checkpointBannerTimer = 0;
     this.checkpointBannerText?.setAlpha(0);
     if (this.checkpointGraphics) {
@@ -1147,9 +1111,6 @@ export class ShellScene extends Phaser.Scene {
       gfx.eyeHighlight?.destroy();
     }
     this.chestGfx.clear();
-    this.prevWeaponLevel = 1;
-    this.upgradeBannerTimer = 0;
-    this.upgradeBannerText?.setAlpha(0);
     this.checkpointBannerTimer = 0;
     this.checkpointBannerText?.setAlpha(0);
     if (this.checkpointGraphics) {
@@ -1163,8 +1124,6 @@ export class ShellScene extends Phaser.Scene {
       this.magicGraphics.destroy();
       this.magicGraphics = null;
     }
-    this.upgradeBannerText?.destroy();
-    this.upgradeBannerText = null;
     this.checkpointBannerText?.destroy();
     this.checkpointBannerText = null;
     this.hydraVictoryBannerText?.destroy();

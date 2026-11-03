@@ -8,7 +8,7 @@ import { PLAYER_ID, sortActions } from './types';
 import { stepVertical, type VerticalParams } from './vertical';
 import { spawnOrbsFromDeath, stepOrbs } from './orbs';
 import { stepArcher, stepArrows } from './archer';
-import { stepChests, collectGorgonEye, collectPhoenixFeather, upgradeWeapon } from './chests';
+import { stepChests, collectGorgonEye, collectPhoenixFeather } from './chests';
 import { capturePlayerData, respawnAtCheckpoint, stepCheckpoints } from './checkpoint';
 import { WaveManager } from './waves';
 import { ArenaManager } from './arena';
@@ -133,16 +133,14 @@ export class World {
     const kills = Math.max(this.totalKills, waveKills);
     const chestsOpened = this.chests.filter((c) => c.state === 'open').length;
     const redOrbs = player?.redOrbs ?? 0;
-    const weaponLevel = player?.weaponLevel ?? 1;
     let rank = 'GUERRERO ESPARTANO';
     if (kills >= 10 || redOrbs >= 100) rank = 'HÉROE DEL OLIMPO';
-    if (kills >= 15 && weaponLevel >= 2) rank = 'DIOS DE LA GUERRA';
+    if (kills >= 15) rank = 'DIOS DE LA GUERRA';
     return {
       totalKills: kills,
       redOrbs,
       chestsOpened,
       totalChests: this.chests.length,
-      weaponLevel,
       rank,
     };
   }
@@ -182,16 +180,6 @@ export class World {
     if (!p) return false;
     const ok = collectPhoenixFeather(p);
     if (this.activeCheckpointId) {
-      this.savedPlayerData = capturePlayerData(p);
-    }
-    return ok;
-  }
-
-  upgradeWeapon(target?: EntityState): boolean {
-    const p = target ?? this.peekEntity(PLAYER_ID);
-    if (!p) return false;
-    const ok = upgradeWeapon(p);
-    if (ok && this.activeCheckpointId) {
       this.savedPlayerData = capturePlayerData(p);
     }
     return ok;
@@ -546,8 +534,6 @@ export class World {
     const steadyDirection: HeldDirection =
       direction !== 0 && this.directionTicks >= COMBO_TURN_MIN_TICKS ? direction : 0;
 
-    const wantsUpgrade = this.input.includes('upgrade');
-
     // A strike that connects freezes the whole world for a few ticks; a press
     // made meanwhile still queues the next strike of the combo.
     if (this.hitstopTicks > 0) {
@@ -615,10 +601,6 @@ export class World {
           stepMagic(player, false, this.targets);
         }
         const nowCastingMagic = isCastingMagic(player);
-
-        if (wantsUpgrade && !inHitstun && !isOpeningChest) {
-          this.upgradeWeapon(player);
-        }
 
         const rolling = isRolling(player);
         const guarding = isGuarding(player);

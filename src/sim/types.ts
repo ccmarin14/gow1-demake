@@ -11,7 +11,6 @@ export type GameAction =
   | 'dodge'
   | 'guard'
   | 'context-action'
-  | 'upgrade'
   | 'pause'
   | 'restart';
 
@@ -26,7 +25,6 @@ export const DOMAIN_ACTIONS: readonly GameAction[] = [
   'dodge',
   'guard',
   'context-action',
-  'upgrade',
   'pause',
   'restart',
 ];
@@ -160,7 +158,6 @@ export interface EntityState {
   gorgonUpgrades: number;
   phoenixFeathers: number;
   phoenixUpgrades: number;
-  weaponLevel: number;
 }
 
 export interface ArrowState {
@@ -226,7 +223,6 @@ export interface SavedPlayerData {
   hp: number;
   maxMp: number;
   mp: number;
-  weaponLevel: number;
   redOrbs: number;
   gorgonEyes: number;
   gorgonUpgrades: number;
@@ -241,7 +237,6 @@ export interface CombatStats {
   redOrbs: number;
   chestsOpened: number;
   totalChests: number;
-  weaponLevel: number;
   rank: string;
 }
 

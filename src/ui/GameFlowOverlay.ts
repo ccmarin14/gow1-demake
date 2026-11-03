@@ -124,7 +124,7 @@ export class GameFlowOverlay {
         0,
         'A/D: Moverse · ESPACIO: Salto / Doble · SHIFT: Rodada\n' +
         'J: Golpe □ · I: Golpe △ · Q: Guardia/Parry · U: Ira de Poseidón\n' +
-        'E: Cofre · P: Mejorar · ESC: Pausa',
+        'E: Cofre · ESC: Pausa',
         {
           color: '#cbd5e1',
           fontFamily: CONFIG.ui.fontFamily,
@@ -354,7 +354,6 @@ export class GameFlowOverlay {
       const maxHp = player ? player.maxHp : 100;
       const mp = player && player.mp !== undefined ? player.mp : 100;
       const maxMp = player && player.maxMp !== undefined ? player.maxMp : 100;
-      const wLvl = player && player.weaponLevel ? player.weaponLevel : 1;
       const redOrbs = player && player.redOrbs ? player.redOrbs : 0;
       const eyes = player && player.gorgonEyes ? player.gorgonEyes : 0;
       const feathers = player && player.phoenixFeathers ? player.phoenixFeathers : 0;
@@ -363,7 +362,6 @@ export class GameFlowOverlay {
         'RESUMEN DEL HÉROE:\n' +
         `• SALUD: ${hp}/${maxHp}\n` +
         `• MANÁ:  ${mp}/${maxMp}\n` +
-        `• CUCHILLAS: NV. ${wLvl}\n` +
         `• ORBES ROJOS: ${redOrbs}\n` +
         `• OJOS DE GÓRGONA: ${eyes}/6\n` +
         `• PLUMAS DE FÉNIX: ${feathers}/6`,
@@ -375,14 +373,12 @@ export class GameFlowOverlay {
         redOrbs: player?.redOrbs ?? 0,
         chestsOpened: 0,
         totalChests: 4,
-        weaponLevel: player?.weaponLevel ?? 1,
         rank: 'GUERRERO ESPARTANO',
       };
       this.victoryStatsText.setText(
         `ENEMIGOS ABATIDOS: ${s.totalKills}\n` +
         `ORBES ROJOS RECOLECTADOS: ${s.redOrbs}\n` +
-        `COFRES DESCUBIERTOS: ${s.chestsOpened} / ${s.totalChests}\n` +
-        `NIVEL DE ARMA ALCANZADO: NIVEL ${s.weaponLevel}\n\n` +
+        `COFRES DESCUBIERTOS: ${s.chestsOpened} / ${s.totalChests}\n\n` +
         `RANGO DE COMBATE: ★ ${s.rank} ★`,
       );
       this.victoryPromptText.setAlpha(pulseAlpha);

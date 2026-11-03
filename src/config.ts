@@ -77,15 +77,10 @@ vertical: {
   maxJumps: 2,
   topY: PLAYER_BOUNDS.ceilingY,
 },
-/** Weapon identity and its upgrades (the strikes are redesigned, D-36). */
+/** Weapon identity. */
 weapon: {
   id: 'blades-of-chaos',
   name: 'Cuchillas del Caos',
-  upgrades: {
-    level2Cost: 100,
-    level2DamageMultiplier: 1.3,
-    level2Name: 'Cuchillas del Caos Nv. 2',
-  },
 },
 dodge: {
   // Roll impulse speed. The roll *duration* is not declared here: it lives in
@@ -457,7 +452,6 @@ export const CONFIG = {
       totalEnemiesLabel: 'ENEMIGOS ABATIDOS',
       chestsFoundLabel: 'COFRES DESCUBIERTOS',
       redOrbsLabel: 'ORBES ROJOS',
-      weaponLevelLabel: 'NIVEL DE ARMA',
     },
     depth: 150,
   },

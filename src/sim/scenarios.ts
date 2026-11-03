@@ -62,7 +62,6 @@ function playerAt(x: number, y: number): EntityState {
     gorgonUpgrades: 0,
     phoenixFeathers: 0,
     phoenixUpgrades: 0,
-    weaponLevel: 1,
   };
 }
 
@@ -107,7 +106,6 @@ function dummyAt(id: string, x: number, y: number, facing: -1 | 1 = 1, grounded 
     gorgonUpgrades: 0,
     phoenixFeathers: 0,
     phoenixUpgrades: 0,
-    weaponLevel: 1,
   };
 }
 
@@ -152,7 +150,6 @@ export function legionnaireAt(id: string, x: number, y: number, facing: -1 | 1 =
     gorgonUpgrades: 0,
     phoenixFeathers: 0,
     phoenixUpgrades: 0,
-    weaponLevel: 1,
   };
 }
 
@@ -197,7 +194,6 @@ export function archerAt(id: string, x: number, y: number, facing: -1 | 1 = -1, 
     gorgonUpgrades: 0,
     phoenixFeathers: 0,
     phoenixUpgrades: 0,
-    weaponLevel: 1,
   };
 }
 

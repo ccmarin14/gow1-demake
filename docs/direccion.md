@@ -38,7 +38,7 @@ Por ahora Kratos tiene el combo de 6 □ y △ en la tecla `I` (D-37); Triángul
 
 Revisión del 2026-10-29 contra el primer *God of War*, hecha sobre código, configuración y capturas (sin prueba de sensación a mano). Cada brecha es un trabajo pequeño e independiente; ninguna se ha implementado. El estado vivo de cada una está en `docs/estado.md`.
 
-**Qué ya cumple:** guardia con parry y rodada con invulnerabilidad, *Ira de Poseidón*, orbes, cofres con Ojos de Gorgona y Plumas de Fénix, mejora de arma, checkpoints y el tramo de la nave con la Hidra.
+**Qué ya cumple:** guardia con parry y rodada con invulnerabilidad, *Ira de Poseidón*, orbes, cofres con Ojos de Gorgona y Plumas de Fénix, checkpoints y el tramo de la nave con la Hidra.
 
 | ID | Brecha | Criterio de aceptación | Depende del arte |
 | --- | --- | --- | --- |

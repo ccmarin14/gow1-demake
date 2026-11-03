@@ -59,7 +59,6 @@ export function createHydraState(
     gorgonUpgrades: 0,
     phoenixFeathers: 0,
     phoenixUpgrades: 0,
-    weaponLevel: 1,
   };
 }
 
