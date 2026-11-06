@@ -466,9 +466,10 @@ describe('air triangle (manual: "Ataque vertical")', () => {
   });
 });
 
-describe('Orion\'s Harpoon (draft)', () => {
-  it('chains from Ascension\'s follow-up on J', () => {
-    assert.equal(ASCENSION.chain?.into, 'harpoon');
+describe('air strikes from Ascension', () => {
+  it('chains into the normal air square chain (air1 -> air2 -> air3) on J, and into airTriangle on I', () => {
+    assert.equal(ASCENSION.chain?.into, 'air1');
+    assert.equal(ASCENSION.chain?.heavy, 'airTriangle');
     assert.equal(ASCENSION.chain?.from, 'hang');
     const world = ascensionWorld();
     let started = false;
@@ -476,15 +477,18 @@ describe('Orion\'s Harpoon (draft)', () => {
       const snap = world.snapshot();
       if (snap.strike?.id === 'ascension' && snap.strike.tick >= 22) {
         world.step(['light-attack']);
-        started = world.snapshot().strike?.id === 'harpoon' || world.snapshot().strike?.id === 'ascension' && world.snapshot().strike.queued === true;
+        started = world.snapshot().strike?.id === 'air1';
       } else {
         world.step([]);
       }
     }
-    assert.ok(started, 'J during the follow-up queues the harpoon');
+    assert.ok(started, 'J during the follow-up starts air1');
+    hold(world, 5, []);
+    world.step(['light-attack']);
+    assert.equal(world.snapshot().strike?.id, 'air2', 'continues into air2');
   });
 
-  it('grabs only an enemy already in the air, and pulls it toward Kratos', () => {
+  it('keeps Orion\'s Harpoon data as an unchained draft until circle has a key', () => {
     const kratos = { ...player(playingWorld().snapshot()) };
     const grounded = foeAt(kratos.x + 70, kratos.y);
     const juggled = foeAt(kratos.x + 70, kratos.y - 56, 'juggled');

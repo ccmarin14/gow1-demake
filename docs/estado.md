@@ -129,6 +129,7 @@ Historias de usuario que quedan, con el modelo que las trabaja y qué las bloque
 - **2026-11-03** — **BL-04 (Tabla de sensación de combate):** los umbrales de combo, búfer de salto, pausa y empuje, y las reglas de suspensión aérea pasaron a `CONFIG.combat.feel`; se añadieron pruebas de sus valores. Verificado con la suite completa, build, grids y navegador.
 - **2026-11-03** — **BL-13 (Audio de peso por golpe):** cada golpe inicia un silbido sintético y cada impacto se clasifica como liviano, pesado o aéreo con su envolvente y tono propios. Verificado con la suite completa, build, grids y navegador.
 - **2026-11-03** — **BL-20 (Previews de golpes ajustados):** se capturaron en Chrome y se generaron GIF y tiras ampliadas de □1–□6, △ de suelo, lanzador, *Ascension* y □ aéreo 1–3 en `docs/tmp/golpes/bl20-*.gif` y `bl20-*-strip.png`. Las capturas dieron 0 errores y 0 peticiones fallidas; no se fabricó una comparación con referencias porque los fotogramas numerados del video ya no están en el árbol.
+- **2026-11-06** — **Golpes aéreos tras *Ascension*:** pulsar □ o △ durante la suspensión de *Ascension* ahora encadena los golpes aéreos normales (`air1` → `air2` → `air3` y `airTriangle`) en lugar del borrador de *Orion's Harpoon* (que en GoW 1 es con ○). Verificado con 233 pruebas, build, grids y navegador (0 errores, 0 peticiones fallidas).
 
 ## 4. Registro de pasos
 

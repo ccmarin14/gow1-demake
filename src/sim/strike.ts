@@ -1048,8 +1048,8 @@ const ASCENSION: StrikeDef = {
   hitstopTicks: 6,
   trailSamplesPerTick: 6,
   trailFadeWidthPx: 4,
-  // J while rising starts Orion's Harpoon. The button is a draft choice (the manual's circle has no key yet).
-  chain: { into: 'harpoon', from: 'hang', fromTick: 0 },
+  // Square or triangle during the follow-up starts the normal air strikes.
+  chain: { into: 'air1', heavy: 'airTriangle', from: 'hang', fromTick: 0 },
 };
 
 /** What the three air squares share: a light hit, the near-identical trail of the ground strikes. */
