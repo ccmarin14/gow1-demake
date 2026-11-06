@@ -13,7 +13,7 @@
     "run-06": { "action": "Sprint_Loop", "frame": 12, "ground": false },
     "run-07": { "action": "Sprint_Loop", "frame": 14, "ground": false },
     "air-00": { "action": "Jump_Start", "frame": 4, "pose": "jump-rise.json", "ground": true },
-    "air-01": { "action": "Jump_Land", "frame": 0, "ground": true },
+    "air-01": { "action": "Jump_Start", "frame": 4, "pose": "jump-fall.json", "ground": true },
     "air-02": { "action": "Jump_Start", "frame": 4, "pose": "jump-double.json", "ground": true },
     "roll-00": { "action": "Roll", "frame": 0, "ground": true },
     "roll-01": { "action": "Roll", "frame": 5, "ground": true },

@@ -130,6 +130,7 @@ Historias de usuario que quedan, con el modelo que las trabaja y qué las bloque
 - **2026-11-03** — **BL-13 (Audio de peso por golpe):** cada golpe inicia un silbido sintético y cada impacto se clasifica como liviano, pesado o aéreo con su envolvente y tono propios. Verificado con la suite completa, build, grids y navegador.
 - **2026-11-03** — **BL-20 (Previews de golpes ajustados):** se capturaron en Chrome y se generaron GIF y tiras ampliadas de □1–□6, △ de suelo, lanzador, *Ascension* y □ aéreo 1–3 en `docs/tmp/golpes/bl20-*.gif` y `bl20-*-strip.png`. Las capturas dieron 0 errores y 0 peticiones fallidas; no se fabricó una comparación con referencias porque los fotogramas numerados del video ya no están en el árbol.
 - **2026-11-06** — **Golpes aéreos tras *Ascension*:** pulsar □ o △ durante la suspensión de *Ascension* ahora encadena los golpes aéreos normales (`air1` → `air2` → `air3` y `airTriangle`) en lugar del borrador de *Orion's Harpoon* (que en GoW 1 es con ○). Verificado con 233 pruebas, build, grids y navegador (0 errores, 0 peticiones fallidas).
+- **2026-11-06** — **Caída del salto con cabeza erguida (`air-01`):** `air-01` pasó de `Jump_Land` 0 (que inclinaba el torso y la cabeza hacia el suelo) a `Jump_Start` 4 con `poses/jump-fall.json` (misma postura erguida de `air-00` con las piernas bajando para aterrizar), aprobado por la usuaria. Se regeneraron el PNG y `kratos-anchors.json` (76 cuadros). Verificado con 233 pruebas, build, grids y navegador (0 errores, 0 peticiones fallidas).
 
 ## 4. Registro de pasos
 
