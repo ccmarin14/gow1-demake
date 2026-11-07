@@ -948,9 +948,6 @@ const LAUNCHER_MOTION = {
   carry: { kind: 'carry' },
   sweep: { kind: 'track', from: 0, to: 3 / 7, ease: 'linear' },
   lift: { kind: 'track', from: 3 / 7, to: 1, ease: 'out' },
-  // The apex hold when triangle is kept held for Ascension; when released early,
-  // the strike skips directly to recall from s = 1.
-  top: { kind: 'track', from: 1, to: 1, ease: 'out' },
   recall: { kind: 'recall', sagPx: 5, fromS: 1 },
 } as const;
 
@@ -960,9 +957,8 @@ const LAUNCHER_GROWTH = { sweep: { widthPx: 5 }, lift: { widthPx: 6 } };
  * The launcher (triangle held through the charge; manual "Lanzar al enemigo
  * al aire", video 42.6-43.2 s): Kratos stays on the ground, both blades
  * sweep low along the floor and lift up the front, launching the foot
- * soldier; they hang over his head (about 0.4 s) while the enemy is in the
- * air. Still holding triangle through that hold sends Kratos after it
- * (Ascension); releasing it recalls the blades. No jump here.
+ * soldier. Still holding triangle at the end of the lift sends Kratos
+ * immediately after it into Ascension; releasing it recalls the blades.
  */
 const LAUNCHER: StrikeDef = {
   id: 'launcher',
@@ -973,7 +969,6 @@ const LAUNCHER: StrikeDef = {
     { id: 'carry', ticks: 2, advancePx: 0, pose: 'tri-pc', centerX: CX['tri-pc'] },
     { id: 'sweep', ticks: 6, advancePx: 3, pose: 'tri-f', centerX: CX['tri-f'] },
     { id: 'lift', ticks: 6, advancePx: 0, pose: 'sq3-h', centerX: CX['sq3-h'] },
-    { id: 'top', ticks: 24, advancePx: 0, pose: 'tri-d', centerX: CX['tri-d'] },
     { id: 'recall', ticks: 10, advancePx: 0, pose: 'tri-g', centerX: CX['tri-g'] },
   ],
   blades: {
@@ -1010,8 +1005,8 @@ const LAUNCHER: StrikeDef = {
   hitstopTicks: 4,
   trailSamplesPerTick: 6,
   trailFadeWidthPx: 4,
-  // Held through the top hold, Kratos leaps after the enemy.
-  branch: { atEndOf: 'top', ifHeld: 'heavy-attack', into: 'ascension' },
+  // Held through the lift, Kratos leaps after the enemy immediately.
+  branch: { atEndOf: 'lift', ifHeld: 'heavy-attack', into: 'ascension' },
   cancel: { from: 'recall', fromTick: 4 },
 };
 

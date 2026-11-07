@@ -75,10 +75,10 @@ function launcherWorld(): World {
   return world;
 }
 
-/** Still holding through the launcher's top hold (tick 36 of the launcher): Ascension starts there. */
+/** Still holding through the launcher's lift: Ascension starts immediately (18 ticks accounting for hitstop on the legionnaire). */
 function ascensionWorld(): World {
   const world = launcherWorld();
-  hold(world, 42, ['heavy-attack']);
+  hold(world, 18, ['heavy-attack']);
   assert.equal(world.snapshot().strike?.id, 'ascension');
   return world;
 }
@@ -135,9 +135,9 @@ describe('triangle hold levels by time (tap, launcher, Ascension)', () => {
     assert.ok(left, 'Kratos jumped after the enemy');
   });
 
-  it('released a moment before the end of the top hold, the launcher recalls its blades instead of leaping', () => {
+  it('released before the end of the lift, the launcher recalls its blades instead of leaping', () => {
     const world = launcherWorld();
-    hold(world, 20, ['heavy-attack']);
+    hold(world, 6, ['heavy-attack']);
     hold(world, 30, []);
     assert.notEqual(world.snapshot().strike?.id, 'ascension');
     assert.equal(player(world.snapshot()).grounded, true);
@@ -145,15 +145,15 @@ describe('triangle hold levels by time (tap, launcher, Ascension)', () => {
 });
 
 describe('launcher data', () => {
-  it('sweeps low, lifts up the front, hangs on top for the player to decide, and recalls; it is a ground strike with no jump', () => {
+  it('sweeps low, lifts up the front, and recalls; branching into Ascension if held at the end of the lift', () => {
     assert.deepEqual(
       LAUNCHER.phases.map((p) => [p.id, p.ticks]),
-      [['carry', 2], ['sweep', 6], ['lift', 6], ['top', 24], ['recall', 10]],
+      [['carry', 2], ['sweep', 6], ['lift', 6], ['recall', 10]],
     );
     assert.equal(LAUNCHER.air, undefined, 'a ground strike');
     assert.equal(LAUNCHER.phases.some((p) => p.leapVy !== undefined), false, 'no jump');
     assert.equal(LAUNCHER.launch?.vy, -380, 'the lift launches the foot soldier');
-    assert.deepEqual(LAUNCHER.branch, { atEndOf: 'top', ifHeld: 'heavy-attack', into: 'ascension' });
+    assert.deepEqual(LAUNCHER.branch, { atEndOf: 'lift', ifHeld: 'heavy-attack', into: 'ascension' });
     assert.equal(STRIKES.triangle.branch?.into, 'launcher');
   });
 
@@ -168,7 +168,7 @@ describe('launcher data', () => {
         assert.ok(pathLength(points) <= 55, `${hand} trail ${pathLength(points).toFixed(1)} px on tick ${t}`);
       }
     }
-    assert.ok(thrownBladeAt(LAUNCHER, 14, poseAnchors, 'near').pos[1] <= -70, 'the blades hang over the head in the top hold');
+    assert.ok(thrownBladeAt(LAUNCHER, 13, poseAnchors, 'near').pos[1] <= -70, 'the blades lift over the head');
     assert.ok(thrownBladeAt(LAUNCHER, 5, poseAnchors, 'near').pos[1] >= -8, 'the sweep is low');
   });
 });
@@ -184,7 +184,7 @@ describe('launcher in the world (level 2)', () => {
 });
 
 describe('Ascension data (user feedback: a leap, not another attack)', () => {
-  it('chains from the launcher\'s top hold and is only a leap: crouch, leap, rise, hang, fall and land', () => {
+  it('chains from the launcher\'s lift and is only a leap: crouch, leap, rise, hang, fall and land', () => {
     assert.equal(STRIKES.launcher.branch?.into, 'ascension');
     assert.equal(ASCENSION.air, true);
     assert.deepEqual(ASCENSION.phases.map((p) => p.id), ['crouch', 'leap', 'rise', 'hang', 'fall', 'land']);

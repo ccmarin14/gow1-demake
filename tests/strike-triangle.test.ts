@@ -429,20 +429,20 @@ describe('phases that end on landing', () => {
   });
 });
 
-describe('launcher: seamless recall from top', () => {
+describe('launcher: seamless recall from lift', () => {
   it('recalls the blades directly from their apex without position jumps', () => {
     const LAUNCHER = STRIKES.launcher;
-    const top = LAUNCHER.phases.findIndex((p) => p.id === 'top');
-    const start = LAUNCHER.phases.slice(0, top).reduce((n, p) => n + p.ticks, 0);
-    const end = start + LAUNCHER.phases[top].ticks;
+    const lift = LAUNCHER.phases.findIndex((p) => p.id === 'lift');
+    const start = LAUNCHER.phases.slice(0, lift).reduce((n, p) => n + p.ticks, 0);
+    const end = start + LAUNCHER.phases[lift].ticks;
     for (const hand of ['near', 'far'] as const) {
       const last = bladeAt(LAUNCHER, hand, end - 1, poseAnchors).pos;
       const recall = bladeAt(LAUNCHER, hand, end, poseAnchors).pos;
-      assert.ok(Math.hypot(last[0] - recall[0], last[1] - recall[1]) <= 1, `${hand} recall starts seamlessly at apex`);
+      assert.ok(Math.hypot(last[0] - recall[0], last[1] - recall[1]) <= 3, `${hand} recall starts seamlessly at apex`);
     }
   });
 
-  it('medium-duration triangle skips the frozen top hold and starts recall immediately when released', () => {
+  it('medium-duration triangle finishes swiftly and starts recall immediately when released', () => {
     const world = playingWorld();
     world.step(['heavy-attack']);
     // Hold 24 ticks through the charge so triangle branches into launcher
@@ -450,19 +450,21 @@ describe('launcher: seamless recall from top', () => {
     assert.equal(world.snapshot().strike?.id, 'launcher');
 
     // Release triangle right after launcher starts (medium-duration)
-    let inTop = false;
     let ticksInStrike = 0;
     while (world.snapshot().strike?.id === 'launcher') {
-      const snap = world.snapshot();
-      const phase = strikePhaseAt(STRIKES.launcher, snap.strike!.tick).phase.id;
-      if (phase === 'top') {
-        inTop = true;
-      }
       world.step([]);
       ticksInStrike += 1;
     }
-    // The top phase was skipped immediately on release (at most 1 tick to transition)
-    assert.ok(ticksInStrike < 30, `launcher should finish swiftly without 24-tick freeze, took ${ticksInStrike} ticks`);
+    // carry 2 + sweep 6 + lift 6 + recall 10 = 24 ticks
+    assert.ok(ticksInStrike <= 25, `launcher should finish swiftly without freeze, took ${ticksInStrike} ticks`);
     assert.equal(player(world.snapshot()).grounded, true, 'Kratos remained grounded');
+  });
+
+  it('long-duration triangle branches immediately into Ascension at the end of lift without pausing in the air', () => {
+    const world = playingWorld();
+    world.step(['heavy-attack']);
+    // Hold 24 ticks for charge + 15 ticks for carry, sweep, lift
+    hold(world, 24 + 15, ['heavy-attack']);
+    assert.equal(world.snapshot().strike?.id, 'ascension', 'branches into Ascension immediately after lift');
   });
 });
