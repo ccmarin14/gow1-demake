@@ -17,6 +17,7 @@ import {
   strikeHitWindowAt,
   strikeImpactTick,
   strikeLength,
+  strikePhaseAt,
   strikePoseAt,
   strikeTrailAt,
   thrownBladeAt,
@@ -428,18 +429,40 @@ describe('phases that end on landing', () => {
   });
 });
 
-describe('launcher: the blades retract on top', () => {
-  it('pulls both blades back toward Kratos during the top hold and recalls them from there without a jump', () => {
+describe('launcher: seamless recall from top', () => {
+  it('recalls the blades directly from their apex without position jumps', () => {
     const LAUNCHER = STRIKES.launcher;
     const top = LAUNCHER.phases.findIndex((p) => p.id === 'top');
     const start = LAUNCHER.phases.slice(0, top).reduce((n, p) => n + p.ticks, 0);
     const end = start + LAUNCHER.phases[top].ticks;
     for (const hand of ['near', 'far'] as const) {
-      const first = bladeAt(LAUNCHER, hand, start, poseAnchors).pos;
       const last = bladeAt(LAUNCHER, hand, end - 1, poseAnchors).pos;
       const recall = bladeAt(LAUNCHER, hand, end, poseAnchors).pos;
-      assert.ok(Math.hypot(first[0] - last[0], first[1] - last[1]) >= 15, `${hand} blade comes back on top`);
-      assert.ok(Math.hypot(last[0] - recall[0], last[1] - recall[1]) <= 8, `${hand} recall starts where the retract ended`);
+      assert.ok(Math.hypot(last[0] - recall[0], last[1] - recall[1]) <= 1, `${hand} recall starts seamlessly at apex`);
     }
+  });
+
+  it('medium-duration triangle skips the frozen top hold and starts recall immediately when released', () => {
+    const world = playingWorld();
+    world.step(['heavy-attack']);
+    // Hold 24 ticks through the charge so triangle branches into launcher
+    hold(world, 24, ['heavy-attack']);
+    assert.equal(world.snapshot().strike?.id, 'launcher');
+
+    // Release triangle right after launcher starts (medium-duration)
+    let inTop = false;
+    let ticksInStrike = 0;
+    while (world.snapshot().strike?.id === 'launcher') {
+      const snap = world.snapshot();
+      const phase = strikePhaseAt(STRIKES.launcher, snap.strike!.tick).phase.id;
+      if (phase === 'top') {
+        inTop = true;
+      }
+      world.step([]);
+      ticksInStrike += 1;
+    }
+    // The top phase was skipped immediately on release (at most 1 tick to transition)
+    assert.ok(ticksInStrike < 30, `launcher should finish swiftly without 24-tick freeze, took ${ticksInStrike} ticks`);
+    assert.equal(player(world.snapshot()).grounded, true, 'Kratos remained grounded');
   });
 });

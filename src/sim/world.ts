@@ -17,7 +17,7 @@ import { isGuarding, startGuard, stepGuard } from './guard';
 import { stepLegionnaire } from './legionnaire';
 import { stepHydra } from './hydra';
 import { isCastingMagic, stepMagic } from './magic';
-import { STRIKES, branchStrike, chainStrike, stepGroundFires, strikeGravityAt, queueChain, startStrike, stepStrike, strikeCancellable, strikeLength, type HeldDirection, type StrikeImpactNotice, type StrikeState } from './strike';
+import { STRIKES, branchStrike, chainStrike, phaseStart, stepGroundFires, strikeGravityAt, queueChain, startStrike, stepStrike, strikeCancellable, strikeLength, strikePhaseAt, type HeldDirection, type StrikeImpactNotice, type StrikeState } from './strike';
 import { buildLevel1Map, computeCameraScrollX, getSegmentAtX, type LevelMapData } from './map';
 
 const TICK_DT = 1 / CONFIG.sim.tickRate;
@@ -686,6 +686,14 @@ export class World {
           this.strike = startStrike(player, heavyAttackPress ? 'airTriangle' : 'air1');
           startedNow = true;
         } else if (this.strike) {
+          // Releasing triangle during the launcher skips the hold on top and recalls the blades at once.
+          if (this.strike.id === 'launcher') {
+            const current = strikePhaseAt(STRIKES.launcher, this.strike.tick);
+            if (current.phase.id === 'top' && this.heavyHeldTicks === 0) {
+              const recall = phaseStart(STRIKES.launcher, 'recall');
+              this.strike.tick = recall.start - 1;
+            }
+          }
           // Triangle held through its windup branches (Ascension).
           const branched = branchStrike(this.strike, player, this.heavyHeldTicks);
           if (branched) {

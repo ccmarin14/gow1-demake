@@ -948,10 +948,10 @@ const LAUNCHER_MOTION = {
   carry: { kind: 'carry' },
   sweep: { kind: 'track', from: 0, to: 3 / 7, ease: 'linear' },
   lift: { kind: 'track', from: 3 / 7, to: 1, ease: 'out' },
-  // The enemy hangs in the air: the player decides here whether Kratos goes after it.
-  // The blades do not stay stuck on top: they pull back toward him while the enemy hangs.
-  top: { kind: 'track', from: 1, to: 0.86, ease: 'out' },
-  recall: { kind: 'recall', sagPx: 5, fromS: 0.86 },
+  // The apex hold when triangle is kept held for Ascension; when released early,
+  // the strike skips directly to recall from s = 1.
+  top: { kind: 'track', from: 1, to: 1, ease: 'out' },
+  recall: { kind: 'recall', sagPx: 5, fromS: 1 },
 } as const;
 
 const LAUNCHER_GROWTH = { sweep: { widthPx: 5 }, lift: { widthPx: 6 } };
@@ -1742,7 +1742,7 @@ export function strikeTrailAt(def: StrikeDef, tick: number, anchors: StrikePoseA
   };
 }
 
-function phaseStart(def: StrikeDef, id: string): { start: number; ticks: number } {
+export function phaseStart(def: StrikeDef, id: string): { start: number; ticks: number } {
   let start = 0;
   for (const phase of def.phases) {
     if (phase.id === id) return { start, ticks: phase.ticks };
