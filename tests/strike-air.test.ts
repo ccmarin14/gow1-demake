@@ -75,10 +75,10 @@ function launcherWorld(): World {
   return world;
 }
 
-/** Still holding through the launcher's lift: Ascension starts immediately (18 ticks accounting for hitstop on the legionnaire). */
+/** Still holding through the launcher's lift: Ascension starts immediately (26 ticks accounting for hitstop on the legionnaire). */
 function ascensionWorld(): World {
   const world = launcherWorld();
-  hold(world, 18, ['heavy-attack']);
+  hold(world, 26, ['heavy-attack']);
   assert.equal(world.snapshot().strike?.id, 'ascension');
   return world;
 }
@@ -100,7 +100,7 @@ describe('triangle hold levels by time (tap, launcher, Ascension)', () => {
   it('level 1: a tap (released before the end of the charge) is the slam; no launcher, no jump', () => {
     const world = legionnaireWorld();
     world.step(['heavy-attack']);
-    hold(world, 10, ['heavy-attack']);
+    hold(world, 8, ['heavy-attack']);
     for (let i = 0; i < 30; i += 1) {
       world.step([]);
       assert.equal(world.snapshot().strike?.id, 'triangle');
@@ -137,8 +137,8 @@ describe('triangle hold levels by time (tap, launcher, Ascension)', () => {
 
   it('released before the end of the lift, the launcher recalls its blades instead of leaping', () => {
     const world = launcherWorld();
-    hold(world, 6, ['heavy-attack']);
-    hold(world, 30, []);
+    hold(world, 10, ['heavy-attack']);
+    hold(world, 35, []);
     assert.notEqual(world.snapshot().strike?.id, 'ascension');
     assert.equal(player(world.snapshot()).grounded, true);
   });
@@ -148,7 +148,7 @@ describe('launcher data', () => {
   it('sweeps low, lifts up the front, and recalls; branching into Ascension if held at the end of the lift', () => {
     assert.deepEqual(
       LAUNCHER.phases.map((p) => [p.id, p.ticks]),
-      [['carry', 2], ['sweep', 6], ['lift', 6], ['recall', 10]],
+      [['carry', 2], ['sweep', 12], ['lift', 8], ['recall', 10]],
     );
     assert.equal(LAUNCHER.air, undefined, 'a ground strike');
     assert.equal(LAUNCHER.phases.some((p) => p.leapVy !== undefined), false, 'no jump');
@@ -168,8 +168,8 @@ describe('launcher data', () => {
         assert.ok(pathLength(points) <= 55, `${hand} trail ${pathLength(points).toFixed(1)} px on tick ${t}`);
       }
     }
-    assert.ok(thrownBladeAt(LAUNCHER, 13, poseAnchors, 'near').pos[1] <= -70, 'the blades lift over the head');
-    assert.ok(thrownBladeAt(LAUNCHER, 5, poseAnchors, 'near').pos[1] >= -8, 'the sweep is low');
+    assert.ok(thrownBladeAt(LAUNCHER, 21, poseAnchors, 'near').pos[1] <= -70, 'the blades lift over the head');
+    assert.ok(thrownBladeAt(LAUNCHER, 8, poseAnchors, 'near').pos[1] >= -8, 'the sweep is low');
   });
 });
 

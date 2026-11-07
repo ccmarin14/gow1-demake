@@ -967,8 +967,8 @@ const LAUNCHER: StrikeDef = {
   launch: { vy: -380 },
   phases: [
     { id: 'carry', ticks: 2, advancePx: 0, pose: 'tri-pc', centerX: CX['tri-pc'] },
-    { id: 'sweep', ticks: 6, advancePx: 3, pose: 'tri-f', centerX: CX['tri-f'] },
-    { id: 'lift', ticks: 6, advancePx: 0, pose: 'sq3-h', centerX: CX['sq3-h'] },
+    { id: 'sweep', ticks: 12, advancePx: 4, pose: 'tri-f', centerX: CX['tri-f'] },
+    { id: 'lift', ticks: 8, advancePx: 0, pose: 'sq3-h', centerX: CX['sq3-h'] },
     { id: 'recall', ticks: 10, advancePx: 0, pose: 'tri-g', centerX: CX['tri-g'] },
   ],
   blades: {

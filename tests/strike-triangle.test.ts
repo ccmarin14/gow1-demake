@@ -455,16 +455,16 @@ describe('launcher: seamless recall from lift', () => {
       world.step([]);
       ticksInStrike += 1;
     }
-    // carry 2 + sweep 6 + lift 6 + recall 10 = 24 ticks
-    assert.ok(ticksInStrike <= 25, `launcher should finish swiftly without freeze, took ${ticksInStrike} ticks`);
+    // carry 2 + sweep 12 + lift 8 + recall 10 = 32 ticks
+    assert.ok(ticksInStrike <= 33, `launcher should finish swiftly without freeze, took ${ticksInStrike} ticks`);
     assert.equal(player(world.snapshot()).grounded, true, 'Kratos remained grounded');
   });
 
   it('long-duration triangle branches immediately into Ascension at the end of lift without pausing in the air', () => {
     const world = playingWorld();
     world.step(['heavy-attack']);
-    // Hold 24 ticks for charge + 15 ticks for carry, sweep, lift
-    hold(world, 24 + 15, ['heavy-attack']);
+    // Hold 24 ticks for charge + 23 ticks for carry, sweep, lift
+    hold(world, 24 + 23, ['heavy-attack']);
     assert.equal(world.snapshot().strike?.id, 'ascension', 'branches into Ascension immediately after lift');
   });
 });
