@@ -124,6 +124,19 @@ describe('approved strikes stay as recorded', () => {
     assertMatchesFixture(STRIKES.square3, 'square3-track.json');
     assertMatchesFixture(STRIKES.square4, 'square4-track.json');
   });
+  it('starts square 4 compact above the shoulder and keeps its fire trail through throw and hold', () => {
+    const entry: StrikeEntry = { id: 'square3', tick: 22, offsetPx: 2, turned: false };
+    for (const t of [0, 1, 2]) {
+      const near = nearBladeAt(STRIKES.square4, t, poseAnchors, entry);
+      assert.ok(near.pos[0] <= 26, `square4 prep at t=${t} stays close to the head (x=${near.pos[0].toFixed(1)})`);
+    }
+    assert.ok(nearBladeAt(STRIKES.square4, 11, poseAnchors, entry).pos[0] >= 85, 'square4 whips out past 85 px');
+    assert.ok(pathLength(strikeTrailAt(STRIKES.square4, 4, poseAnchors, 'near').points) >= 12, 'square4 trail starts on tick 4');
+    for (let tick = 5; tick <= 18; tick += 1) {
+      const trail = strikeTrailAt(STRIKES.square4, tick, poseAnchors, 'near');
+      assert.ok(pathLength(trail.points) >= 24, `square4 trail sustained on tick ${tick}`);
+    }
+  });
   it('keeps air square 1 exactly as recorded (approved, not to be changed)', () => assertMatchesFixture(STRIKES.air1, 'air1-track.json'));
 });
 

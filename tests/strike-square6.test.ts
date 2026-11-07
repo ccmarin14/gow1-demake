@@ -71,9 +71,9 @@ function square6World(): { world: World; x0: number } {
   world.step(['light-attack']);
   hold(world, 14, []);
   world.step(['light-attack']);
-  hold(world, 14, []);
+  hold(world, 21, []);
   world.step(['light-attack']);
-  hold(world, 11, []);
+  hold(world, 15, []);
   world.step(['light-attack']);
   assert.equal(world.snapshot().strike?.id, 'square5');
   hold(world, 24, []);
@@ -341,9 +341,9 @@ describe('square 5 -> square 6 in the world', () => {
     world.step(['light-attack']);
     hold(world, 14, []);
     world.step(['light-attack']);
-    hold(world, 14, []);
+    hold(world, 21, []);
     world.step(['light-attack']);
-    hold(world, 11, []);
+    hold(world, 15, []);
     world.step(['light-attack']);
     hold(world, 20, []);
     hold(world, 4, ['move-left']);

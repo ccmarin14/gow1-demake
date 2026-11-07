@@ -449,24 +449,24 @@ const SQUARE3: StrikeDef = {
         { kind: 'flash', x: 44, ticks: 3, radiusPx: 6 },
       ],
     },
-    // Still moving: the rise and the descent are one arc (GoW1 20.57-20.63); it eases into the top and stays there.
-    { id: 'hold', ticks: 12, advancePx: 0, pose: 'sq3-h', centerX: CX['sq3-h'] },
-    { id: 'recall', ticks: 8, advancePx: 0, pose: 'sq3-a', centerX: CX['sq3-a'] },
+    // Brief apex at the top of the cut before returning.
+    { id: 'hold', ticks: 4, advancePx: 0, pose: 'sq3-h', centerX: CX['sq3-h'] },
+    // Blades return to Kratos; square 4 chains once they are back in hand.
+    { id: 'recall', ticks: 7, advancePx: 0, pose: 'sq3-a', centerX: CX['sq3-a'] },
   ],
   blades: {
     near: {
       // Near shoulder of the cut (sq3-g).
       shoulder: [-4.5, -29.7],
       // On the floor ahead (41 px out), up in front through chest height (75 px out), to
-      // over the head in front (65 px up): where square 4 starts.
-      track: [[41.1, 28.7], [53.5, 27.7], [75.2, -0.3], [62.8, -24.3], [33.3, -35.3], [-2.3, -36.3]],
+      // over the head in front (65 px up): where the cut peaks.
+      track: [[41.1, 28.7], [53.5, 27.7], [75.2, -0.3], [56.0, -24.3], [19.0, -35.3], [-4.5, -36.3]],
       chainFrom: 0.05,
       motion: {
         // The blade drags along the floor to the start of the cut.
         load: { kind: 'draw', from: 'hand', behindBody: true, via: 'ground' },
-        cut: { kind: 'track', from: 0, to: 0.88, ease: 'linear' },
-        // Keeps going, easing into the top: square 4 carries on from here.
-        hold: { kind: 'track', from: 0.88, to: 1, ease: 'out' },
+        cut: { kind: 'track', from: 0, to: 1, ease: 'linear' },
+        hold: { kind: 'hold', driftPx: 2 },
         recall: { kind: 'recall', sagPx: 5 },
       },
       trailGrowth: { cut: { widthPx: 6 }, hold: { widthPx: 6, tailPx: 30, tailFromU: 0.4 } },
@@ -483,61 +483,62 @@ const SQUARE3: StrikeDef = {
   hitstopTicks: 4,
   trailSamplesPerTick: 6,
   trailFadeWidthPx: 4,
-  chain: { into: 'square4', heavy: 'triangle', from: 'hold', fromTick: 1 },
+  chain: { into: 'square4', heavy: 'triangle', from: 'recall', fromTick: 4 },
 };
 
 /**
- * Square 4 (draft v2, after the critic; pending user approval): the
- * descending cut, chained from square 3's top. The near blade comes down
- * from over the head, a long diagonal in front through chest height, and
- * stops level at chest height; Kratos crouches with both arms open, the far
- * blade out behind him on a short chain, setting up square 5's spin. Its
- * descent, hold and far blade are the approved square 3's second half
- * (commit af48f18), so square 5 starts from the same place.
+ * Square 4 (per GoW 1 reference 20.90s-21.23s): chained after square 3's
+ * blades return to Kratos. From Kratos' hands, both blades lash wide outward
+ * across chest height: the near blade whips forward 88 px into a deep lunge
+ * and the far blade whips backward 70 px behind him, both leaving fire trails
+ * and holding wide before returning or chaining into square 5's spin.
  */
 const SQUARE4: StrikeDef = {
   id: 'square4',
   hand: 'near',
-  heldBlade: { from: 'previous', ticks: 9, sagPx: 5 },
+  heldBlade: { from: 'previous', ticks: 6, sagPx: 5 },
   phases: [
-    { id: 'carry', ticks: 2, advancePx: 0, pose: 'sq3-c', centerX: CX['sq3-c'] },
-    { id: 'throw', ticks: 5, advancePx: 3, pose: 'sq3-d', centerX: CX['sq3-d'] },
+    { id: 'load', ticks: 3, advancePx: 0, pose: 'sq3-a', centerX: CX['sq3-a'] },
+    { id: 'throw', ticks: 8, advancePx: 3, pose: 'sq3-d', centerX: CX['sq3-d'] },
     {
-      id: 'hold', ticks: 6, advancePx: 0, pose: 'sq3-e', centerX: CX['sq3-e'],
-      // The blade meets the chest where the descent ends: a flash, like square 3's cut.
+      id: 'hold', ticks: 8, advancePx: 0, pose: 'sq3-e', centerX: CX['sq3-e'],
       effects: [{ kind: 'flash', x: 84, ticks: 3, radiusPx: 6 }],
     },
-    { id: 'recall', ticks: 7, advancePx: 0, pose: 'sq3-f', centerX: CX['sq3-f'] },
+    { id: 'recall', ticks: 8, advancePx: 0, pose: 'sq3-f', centerX: CX['sq3-f'] },
   ],
   blades: {
     near: {
-      // Near shoulder of the throw (sq3-d).
+      // Near shoulder of the lunge (sq3-e).
       shoulder: [-3.7, -31.7],
-      // From over the head in front (where square 3 stops) down the diagonal
-      // to chest height, 87 px out with the step.
-      track: [[-2.8, -34.3], [32.5, -33.3], [46.4, -9.3], [87.2, 1.7], [102.8, 3.7]],
+      // From Kratos' hand, whipped forward across chest height, reaching 89 px ahead.
+      track: [[-10.0, -28.0], [-4.0, -28.0], [25.0, -16.0], [60.0, -6.0], [90.0, 2.0], [105.0, 4.0]],
       chainFrom: 0.05,
       motion: {
-        carry: { kind: 'carry' },
-        throw: { kind: 'track', from: 0, to: 1, ease: 'out' },
+        load: { kind: 'carry' },
+        throw: { kind: 'track', from: 0, to: 1, ease: 'linear' },
         hold: { kind: 'hold', driftPx: 2 },
         recall: { kind: 'recall', sagPx: 5 },
       },
-      trailGrowth: { throw: { widthPx: 6, tailPx: 30, tailFromU: 0.4 } },
+      trailGrowth: { throw: { widthPx: 6 }, hold: { widthPx: 6, tailPx: 35, tailFromU: 0.35 } },
       trail: { kind: 'profile', ...SQUARE_TRAIL },
-      // From the way down in front, at chest and shoulder height, to the end of the hold.
-      active: { fromS: 0.3 },
+      active: { fromS: 0.25 },
     },
     far: {
+      // Far shoulder of the lunge (sq3-e).
       shoulder: [3.4, -24.2],
-      // Out behind at chest height on a short chain once the arms open.
-      track: [[-6, 5], [-11.7, 4.7], [-22, -1], [-33, -3], [-36, -3]],
-      trackDepth: ['behind', 'behind', 'behind', 'behind', 'behind'],
-      chainFrom: 0,
+      // From Kratos' hand, whipped backward across hip/chest height, reaching 71 px behind.
+      track: [[10.0, -22.0], [3.0, -22.0], [-25.0, -14.0], [-50.0, -6.0], [-74.0, 2.0], [-88.0, 4.0]],
+      trackDepth: ['behind', 'behind', 'behind', 'behind', 'behind', 'behind'],
+      chainFrom: 0.05,
       motion: {
-        hold: { kind: 'track', from: 0, to: 1, ease: 'out' },
-        recall: { kind: 'recall', sagPx: 3 },
+        load: { kind: 'carry' },
+        throw: { kind: 'track', from: 0, to: 1, ease: 'linear' },
+        hold: { kind: 'hold', driftPx: 2 },
+        recall: { kind: 'recall', sagPx: 5 },
       },
+      trailGrowth: { throw: { widthPx: 6 }, hold: { widthPx: 6, tailPx: 30, tailFromU: 0.35 } },
+      trail: { kind: 'profile', ...SQUARE_TRAIL, flip: true },
+      active: { fromS: 0.25 },
     },
   },
   hitRadiusPx: 3.5,

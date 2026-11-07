@@ -58,11 +58,11 @@ function square5World(): { world: World; x0: number } {
   hold(world, 14, []);
   world.step(['light-attack']);
   assert.equal(world.snapshot().strike?.id, 'square3');
-  hold(world, 14, []);
+  hold(world, 21, []);
   world.step(['light-attack']);
   assert.equal(world.snapshot().strike?.id, 'square4');
-  hold(world, 11, []);
-  assert.equal(world.snapshot().strike?.tick, 11);
+  hold(world, 15, []);
+  assert.equal(world.snapshot().strike?.tick, 15);
   world.step(['light-attack']);
   return { world, x0 };
 }
@@ -213,7 +213,7 @@ describe('square-5 strike data', () => {
     assert.deepEqual(strikeActiveTicks(SQUARE5), { first: 4, last: 25 });
     assert.ok(strikeHitSegment(SQUARE5, 6, 'near') && strikeHitSegment(SQUARE5, 6, 'far'));
     const chain = strikeChainTicks(SQUARE4)!;
-    assert.equal(chain.opens, 11);
+    assert.equal(chain.opens, 15);
     assert.ok(chain.buffersFrom <= chain.opens);
     assert.equal(SQUARE4.chain?.into, 'square5');
   });
@@ -274,9 +274,9 @@ describe('square 4 -> square 5 in the world', () => {
     world.step(['light-attack']);
     hold(world, 14, []);
     world.step(['light-attack']);
-    hold(world, 14, []);
+    hold(world, 21, []);
     world.step(['light-attack']);
-    hold(world, 7, []);
+    hold(world, 11, []);
     hold(world, 4, ['move-left']);
     world.step(['light-attack', 'move-left']);
     assert.equal(world.snapshot().strike?.id, 'square5');
