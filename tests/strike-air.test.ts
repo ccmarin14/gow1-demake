@@ -455,6 +455,7 @@ describe('air triangle (manual: "Ataque vertical")', () => {
     assert.ok(near(26).pos[1] >= 0, 'under the body');
     assert.ok(near(30).pos[0] <= -20, 'up the back again');
     assert.ok(near(36).pos[1] <= -62, 'raised over him as he drops');
+    assert.ok(near(43).pos[1] >= -35, 'recalls toward Kratos hands instead of staying frozen overhead');
     // Hangs through the circle (about 0.4 s), then drops at more than the plain gravity.
     const gravity = (id: string): number => AIR_TRIANGLE.phases.find((p) => p.id === id)!.gravity ?? 1;
     assert.ok(['coil', 'loop1a', 'loop1b', 'loop2'].every((id) => gravity(id) <= 0.25), 'hangs in the loop');
@@ -471,6 +472,7 @@ describe('air strikes from Ascension', () => {
     assert.equal(ASCENSION.chain?.into, 'air1');
     assert.equal(ASCENSION.chain?.heavy, 'airTriangle');
     assert.equal(ASCENSION.chain?.from, 'hang');
+    assert.equal(ASCENSION.chain?.until, 'land');
     const world = ascensionWorld();
     let started = false;
     for (let i = 0; i < 120 && !started; i += 1) {
@@ -486,6 +488,21 @@ describe('air strikes from Ascension', () => {
     hold(world, 5, []);
     world.step(['light-attack']);
     assert.equal(world.snapshot().strike?.id, 'air2', 'continues into air2');
+  });
+
+  it('landing from Ascension closes the air chain: pressing triangle on the ground executes ground triangle, not airTriangle', () => {
+    const world = ascensionWorld();
+    // Wait until Kratos lands on the floor
+    for (let i = 0; i < 100; i += 1) {
+      world.step([]);
+      if (player(world.snapshot()).grounded) break;
+    }
+    assert.equal(player(world.snapshot()).grounded, true, 'Kratos has landed on the ground');
+    // Press triangle on the ground
+    world.step(['heavy-attack']);
+    const snap = world.snapshot();
+    assert.notEqual(snap.strike?.id, 'airTriangle', 'should not execute airTriangle on the ground');
+    assert.equal(snap.strike?.id, 'triangle', 'should start the ground triangle strike');
   });
 
   it('keeps Orion\'s Harpoon data as an unchained draft until circle has a key', () => {
@@ -537,7 +554,7 @@ describe('arm and body in the new strikes', () => {
       let at = 0;
       for (const phase of def.phases) {
         const hands = def.id === 'airTriangle' || def.id === 'ascension' || def.id === 'launcher' ? (['near', 'far'] as const) : ([def.hand] as const);
-        const blades = phase.pose === 'air-00' || phase.pose === 'tri-g' || phase.id === 'land' || phase.id === 'recall' || phase.id === 'top' || phase.id === 'fall' ? [] : hands;
+        const blades = phase.pose === 'air-00' || phase.pose === 'tri-g' || phase.pose === 'airtri-e' || phase.id === 'land' || phase.id === 'recall' || phase.id === 'top' || phase.id === 'fall' || phase.id === 'raise' ? [] : hands;
         for (let t = at + 2; t < Math.min(at + phase.ticks, strikeLength(def)); t += 1) {
           for (const hand of blades) {
             const a = ANCHORS[`kratos-${phase.pose}`];

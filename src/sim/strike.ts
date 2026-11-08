@@ -242,6 +242,7 @@ export interface StrikeChain {
   heavy?: StrikeId;
   from: string;
   fromTick: number;
+  until?: string;
 }
 
 export interface StrikeDef {
@@ -1044,8 +1045,8 @@ const ASCENSION: StrikeDef = {
   hitstopTicks: 6,
   trailSamplesPerTick: 6,
   trailFadeWidthPx: 4,
-  // Square or triangle during the follow-up starts the normal air strikes.
-  chain: { into: 'air1', heavy: 'airTriangle', from: 'hang', fromTick: 0 },
+  // Square or triangle during the follow-up starts the normal air strikes; closes upon touching the ground (land).
+  chain: { into: 'air1', heavy: 'airTriangle', from: 'hang', fromTick: 0, until: 'land' },
 };
 
 /** What the three air squares share: a light hit, the near-identical trail of the ground strikes. */
@@ -1192,8 +1193,8 @@ const AIR_TRIANGLE_MOTION = {
   dive: { kind: 'track', from: 6 / 12, to: 8 / 12, ease: 'linear' },
   // ...and up the back again to over his head as he falls.
   swing: { kind: 'track', from: 8 / 12, to: 1, ease: 'out' },
-  raise: { kind: 'hold', driftPx: 2 },
-  land: { kind: 'recall', sagPx: 4 },
+  raise: { kind: 'recall', sagPx: 4, fromS: 1 },
+  land: { kind: 'recall', sagPx: 4, fromS: 1 },
 } as const;
 
 const AIR_TRIANGLE_GROWTH = {
@@ -1221,7 +1222,7 @@ const AIR_TRIANGLE: StrikeDef = {
     { id: 'loop2', ticks: 5, advancePx: 2, pose: 'airtri-c', centerX: CX['airtri-c'], gravity: 0.25 },
     { id: 'dive', ticks: 5, advancePx: 1, pose: 'airtri-d', centerX: CX['airtri-d'], gravity: 1.8 },
     { id: 'swing', ticks: 6, advancePx: 0, pose: 'airtri-m1', centerX: CX['airtri-m1'], gravity: 2.2, until: { event: 'grounded', minTicks: 1 } },
-    { id: 'raise', ticks: 20, advancePx: 0, pose: 'airtri-b', centerX: CX['airtri-b'], gravity: 2.2, until: { event: 'grounded', minTicks: 0 } },
+    { id: 'raise', ticks: 10, advancePx: 0, pose: 'airtri-e', centerX: CX['airtri-e'], gravity: 2.2, until: { event: 'grounded', minTicks: 0 } },
     {
       id: 'land', ticks: 10, advancePx: 0, pose: 'tri-f', centerX: CX['tri-f'],
       // The strike ends with the landing: no fire, flash or shake (it does not hit the ground).
@@ -1839,13 +1840,17 @@ export function startStrike(player: EntityState, id: StrikeId): StrikeState {
 export type HeldDirection = -1 | 0 | 1;
 
 /** First tick of the chain window and of the press buffer, or `null` when the strike does not chain. */
-export function strikeChainTicks(def: StrikeDef): { opens: number; buffersFrom: number } | null {
+export function strikeChainTicks(def: StrikeDef): { opens: number; buffersFrom: number; closes?: number } | null {
   if (!def.chain) return null;
-  return {
+  const res: { opens: number; buffersFrom: number; closes?: number } = {
     opens: phaseStart(def, def.chain.from).start + def.chain.fromTick,
     // A press is remembered from the strike's first tick (a phone finger is early or late).
     buffersFrom: 0,
   };
+  if (def.chain.until) {
+    res.closes = phaseStart(def, def.chain.until).start;
+  }
+  return res;
 }
 
 /**
@@ -1858,7 +1863,7 @@ export function queueChain(state: StrikeState, direction: HeldDirection = 0, but
   const def = STRIKES[state.id];
   const ticks = strikeChainTicks(def);
   const accepts = button === 'heavy' ? Boolean(def.chain?.heavy) : Boolean(def.chain?.into);
-  if (ticks && state.tick >= ticks.buffersFrom && accepts) {
+  if (ticks && state.tick >= ticks.buffersFrom && (ticks.closes === undefined || state.tick < ticks.closes) && accepts) {
     state.queued = true;
     // The last button pressed decides the next strike.
     if (button === 'heavy') state.queuedHeavy = true;
@@ -1878,11 +1883,17 @@ export function queueChain(state: StrikeState, direction: HeldDirection = 0, but
 export function chainStrike(state: StrikeState, player: EntityState, direction: HeldDirection = 0): StrikeState | null {
   const def = STRIKES[state.id];
   const ticks = strikeChainTicks(def);
-  if (!def.chain || !ticks || !state.queued || state.tick < ticks.opens) {
+  if (!def.chain || !ticks || !state.queued || state.tick < ticks.opens || (ticks.closes !== undefined && state.tick >= ticks.closes)) {
     return null;
   }
   const target = state.queuedHeavy && def.chain.heavy ? def.chain.heavy : def.chain.into;
   if (!target) return null;
+  if (STRIKES[target].air && player.grounded) {
+    return null;
+  }
+  if (!STRIKES[target].air && !player.grounded) {
+    return null;
+  }
   const wanted = direction !== 0 ? direction : state.queuedDirection ?? 0;
   const facing: -1 | 1 = wanted === 0 ? state.facing : wanted;
   player.vx = 0;

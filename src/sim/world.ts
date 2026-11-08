@@ -613,6 +613,10 @@ export class World {
         if (this.strike && (inHitstun || (!player.grounded && !STRIKES[this.strike.id].air))) {
           this.strike = null;
         }
+        // Landing from an air strike: if Kratos is on the ground, pressing an attack cuts recovery to start a ground attack.
+        if (this.strike && STRIKES[this.strike.id].air && player.grounded && (lightAttackEdge || heavyAttackPress)) {
+          this.strike = null;
+        }
         if (this.strike && strikeCancellable(STRIKES[this.strike.id], this.strike.tick) && (wantsGuard || jumpEdge)) {
           this.strike = null;
         }
