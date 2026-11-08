@@ -777,17 +777,17 @@ const TRIANGLE: StrikeDef = {
   phases: [
     { id: 'draw', ticks: 4, advancePx: 1, pose: 'tri-a', centerX: CX['tri-a'] },
     { id: 'load', ticks: 5, advancePx: 1, pose: 'tri-pb', centerX: CX['tri-pb'] },
-    { id: 'rise', ticks: 3, advancePx: 1, pose: 'tri-d', centerX: CX['tri-d'] },
-    { id: 'slash1', ticks: 6, advancePx: 2, pose: 'tri-e', centerX: CX['tri-e'] },
-    { id: 'settle1', ticks: 3, advancePx: 1, pose: 'tri-f', centerX: CX['tri-f'] },
-    { id: 'step', ticks: 5, advancePx: 2, pose: 'tri-c', centerX: CX['tri-c'] },
-    { id: 'slash2', ticks: 6, advancePx: 0, pose: 'tri-e', centerX: CX['tri-e'] },
-    { id: 'hold2', ticks: 4, advancePx: 0, pose: 'tri-f', centerX: CX['tri-f'] },
-    { id: 'recall', ticks: 6, advancePx: 0, pose: 'tri-g', centerX: CX['tri-g'] },
+    { id: 'rise', ticks: 3, advancePx: 1, pose: 'sq1-b', centerX: CX['sq1-b'] },
+    { id: 'slash1', ticks: 6, advancePx: 2, pose: 'sq1-c', centerX: CX['sq1-c'] },
+    { id: 'settle1', ticks: 3, advancePx: 1, pose: 'sq1-d', centerX: CX['sq1-d'] },
+    { id: 'step', ticks: 5, advancePx: 2, pose: 'sq2-b', centerX: CX['sq2-b'] },
+    { id: 'slash2', ticks: 6, advancePx: 0, pose: 'sq2-c', centerX: CX['sq2-c'] },
+    { id: 'hold2', ticks: 4, advancePx: 0, pose: 'sq2-d', centerX: CX['sq2-d'] },
+    { id: 'recall', ticks: 6, advancePx: 0, pose: 'sq2-e', centerX: CX['sq2-e'] },
   ],
   blades: {
     near: {
-      // Near shoulder of the slashing arm (tri-e).
+      // Near shoulder of the slashing arm (sq1-c).
       shoulder: [-2.3, -25.4],
       // From the hands at the hip/shoulder, across the chest in a diagonal cleave down-forward,
       // then sweeping through the bottom back toward the hip.
@@ -810,27 +810,26 @@ const TRIANGLE: StrikeDef = {
       active: { fromS: 0.5, toS: 0.74 },
     },
     far: {
-      // Far shoulder of the slashing arm (tri-e).
-      shoulder: [3.9, -25],
-      // Staggered second diagonal cut following after the first: winds up overhead during step,
-      // cleaves across chest height in slash2, holds, and recalls.
+      // Far shoulder of the slashing arm (sq2-c).
+      shoulder: [1.0, -22.0],
+      // Staggered second diagonal cut following after the first: winds up overhead during step (sq2-b),
+      // cleaves across chest height in slash2 (sq2-c), holds (sq2-d), and recalls (sq2-e).
       track: [
-        [0.1, 13.0], [-14.0, 8.0], [-21.0, 6.0],
-        [-16.0, -8.0], [-8.0, -20.0], [18.0, -20.0],
-        [48.0, -14.0], [74.0, 0.0], [70.0, 14.0], [52.0, 22.0], [38.0, 24.0],
+        [-24.0, 4.0], [-14.0, -20.0], [0.0, -34.0], [20.0, -36.0],
+        [40.0, -15.0], [57.0, 2.0], [66.0, 14.0], [64.0, 18.0],
       ],
-      trackDepth: ['behind', 'behind', 'behind', 'behind', 'behind', 'front', 'front', 'front', 'front', 'front', 'front'],
-      chainFrom: 0.45,
+      trackDepth: ['behind', 'behind', 'behind', 'front', 'front', 'front', 'front', 'front'],
+      chainFrom: 0.1,
       motion: {
-        step: { kind: 'track', from: 0, to: 0.5, ease: 'linear' },
-        slash2: { kind: 'track', from: 0.5, to: 85 / 100, ease: 'linear' },
-        hold2: { kind: 'hold', driftPx: 1, at: 85 / 100 },
-        recall: { kind: 'recall', sagPx: 4, fromS: 85 / 100 },
+        step: { kind: 'track', from: 0, to: 0.55, ease: 'linear' },
+        slash2: { kind: 'track', from: 0.55, to: 1.0, ease: 'linear' },
+        hold2: { kind: 'hold', driftPx: 1, at: 1.0 },
+        recall: { kind: 'recall', sagPx: 4, fromS: 1.0 },
       },
       trailGrowth: { slash2: { widthPx: 6 } },
       trail: { kind: 'profile', ...TRIANGLE_TRAIL },
       trailBreakAt: [0.02],
-      active: [{ fromS: -1, toS: -0.5 }, { fromS: 0.5, toS: 0.84 }],
+      active: [{ fromS: -1, toS: -0.5 }, { fromS: 0.54, toS: 0.99 }],
     },
   },
   hitRadiusPx: 3.5,

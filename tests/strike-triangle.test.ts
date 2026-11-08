@@ -123,11 +123,12 @@ describe('triangle strike data', () => {
     assert.deepEqual(TRIANGLE.cancel, { from: 'recall', fromTick: 2 }, 'cancelable from recall tick 2');
   });
 
-  it('reads in the draw, load, slash and recall: upright aggressive stance', () => {
+  it('reads in the draw, load, dual sequential slashes with torso rotation and recall', () => {
     assert.ok(-feet(ANCHORS['kratos-tri-a'].shoulder)[1] >= 28, 'the draw stands upright');
     assert.ok(-feet(ANCHORS['kratos-tri-pb'].shoulder)[1] >= 24, 'the load crouch keeps the torso angled');
-    assert.ok(-feet(ANCHORS['kratos-tri-e'].shoulder)[1] >= 24, 'the slash drives downward');
-    assert.ok(-feet(ANCHORS['kratos-tri-g'].shoulder)[1] >= 26, 'the recall recovers');
+    assert.ok(-feet(ANCHORS['kratos-sq1-c'].shoulder)[1] >= 24, 'slash 1 drives right shoulder forward into cut');
+    assert.ok(-feet(ANCHORS['kratos-sq2-c'].shoulder)[1] >= 20, 'slash 2 cross-cleaves with left shoulder lead');
+    assert.ok(-feet(ANCHORS['kratos-sq2-e'].shoulder)[1] >= 22, 'the recall recovers and settles');
   });
 
   it('moves both blades continuously with no per-tick jumps over 40 px, and zero jump during thrown tracks', () => {
