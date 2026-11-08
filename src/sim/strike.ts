@@ -759,36 +759,24 @@ const TRIANGLE_TRAIL = {
   cutWhenDetached: true,
 } as const;
 
-/** Track parameter of the control point behind the hip (point 2 of 8 on the 10-point tracks): where the blades coil. */
-const TRI_BEHIND = 1 / 7;
-
 /** The triangle's motion, shared by both blades. */
 const TRIANGLE_MOTION = {
   draw: { kind: 'draw', from: 'back', behindBody: true },
-  // Pulled back behind the hip at once as Kratos twists (GoW1 28.90-29.17 s)...
-  pull: { kind: 'track', from: 0, to: TRI_BEHIND, ease: 'out' },
-  // ...and charged there until the arc.
-  charge: { kind: 'hold', driftPx: 2, at: TRI_BEHIND },
-  rise: { kind: 'track', from: TRI_BEHIND, to: 0.3, ease: 'linear' },
-  // Pauses on top, then accelerates down into the ground.
-  over: { kind: 'track', from: 0.3, to: 0.55, ease: 'out' },
-  down: { kind: 'track', from: 0.55, to: 1, ease: 'in' },
-  slam: { kind: 'hold', driftPx: 0 },
-  recall: { kind: 'recall', sagPx: 5 },
+  load: { kind: 'track', from: 0, to: 0.25, ease: 'out' },
+  rise: { kind: 'track', from: 0.25, to: 0.45, ease: 'linear' },
+  slash: { kind: 'track', from: 0.45, to: 0.85, ease: 'in' },
+  hold: { kind: 'track', from: 0.85, to: 1, ease: 'out' },
+  recall: { kind: 'recall', sagPx: 4 },
 } as const;
 
-// The fire starts as soon as the blades are thrown back (pull, charge), not only on the arc.
-const TRIANGLE_GROWTH = { pull: { widthPx: 6 }, charge: { widthPx: 6 }, rise: { widthPx: 6 }, over: { widthPx: 6 }, down: { widthPx: 6 } };
+// Fire trail ignites on load and blazes through the slash and follow-through hold.
+const TRIANGLE_GROWTH = { load: { widthPx: 4 }, rise: { widthPx: 4 }, slash: { widthPx: 6 }, hold: { widthPx: 6 } };
 
 /**
- * Triangle on the ground (draft v2, after the critic; pending user approval):
- * the first hit of Valor and Spirit of Hercules. Kratos draws both blades
- * and holds them together at his hip, no energy ball (the original shows the blades themselves lit), in a visible
- * windup (legs apart, chest toward the camera); then swings them as two
- * crescents up behind him, pauses over his head and accelerates down in
- * front into the ground, 100 px ahead: a fire line along the ground, dust at
- * both ends, a flash where the blades land and a short shake, with a hit box
- * over the whole line. Holding triangle through the charge branches into the
+ * Triangle on the ground: authentic God of War 1 (PS2) heavy attack (the opener
+ * of Spirit and Valor of Hercules). Kratos steps forward and unleashes a powerful,
+ * fast dual-blade diagonal cleave across his chest and downward, dealing heavy
+ * damage and knockback. Holding triangle through draw/load branches into the
  * launcher (then Ascension). It does not chain; guard or jump cut its recall short.
  */
 const TRIANGLE: StrikeDef = {
@@ -796,55 +784,38 @@ const TRIANGLE: StrikeDef = {
   hand: 'near',
   heldBlade: { from: 'back' },
   phases: [
-    { id: 'draw', ticks: 5, advancePx: 0, pose: 'tri-a', centerX: CX['tri-a'] },
-    // Both arms and blades swing back and low behind the hip at once, the torso twisting after them...
-    { id: 'pull', ticks: 7, advancePx: 0, pose: 'tri-pb', centerX: CX['tri-pb'] },
-    // ...and the charge happens there, crouched and twisted, the blades trembling behind him.
-    { id: 'charge', ticks: 12, advancePx: 0, pose: 'tri-pc', centerX: CX['tri-pc'] },
-    { id: 'rise', ticks: 4, advancePx: 0, pose: 'tri-c', centerX: CX['tri-c'] },
-    { id: 'over', ticks: 4, advancePx: 0, pose: 'tri-d', centerX: CX['tri-d'] },
-    { id: 'down', ticks: 4, advancePx: 3, pose: 'tri-e', centerX: CX['tri-e'] },
-    {
-      id: 'slam', ticks: 10, advancePx: 0, pose: 'tri-f', centerX: CX['tri-f'],
-      effects: [
-        { kind: 'groundFire', from: 40, to: 108, heightPx: 3, ticks: 8 },
-        { kind: 'dust', at: [40, 108] },
-        // Where the near blade lands.
-        { kind: 'flash', x: 101, ticks: 2, radiusPx: 6 },
-        { kind: 'shake', px: 2, ticks: 4 },
-      ],
-    },
-    { id: 'recall', ticks: 12, advancePx: 0, pose: 'tri-g', centerX: CX['tri-g'] },
+    { id: 'draw', ticks: 5, advancePx: 2, pose: 'tri-a', centerX: CX['tri-a'] },
+    { id: 'load', ticks: 5, advancePx: 2, pose: 'tri-pb', centerX: CX['tri-pb'] },
+    { id: 'rise', ticks: 3, advancePx: 1, pose: 'tri-c', centerX: CX['tri-c'] },
+    { id: 'slash', ticks: 5, advancePx: 3, pose: 'tri-e', centerX: CX['tri-e'] },
+    { id: 'hold', ticks: 4, advancePx: 0, pose: 'tri-f', centerX: CX['tri-f'] },
+    { id: 'recall', ticks: 6, advancePx: 0, pose: 'tri-g', centerX: CX['tri-g'] },
   ],
   blades: {
     near: {
-      // Near shoulder of the arm coming down (tri-e).
+      // Near shoulder of the slashing arm (tri-e).
       shoulder: [-2.3, -25.4],
-      // From the hands at the hip, out and up behind Kratos, over the head
-      // and down in front into the ground.
-      track: [[8.3, 11.4], [-8.7, 7.9], [-28, 5], [-30, -14], [5.4, -46.6], [47.9, -38.6], [80.3, -12.6], [97.8, 15.4], [100.3, 23.4], [100.3, 29.4]],
+      // From the hands at the hip/shoulder, across the chest in a diagonal cleave down-forward.
+      track: [[8.3, 11.4], [-12.0, 8.0], [-28.0, 5.0], [-6.0, -22.0], [32.0, -18.0], [68.0, -6.0], [85.0, 8.0], [78.0, 20.0], [62.0, 24.0], [48.0, 24.0]],
       chainFrom: 0.02,
       motion: TRIANGLE_MOTION,
       trailGrowth: TRIANGLE_GROWTH,
       trail: { kind: 'profile', ...TRIANGLE_TRAIL },
-      // The windup is over: the arc's trail starts fresh.
       trailBreakAt: [0.02],
-      // The arc on its way down in front.
-      active: { fromS: 0.55 },
+      active: { fromS: 0.45, toS: 0.9 },
     },
     far: {
-      // Far shoulder of the arm coming down (tri-e).
+      // Far shoulder of the slashing arm (tri-e).
       shoulder: [3.9, -25],
-      // Together with the near blade at the hands, then a second crescent
-      // 16 px behind and 6 px below it, landing 62 px ahead.
-      track: [[0.1, 13], [-14.9, 9], [-21, 6], [-40, -12], [-17.9, -41], [21.6, -33], [56.6, -7], [75.4, 21], [78.1, 23], [78.1, 29]],
-      trackDepth: ['behind', 'behind', 'behind', 'behind', 'front', 'front', 'front', 'front', 'front', 'front'],
+      // Parallel diagonal cleave matching the near blade.
+      track: [[0.1, 13.0], [-14.0, 8.0], [-21.0, 6.0], [-12.0, -18.0], [22.0, -14.0], [54.0, -4.0], [70.0, 10.0], [64.0, 22.0], [50.0, 25.0], [36.0, 25.0]],
+      trackDepth: ['behind', 'behind', 'behind', 'front', 'front', 'front', 'front', 'front', 'front', 'front'],
       chainFrom: 0.02,
       motion: TRIANGLE_MOTION,
       trailGrowth: TRIANGLE_GROWTH,
       trail: { kind: 'profile', ...TRIANGLE_TRAIL },
       trailBreakAt: [0.02],
-      active: { fromS: 0.55 },
+      active: { fromS: 0.45, toS: 0.9 },
     },
   },
   hitRadiusPx: 3.5,
@@ -853,11 +824,8 @@ const TRIANGLE: StrikeDef = {
   hitstopTicks: 6,
   trailSamplesPerTick: 6,
   trailFadeWidthPx: 4,
-  // The fire line's whole length hits, so an enemy at Kratos' feet is hit too.
-  impact: { phase: 'slam', from: 40, to: 108, heightPx: 20 },
-  // Held through the windup, triangle becomes Ascension (next to build).
-  branch: { atEndOf: 'charge', ifHeld: 'heavy-attack', into: 'launcher' },
-  cancel: { from: 'recall', fromTick: 6 },
+  branch: { atEndOf: 'load', ifHeld: 'heavy-attack', into: 'launcher' },
+  cancel: { from: 'recall', fromTick: 2 },
 };
 
 /** Plume's motion, shared by both blades. */

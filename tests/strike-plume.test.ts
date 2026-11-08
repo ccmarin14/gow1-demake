@@ -108,7 +108,7 @@ function legionnaireAt(x: number, y: number, id: string): EntityState {
 const SLAM = strikeImpactTick(PLUME);
 
 describe('approved strikes stay as recorded', () => {
-  it('keeps the triangle as re-recorded after the user feedback (landing 101 px ahead, fire from the pull)', () => assertMatchesFixture(TRIANGLE, 'triangle-track.json'));
+  it('keeps the triangle as re-recorded for GoW1 (snappy dual diagonal cleave)', () => assertMatchesFixture(TRIANGLE, 'triangle-track.json'));
   it('keeps Plume of Prometheus as recorded in this draft (chained from square 2)', () => {
     const fixture = JSON.parse(readFileSync(new URL('./fixtures/plume-track.json', import.meta.url), 'utf-8'));
     for (const q of fixture.samples) {
@@ -174,19 +174,19 @@ describe('ground fire line', () => {
 });
 
 describe('fast blades do not tunnel', () => {
-  it('a 10 px wide enemy in the triangle\'s 40 px/tick descent is hit', () => {
+  it('a 10 px wide enemy in the triangle\'s slash is hit without tunneling', () => {
     const target = CONFIG.combat.target as { halfWidth: number };
     const halfWidth = target.halfWidth;
     target.halfWidth = 5;
     try {
-      // The fastest tick of the descent, and the midpoint of what it sweeps.
+      // The fastest tick of the slash, and the midpoint of what it sweeps.
       let fastest = 0;
       let best = 0;
-      for (let t = 33; t <= strikeImpactTick(TRIANGLE); t += 1) {
+      for (let t = 13; t <= 18; t += 1) {
         const step = dist(thrownBladeAt(TRIANGLE, t - 1, poseAnchors).pos, thrownBladeAt(TRIANGLE, t, poseAnchors).pos);
         if (step > best) [best, fastest] = [step, t];
       }
-      assert.ok(best >= 25, `fastest step ${best.toFixed(1)} px`);
+      assert.ok(best >= 18, `fastest step ${best.toFixed(1)} px`);
       const a = thrownBladeAt(TRIANGLE, fastest - 1, poseAnchors).pos;
       const b = thrownBladeAt(TRIANGLE, fastest, poseAnchors).pos;
       const mid: Vec2 = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
@@ -220,7 +220,6 @@ describe('Plume of Prometheus data', () => {
     );
     assert.equal(strikeLength(PLUME), 43);
     assert.equal(SLAM, 19);
-    assert.ok(SLAM < strikeImpactTick(TRIANGLE) - 10, 'slams much sooner than the plain triangle');
   });
 
   it('carries both blades from where square 2 left them up behind the head, without stalling at the link', () => {

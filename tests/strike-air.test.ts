@@ -66,11 +66,11 @@ function foeAt(x: number, y: number, id = 'foe'): EntityState {
   return { ...foe, id, x, y, hp: 100, isDead: false, aiState: 'approach', grounded: true, vy: 0 };
 }
 
-/** Holds triangle through its charge from the legionnaire scenario: the launcher starts on tick 24 of the press. */
+/** Holds triangle through its draw and load from the legionnaire scenario: the launcher starts on tick 10 of the press. */
 function launcherWorld(): World {
   const world = legionnaireWorld();
   world.step(['heavy-attack']);
-  hold(world, 24, ['heavy-attack']);
+  hold(world, 10, ['heavy-attack']);
   assert.equal(world.snapshot().strike?.id, 'launcher');
   return world;
 }
@@ -97,14 +97,19 @@ function juggled(world: World, ticks: number): { launched: EntityState | undefin
 }
 
 describe('triangle hold levels by time (tap, launcher, Ascension)', () => {
-  it('level 1: a tap (released before the end of the charge) is the slam; no launcher, no jump', () => {
+  it('level 1: a tap (released before the end of load) executes the diagonal slash; no launcher, no jump', () => {
     const world = legionnaireWorld();
     world.step(['heavy-attack']);
-    hold(world, 8, ['heavy-attack']);
-    for (let i = 0; i < 30; i += 1) {
+    hold(world, 5, ['heavy-attack']);
+    let hadTriangle = false;
+    for (let i = 0; i < 35; i += 1) {
       world.step([]);
-      assert.equal(world.snapshot().strike?.id, 'triangle');
+      const strikeId = world.snapshot().strike?.id;
+      if (strikeId === 'triangle') hadTriangle = true;
+      assert.notEqual(strikeId, 'launcher', 'tap does not branch into launcher');
+      assert.notEqual(strikeId, 'ascension', 'tap does not branch into ascension');
     }
+    assert.ok(hadTriangle, 'triangle executed');
     assert.equal(player(world.snapshot()).grounded, true);
   });
 
