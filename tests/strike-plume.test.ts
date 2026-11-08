@@ -212,7 +212,7 @@ describe('Plume of Prometheus data', () => {
     for (const id of ['square1', 'square2', 'square3', 'square4'] as const) {
       assert.equal(STRIKES[id].chain?.heavy, 'plume');
     }
-    assert.equal(STRIKES.square5.chain?.heavy, 'triangle');
+    assert.equal(STRIKES.square5.chain?.heavy, 'spirit');
     assert.equal(STRIKES.square6.chain, undefined);
   });
 
@@ -390,5 +390,70 @@ describe('Plume of Prometheus in the world', () => {
     world.step(['jump']);
     assert.equal(world.snapshot().strike, undefined);
     assert.equal(player(world.snapshot()).grounded, false);
+  });
+});
+
+describe('Spirit of Hercules (5 squares + triangle) data and execution', () => {
+  const SPIRIT = STRIKES.spirit;
+
+  it('runs deliberate 54 ticks with longer apex hold and impact resonance', () => {
+    assert.deepEqual(
+      SPIRIT.phases.map((p) => [p.id, p.ticks]),
+      [['carry', 8], ['top', 6], ['over', 5], ['down', 5], ['slam', 18], ['recall', 12]],
+    );
+    assert.equal(strikeLength(SPIRIT), 54);
+    assert.equal(SPIRIT.damage, 28);
+    assert.equal(SPIRIT.hitstopTicks, 8);
+    assert.equal(SPIRIT.hitstunTicks, 26);
+    assert.equal(SPIRIT.heavy, true);
+  });
+
+  it('amplifies visual fire lights with 3 flashes, wider ground fire and heavier screen shake', () => {
+    const slam = SPIRIT.phases.find((p) => p.id === 'slam');
+    assert.ok(slam?.effects);
+    const flashes = slam.effects.filter((e) => e.kind === 'flash');
+    assert.equal(flashes.length, 3, '3 flashes along the detonation line');
+    const fire = slam.effects.find((e) => e.kind === 'groundFire');
+    assert.ok(fire && fire.kind === 'groundFire');
+    assert.equal(fire.from, 16);
+    assert.equal(fire.to, 92);
+    assert.equal(fire.heightPx, 4);
+    const shake = slam.effects.find((e) => e.kind === 'shake');
+    assert.ok(shake && shake.kind === 'shake');
+    assert.equal(shake.px, 4);
+  });
+
+  it('chains from square 5 into spirit when triangle is pressed in its chain window', () => {
+    const world = playingWorld();
+    world.step(['light-attack']);
+    hold(world, 20, []);
+    world.step(['light-attack']);
+    hold(world, 14, []);
+    world.step(['light-attack']);
+    hold(world, 21, []);
+    world.step(['light-attack']);
+    hold(world, 15, []);
+    world.step(['light-attack']);
+    assert.equal(world.snapshot().strike?.id, 'square5');
+    // Square 5 chain window opens at hold tick 3 (tick 21 + 3 = 24)
+    hold(world, 24, []);
+    world.step(['heavy-attack']);
+    const strike = world.snapshot().strike;
+    assert.ok(strike);
+    assert.equal(strike.id, 'spirit');
+    assert.equal(strike.entry?.id, 'square5');
+  });
+
+  it('deals heavy damage (28 per hit across descent and ground slam) on impact', () => {
+    const world = playingWorld();
+    const kratos = player(world.snapshot());
+    const target = legionnaireAt(kratos.x + 60, kratos.y, 'spirit-target');
+    const state = startStrike(kratos, 'spirit');
+    // Step through carry (8), top (6), over (5) and down (5) -> tick 24 slam
+    for (let i = 0; i <= 24; i += 1) {
+      stepStrike(state, kratos, [target], -1e6, 1e6);
+    }
+    assert.deepEqual(state.hits, ['spirit-target', 'spirit-target@impact']);
+    assert.equal(target.hp, 100 - 2 * SPIRIT.damage);
   });
 });

@@ -18,7 +18,7 @@ export type Vec2 = readonly [number, number];
 
 export type StrikeId =
   | 'square1' | 'square2' | 'square3' | 'square4' | 'square5' | 'square6'
-  | 'triangle' | 'launcher' | 'plume' | 'ascension' | 'air1' | 'air2' | 'air3' | 'airTriangle' | 'harpoon';
+  | 'triangle' | 'launcher' | 'plume' | 'spirit' | 'ascension' | 'air1' | 'air2' | 'air3' | 'airTriangle' | 'harpoon';
 
 /** Kratos' hands as the side view shows them: near the camera or behind the body. */
 export type Hand = 'near' | 'far';
@@ -641,7 +641,7 @@ const SQUARE5: StrikeDef = {
   hitstopTicks: 4,
   trailSamplesPerTick: 6,
   trailFadeWidthPx: 4,
-  chain: { into: 'square6', heavy: 'triangle', from: 'hold', fromTick: 3 },
+  chain: { into: 'square6', heavy: 'spirit', from: 'hold', fromTick: 3 },
 };
 
 /** Restrained crescent of square 6's two lashes, cut as soon as it leaves its blade. */
@@ -950,6 +950,116 @@ const PLUME: StrikeDef = {
   trailFadeWidthPx: 4,
   impact: { phase: 'slam', from: 20, to: 80, heightPx: 20 },
   cancel: { from: 'recall', fromTick: 6 },
+};
+
+/** Spirit of Hercules' motion, shared by both blades: slightly slower, grander backswing and slam. */
+const SPIRIT_MOTION = {
+  // Both blades sweep from previous strike down and back behind the hips in a wide fiery arc:
+  carry: { kind: 'carry', arcPx: 22 },
+  // Sweep up behind the back along the spine, reaching the apex overhead as Kratos arches back.
+  top: { kind: 'track', from: 0, to: 3 / 7, ease: 'linear' },
+  // Over the head driving forward.
+  over: { kind: 'track', from: 3 / 7, to: 4 / 7, ease: 'linear' },
+  // Accelerates into the ground with heavy momentum.
+  down: { kind: 'track', from: 4 / 7, to: 1, ease: 'in' },
+  slam: { kind: 'hold', driftPx: 0 },
+  recall: { kind: 'recall', sagPx: 5 },
+} as const;
+
+const SPIRIT_GROWTH = { carry: { widthPx: 5 }, top: { widthPx: 7 }, over: { widthPx: 8 }, down: { widthPx: 8 } };
+
+const SPIRIT_TRAIL = {
+  widths: [[0, 3], [0.35, 7], [0.75, 8], [1, 5]],
+  taperOld: 0.2,
+  taperHead: 0.1,
+  minLengthPx: 12,
+  maxLengthPx: 70,
+  cutWhenDetached: true,
+} as const;
+
+/**
+ * Spirit of Hercules (5 squares + triangle; finisher): triangle pressed in square 5's chain window.
+ * The same overhead double slam as Plume of Prometheus, but slightly slower, heavier, with amplified
+ * fiery lights, multiple ground detonation flashes, wider ground fires, and greater impact.
+ */
+const SPIRIT: StrikeDef = {
+  id: 'spirit',
+  hand: 'near',
+  heldBlade: { from: 'previous', ticks: 9, sagPx: 5 },
+  heavy: true,
+  phases: [
+    { id: 'carry', ticks: 8, advancePx: 0, pose: 'plume-a', centerX: CX['plume-a'] },
+    { id: 'top', ticks: 6, advancePx: 0, pose: 'plume-b', centerX: CX['plume-b'] },
+    { id: 'over', ticks: 5, advancePx: 0, pose: 'plume-c', centerX: CX['plume-c'] },
+    { id: 'down', ticks: 5, advancePx: 4, pose: 'plume-d', centerX: CX['plume-d'] },
+    {
+      id: 'slam', ticks: 18, advancePx: 0, pose: 'plume-e', centerX: CX['plume-e'],
+      effects: [
+        { kind: 'groundFire', from: 16, to: 92, heightPx: 4, ticks: 26, linger: { damage: 14, hitstunTicks: 20, liftVy: -260 } },
+        { kind: 'dust', at: [16, 92] },
+        { kind: 'flash', x: 78, ticks: 3, radiusPx: 9 },
+        { kind: 'flash', x: 60, ticks: 3, radiusPx: 7 },
+        { kind: 'flash', x: 40, ticks: 2, radiusPx: 6 },
+        { kind: 'shake', px: 4, ticks: 7 },
+      ],
+    },
+    {
+      id: 'recall', ticks: 12, advancePx: 0, pose: 'plume-f', centerX: CX['plume-f'],
+    },
+  ],
+  blades: {
+    near: {
+      shoulder: [-2, -25.4],
+      track: [
+        [-16.0, -12.0],
+        [-30.0, -26.0],
+        [-28.0, -36.0],
+        [-16.0, -42.0],
+        [4.0, -48.6],
+        [36.0, -36.6],
+        [62.0, -10.6],
+        [76.0, 17.4],
+        [78.0, 23.4],
+        [78.0, 29.4],
+      ],
+      chainFrom: 0,
+      motion: SPIRIT_MOTION,
+      trailGrowth: SPIRIT_GROWTH,
+      trail: { kind: 'profile', ...SPIRIT_TRAIL },
+      trailBreakAt: [0.02],
+      active: { fromS: 3 / 7 },
+    },
+    far: {
+      shoulder: [4.1, -24.9],
+      track: [
+        [-28.0, -11.0],
+        [-42.0, -25.0],
+        [-40.0, -35.0],
+        [-28.1, -41.0],
+        [-8.1, -47.1],
+        [17.9, -33.1],
+        [43.9, -7.1],
+        [57.9, 18.9],
+        [59.9, 22.9],
+        [59.9, 28.9],
+      ],
+      trackDepth: ['behind', 'behind', 'behind', 'behind', 'behind', 'front', 'front', 'front', 'front', 'front'],
+      chainFrom: 0,
+      motion: SPIRIT_MOTION,
+      trailGrowth: SPIRIT_GROWTH,
+      trail: { kind: 'profile', ...SPIRIT_TRAIL },
+      trailBreakAt: [0.02],
+      active: { fromS: 3 / 7 },
+    },
+  },
+  hitRadiusPx: 4,
+  damage: 28,
+  hitstunTicks: 26,
+  hitstopTicks: 8,
+  trailSamplesPerTick: 6,
+  trailFadeWidthPx: 4,
+  impact: { phase: 'slam', from: 16, to: 92, heightPx: 25 },
+  cancel: { from: 'recall', fromTick: 8 },
 };
 
 /** The launcher's motion, shared by both blades: a low sweep along the ground, a lift up the front, a hold on top. */
@@ -1324,6 +1434,7 @@ export const STRIKES: Readonly<Record<StrikeId, StrikeDef>> = {
   triangle: TRIANGLE,
   launcher: LAUNCHER,
   plume: PLUME,
+  spirit: SPIRIT,
   ascension: ASCENSION,
   air1: AIR1,
   air2: AIR2,
