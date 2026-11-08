@@ -356,7 +356,7 @@ const SQUARE1: StrikeDef = {
   hitstopTicks: 4,
   trailSamplesPerTick: 6,
   trailFadeWidthPx: 4,
-  chain: { into: 'square2', heavy: 'plume', from: 'hold', fromTick: 4 },
+  chain: { into: 'square2', heavy: 'triangle', from: 'hold', fromTick: 4 },
 };
 
 /**

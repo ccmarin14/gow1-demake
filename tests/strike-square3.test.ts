@@ -313,12 +313,13 @@ describe('triangle from the square chain', () => {
     return world;
   };
   for (const n of [1, 2, 3, 4]) {
-    it(`starts Plume of Prometheus when I is pressed in square ${n}'s chain window`, () => {
+    const into = n === 1 ? 'triangle' : 'plume';
+    it(`starts ${into === 'plume' ? 'Plume of Prometheus' : 'the plain triangle'} when I is pressed in square ${n}'s chain window`, () => {
       const world = pressAt(n);
       assert.equal(world.snapshot().strike?.id, `square${n}`);
       world.step(['heavy-attack']);
       const strike = world.snapshot().strike;
-      assert.equal(strike?.id, 'plume');
+      assert.equal(strike?.id, into);
       assert.equal(strike?.entry?.id, `square${n}`);
     });
   }

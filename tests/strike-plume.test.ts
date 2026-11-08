@@ -208,8 +208,9 @@ describe('fast blades do not tunnel', () => {
 });
 
 describe('Plume of Prometheus data', () => {
-  it('chains into Plume of Prometheus from square 1, 2, 3 and 4 chain windows', () => {
-    for (const id of ['square1', 'square2', 'square3', 'square4'] as const) {
+  it('chains into Plume of Prometheus from square 2, 3 and 4 chain windows, keeping square 1 with plain triangle', () => {
+    assert.equal(STRIKES.square1.chain?.heavy, 'triangle');
+    for (const id of ['square2', 'square3', 'square4'] as const) {
       assert.equal(STRIKES[id].chain?.heavy, 'plume');
     }
     assert.equal(STRIKES.square5.chain?.heavy, 'spirit');
