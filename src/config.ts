@@ -184,6 +184,8 @@ export const CONFIG = {
       hoverVyMin: -140,
       hoverVyMax: 40,
       graceAirGravity: 0.5,
+      minAirHeavyAltitudePx: 32,
+      landingAttackBufferTicks: 8,
       heavyDamage: 20,
       heavyExtraHitstop: 3,
       knockbackLight: 90,

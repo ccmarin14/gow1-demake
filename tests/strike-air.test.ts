@@ -505,6 +505,50 @@ describe('air strikes from Ascension', () => {
     assert.equal(snap.strike?.id, 'triangle', 'should start the ground triangle strike');
   });
 
+  it('pressing triangle while falling within minAirHeavyAltitudePx buffers the attack and executes ground triangle on landing', () => {
+    const world = playingWorld();
+    world.step(['jump']);
+    // Wait until Kratos is falling and altitude < 32 px
+    for (let i = 0; i < 60; i += 1) {
+      world.step([]);
+      const p = player(world.snapshot());
+      if (p.vy >= 0 && (262 - p.y) < 32 && !p.grounded) break;
+    }
+    const pBefore = player(world.snapshot());
+    assert.ok(!pBefore.grounded, 'still in the air');
+    assert.ok(pBefore.vy >= 0, 'falling');
+    assert.ok((262 - pBefore.y) < 32, 'within 32 px of ground');
+
+    // Press heavy-attack
+    world.step(['heavy-attack']);
+    const pDuring = world.snapshot();
+    assert.notEqual(pDuring.strike?.id, 'airTriangle', 'should NOT start airTriangle close to the ground');
+
+    // Step until Kratos touches down and executes the buffered ground attack
+    for (let i = 0; i < 10; i += 1) {
+      world.step([]);
+      if (world.snapshot().strike?.id === 'triangle') break;
+    }
+    const pAfter = world.snapshot();
+    assert.equal(player(pAfter).grounded, true, 'landed');
+    assert.equal(pAfter.strike?.id, 'triangle', 'buffered heavy attack executed on landing as ground triangle');
+  });
+
+  it('pressing triangle while falling above minAirHeavyAltitudePx starts airTriangle immediately', () => {
+    const world = playingWorld();
+    world.step(['jump']);
+    // Wait until Kratos is at peak / falling but still high (altitude >= 32 px)
+    for (let i = 0; i < 60; i += 1) {
+      world.step([]);
+      const p = player(world.snapshot());
+      if (p.vy >= 0 && (262 - p.y) >= 32) break;
+    }
+    const p = player(world.snapshot());
+    assert.ok((262 - p.y) >= 32, 'still high enough');
+    world.step(['heavy-attack']);
+    assert.equal(world.snapshot().strike?.id, 'airTriangle', 'airTriangle allowed at safe altitude');
+  });
+
   it('keeps Orion\'s Harpoon data as an unchained draft until circle has a key', () => {
     const kratos = { ...player(playingWorld().snapshot()) };
     const grounded = foeAt(kratos.x + 70, kratos.y);

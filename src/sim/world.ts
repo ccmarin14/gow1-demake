@@ -57,6 +57,7 @@ export class World {
   private heavyHeldTicks = 0;
   /** A ground attack pressed during a roll waits until the roll releases control. */
   private rollAttackBuffer: { button: 'light' | 'heavy'; ticks: number } | null = null;
+  private landingAttackBuffer: { button: 'light' | 'heavy'; ticks: number } | null = null;
   /** Kratos' strike in progress (`null` when not striking). */
   private strike: StrikeState | null = null;
   /** Left/right held on this tick and for how many ticks in a row (a combo turns only on a steady hold). */
@@ -330,6 +331,19 @@ export class World {
     return this.mapData;
   }
 
+  private altitudeAboveGround(player: EntityState): number {
+    let groundY = Infinity;
+    for (const p of this.platforms) {
+      if (player.dropThroughTicks > 0 && p.yTop < VERTICAL_PARAMS.groundY) {
+        continue;
+      }
+      if (player.x >= p.x1 && player.x <= p.x2 && p.yTop >= player.y) {
+        if (p.yTop < groundY) groundY = p.yTop;
+      }
+    }
+    return groundY === Infinity ? Infinity : groundY - player.y;
+  }
+
   private spawnWaveEnemy(kind: 'legionnaire' | 'archer', x: number, facing: -1 | 1): EntityState {
     const id = `wave-enemy-${this.waveEnemyIdCounter++}`;
     const groundY = this.platforms[0]?.yTop ?? 236;
@@ -396,6 +410,7 @@ export class World {
     this.groundFires = [];
     this.strike = null;
     this.rollAttackBuffer = null;
+    this.landingAttackBuffer = null;
     this.direction = 0;
     this.directionTicks = 0;
     this.hitstopTicks = 0;
@@ -651,6 +666,7 @@ export class World {
         // queues the next strike of the combo, which starts once the chain
         // window opens (from the strike's pose, not from the guard).
         let startedNow = false;
+        let bufferedNow = false;
         const free = player.grounded && !rolling && !guarding && !nowCastingMagic && !inHitstun && !isOpeningChest;
         // In the air, square starts the air square and triangle the air triangle.
         const airFree = !player.grounded && !rolling && !guarding && !nowCastingMagic && !inHitstun && !isOpeningChest;
@@ -686,9 +702,23 @@ export class World {
         } else if (!striking && lightAttackEdge && free) {
           this.strike = startStrike(player, 'square1');
           startedNow = true;
-        } else if (!striking && airFree && (lightAttackEdge || heavyAttackPress)) {
-          this.strike = startStrike(player, heavyAttackPress ? 'airTriangle' : 'air1');
+        } else if (!striking && this.landingAttackBuffer && free) {
+          const buffered = this.landingAttackBuffer;
+          this.landingAttackBuffer = null;
+          if (direction !== 0) player.facing = direction;
+          this.strike = startStrike(player, buffered.button === 'heavy' ? 'triangle' : 'square1');
           startedNow = true;
+        } else if (!striking && airFree && (lightAttackEdge || heavyAttackPress)) {
+          if (heavyAttackPress && player.vy >= 0 && this.altitudeAboveGround(player) < CONFIG.combat.feel.minAirHeavyAltitudePx) {
+            this.landingAttackBuffer = {
+              button: 'heavy',
+              ticks: CONFIG.combat.feel.landingAttackBufferTicks,
+            };
+            bufferedNow = true;
+          } else {
+            this.strike = startStrike(player, heavyAttackPress ? 'airTriangle' : 'air1');
+            startedNow = true;
+          }
         } else if (this.strike) {
           // Triangle held through its windup branches (Ascension).
           const branched = branchStrike(this.strike, player, this.heavyHeldTicks);
@@ -723,6 +753,10 @@ export class World {
         if (this.comboGrace) {
           this.comboGrace.ticks -= 1;
           if (nowStriking || this.comboGrace.ticks <= 0) this.comboGrace = null;
+        }
+        if (this.landingAttackBuffer && !bufferedNow) {
+          this.landingAttackBuffer.ticks -= 1;
+          if (this.landingAttackBuffer.ticks <= 0) this.landingAttackBuffer = null;
         }
 
         // Dodge cancels guard immediately
