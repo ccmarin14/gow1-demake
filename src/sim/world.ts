@@ -17,7 +17,7 @@ import { isGuarding, startGuard, stepGuard } from './guard';
 import { stepLegionnaire } from './legionnaire';
 import { stepHydra } from './hydra';
 import { isCastingMagic, stepMagic } from './magic';
-import { STRIKES, branchStrike, chainStrike, stepGroundFires, strikeGravityAt, queueChain, startStrike, stepStrike, strikeCancellable, strikeLength, type HeldDirection, type StrikeImpactNotice, type StrikeState } from './strike';
+import { STRIKES, branchStrike, chainStrike, stepGroundFires, strikeGravityAt, queueChain, startStrike, stepStrike, strikeCancellable, strikeLength, strikePhaseAt, type HeldDirection, type StrikeImpactNotice, type StrikeState } from './strike';
 import { buildLevel1Map, computeCameraScrollX, getSegmentAtX, type LevelMapData } from './map';
 
 const TICK_DT = 1 / CONFIG.sim.tickRate;
@@ -624,9 +624,14 @@ export class World {
 
         // Taking a hit or leaving the ground cuts the strike short; so do
         // guarding or jumping in its cancel window (the guard or jump then
-        // starts below as usual).
-        if (this.strike && (inHitstun || (!player.grounded && !STRIKES[this.strike.id].air))) {
-          this.strike = null;
+        // starts below as usual). Phases with leapVy or waiting to land are allowed airborne.
+        if (this.strike) {
+          const def = STRIKES[this.strike.id];
+          const phase = strikePhaseAt(def, this.strike.tick).phase;
+          const airborneOk = def.air || phase.leapVy !== undefined || phase.until?.event === 'grounded';
+          if (inHitstun || (!player.grounded && !airborneOk)) {
+            this.strike = null;
+          }
         }
         // Landing from an air strike: if Kratos is on the ground, pressing an attack or having a buffered landing attack cuts recovery to start a ground attack.
         if (this.strike && STRIKES[this.strike.id].air && player.grounded && (lightAttackEdge || heavyAttackPress || this.landingAttackBuffer)) {

@@ -397,16 +397,17 @@ describe('Plume of Prometheus in the world', () => {
 describe('Spirit of Hercules (5 squares + triangle) data and execution', () => {
   const SPIRIT = STRIKES.spirit;
 
-  it('runs deliberate 54 ticks with longer apex hold and impact resonance', () => {
+  it('runs deliberate 56 ticks with a forward leap, longer apex hold and impact resonance', () => {
     assert.deepEqual(
       SPIRIT.phases.map((p) => [p.id, p.ticks]),
-      [['carry', 8], ['top', 6], ['over', 5], ['down', 5], ['slam', 18], ['recall', 12]],
+      [['carry', 8], ['top', 6], ['over', 6], ['down', 6], ['slam', 18], ['recall', 12]],
     );
-    assert.equal(strikeLength(SPIRIT), 54);
+    assert.equal(strikeLength(SPIRIT), 56);
     assert.equal(SPIRIT.damage, 28);
     assert.equal(SPIRIT.hitstopTicks, 8);
     assert.equal(SPIRIT.hitstunTicks, 26);
     assert.equal(SPIRIT.heavy, true);
+    assert.equal(SPIRIT.phases[2].leapVy, -140);
   });
 
   it('amplifies visual fire lights with 3 flashes, wider ground fire and heavier screen shake', () => {
@@ -450,11 +451,48 @@ describe('Spirit of Hercules (5 squares + triangle) data and execution', () => {
     const kratos = player(world.snapshot());
     const target = legionnaireAt(kratos.x + 60, kratos.y, 'spirit-target');
     const state = startStrike(kratos, 'spirit');
-    // Step through carry (8), top (6), over (5) and down (5) -> tick 24 slam
-    for (let i = 0; i <= 24; i += 1) {
+    // Step through carry (8), top (6), over (6) and down (6) -> tick 26 slam
+    for (let i = 0; i <= 26; i += 1) {
       stepStrike(state, kratos, [target], -1e6, 1e6);
     }
     assert.deepEqual(state.hits, ['spirit-target', 'spirit-target@impact']);
     assert.equal(target.hp, 100 - 2 * SPIRIT.damage);
+  });
+
+  it('performs a small forward leap in over/down and lands firmly on slam', () => {
+    const world = playingWorld();
+    world.step(['light-attack']);
+    hold(world, 20, []);
+    world.step(['light-attack']);
+    hold(world, 14, []);
+    world.step(['light-attack']);
+    hold(world, 21, []);
+    world.step(['light-attack']);
+    hold(world, 15, []);
+    world.step(['light-attack']);
+    hold(world, 24, []);
+    world.step(['heavy-attack']);
+    assert.equal(world.snapshot().strike?.id, 'spirit');
+    const x0 = player(world.snapshot()).x;
+    const y0 = player(world.snapshot()).y;
+    // Step through carry (8) and 5 ticks of top -> tick 13 is the last tick of top (still on ground)
+    hold(world, 13, []);
+    assert.equal(player(world.snapshot()).grounded, true, 'grounded during windup');
+    // Tick 14 (start of over): Kratos leaps into the air
+    world.step([]);
+    assert.equal(world.snapshot().strike?.tick, 14);
+    assert.equal(player(world.snapshot()).grounded, false, 'airborne during the leap');
+    assert.ok(player(world.snapshot()).vy < 0, 'leaping upward');
+    // At tick 17 (mid-leap): Kratos is airborne above the floor
+    hold(world, 3, []);
+    const mid = player(world.snapshot());
+    assert.equal(mid.grounded, false, 'airborne during the leap');
+    assert.ok(mid.y < y0, 'leaped up above the ground');
+    // Step into slam (tick 26): Kratos lands and is grounded
+    hold(world, 9, []);
+    const landed = player(world.snapshot());
+    assert.equal(landed.grounded, true, 'landed on slam');
+    assert.equal(landed.y, y0, 'on the floor');
+    assert.ok(landed.x > x0 + 10, 'advanced forward with the jump');
   });
 });

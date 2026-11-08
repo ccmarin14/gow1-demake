@@ -990,8 +990,8 @@ const SPIRIT: StrikeDef = {
   phases: [
     { id: 'carry', ticks: 8, advancePx: 0, pose: 'plume-a', centerX: CX['plume-a'] },
     { id: 'top', ticks: 6, advancePx: 0, pose: 'plume-b', centerX: CX['plume-b'] },
-    { id: 'over', ticks: 5, advancePx: 0, pose: 'plume-c', centerX: CX['plume-c'] },
-    { id: 'down', ticks: 5, advancePx: 4, pose: 'plume-d', centerX: CX['plume-d'] },
+    { id: 'over', ticks: 6, advancePx: 6, pose: 'plume-c', centerX: CX['plume-c'], leapVy: -140, gravity: 1.0 },
+    { id: 'down', ticks: 6, advancePx: 6, pose: 'plume-d', centerX: CX['plume-d'], gravity: 2.2, until: { event: 'grounded', minTicks: 2 } },
     {
       id: 'slam', ticks: 18, advancePx: 0, pose: 'plume-e', centerX: CX['plume-e'],
       effects: [
