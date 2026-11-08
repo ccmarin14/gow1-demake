@@ -112,14 +112,14 @@ describe('square 6 closes its forward lash (user feedback)', () => {
 });
 
 describe('triangle strike data', () => {
-  it('runs draw 4, load 4, rise 3, slash1 4, step 2, slash2 4, hold 3 and recall 4 ticks (28 in total): snappy GoW1 dual diagonal cleave', () => {
+  it('runs draw 4, load 5, rise 3, slash1 6, settle1 3, step 5, slash2 6, hold2 4 and recall 6 ticks (42 in total): deliberate GoW1 dual sequential cleave', () => {
     assert.deepEqual(
       TRIANGLE.phases.map((p) => [p.id, p.ticks]),
-      [['draw', 4], ['load', 4], ['rise', 3], ['slash1', 4], ['step', 2], ['slash2', 4], ['hold', 3], ['recall', 4]],
+      [['draw', 4], ['load', 5], ['rise', 3], ['slash1', 6], ['settle1', 3], ['step', 5], ['slash2', 6], ['hold2', 4], ['recall', 6]],
     );
-    assert.equal(strikeLength(TRIANGLE), 28);
-    assert.equal(strikeAdvanceAt(TRIANGLE, 28), 8, 'advances 8 px forward total');
-    assert.deepEqual(TRIANGLE.branch, { atEndOf: 'load', ifHeld: 'heavy-attack', into: 'launcher' }, 'the hold threshold is the end of load (tick 7)');
+    assert.equal(strikeLength(TRIANGLE), 42);
+    assert.equal(strikeAdvanceAt(TRIANGLE, 42), 8, 'advances 8 px forward total');
+    assert.deepEqual(TRIANGLE.branch, { atEndOf: 'load', ifHeld: 'heavy-attack', into: 'launcher' }, 'the hold threshold is the end of load (tick 8)');
     assert.deepEqual(TRIANGLE.cancel, { from: 'recall', fromTick: 2 }, 'cancelable from recall tick 2');
   });
 
@@ -130,7 +130,7 @@ describe('triangle strike data', () => {
     assert.ok(-feet(ANCHORS['kratos-tri-g'].shoulder)[1] >= 26, 'the recall recovers');
   });
 
-  it('moves both blades continuously with no jumps over 40 px, and zero jump at phase changes', () => {
+  it('moves both blades continuously with no per-tick jumps over 40 px, and zero jump during thrown tracks', () => {
     for (const hand of ['near', 'far'] as const) {
       let prev = bladeAt(TRIANGLE, hand, 0, poseAnchors).pos;
       for (let t = 1; t < strikeLength(TRIANGLE); t += 1) {
@@ -138,19 +138,40 @@ describe('triangle strike data', () => {
         assert.ok(dist(prev, pos) <= 40, `${hand}: jump of ${dist(prev, pos).toFixed(1)} px on tick ${t}`);
         prev = pos;
       }
-      let at = 0;
-      for (const phase of TRIANGLE.phases.slice(0, -1)) {
-        at += phase.ticks;
-        const before = bladeAt(TRIANGLE, hand, at - 1e-6, poseAnchors).pos;
-        const after = bladeAt(TRIANGLE, hand, at, poseAnchors).pos;
-        assert.ok(dist(before, after) < 1, `${hand}: jump of ${dist(before, after).toFixed(2)} px entering tick ${at}`);
-      }
+    }
+    // Near thrown track (load, rise, slash1, settle1): zero jump entering ticks 4, 9, 12, 18
+    for (const at of [4, 9, 12, 18]) {
+      const before = bladeAt(TRIANGLE, 'near', at - 1e-6, poseAnchors).pos;
+      const after = bladeAt(TRIANGLE, 'near', at, poseAnchors).pos;
+      assert.ok(dist(before, after) < 1, `near: jump of ${dist(before, after).toFixed(2)} px entering tick ${at}`);
+    }
+    // Far thrown track (slash2, hold2, recall): zero jump entering ticks 26, 32, 36
+    for (const at of [26, 32, 36]) {
+      const before = bladeAt(TRIANGLE, 'far', at - 1e-6, poseAnchors).pos;
+      const after = bladeAt(TRIANGLE, 'far', at, poseAnchors).pos;
+      assert.ok(dist(before, after) < 1, `far: jump of ${dist(before, after).toFixed(2)} px entering tick ${at}`);
+    }
+  });
+
+  it('enforces single-blade flying exclusivity: never both chains out at once, held blade in hand', () => {
+    for (let t = 0; t < strikeLength(TRIANGLE); t += 1) {
+      const near = bladeAt(TRIANGLE, 'near', t, poseAnchors);
+      const far = bladeAt(TRIANGLE, 'far', t, poseAnchors);
+      assert.ok(!(near.chainOut && far.chainOut), `both chains out at tick ${t}`);
+    }
+    // During slash1 (ticks 12..17), far blade is strictly held in hand
+    for (let t = 12; t <= 17; t += 1) {
+      assert.equal(bladeAt(TRIANGLE, 'far', t, poseAnchors).chainOut, false, `far blade chainOut at tick ${t}`);
+    }
+    // During slash2 (ticks 26..31), near blade is strictly held in hand
+    for (let t = 26; t <= 31; t += 1) {
+      assert.equal(bladeAt(TRIANGLE, 'near', t, poseAnchors).chainOut, false, `near blade chainOut at tick ${t}`);
     }
   });
 
   it('points each arm toward its blade within 45 degrees during its slash', () => {
-    // slash1 runs from tick 11 to 14 (near arm cuts down-forward)
-    for (let t = 11; t <= 14; t += 1) {
+    // slash1 runs from tick 12 to 17 (near arm cuts down-forward)
+    for (let t = 12; t <= 17; t += 1) {
       const pose = strikePoseAt(TRIANGLE, t);
       const a = ANCHORS[`kratos-${pose}`];
       const adv = strikeAdvanceAt(TRIANGLE, t);
@@ -162,8 +183,8 @@ describe('triangle strike data', () => {
       const off = Math.abs(((arm - toBlade + 3 * Math.PI) % (2 * Math.PI)) - Math.PI);
       assert.ok(off <= (45 * Math.PI) / 180, `tick ${t} (${pose}) near: arm ${((off * 180) / Math.PI).toFixed(0)} degrees off`);
     }
-    // slash2 runs from tick 17 to 20 (far arm cuts across)
-    for (let t = 17; t <= 20; t += 1) {
+    // slash2 runs from tick 26 to 31 (far arm cuts across)
+    for (let t = 26; t <= 31; t += 1) {
       const pose = strikePoseAt(TRIANGLE, t);
       const a = ANCHORS[`kratos-${pose}`];
       const adv = strikeAdvanceAt(TRIANGLE, t);
@@ -192,8 +213,8 @@ describe('triangle strike data', () => {
 
   it('hits with both blades across two slashes; does not chain', () => {
     assert.equal(strikeHitWindowAt(TRIANGLE, 4, 'near'), -1, 'not while loading');
-    assert.equal(strikeHitWindowAt(TRIANGLE, 12, 'near'), 0, 'during slash1');
-    assert.equal(strikeHitWindowAt(TRIANGLE, 18, 'far'), 1, 'during slash2');
+    assert.equal(strikeHitWindowAt(TRIANGLE, 13, 'near'), 0, 'during slash1');
+    assert.equal(strikeHitWindowAt(TRIANGLE, 27, 'far'), 1, 'during slash2');
     assert.equal(strikeChainTicks(TRIANGLE), null);
   });
 });
@@ -214,7 +235,7 @@ describe('triangle hits', () => {
       if (result.done) break;
     }
     assert.ok(hitsOn.length >= 1, `should hit at least once, hits: ${hitsOn}`);
-    assert.ok(hitsOn[0] >= 11 && hitsOn[0] <= 15, `hits during slash1 (tick 11-15), was ${hitsOn[0]}`);
+    assert.ok(hitsOn[0] >= 12 && hitsOn[0] <= 17, `hits during slash1 (tick 12-17), was ${hitsOn[0]}`);
     assert.equal(enemy.hp, 100 - (TRIANGLE.damage * 2), 'deals 20 damage across 2 slashes');
   });
 });
@@ -227,7 +248,7 @@ describe('triangle against a close enemy', () => {
     const hp0 = foe.hp;
     world.step(['heavy-attack']);
     let hitTick = -1;
-    for (let i = 0; i < 30 && hitTick < 0; i += 1) {
+    for (let i = 0; i < 35 && hitTick < 0; i += 1) {
       world.step([]);
       const snap = world.snapshot();
       if (snap.strike?.id === 'triangle' && snap.strike.hits.length > 0) {
@@ -235,24 +256,24 @@ describe('triangle against a close enemy', () => {
         assert.equal(snap.hitstopTicks, TRIANGLE.hitstopTicks + 3, 'a heavy blow holds the world 3 ticks longer');
       }
     }
-    assert.ok(hitTick >= 11 && hitTick <= 20, `hit during slash on tick ${hitTick}`);
+    assert.ok(hitTick >= 12 && hitTick <= 31, `hit during slash on tick ${hitTick}`);
     const after = world.snapshot().entities.find((e) => e.kind === 'legionnaire')!;
     assert.ok(after.hp < hp0);
   });
 });
 
 describe('triangle in the world', () => {
-  it('starts on the I press from idle on the ground, lasts 28 ticks; I and J during it do nothing', () => {
+  it('starts on the I press from idle on the ground, lasts 42 ticks; I and J during it do nothing', () => {
     const world = playingWorld();
     world.step(['heavy-attack']);
     const strike = world.snapshot().strike;
     assert.equal(strike?.id, 'triangle');
     assert.equal(strike?.tick, 0);
-    for (let i = 0; i < 27; i += 1) {
+    for (let i = 0; i < 41; i += 1) {
       world.step(i % 4 === 0 ? ['heavy-attack'] : i % 4 === 2 ? ['light-attack'] : []);
       assert.equal(world.snapshot().strike?.id, 'triangle');
     }
-    assert.equal(world.snapshot().strike?.tick, 27);
+    assert.equal(world.snapshot().strike?.tick, 41);
     world.step([]);
     assert.equal(world.snapshot().strike, undefined);
   });
@@ -260,7 +281,7 @@ describe('triangle in the world', () => {
   it('fires once per press and turns toward a direction held as it starts', () => {
     const world = playingWorld();
     world.step(['heavy-attack']);
-    hold(world, 27, []);
+    hold(world, 41, []);
     world.step([]);
     assert.equal(world.snapshot().strike, undefined, 'one triangle per press');
     assert.equal(player(world.snapshot()).facing, 1);
@@ -269,8 +290,8 @@ describe('triangle in the world', () => {
   });
 
   it('can be cut short by guarding or jumping from recall tick 2, not before', () => {
-    // recall starts at tick 24 (4 + 4 + 3 + 4 + 2 + 4 + 3 = 24). Recall tick 2 is tick 26.
-    const cancelTick = 26;
+    // recall starts at tick 36 (4 + 5 + 3 + 6 + 3 + 5 + 6 + 4 = 36). Recall tick 2 is tick 38.
+    const cancelTick = 38;
     const early = playingWorld();
     early.step(['heavy-attack']);
     hold(early, cancelTick - 1, []);

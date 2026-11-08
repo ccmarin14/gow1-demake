@@ -761,10 +761,12 @@ const TRIANGLE_TRAIL = {
 } as const;
 
 /**
- * Ground triangle (snappy GoW1 heavy dual-blade diagonal cleave, opening strike
+ * Ground triangle (deliberate GoW1 heavy dual-blade sequential cleave, opening strike
  * of Spirit and Valor of Hercules). Kratos steps forward and unleashes two successive,
- * powerful diagonal slashes across his front: first the right arm slashes down-left,
- * followed immediately by the left arm slashing down-right across (two distinct hits).
+ * powerful diagonal slashes across his front: first the right arm cleaves down-left
+ * while the left blade remains held in hand, followed by a forward step and the left
+ * arm cleaving down-right across while the right blade rests in hand (two distinct hits
+ * of 10 damage each, totaling 20 heavy damage).
  * Holding triangle through draw/load branches into the launcher (then Ascension).
  * It does not chain; guard or jump cut its recall short.
  */
@@ -773,66 +775,62 @@ const TRIANGLE: StrikeDef = {
   hand: 'near',
   heldBlade: { from: 'back' },
   phases: [
-    { id: 'draw', ticks: 4, advancePx: 2, pose: 'tri-a', centerX: CX['tri-a'] },
-    { id: 'load', ticks: 4, advancePx: 2, pose: 'tri-pb', centerX: CX['tri-pb'] },
+    { id: 'draw', ticks: 4, advancePx: 1, pose: 'tri-a', centerX: CX['tri-a'] },
+    { id: 'load', ticks: 5, advancePx: 1, pose: 'tri-pb', centerX: CX['tri-pb'] },
     { id: 'rise', ticks: 3, advancePx: 1, pose: 'tri-d', centerX: CX['tri-d'] },
-    { id: 'slash1', ticks: 4, advancePx: 2, pose: 'tri-e', centerX: CX['tri-e'] },
-    { id: 'step', ticks: 2, advancePx: 1, pose: 'tri-f', centerX: CX['tri-f'] },
-    { id: 'slash2', ticks: 4, advancePx: 0, pose: 'tri-e', centerX: CX['tri-e'] },
-    { id: 'hold', ticks: 3, advancePx: 0, pose: 'tri-f', centerX: CX['tri-f'] },
-    { id: 'recall', ticks: 4, advancePx: 0, pose: 'tri-g', centerX: CX['tri-g'] },
+    { id: 'slash1', ticks: 6, advancePx: 2, pose: 'tri-e', centerX: CX['tri-e'] },
+    { id: 'settle1', ticks: 3, advancePx: 1, pose: 'tri-f', centerX: CX['tri-f'] },
+    { id: 'step', ticks: 5, advancePx: 2, pose: 'tri-c', centerX: CX['tri-c'] },
+    { id: 'slash2', ticks: 6, advancePx: 0, pose: 'tri-e', centerX: CX['tri-e'] },
+    { id: 'hold2', ticks: 4, advancePx: 0, pose: 'tri-f', centerX: CX['tri-f'] },
+    { id: 'recall', ticks: 6, advancePx: 0, pose: 'tri-g', centerX: CX['tri-g'] },
   ],
   blades: {
     near: {
       // Near shoulder of the slashing arm (tri-e).
       shoulder: [-2.3, -25.4],
-      // From the hands at the hip/shoulder, across the chest in a diagonal cleave down-forward.
+      // From the hands at the hip/shoulder, across the chest in a diagonal cleave down-forward,
+      // then sweeping through the bottom back toward the hip.
       track: [
         [8.3, 11.4], [-12.0, 8.0], [-28.0, 5.0],
         [-6.0, -22.0], [32.0, -18.0], [68.0, -6.0], [80.0, 10.0], [60.0, 22.0],
-        [45.0, 24.0], [40.0, 24.0],
+        [30.0, 20.0], [8.3, 11.4], [0.0, 8.0],
       ],
-      chainFrom: 0.02,
+      chainFrom: 0.1,
       motion: {
         draw: { kind: 'carry' },
-        load: { kind: 'track', from: 0, to: 2 / 9, ease: 'linear' },
-        rise: { kind: 'track', from: 2 / 9, to: 4 / 9, ease: 'linear' },
-        slash1: { kind: 'track', from: 4 / 9, to: 7 / 9, ease: 'linear' },
-        step: { kind: 'hold', driftPx: 1, at: 7 / 9 },
-        slash2: { kind: 'hold', driftPx: 1, at: 7 / 9 },
-        hold: { kind: 'track', from: 7 / 9, to: 1, ease: 'out' },
-        recall: { kind: 'recall', sagPx: 4 },
+        load: { kind: 'track', from: 0, to: 2 / 8, ease: 'linear' },
+        rise: { kind: 'track', from: 2 / 8, to: 4 / 8, ease: 'linear' },
+        slash1: { kind: 'track', from: 4 / 8, to: 6 / 8, ease: 'linear' },
+        settle1: { kind: 'track', from: 6 / 8, to: 1.0, ease: 'out' },
       },
       trailGrowth: { slash1: { widthPx: 6 } },
       trail: { kind: 'profile', ...TRIANGLE_TRAIL },
       trailBreakAt: [0.02],
-      active: { fromS: 0.45, toS: 0.8 },
+      active: { fromS: 0.5, toS: 0.74 },
     },
     far: {
       // Far shoulder of the slashing arm (tri-e).
       shoulder: [3.9, -25],
-      // Staggered second diagonal cut following immediately after the near blade.
+      // Staggered second diagonal cut following after the first: winds up overhead during step,
+      // cleaves across chest height in slash2, holds, and recalls.
       track: [
         [0.1, 13.0], [-14.0, 8.0], [-21.0, 6.0],
         [-16.0, -8.0], [-8.0, -20.0], [18.0, -20.0],
         [48.0, -14.0], [74.0, 0.0], [70.0, 14.0], [52.0, 22.0], [38.0, 24.0],
       ],
       trackDepth: ['behind', 'behind', 'behind', 'behind', 'behind', 'front', 'front', 'front', 'front', 'front', 'front'],
-      chainFrom: 0.02,
+      chainFrom: 0.45,
       motion: {
-        draw: { kind: 'carry' },
-        load: { kind: 'track', from: 0, to: 2 / 10, ease: 'linear' },
-        rise: { kind: 'track', from: 2 / 10, to: 3 / 10, ease: 'linear' },
-        slash1: { kind: 'track', from: 3 / 10, to: 4 / 10, ease: 'linear' },
-        step: { kind: 'track', from: 4 / 10, to: 6 / 10, ease: 'linear' },
-        slash2: { kind: 'track', from: 6 / 10, to: 9 / 10, ease: 'linear' },
-        hold: { kind: 'track', from: 9 / 10, to: 1, ease: 'out' },
-        recall: { kind: 'recall', sagPx: 4 },
+        step: { kind: 'track', from: 0, to: 0.5, ease: 'linear' },
+        slash2: { kind: 'track', from: 0.5, to: 85 / 100, ease: 'linear' },
+        hold2: { kind: 'hold', driftPx: 1, at: 85 / 100 },
+        recall: { kind: 'recall', sagPx: 4, fromS: 85 / 100 },
       },
       trailGrowth: { slash2: { widthPx: 6 } },
       trail: { kind: 'profile', ...TRIANGLE_TRAIL },
       trailBreakAt: [0.02],
-      active: [{ fromS: -1, toS: -0.5 }, { fromS: 0.6, toS: 0.95 }],
+      active: [{ fromS: -1, toS: -0.5 }, { fromS: 0.5, toS: 0.84 }],
     },
   },
   hitRadiusPx: 3.5,

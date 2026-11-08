@@ -182,7 +182,7 @@ describe('fast blades do not tunnel', () => {
       // The fastest tick of the slash, and the midpoint of what it sweeps.
       let fastest = 0;
       let best = 0;
-      for (let t = 11; t <= 14; t += 1) {
+      for (let t = 12; t <= 17; t += 1) {
         const step = dist(thrownBladeAt(TRIANGLE, t - 1, poseAnchors).pos, thrownBladeAt(TRIANGLE, t, poseAnchors).pos);
         if (step > best) [best, fastest] = [step, t];
       }
