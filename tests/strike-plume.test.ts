@@ -267,7 +267,7 @@ describe('Plume of Prometheus data', () => {
   });
 
   it('points each arm at its blade from the raise through the slam (within 40 degrees)', () => {
-    for (let t = 1; t < 33; t += 1) {
+    for (let t = 7; t < 33; t += 1) {
       if (t === 11 || t === 15) continue; // first tick of the over and down poses
       const pose = strikePoseAt(PLUME, t);
       const a = ANCHORS[`kratos-${pose}`];

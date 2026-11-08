@@ -68,9 +68,10 @@ export type BladeMotion =
   /**
    * To the start of the track (ease out), from where the previous strike of
    * the combo left this blade (or from under the hand when there is none):
-   * both blades are thrown from the first phase on.
+   * both blades are thrown from the first phase on. Optional `arcPx` creates
+   * a curved downward swing arc with dynamic tangent angle.
    */
-  | { kind: 'carry' }
+  | { kind: 'carry'; arcPx?: number }
   /** Along the track from `from` to `to` (0..1 of its length). */
   | { kind: 'track'; from: number; to: number; ease: 'linear' | 'out' | 'in' }
   /**
@@ -845,8 +846,8 @@ const TRIANGLE: StrikeDef = {
 
 /** Plume's motion, shared by both blades. */
 const PLUME_MOTION = {
-  // Both blades come from previous strike down and back behind the hips/waist: balanceo hacia atrás.
-  carry: { kind: 'carry' },
+  // Both blades sweep from previous strike down and back behind the hips in a wide fiery arc:
+  carry: { kind: 'carry', arcPx: 20 },
   // Sweep up behind the back along the spine, reaching the apex overhead as Kratos arches back.
   top: { kind: 'track', from: 0, to: 3 / 7, ease: 'linear' },
   // Over the head driving forward.
@@ -857,7 +858,7 @@ const PLUME_MOTION = {
   recall: { kind: 'recall', sagPx: 5 },
 } as const;
 
-const PLUME_GROWTH = { top: { widthPx: 6 }, over: { widthPx: 6 }, down: { widthPx: 6 } };
+const PLUME_GROWTH = { carry: { widthPx: 4 }, top: { widthPx: 6 }, over: { widthPx: 6 }, down: { widthPx: 6 } };
 
 /**
  * Plume of Prometheus (square, square, triangle; draft v1, pending critic
@@ -909,7 +910,7 @@ const PLUME: StrikeDef = {
         [78.0, 23.4],
         [78.0, 29.4],
       ],
-      chainFrom: 0.02,
+      chainFrom: 0,
       motion: PLUME_MOTION,
       trailGrowth: PLUME_GROWTH,
       trail: { kind: 'profile', ...TRIANGLE_TRAIL },
@@ -933,7 +934,7 @@ const PLUME: StrikeDef = {
         [59.9, 28.9],
       ],
       trackDepth: ['behind', 'behind', 'behind', 'behind', 'behind', 'front', 'front', 'front', 'front', 'front'],
-      chainFrom: 0.02,
+      chainFrom: 0,
       motion: PLUME_MOTION,
       trailGrowth: PLUME_GROWTH,
       trail: { kind: 'profile', ...TRIANGLE_TRAIL },
@@ -1534,12 +1535,19 @@ export function thrownBladeAt(
     const start = entry ? previousBladeAt(entry, hand, anchors) : [grip[0], grip[1] + 5] as Vec2;
     const end = onTrack(def, hand, tb, 0);
     const e = 1 - (1 - u) * (1 - u);
-    const pos: Vec2 = [start[0] + (end[0] - start[0]) * e, start[1] + (end[1] - start[1]) * e];
+    const arc = motion.arcPx ? motion.arcPx * Math.sin(u * Math.PI) : 0;
+    const pos: Vec2 = [start[0] + (end[0] - start[0]) * e, start[1] + (end[1] - start[1]) * e + arc];
+    let deg = 100;
+    if (motion.arcPx) {
+      const dx = (end[0] - start[0]) * 2 * (1 - u);
+      const dy = (end[1] - start[1]) * 2 * (1 - u) + motion.arcPx * Math.PI * Math.cos(u * Math.PI);
+      deg = (Math.atan2(dy, dx) * 180) / Math.PI;
+    }
     return {
       pos,
       chainOut: Math.hypot(pos[0] - grip[0], pos[1] - grip[1]) > 8,
       sagPx: 0,
-      deg: 100,
+      deg,
       behindBody: trackDepthAt(def, 0, hand) === 'behind',
       s: 0,
     };
