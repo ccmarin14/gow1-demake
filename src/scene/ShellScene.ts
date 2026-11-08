@@ -279,7 +279,7 @@ export class ShellScene extends Phaser.Scene {
       const def = STRIKES[activeStrike.id];
       const profile = def.air
         ? 'air'
-        : def.damage >= CONFIG.combat.feel.heavyDamage
+        : (def.heavy || def.damage >= CONFIG.combat.feel.heavyDamage)
           ? 'heavy'
           : 'light';
       this.soundManager?.playStrikeWhoosh(profile);

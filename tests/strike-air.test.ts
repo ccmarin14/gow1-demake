@@ -452,15 +452,15 @@ describe('air triangle (manual: "Ataque vertical")', () => {
       AIR_TRIANGLE.phases.map((p) => p.id),
       ['coil', 'loop1a', 'loop1b', 'loop2', 'dive', 'swing', 'raise', 'land'],
     );
-    const near = (t: number) => thrownBladeAt(AIR_TRIANGLE, t, poseAnchors, 'near');
+    const near = (t: number) => bladeAt(AIR_TRIANGLE, 'near', t, poseAnchors);
     assert.ok(near(7).pos[0] <= -12 && near(7).pos[1] >= -30, 'coil: back and low');
     assert.ok(near(13).pos[0] <= -15 && near(13).behindBody, 'up behind the back');
     assert.ok(near(16).pos[1] <= -66, 'over the head');
     assert.ok(near(22).pos[0] >= 25 && !near(22).behindBody, 'down the front');
     assert.ok(near(26).pos[1] >= 0, 'under the body');
-    assert.ok(near(30).pos[0] <= -20, 'up the back again');
-    assert.ok(near(36).pos[1] <= -62, 'raised over him as he drops');
-    assert.ok(near(43).pos[1] >= -35, 'recalls toward Kratos hands instead of staying frozen overhead');
+    assert.ok(near(30).chainOut, 'swing recalls directly towards hands');
+    assert.equal(near(34).chainOut, false, 'raise holds blades in hands as he drops');
+    assert.equal(near(40).chainOut, false, 'land keeps blades in hands upon impact');
     // Hangs through the circle (about 0.4 s), then drops at more than the plain gravity.
     const gravity = (id: string): number => AIR_TRIANGLE.phases.find((p) => p.id === id)!.gravity ?? 1;
     assert.ok(['coil', 'loop1a', 'loop1b', 'loop2'].every((id) => gravity(id) <= 0.25), 'hangs in the loop');
@@ -539,6 +539,33 @@ describe('air strikes from Ascension', () => {
     assert.equal(pAfter.strike?.id, 'triangle', 'buffered heavy attack executed on landing as ground triangle');
   });
 
+  it('pressing triangle while falling from Ascension within minAirHeavyAltitudePx buffers and executes ground triangle on landing', () => {
+    const world = ascensionWorld();
+    // Wait until Kratos is falling from Ascension and altitude < 32 px
+    for (let i = 0; i < 120; i += 1) {
+      world.step([]);
+      const p = player(world.snapshot());
+      if (p.vy >= 0 && (262 - p.y) < 32 && !p.grounded) break;
+    }
+    const pBefore = player(world.snapshot());
+    assert.ok(!pBefore.grounded, 'still in the air from Ascension');
+    assert.ok(pBefore.vy >= 0, 'falling');
+    assert.ok((262 - pBefore.y) < 32, 'within 32 px of ground');
+
+    // Press heavy-attack
+    world.step(['heavy-attack']);
+    assert.notEqual(world.snapshot().strike?.id, 'airTriangle', 'should NOT start airTriangle close to the ground from Ascension');
+
+    // Step until Kratos touches down and executes the buffered ground attack
+    for (let i = 0; i < 15; i += 1) {
+      world.step([]);
+      if (world.snapshot().strike?.id === 'triangle') break;
+    }
+    const pAfter = world.snapshot();
+    assert.equal(player(pAfter).grounded, true, 'landed from Ascension');
+    assert.equal(pAfter.strike?.id, 'triangle', 'buffered heavy attack executed on landing as ground triangle');
+  });
+
   it('pressing triangle while falling above minAirHeavyAltitudePx starts airTriangle immediately', () => {
     const world = playingWorld();
     world.step(['jump']);
@@ -603,7 +630,7 @@ describe('arm and body in the new strikes', () => {
       let at = 0;
       for (const phase of def.phases) {
         const hands = def.id === 'airTriangle' || def.id === 'ascension' || def.id === 'launcher' ? (['near', 'far'] as const) : ([def.hand] as const);
-        const blades = phase.pose === 'air-00' || phase.pose === 'tri-g' || phase.pose === 'airtri-e' || phase.id === 'land' || phase.id === 'recall' || phase.id === 'top' || phase.id === 'fall' || phase.id === 'raise' ? [] : hands;
+        const blades = phase.pose === 'air-00' || phase.pose === 'tri-g' || phase.pose === 'airtri-e' || phase.id === 'land' || phase.id === 'recall' || phase.id === 'top' || phase.id === 'fall' || phase.id === 'raise' || (def.id === 'airTriangle' && phase.id === 'swing') ? [] : hands;
         for (let t = at + 2; t < Math.min(at + phase.ticks, strikeLength(def)); t += 1) {
           for (const hand of blades) {
             const a = ANCHORS[`kratos-${phase.pose}`];

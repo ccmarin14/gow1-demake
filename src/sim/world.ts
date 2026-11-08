@@ -628,8 +628,8 @@ export class World {
         if (this.strike && (inHitstun || (!player.grounded && !STRIKES[this.strike.id].air))) {
           this.strike = null;
         }
-        // Landing from an air strike: if Kratos is on the ground, pressing an attack cuts recovery to start a ground attack.
-        if (this.strike && STRIKES[this.strike.id].air && player.grounded && (lightAttackEdge || heavyAttackPress)) {
+        // Landing from an air strike: if Kratos is on the ground, pressing an attack or having a buffered landing attack cuts recovery to start a ground attack.
+        if (this.strike && STRIKES[this.strike.id].air && player.grounded && (lightAttackEdge || heavyAttackPress || this.landingAttackBuffer)) {
           this.strike = null;
         }
         if (this.strike && strikeCancellable(STRIKES[this.strike.id], this.strike.tick) && (wantsGuard || jumpEdge)) {
@@ -735,8 +735,16 @@ export class World {
           }
           const next = chainStrike(this.strike, player, steadyDirection);
           if (next) {
-            this.strike = next;
-            startedNow = true;
+            if (next.id === 'airTriangle' && player.vy >= 0 && this.altitudeAboveGround(player) < CONFIG.combat.feel.minAirHeavyAltitudePx) {
+              this.landingAttackBuffer = {
+                button: 'heavy',
+                ticks: CONFIG.combat.feel.landingAttackBufferTicks,
+              };
+              bufferedNow = true;
+            } else {
+              this.strike = next;
+              startedNow = true;
+            }
           }
         }
         // Attacking in the air spends the double jump: no more jumps until he lands.
@@ -879,16 +887,17 @@ export class World {
           } else if (result.hits.length > 0) {
             const def = STRIKES[this.strike.id];
             // A heavy blow holds the world a little longer and throws the target back.
-            this.hitstopTicks = def.hitstopTicks + (def.damage >= CONFIG.combat.feel.heavyDamage ? CONFIG.combat.feel.heavyExtraHitstop : 0);
+            const isHeavy = Boolean(def.heavy || def.damage >= CONFIG.combat.feel.heavyDamage);
+            this.hitstopTicks = def.hitstopTicks + (isHeavy ? CONFIG.combat.feel.heavyExtraHitstop : 0);
             const last = result.hits[result.hits.length - 1];
             const kind = def.air
               ? 'air'
-              : def.damage >= CONFIG.combat.feel.heavyDamage
+              : isHeavy
                 ? 'heavy'
                 : 'light';
             this.strikeHitNotice = { x: last.x, y: last.y, power: def.damage, kind };
             if (this.targetPhysics) {
-              const knock = def.damage >= CONFIG.combat.feel.heavyDamage
+              const knock = isHeavy
                 ? CONFIG.combat.feel.knockbackHeavy
                 : CONFIG.combat.feel.knockbackLight;
               for (const hit of result.hits) {

@@ -256,6 +256,7 @@ export interface StrikeDef {
   /** Half thickness of the blades' swept segments (px). */
   hitRadiusPx: number;
   damage: number;
+  heavy?: boolean;
   hitstunTicks: number;
   /** Ticks the whole world freezes when the strike connects. */
   hitstopTicks: number;
@@ -759,69 +760,86 @@ const TRIANGLE_TRAIL = {
   cutWhenDetached: true,
 } as const;
 
-/** The triangle's motion, shared by both blades. */
-const TRIANGLE_MOTION = {
-  draw: { kind: 'draw', from: 'back', behindBody: true },
-  load: { kind: 'track', from: 0, to: 0.25, ease: 'out' },
-  rise: { kind: 'track', from: 0.25, to: 0.45, ease: 'linear' },
-  slash: { kind: 'track', from: 0.45, to: 0.85, ease: 'in' },
-  hold: { kind: 'track', from: 0.85, to: 1, ease: 'out' },
-  recall: { kind: 'recall', sagPx: 4 },
-} as const;
-
-// Fire trail ignites on load and blazes through the slash and follow-through hold.
-const TRIANGLE_GROWTH = { load: { widthPx: 4 }, rise: { widthPx: 4 }, slash: { widthPx: 6 }, hold: { widthPx: 6 } };
-
 /**
- * Triangle on the ground: authentic God of War 1 (PS2) heavy attack (the opener
- * of Spirit and Valor of Hercules). Kratos steps forward and unleashes a powerful,
- * fast dual-blade diagonal cleave across his chest and downward, dealing heavy
- * damage and knockback. Holding triangle through draw/load branches into the
- * launcher (then Ascension). It does not chain; guard or jump cut its recall short.
+ * Ground triangle (snappy GoW1 heavy dual-blade diagonal cleave, opening strike
+ * of Spirit and Valor of Hercules). Kratos steps forward and unleashes two successive,
+ * powerful diagonal slashes across his front: first the right arm slashes down-left,
+ * followed immediately by the left arm slashing down-right across (two distinct hits).
+ * Holding triangle through draw/load branches into the launcher (then Ascension).
+ * It does not chain; guard or jump cut its recall short.
  */
 const TRIANGLE: StrikeDef = {
   id: 'triangle',
   hand: 'near',
   heldBlade: { from: 'back' },
   phases: [
-    { id: 'draw', ticks: 5, advancePx: 2, pose: 'tri-a', centerX: CX['tri-a'] },
-    { id: 'load', ticks: 5, advancePx: 2, pose: 'tri-pb', centerX: CX['tri-pb'] },
-    { id: 'rise', ticks: 3, advancePx: 1, pose: 'tri-c', centerX: CX['tri-c'] },
-    { id: 'slash', ticks: 5, advancePx: 3, pose: 'tri-e', centerX: CX['tri-e'] },
-    { id: 'hold', ticks: 4, advancePx: 0, pose: 'tri-f', centerX: CX['tri-f'] },
-    { id: 'recall', ticks: 6, advancePx: 0, pose: 'tri-g', centerX: CX['tri-g'] },
+    { id: 'draw', ticks: 4, advancePx: 2, pose: 'tri-a', centerX: CX['tri-a'] },
+    { id: 'load', ticks: 4, advancePx: 2, pose: 'tri-pb', centerX: CX['tri-pb'] },
+    { id: 'rise', ticks: 3, advancePx: 1, pose: 'tri-d', centerX: CX['tri-d'] },
+    { id: 'slash1', ticks: 4, advancePx: 2, pose: 'tri-e', centerX: CX['tri-e'] },
+    { id: 'step', ticks: 2, advancePx: 1, pose: 'tri-f', centerX: CX['tri-f'] },
+    { id: 'slash2', ticks: 4, advancePx: 0, pose: 'tri-e', centerX: CX['tri-e'] },
+    { id: 'hold', ticks: 3, advancePx: 0, pose: 'tri-f', centerX: CX['tri-f'] },
+    { id: 'recall', ticks: 4, advancePx: 0, pose: 'tri-g', centerX: CX['tri-g'] },
   ],
   blades: {
     near: {
       // Near shoulder of the slashing arm (tri-e).
       shoulder: [-2.3, -25.4],
       // From the hands at the hip/shoulder, across the chest in a diagonal cleave down-forward.
-      track: [[8.3, 11.4], [-12.0, 8.0], [-28.0, 5.0], [-6.0, -22.0], [32.0, -18.0], [68.0, -6.0], [85.0, 8.0], [78.0, 20.0], [62.0, 24.0], [48.0, 24.0]],
+      track: [
+        [8.3, 11.4], [-12.0, 8.0], [-28.0, 5.0],
+        [-6.0, -22.0], [32.0, -18.0], [68.0, -6.0], [80.0, 10.0], [60.0, 22.0],
+        [45.0, 24.0], [40.0, 24.0],
+      ],
       chainFrom: 0.02,
-      motion: TRIANGLE_MOTION,
-      trailGrowth: TRIANGLE_GROWTH,
+      motion: {
+        draw: { kind: 'carry' },
+        load: { kind: 'track', from: 0, to: 2 / 9, ease: 'linear' },
+        rise: { kind: 'track', from: 2 / 9, to: 4 / 9, ease: 'linear' },
+        slash1: { kind: 'track', from: 4 / 9, to: 7 / 9, ease: 'linear' },
+        step: { kind: 'hold', driftPx: 1, at: 7 / 9 },
+        slash2: { kind: 'hold', driftPx: 1, at: 7 / 9 },
+        hold: { kind: 'track', from: 7 / 9, to: 1, ease: 'out' },
+        recall: { kind: 'recall', sagPx: 4 },
+      },
+      trailGrowth: { slash1: { widthPx: 6 } },
       trail: { kind: 'profile', ...TRIANGLE_TRAIL },
       trailBreakAt: [0.02],
-      active: { fromS: 0.45, toS: 0.9 },
+      active: { fromS: 0.45, toS: 0.8 },
     },
     far: {
       // Far shoulder of the slashing arm (tri-e).
       shoulder: [3.9, -25],
-      // Parallel diagonal cleave matching the near blade.
-      track: [[0.1, 13.0], [-14.0, 8.0], [-21.0, 6.0], [-12.0, -18.0], [22.0, -14.0], [54.0, -4.0], [70.0, 10.0], [64.0, 22.0], [50.0, 25.0], [36.0, 25.0]],
-      trackDepth: ['behind', 'behind', 'behind', 'front', 'front', 'front', 'front', 'front', 'front', 'front'],
+      // Staggered second diagonal cut following immediately after the near blade.
+      track: [
+        [0.1, 13.0], [-14.0, 8.0], [-21.0, 6.0],
+        [-16.0, -8.0], [-8.0, -20.0], [18.0, -20.0],
+        [48.0, -14.0], [74.0, 0.0], [70.0, 14.0], [52.0, 22.0], [38.0, 24.0],
+      ],
+      trackDepth: ['behind', 'behind', 'behind', 'behind', 'behind', 'front', 'front', 'front', 'front', 'front', 'front'],
       chainFrom: 0.02,
-      motion: TRIANGLE_MOTION,
-      trailGrowth: TRIANGLE_GROWTH,
+      motion: {
+        draw: { kind: 'carry' },
+        load: { kind: 'track', from: 0, to: 2 / 10, ease: 'linear' },
+        rise: { kind: 'track', from: 2 / 10, to: 3 / 10, ease: 'linear' },
+        slash1: { kind: 'track', from: 3 / 10, to: 4 / 10, ease: 'linear' },
+        step: { kind: 'track', from: 4 / 10, to: 6 / 10, ease: 'linear' },
+        slash2: { kind: 'track', from: 6 / 10, to: 9 / 10, ease: 'linear' },
+        hold: { kind: 'track', from: 9 / 10, to: 1, ease: 'out' },
+        recall: { kind: 'recall', sagPx: 4 },
+      },
+      trailGrowth: { slash2: { widthPx: 6 } },
       trail: { kind: 'profile', ...TRIANGLE_TRAIL },
       trailBreakAt: [0.02],
-      active: { fromS: 0.45, toS: 0.9 },
+      active: [{ fromS: -1, toS: -0.5 }, { fromS: 0.6, toS: 0.95 }],
     },
   },
   hitRadiusPx: 3.5,
-  damage: 20,
-  hitstunTicks: 20,
-  hitstopTicks: 6,
+  damage: 10,
+  heavy: true,
+  hitstunTicks: 18,
+  hitstopTicks: 4,
   trailSamplesPerTick: 6,
   trailFadeWidthPx: 4,
   branch: { atEndOf: 'load', ifHeld: 'heavy-attack', into: 'launcher' },
@@ -1159,24 +1177,21 @@ const AIR_TRIANGLE_MOTION = {
   loop2: { kind: 'track', from: 4 / 12, to: 6 / 12, ease: 'linear' },
   // ...under the body as he starts to drop...
   dive: { kind: 'track', from: 6 / 12, to: 8 / 12, ease: 'linear' },
-  // ...and up the back again to over his head as he falls.
-  swing: { kind: 'track', from: 8 / 12, to: 1, ease: 'out' },
-  raise: { kind: 'recall', sagPx: 4, fromS: 1 },
-  land: { kind: 'recall', sagPx: 4, fromS: 1 },
+  // ...and recalls immediately into hands after the downward slice.
+  swing: { kind: 'recall', sagPx: 2, fromS: 8 / 12 },
 } as const;
 
 const AIR_TRIANGLE_GROWTH = {
-  loop1a: { widthPx: 6 }, loop1b: { widthPx: 6 }, loop2: { widthPx: 6 }, dive: { widthPx: 6 }, swing: { widthPx: 6 },
+  loop1a: { widthPx: 6 }, loop1b: { widthPx: 6 }, loop2: { widthPx: 6 }, dive: { widthPx: 6 },
 };
 
 /**
  * Air triangle (manual "Ataque vertical", video 38.9-40.3 s, studied at 30
  * fps): at the top of the jump Kratos hangs tucked with both blades lit low
  * behind him (about 0.25 s), then the blades go once round a big vertical
- * circle: up behind, over his head, down the front, under his body and up
- * the back again (about 0.45 s, still hanging) while he drops; he lands
- * crouched with the blades raised over him and a burst of fire at his feet.
- * Works after any air square.
+ * circle: up behind, over his head, down the front, under his body and
+ * recall directly into hands while he drops; he lands crouched with blades in
+ * hands and a burst of dust at his feet. Works after any air square.
  */
 const AIR_TRIANGLE: StrikeDef = {
   id: 'airTriangle',
@@ -1189,10 +1204,10 @@ const AIR_TRIANGLE: StrikeDef = {
     { id: 'loop1b', ticks: 6, advancePx: 0, pose: 'airtri-b', centerX: CX['airtri-b'], gravity: 0.15 },
     { id: 'loop2', ticks: 5, advancePx: 2, pose: 'airtri-c', centerX: CX['airtri-c'], gravity: 0.25 },
     { id: 'dive', ticks: 5, advancePx: 1, pose: 'airtri-d', centerX: CX['airtri-d'], gravity: 1.8 },
-    { id: 'swing', ticks: 6, advancePx: 0, pose: 'airtri-m1', centerX: CX['airtri-m1'], gravity: 2.2, until: { event: 'grounded', minTicks: 1 } },
-    { id: 'raise', ticks: 10, advancePx: 0, pose: 'airtri-e', centerX: CX['airtri-e'], gravity: 2.2, until: { event: 'grounded', minTicks: 0 } },
+    { id: 'swing', ticks: 4, advancePx: 0, pose: 'airtri-m1', centerX: CX['airtri-m1'], gravity: 2.2, until: { event: 'grounded', minTicks: 0 } },
+    { id: 'raise', ticks: 6, advancePx: 0, pose: 'air-01', centerX: CX['air-01'], gravity: 2.2, until: { event: 'grounded', minTicks: 0 } },
     {
-      id: 'land', ticks: 10, advancePx: 0, pose: 'tri-f', centerX: CX['tri-f'],
+      id: 'land', ticks: 6, advancePx: 0, pose: 'tri-f', centerX: CX['tri-f'],
       // The strike ends with the landing: no fire, flash or shake (it does not hit the ground).
       effects: [{ kind: 'dust', at: [4, 30] }],
     },
@@ -1209,7 +1224,7 @@ const AIR_TRIANGLE: StrikeDef = {
       trailGrowth: AIR_TRIANGLE_GROWTH,
       trail: { kind: 'profile', ...TRIANGLE_TRAIL },
       trailBreakAt: [6 / 12],
-      active: [{ fromS: 0.2, toS: 0.5 }, { fromS: 0.5 }],
+      active: [{ fromS: 0.2, toS: 0.5 }, { fromS: 0.5, toS: 8 / 12 }],
     },
     far: {
       // Far shoulder of the arms coming forward (airtri-c).
@@ -1218,12 +1233,12 @@ const AIR_TRIANGLE: StrikeDef = {
       track: [[-61.8, 9.1], [-61.8, 9.1], [-82.1, -6.9], [-69.9, -26.9], [-25.3, -38.9], [27.3, -28.9], [55.7, -2.9], [39.5, 21.1], [-5.1, 37.1], [-57.8, 31.1], [-90.2, 11.1], [-82.1, -12.9], [-45.6, -34.9], [-9.1, -38.9], [-9.1, -38.9]],
       trackDepth: ['behind', 'behind', 'behind', 'behind', 'behind', 'front', 'front', 'front', 'front', 'behind', 'behind', 'behind', 'front', 'front', 'front'],
       chainFrom: 0,
-      lag: { ticks: 2, until: 'raise' },
+      lag: { ticks: 2, until: 'swing' },
       motion: AIR_TRIANGLE_MOTION,
       trailGrowth: AIR_TRIANGLE_GROWTH,
       trail: { kind: 'profile', ...TRIANGLE_TRAIL },
       trailBreakAt: [6 / 12],
-      active: [{ fromS: 0.2, toS: 0.5 }, { fromS: 0.5 }],
+      active: [{ fromS: 0.2, toS: 0.5 }, { fromS: 0.5, toS: 8 / 12 }],
     },
   },
   hitRadiusPx: 3.5,

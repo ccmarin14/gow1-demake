@@ -112,14 +112,14 @@ describe('square 6 closes its forward lash (user feedback)', () => {
 });
 
 describe('triangle strike data', () => {
-  it('runs draw 5, load 5, rise 3, slash 5, hold 4 and recall 6 ticks (28 in total): snappy GoW1 dual diagonal cleave', () => {
+  it('runs draw 4, load 4, rise 3, slash1 4, step 2, slash2 4, hold 3 and recall 4 ticks (28 in total): snappy GoW1 dual diagonal cleave', () => {
     assert.deepEqual(
       TRIANGLE.phases.map((p) => [p.id, p.ticks]),
-      [['draw', 5], ['load', 5], ['rise', 3], ['slash', 5], ['hold', 4], ['recall', 6]],
+      [['draw', 4], ['load', 4], ['rise', 3], ['slash1', 4], ['step', 2], ['slash2', 4], ['hold', 3], ['recall', 4]],
     );
     assert.equal(strikeLength(TRIANGLE), 28);
     assert.equal(strikeAdvanceAt(TRIANGLE, 28), 8, 'advances 8 px forward total');
-    assert.deepEqual(TRIANGLE.branch, { atEndOf: 'load', ifHeld: 'heavy-attack', into: 'launcher' }, 'the hold threshold is the end of load (tick 9)');
+    assert.deepEqual(TRIANGLE.branch, { atEndOf: 'load', ifHeld: 'heavy-attack', into: 'launcher' }, 'the hold threshold is the end of load (tick 7)');
     assert.deepEqual(TRIANGLE.cancel, { from: 'recall', fromTick: 2 }, 'cancelable from recall tick 2');
   });
 
@@ -148,21 +148,32 @@ describe('triangle strike data', () => {
     }
   });
 
-  it('points each arm toward its blade within 45 degrees during the slash', () => {
-    // slash runs from tick 13 to 17
-    for (let t = 13; t <= 17; t += 1) {
+  it('points each arm toward its blade within 45 degrees during its slash', () => {
+    // slash1 runs from tick 11 to 14 (near arm cuts down-forward)
+    for (let t = 11; t <= 14; t += 1) {
       const pose = strikePoseAt(TRIANGLE, t);
       const a = ANCHORS[`kratos-${pose}`];
       const adv = strikeAdvanceAt(TRIANGLE, t);
-      for (const [hand, shoulderKey, handKey] of [['near', 'shoulder', 'hand'], ['far', 'farShoulder', 'farHand']] as const) {
-        const shoulder = feet(a[shoulderKey]);
-        const grip = feet(a[handKey]);
-        const blade = thrownBladeAt(TRIANGLE, t, poseAnchors, hand).pos;
-        const arm = Math.atan2(grip[1] - shoulder[1], grip[0] - shoulder[0]);
-        const toBlade = Math.atan2(blade[1] - shoulder[1], blade[0] - adv - shoulder[0]);
-        const off = Math.abs(((arm - toBlade + 3 * Math.PI) % (2 * Math.PI)) - Math.PI);
-        assert.ok(off <= (45 * Math.PI) / 180, `tick ${t} (${pose}) ${hand}: arm ${((off * 180) / Math.PI).toFixed(0)} degrees off`);
-      }
+      const shoulder = feet(a.shoulder);
+      const grip = feet(a.hand);
+      const blade = thrownBladeAt(TRIANGLE, t, poseAnchors, 'near').pos;
+      const arm = Math.atan2(grip[1] - shoulder[1], grip[0] - shoulder[0]);
+      const toBlade = Math.atan2(blade[1] - shoulder[1], blade[0] - adv - shoulder[0]);
+      const off = Math.abs(((arm - toBlade + 3 * Math.PI) % (2 * Math.PI)) - Math.PI);
+      assert.ok(off <= (45 * Math.PI) / 180, `tick ${t} (${pose}) near: arm ${((off * 180) / Math.PI).toFixed(0)} degrees off`);
+    }
+    // slash2 runs from tick 17 to 20 (far arm cuts across)
+    for (let t = 17; t <= 20; t += 1) {
+      const pose = strikePoseAt(TRIANGLE, t);
+      const a = ANCHORS[`kratos-${pose}`];
+      const adv = strikeAdvanceAt(TRIANGLE, t);
+      const shoulder = feet(a.farShoulder);
+      const grip = feet(a.farHand);
+      const blade = thrownBladeAt(TRIANGLE, t, poseAnchors, 'far').pos;
+      const arm = Math.atan2(grip[1] - shoulder[1], grip[0] - shoulder[0]);
+      const toBlade = Math.atan2(blade[1] - shoulder[1], blade[0] - adv - shoulder[0]);
+      const off = Math.abs(((arm - toBlade + 3 * Math.PI) % (2 * Math.PI)) - Math.PI);
+      assert.ok(off <= (45 * Math.PI) / 180, `tick ${t} (${pose}) far: arm ${((off * 180) / Math.PI).toFixed(0)} degrees off`);
     }
   });
 
@@ -179,9 +190,10 @@ describe('triangle strike data', () => {
     }
   });
 
-  it('hits with both blades during the slash; does not chain', () => {
+  it('hits with both blades across two slashes; does not chain', () => {
     assert.equal(strikeHitWindowAt(TRIANGLE, 4, 'near'), -1, 'not while loading');
-    assert.equal(strikeHitWindowAt(TRIANGLE, 15, 'near'), 0, 'during the slash');
+    assert.equal(strikeHitWindowAt(TRIANGLE, 12, 'near'), 0, 'during slash1');
+    assert.equal(strikeHitWindowAt(TRIANGLE, 18, 'far'), 1, 'during slash2');
     assert.equal(strikeChainTicks(TRIANGLE), null);
   });
 });
@@ -202,8 +214,8 @@ describe('triangle hits', () => {
       if (result.done) break;
     }
     assert.ok(hitsOn.length >= 1, `should hit at least once, hits: ${hitsOn}`);
-    assert.ok(hitsOn[0] >= 13 && hitsOn[0] <= 18, `hits during slash (tick 13-18), was ${hitsOn[0]}`);
-    assert.equal(enemy.hp, 100 - TRIANGLE.damage, 'deals 20 damage');
+    assert.ok(hitsOn[0] >= 11 && hitsOn[0] <= 15, `hits during slash1 (tick 11-15), was ${hitsOn[0]}`);
+    assert.equal(enemy.hp, 100 - (TRIANGLE.damage * 2), 'deals 20 damage across 2 slashes');
   });
 });
 
@@ -223,7 +235,7 @@ describe('triangle against a close enemy', () => {
         assert.equal(snap.hitstopTicks, TRIANGLE.hitstopTicks + 3, 'a heavy blow holds the world 3 ticks longer');
       }
     }
-    assert.ok(hitTick >= 13 && hitTick <= 18, `hit during slash on tick ${hitTick}`);
+    assert.ok(hitTick >= 11 && hitTick <= 20, `hit during slash on tick ${hitTick}`);
     const after = world.snapshot().entities.find((e) => e.kind === 'legionnaire')!;
     assert.ok(after.hp < hp0);
   });
@@ -257,8 +269,8 @@ describe('triangle in the world', () => {
   });
 
   it('can be cut short by guarding or jumping from recall tick 2, not before', () => {
-    // recall starts at tick 22 (5 + 5 + 3 + 5 + 4 = 22). Recall tick 2 is tick 24.
-    const cancelTick = 24;
+    // recall starts at tick 24 (4 + 4 + 3 + 4 + 2 + 4 + 3 = 24). Recall tick 2 is tick 26.
+    const cancelTick = 26;
     const early = playingWorld();
     early.step(['heavy-attack']);
     hold(early, cancelTick - 1, []);
@@ -322,7 +334,7 @@ describe('phases that end on landing', () => {
       stepStrike(state, kratos, [], -1e6, 1e6);
       assert.equal(state.tick, 1, 'before the minimum it runs on');
       stepStrike(state, kratos, [], -1e6, 1e6);
-      assert.equal(state.tick, 5, 'grounded after the minimum: the next phase starts');
+      assert.equal(state.tick, 4, 'grounded after the minimum: the next phase starts');
     } finally {
       delete phase.until;
     }
