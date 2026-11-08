@@ -845,26 +845,28 @@ const TRIANGLE: StrikeDef = {
 
 /** Plume's motion, shared by both blades. */
 const PLUME_MOTION = {
-  // Both blades come from square 2 to behind the head: no long windup.
+  // Both blades come from previous strike down and back behind the hips/waist: balanceo hacia atrás.
   carry: { kind: 'carry' },
-  top: { kind: 'hold', driftPx: 1, at: 0 },
-  over: { kind: 'track', from: 0, to: 0.4, ease: 'linear' },
+  // Sweep up behind the back along the spine, reaching the apex overhead as Kratos arches back.
+  top: { kind: 'track', from: 0, to: 3 / 7, ease: 'linear' },
+  // Over the head driving forward.
+  over: { kind: 'track', from: 3 / 7, to: 4 / 7, ease: 'linear' },
   // Accelerates into the ground.
-  down: { kind: 'track', from: 0.4, to: 1, ease: 'in' },
+  down: { kind: 'track', from: 4 / 7, to: 1, ease: 'in' },
   slam: { kind: 'hold', driftPx: 0 },
   recall: { kind: 'recall', sagPx: 5 },
 } as const;
 
-const PLUME_GROWTH = { over: { widthPx: 6 }, down: { widthPx: 6 } };
+const PLUME_GROWTH = { top: { widthPx: 6 }, over: { widthPx: 6 }, down: { widthPx: 6 } };
 
 /**
  * Plume of Prometheus (square, square, triangle; draft v1, pending critic
  * and user approval): triangle pressed in square 2's chain window. Both
- * blades come from square 2 straight up behind Kratos' head (no crouched
- * windup), swing over it and slam the ground in front as two crescents,
- * Kratos crouched; the fire they leave burns on the ground for a while as
- * its own entity (the "estallido igneo") and hits and lifts enemies standing
- * in it. He pulls the blades back with his arms open, the hands glowing.
+ * blades come from square 2 with a dynamic backswing behind Kratos' hips/waist,
+ * sweep up behind his back as he arches in plume-b, swing over his head and slam
+ * the ground in front as two crescents, Kratos crouched; the fire they leave burns
+ * on the ground for a while as its own entity (the "estallido igneo") and hits and
+ * lifts enemies standing in it. He pulls the blades back with his arms open, the hands glowing.
  */
 const PLUME: StrikeDef = {
   id: 'plume',
@@ -894,27 +896,49 @@ const PLUME: StrikeDef = {
     near: {
       // Near shoulder of the arms coming down (plume-d).
       shoulder: [-2, -25.4],
-      // Behind the head, over it and down in front into the ground.
-      track: [[-28, -22.6], [-18, -36.6], [4, -48.6], [36, -36.6], [62, -10.6], [76, 17.4], [78, 23.4], [78, 29.4]],
+      // Backswing behind waist, rising up the back, over the head and down into the ground.
+      track: [
+        [-16.0, -12.0],
+        [-30.0, -26.0],
+        [-28.0, -36.0],
+        [-16.0, -42.0],
+        [4.0, -48.6],
+        [36.0, -36.6],
+        [62.0, -10.6],
+        [76.0, 17.4],
+        [78.0, 23.4],
+        [78.0, 29.4],
+      ],
       chainFrom: 0.02,
       motion: PLUME_MOTION,
       trailGrowth: PLUME_GROWTH,
       trail: { kind: 'profile', ...TRIANGLE_TRAIL },
       trailBreakAt: [0.02],
-      active: { fromS: 0.45 },
+      active: { fromS: 3 / 7 },
     },
     far: {
       // Far shoulder of the arms coming down (plume-d).
       shoulder: [4.1, -24.9],
-      // The same slam, a little behind and below: two crescents.
-      track: [[-40.1, -21.1], [-30.1, -35.1], [-8.1, -47.1], [17.9, -33.1], [43.9, -7.1], [57.9, 18.9], [59.9, 22.9], [59.9, 28.9]],
-      trackDepth: ['behind', 'behind', 'behind', 'front', 'front', 'front', 'front', 'front'],
+      // The same slam, slightly offset behind: two crescents.
+      track: [
+        [-28.0, -11.0],
+        [-42.0, -25.0],
+        [-40.0, -35.0],
+        [-28.1, -41.0],
+        [-8.1, -47.1],
+        [17.9, -33.1],
+        [43.9, -7.1],
+        [57.9, 18.9],
+        [59.9, 22.9],
+        [59.9, 28.9],
+      ],
+      trackDepth: ['behind', 'behind', 'behind', 'behind', 'behind', 'front', 'front', 'front', 'front', 'front'],
       chainFrom: 0.02,
       motion: PLUME_MOTION,
       trailGrowth: PLUME_GROWTH,
       trail: { kind: 'profile', ...TRIANGLE_TRAIL },
       trailBreakAt: [0.02],
-      active: { fromS: 0.45 },
+      active: { fromS: 3 / 7 },
     },
   },
   hitRadiusPx: 3.5,
