@@ -322,13 +322,13 @@ describe('square 1 -> square 2 in the world', () => {
     assert.equal(slow.snapshot().strike?.id, 'square1', 'a press 30 ticks after the end starts a new combo');
   });
 
-  it('carries triangle on from the grace window too (a plain triangle after square 1 ends)', () => {
+  it('carries plume on from the grace window too (plume after square 1 ends)', () => {
     const world = playingWorld();
     world.step(['light-attack']);
     for (let i = 0; i < 200 && world.snapshot().strike; i += 1) world.step([]);
     hold(world, 6, []);
     world.step(['heavy-attack']);
-    assert.equal(world.snapshot().strike?.id, 'triangle');
+    assert.equal(world.snapshot().strike?.id, 'plume');
     assert.ok(world.snapshot().strike?.entry, 'it continues from square 1, carrying its blades');
   });
 

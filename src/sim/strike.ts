@@ -356,7 +356,7 @@ const SQUARE1: StrikeDef = {
   hitstopTicks: 4,
   trailSamplesPerTick: 6,
   trailFadeWidthPx: 4,
-  chain: { into: 'square2', heavy: 'triangle', from: 'hold', fromTick: 4 },
+  chain: { into: 'square2', heavy: 'plume', from: 'hold', fromTick: 4 },
 };
 
 /**
@@ -486,7 +486,7 @@ const SQUARE3: StrikeDef = {
   hitstopTicks: 4,
   trailSamplesPerTick: 6,
   trailFadeWidthPx: 4,
-  chain: { into: 'square4', heavy: 'triangle', from: 'recall', fromTick: 4 },
+  chain: { into: 'square4', heavy: 'plume', from: 'recall', fromTick: 4 },
 };
 
 /**
@@ -550,7 +550,7 @@ const SQUARE4: StrikeDef = {
   hitstopTicks: 4,
   trailSamplesPerTick: 6,
   trailFadeWidthPx: 4,
-  chain: { into: 'square5', heavy: 'triangle', from: 'hold', fromTick: 4 },
+  chain: { into: 'square5', heavy: 'plume', from: 'hold', fromTick: 4 },
 };
 
 /** Restrained crescent of square 5's two blades, cut as soon as it leaves its blade. */

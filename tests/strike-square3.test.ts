@@ -313,13 +313,12 @@ describe('triangle from the square chain', () => {
     return world;
   };
   for (const n of [1, 2, 3, 4]) {
-    const into = n === 2 ? 'plume' : 'triangle';
-    it(`starts ${into === 'plume' ? 'Plume of Prometheus' : 'the plain triangle'} when I is pressed in square ${n}'s chain window`, () => {
+    it(`starts Plume of Prometheus when I is pressed in square ${n}'s chain window`, () => {
       const world = pressAt(n);
       assert.equal(world.snapshot().strike?.id, `square${n}`);
       world.step(['heavy-attack']);
       const strike = world.snapshot().strike;
-      assert.equal(strike?.id, into);
+      assert.equal(strike?.id, 'plume');
       assert.equal(strike?.entry?.id, `square${n}`);
     });
   }
@@ -330,11 +329,11 @@ describe('triangle from the square chain', () => {
     for (let i = 0; i < 4; i += 1) world.step(['move-left']);
     world.step(['heavy-attack', 'move-left']);
     const strike = world.snapshot().strike!;
-    assert.equal(strike.id, 'triangle');
+    assert.equal(strike.id, 'plume');
     assert.equal(strike.facing, -1);
     const entry = strike.entry!;
     const left = nearBladeAt(SQUARE3, entry.tick, poseAnchors).pos;
-    const start = nearBladeAt(STRIKES.triangle, 0, poseAnchors, entry).pos;
+    const start = nearBladeAt(STRIKES.plume, 0, poseAnchors, entry).pos;
     assert.ok(dist(start, [-(left[0] - entry.offsetPx), left[1]]) < 1e-6, 'from where square 3 left it (mirrored)');
   });
 });

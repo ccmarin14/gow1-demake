@@ -208,9 +208,12 @@ describe('fast blades do not tunnel', () => {
 });
 
 describe('Plume of Prometheus data', () => {
-  it('replaces the plain triangle in square 2\'s chain window only', () => {
-    assert.equal(STRIKES.square2.chain?.heavy, 'plume');
-    for (const id of ['square1', 'square3', 'square4', 'square5'] as const) assert.equal(STRIKES[id].chain?.heavy, 'triangle');
+  it('chains into Plume of Prometheus from square 1, 2, 3 and 4 chain windows', () => {
+    for (const id of ['square1', 'square2', 'square3', 'square4'] as const) {
+      assert.equal(STRIKES[id].chain?.heavy, 'plume');
+    }
+    assert.equal(STRIKES.square5.chain?.heavy, 'triangle');
+    assert.equal(STRIKES.square6.chain, undefined);
   });
 
   it('runs carry 7, top 4, over 4, down 4, slam 14 and recall 10 (43): no long windup', () => {
