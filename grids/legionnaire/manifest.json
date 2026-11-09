@@ -1,0 +1,9 @@
+{
+  "character": "legionnaire",
+  "palette": "legionnaire.json",
+  "frame_size": { "w": 64, "h": 56 },
+  "anchors": { "ground": 55 },
+  "frames": [
+    { "file": "idle-00.txt", "state": "idle", "grounded": true, "png": "legionnaire-idle-00" }
+  ]
+}
