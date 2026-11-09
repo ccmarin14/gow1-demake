@@ -98,16 +98,16 @@ Criterio: se implementa lo que respaldan el manual oficial, el cartel del juego 
 
 **Qué consta en fuentes:** es el soldado común de GoW 1; un concepto descartado era "un esqueleto con espada y escudo" y el legionario maldito es más blindado y de espadas más grandes (God of War Wiki, vía búsqueda; la página del legionario devuelve 402). No se pudo confirmar su casco, escudo ni sus ataques exactos.
 
-**Criterio del agente (sin fuente; la usuaria aprueba la silueta en el paso 3):**
+**Diseño vigente (D-51, observado en el combate original de la cubierta del barco y aprobado por la usuaria):**
 
-| Elemento | Propuesta |
+| Elemento | Diseño |
 | --- | --- |
-| Silueta | Hoplita podrido de la altura de Kratos o algo menos, con el torso inclinado hacia adelante, el escudo adelantado y la espada atrás al caminar. Debe leerse distinto de Kratos en una mancha de 2 colores. |
-| Cabeza | Casco de bronce con cresta, la cara al descubierto en calavera y piel pegada al hueso. |
-| Cuerpo | Piel gris verdosa, coraza de cuero y bronce desgastada, faldón de tiras, grebas. |
-| Armas | Escudo redondo en el brazo cercano a la cámara y espada corta en la mano libre. La cadena de Kratos no interviene. |
-| Paleta | Propia (`palette/legionnaire.json`), no la de Kratos; 12 colores como máximo, con el bronce como único acento cálido para que Kratos (rojo) siga siendo el centro de atención. |
-| Estados de la IA que necesitan cuadros | Reposo, caminar (`approach`), aviso (`windup`, 24 ticks), tajo (`slash`, 8), recuperación (`recover`, 16), aturdimiento (`hitstun`), aire (`juggle`) y muerte (`death`). |
+| Silueta | Bruto encorvado de torso grueso, piernas abiertas y rodillas flexionadas; se lee distinto de Kratos en una mancha de 2 colores. |
+| Cabeza | Casco de bronce con cresta roja hacia atrás; la cara no tiene facciones (la usuaria lo aceptó). |
+| Cuerpo | Piel gris cálida y oscura, torso costroso, paño oscuro en la cintura. **Sin escudo** (en el concepto inventado primero lo tenía y la referencia lo desmintió). |
+| Arma | Espada larga de hoja curva color cobre, con filo claro, canal oscuro en el centro y guarda; se sostiene baja y mide lo mismo en pantalla en todas las poses. |
+| Paleta | Propia (`palette/legionnaire.json`), 11 colores; el bronce y la cresta son el único acento cálido. |
+| Cuadros | Reposo (1), andar (8), aviso `windup` (4, 24 ticks, con ojos llameantes), tajo `slash` (4, 8 ticks), recuperación `recover` (3, 16 ticks); faltan aturdimiento, aire y muerte. |
 | Lienzo | El mismo de Kratos, 64×56 con los pies en la fila 55, para reutilizar la física y la sombra. |
 
 ### Ritmo del legionario (conducta, criterio del agente)

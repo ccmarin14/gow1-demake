@@ -282,8 +282,44 @@ def bone_points() -> dict:
     return points
 
 
+# A group with `measure` (base and tip, in group space) keeps the same apparent length in
+# every pose: a blade pointing along the camera axis is foreshortened, so it is stretched
+# back along its own axis (shrunk by at most 8%, stretched by at most FIT_MAX times).
+FIT_MIN, FIT_MAX = 0.92, 1.8
+fit_markers = []
+for group_name, group in groups.items():
+    measure = cfg["groups"][group_name].get("measure")
+    if measure:
+        ends = []
+        for end in ("base", "tip"):
+            marker = bpy.data.objects.new(f"{group_name}_{end}", None)
+            bpy.context.scene.collection.objects.link(marker)
+            marker.parent = group
+            marker.location = measure[end]
+            ends.append(marker)
+        fit_markers.append((group, ends[0], ends[1], math.dist(measure["base"], measure["tip"]) * px_per_m))
+
+
+def screen_length(base, tip) -> float:
+    a = world_to_camera_view(scene, camera_obj, base.matrix_world.translation)
+    b = world_to_camera_view(scene, camera_obj, tip.matrix_world.translation)
+    return math.hypot((a.x - b.x) * frame["w"], (a.y - b.y) * frame["h"])
+
+
+def fit_groups(label: str) -> None:
+    for group, base, tip, wanted in fit_markers:
+        group.scale = (1, 1, 1)
+        bpy.context.view_layer.update()
+        seen = screen_length(base, tip)
+        ratio = min(max(wanted / seen, FIT_MIN), FIT_MAX) if seen > 0.5 else FIT_MAX
+        group.scale = (1, ratio, 1)
+        bpy.context.view_layer.update()
+        print(f"FIT {label} {group.name} seen={seen:.1f}px wanted={wanted:.1f}px ratio={ratio:.2f} now={screen_length(base, tip):.1f}px")
+
+
 for number in frames:
     scene.frame_set(number)
+    fit_groups(os.path.basename(out_dir.rstrip("/")) + f"_{number}")
     stem = os.path.join(out_dir, f"{action_name}_{number:03d}")
     scene.render.filepath = stem + ".png"
     bpy.ops.render.render(write_still=True)

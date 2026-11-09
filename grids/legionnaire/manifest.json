@@ -80,6 +80,54 @@
       "state": "windup",
       "grounded": true,
       "png": "legionnaire-windup-02"
+    },
+    {
+      "file": "windup-03.txt",
+      "state": "windup",
+      "grounded": true,
+      "png": "legionnaire-windup-03"
+    },
+    {
+      "file": "slash-00.txt",
+      "state": "slash",
+      "grounded": true,
+      "png": "legionnaire-slash-00"
+    },
+    {
+      "file": "slash-01.txt",
+      "state": "slash",
+      "grounded": true,
+      "png": "legionnaire-slash-01"
+    },
+    {
+      "file": "slash-02.txt",
+      "state": "slash",
+      "grounded": true,
+      "png": "legionnaire-slash-02"
+    },
+    {
+      "file": "slash-03.txt",
+      "state": "slash",
+      "grounded": true,
+      "png": "legionnaire-slash-03"
+    },
+    {
+      "file": "recover-00.txt",
+      "state": "recover",
+      "grounded": true,
+      "png": "legionnaire-recover-00"
+    },
+    {
+      "file": "recover-01.txt",
+      "state": "recover",
+      "grounded": true,
+      "png": "legionnaire-recover-01"
+    },
+    {
+      "file": "recover-02.txt",
+      "state": "recover",
+      "grounded": true,
+      "png": "legionnaire-recover-02"
     }
   ]
 }
