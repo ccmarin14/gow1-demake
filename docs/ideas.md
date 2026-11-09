@@ -4,7 +4,7 @@ Ideas, notas y referencias de diseño para etapas futuras del desarrollo.
 
 > **Regla para agentes:** este archivo reúne conceptos de diseño y referencias que no están activos. Ningún agente las toma como historias de backlog ni como requisitos vigentes, y nada de lo listado acá se implementa sin la instrucción explícita de la usuaria. Cuando la usuaria decide una idea, pasa a `docs/decisiones.md` y `docs/direccion.md`, se crea su historia en `docs/estado.md` §3 y se borra de acá.
 
-**Ya decidido (fuera de este archivo):** el recorrido del Mar Egeo, sus enemigos, el agua vadeable, las cuerdas y la Hidra (D-44, D-45, `direccion.md` §8), y la cámara de seguimiento (D-46, `direccion.md` §9).
+**Ya decidido (fuera de este archivo):** el recorrido del Mar Egeo, sus enemigos, el agua vadeable, las cuerdas y la Hidra (D-44, D-45, `direccion.md` §8), la cámara de seguimiento (D-46, `direccion.md` §9), el vertical slice con sus vigas y el cómic (D-47, D-50, §10) y el HUD, el contador de golpes y los menús (D-48 a D-50, §11).
 
 **Cómo leer cada idea:**
 
@@ -35,7 +35,7 @@ Ideas, notas y referencias de diseño para etapas futuras del desarrollo.
 - **Variantes según el contexto** (se usan por separado, nunca todas juntas):
   - **Arqueros al extremo:** proyectiles a distancia que obligan a saltar o esquivar al ritmo de los disparos mientras se avanza.
   - **Fuego o vapor:** llamaradas o escapes intermitentes. Hay que detenerse y cruzar en la ventana segura.
-  - **Maderos débiles:** tablones que ceden poco después de pisarlos. **Criterio de arte:** si hay maderos desconectados, se ven sus vigas de apoyo, cuerdas o soportes; nunca flotan en el aire.
+  - **Maderos débiles:** tablones que ceden poco después de pisarlos (ya decidido para las vigas del vertical slice, `direccion.md` §10). **Criterio de arte:** si hay maderos desconectados, se ven sus vigas de apoyo, cuerdas o soportes; nunca flotan en el aire.
   - **Ráfagas de viento:** el viento tumba a Kratos y lo deja colgado del borde de la viga. Hay que machacar un botón para subir antes de caer.
 
 ### G-05 · Escalada en superficies verticales
@@ -61,20 +61,6 @@ Ideas, notas y referencias de diseño para etapas futuras del desarrollo.
 - **Orden de la historia:** Mar Egeo (Hidra), Atenas sitiada por Ares, Desierto de las Almas Perdidas, Templo de Pandora (secciones de Atlas, Poseidón y Hades), Inframundo, y de vuelta en Atenas para el combate final.
 - **Enemigos del juego:** soldados no-muertos, arpías, minotauros, Medusa y gorgonas, cíclopes, espectros, sirenas, sátiros, centauros y cerberos. Jefes: la Hidra y el Guardián de Pandora, un minotauro gigante.
 - **Uso:** sirve de guía para planear los niveles siguientes. No es un compromiso de alcance.
-
----
-
-## Narrativa y cinemáticas
-
-### N-01 · Narración con viñetas de cómic, sin video
-- **Respaldo:** Usuaria.
-- **Concepto:** reemplazar las cinemáticas de video por viñetas ilustradas de cómic o novela gráfica.
-- **Ventajas:**
-  - Su estética es coherente con el pixel art 2D y no rompe la inmersión con videos comprimidos.
-  - No hay que decodificar video ni se infla el tamaño de los assets.
-  - El lore, los diálogos de los dioses y el pasado de Kratos se presentan a un ritmo pausado que maneja el jugador.
-- **Lugares de uso en el Egeo** (`direccion.md` §8): la llegada a cada barco nuevo, Poseidón entregando su *Ira*, el remate de la Hidra y el capitán.
-- **Restricción vigente:** D-30. Toda pieza narrativa se salta con cualquier acción y nunca estorba las pruebas. Relación: ESE-05, BL-11.
 
 ---
 

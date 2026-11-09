@@ -131,17 +131,19 @@ Recorrido decidido, fiel al del primer *God of War*. **Respaldo:** *Original* (f
 
 | # | Tramo | Qué pasa | Respaldo |
 | --- | --- | --- | --- |
-| 1 | Cubierta del primer barco | Primera tanda de enemigos y punto de guardado (una luz) en la segunda cubierta. Una escotilla en el piso (`context-action`, `E`) baja a la bodega. La puerta del camarote del capitán se ve, pero está cerrada. | Original [1] [4] |
-| 2 | Bodega: primer encuentro con la Hidra | Una cabeza irrumpe en el barco; solo se ven el cuello y la cabeza, que emerge desde abajo por el lateral derecho. Se golpea en la cara; cuando agita las orejas y se echa atrás, se bloquea. Al debilitarse aparece ○ y se remata con agarre y botones. Pilas de escombros cierran el pasillo antes y después y se rompen a golpes. | Original [1] [2]; puesta en escena: Usuaria |
-| 3 | Cubierta: segundo encuentro | La cabeza golpea a la izquierda, a la derecha y hacia la cámara (se esquiva rodando), y muerde sin que se pueda bloquear (se escapa machacando el agarre). Marineros que huyen (inofensivos, pueden soltar salud) y arpías en picada (se bloquean al oír su chillido). Cofre de orbes tras unas puertas que se levantan. | Original [1]. *Agente, pendiente:* en 2D el golpe "hacia la cámara" cae sobre la posición de Kratos con una sombra de aviso. |
+| 1 | Proa del primer barco | La jugabilidad empieza en la proa con no-muertos cortando el paso. Una segunda tanda rompe una reja del piso cerrada con cadenas y otros trepan por los costados. Punto de guardado (un haz de luz). La reja se abre machacando ○ (en el original, R2) y antes de bajar hay un cofre rojo. La puerta del camarote del capitán se ve, pero está cerrada. | Original [1] [4] [18] [19]; ○ en vez de R2: Usuaria |
+| 2 | Interior: primer encuentro con la Hidra | Kratos recorre el interior del barco y a la mitad una cabeza irrumpe; solo se ven el cuello y la cabeza, que emerge desde abajo por el lateral derecho. Se golpea en la cara; cuando agita las orejas y se echa atrás, se bloquea. Al debilitarse aparece ○ sobre su cabeza ("Pulsa ○ para iniciar el minijuego cuando lo veas sobre la cabeza de un enemigo") y el remate pide más botones en pantalla (por ejemplo △). Pilas de escombros cierran el pasillo y se rompen a golpes. El contador de golpes se ve desde este combate. | Original [1] [2] [20]; puesta en escena: Usuaria |
+| 2b | Vigas sobre la bodega inundada | Inmediatamente después de la Hidra: palos de equilibrio sobre agua baja. Ver "Vigas del vertical slice" en §10. | Original [20]; diseño 2D: Usuaria |
+| 2c | El prisionero | Un tramo corto con un marinero encerrado en una celda. El texto sale abajo, en un recuadro de pergamino, y se avanza con ✕: "¡Sé quién eres, espartano! ¡Sé lo que has hecho! ¡Preferiría morir antes que ser salvado por ti!". Después, una reja (R2), un cofre de orbes rojos y la puerta a cubierta. | Original [20] |
+| 3 | Cubierta: el caos y el segundo encuentro | Bajo la lluvia, marineros que huyen, no-muertos y arpías (el "caos" del vertical slice, §10). En el medio de la cubierta, otra cabeza sale del piso. La cabeza golpea a la izquierda, a la derecha y hacia la cámara (se esquiva rodando), y muerde sin que se pueda bloquear (se escapa machacando el agarre). Marineros que huyen (inofensivos, pueden soltar salud) y arpías en picada (se bloquean al oír su chillido). Cofre de orbes tras unas puertas que se levantan. | Original [1]. *Agente, pendiente:* en 2D el golpe "hacia la cámara" cae sobre la posición de Kratos con una sombra de aviso. |
 | 4 | Agua | El agujero que deja la Hidra lleva a un tramo inundado que se cruza a pie: más lento, salto corto y sin doble salto, demasiado largo (o con techo bajo) para saltarlo de orilla a orilla. Se sale trepando una red. | Original [1] [4]; vadeo: Usuaria |
 | 5 | Redes y vigas | Enemigos y vigas estrechas con una bifurcación: un lado lleva a un cofre de orbes rojos y hay que volver al centro para seguir. | Original [1] |
 | 6 | Segundo barco | Cinemática de llegada. No-muertos con arco disparan desde el otro extremo; cajas grandes como cobertura (una patada cargada las desliza) y una caja chica que se empuja contra la pared para subir hasta ellos. Soldados espartanos moribundos en una cubierta inferior. | Original [1] [4] |
 | 7 | Mástil | Escalera y red con enemigos que también trepan; el combate es limitado al trepar, conviene saltarlos. En la cima, una viga lleva a un cofre. | Original [1] |
 | 8 | Cuerda al tercer barco | Kratos se desliza de lo alto del mástil al barco siguiente, siempre de un punto alto a uno más bajo. Sin enemigos. | Original [1] [4]; sin enemigos: Usuaria |
-| 9 | Tercer barco | Tres paredes tapiadas: la del centro es el camino, una lateral guarda un Ojo de Gorgona y la otra un cofre de orbes. Tras un pasillo angosto, el salón de Poseidón: un punto de guardado azul entre dos estatuas; al tocarlo, Poseidón le da a Kratos la *Ira de Poseidón* y enseguida aparecen enemigos para estrenarla. Cofres de salud y magia y una red larga hasta la cubierta del jefe. | Original [1] [4] [7] [8] |
+| 9 | Tercer barco | Tres paredes tapiadas: la del centro es el camino, una lateral guarda un Ojo de Gorgona y la otra un cofre de orbes. Tras un pasillo angosto, el salón de Poseidón: una plataforma con un símbolo azul brillante en el piso, entre dos estatuas; al pisarla, Poseidón le da a Kratos la *Ira de Poseidón* y enseguida aparecen enemigos para estrenarla. Cofres de salud y magia y una red larga hasta la cubierta del jefe. | Original [1] [4] [7] [8] |
 | 10 | Jefe: la Hidra | Ver "Combate final". | Original; disposición: Usuaria |
-| 11 | El capitán y la salida | Kratos se mete en la garganta de la Hidra, le arranca la llave del cuello al capitán y lo vuelve a tirar dentro. Junto al punto de guardado del otro lado de la arena hay dos cofres (el segundo Ojo de Gorgona). Una cuerda baja a una cubierta anterior, una caja chica sube a la plataforma superior y la llave abre el camarote, lo que cierra el nivel. Poseidón nombra Atenas como el siguiente destino. | Original [1] [11] [12] |
+| 11 | El capitán y la salida | Kratos se mete en la garganta de la Hidra, le arranca la llave del cuello al capitán y lo vuelve a tirar dentro. Junto al punto de guardado del otro lado de la arena hay dos cofres (el segundo Ojo de Gorgona). Una cuerda baja a una cubierta anterior, una caja chica sube a la plataforma superior y la llave abre el camarote ("Pulsa R2 para abrir la puerta con la llave del capitán"), lo que cierra el nivel. Poseidón nombra Atenas como el siguiente destino y al final aparece Atenea. | Original [1] [11] [12] [20] |
 
 ### Combate final contra la Hidra (D-45)
 
@@ -164,11 +166,13 @@ Puntos que las fuentes no aclaran o en los que se contradicen. La usuaria los re
 
 | # | Qué comprobar | Por qué queda abierto |
 | --- | --- | --- |
-| P-01 | Qué toca Kratos en el salón de Poseidón (tramo 9): ¿un muro azul o una llama azul? | Una guía dice "muro" [4] y otra "llama" [8]. |
+| P-01 | ~~Qué toca Kratos en el salón de Poseidón.~~ **Resuelto:** una plataforma con un símbolo azul en el piso, entre dos estatuas [20]. | Las guías decían "muro" [4] y "llama" [8]. |
 | P-02 | Cuántas veces se estampa la cabeza principal contra el mástil antes del remate. | Las guías dicen tres o "varias" [1] [9]. |
 | P-03 | Si hay más de tres puntos de guardado en el Egeo y dónde. | Ninguna fuente da el total. |
 | P-04 | Qué ataques tiene la cabeza principal además de la mordida avisada con un cabeceo. | Las fuentes solo describen la mordida. |
-| P-05 | Qué hay dentro del camarote del capitán y cómo se pasa a Atenas (tramo 11). | Las fuentes solo dicen que la llave lo abre y que Poseidón nombra Atenas. |
+| P-05 | Qué hay dentro del camarote del capitán y qué dice Atenea al cerrar el nivel (tramo 11). | El video muestra que se abre con R2 y que aparece Atenea, pero no se leyó el diálogo [20]. |
+| P-08 | Cómo se ve la *Ira de Poseidón* del original (D-50). | Las fuentes la describen como una descarga de energía alrededor de Kratos que daña en un radio; el video [20] no la muestra usada. |
+| P-09 | Nombre y orden de las pestañas del menú de pausa del original (§11). | Las guías solo dicen que Start abre las mejoras y que R1 o la cruceta cambian de pantalla [21]. |
 | P-06 | Qué golpes tiene Kratos colgado de una cuerda horizontal y trepando una red. | La usuaria lo deja para después (D-44). |
 | P-07 | En *Hollow Knight*, si mirar arriba o abajo exige estar quieto (§9). | La wiki no lo dice. |
 
@@ -191,6 +195,10 @@ Puntos que las fuentes no aclaran o en los que se contradicen. La usuaria los re
 15. *Hollow Knight Wiki*, Updates (arreglo del "Camera Lock" de White Palace): https://hollowknight.wiki/w/Updates_(Hollow_Knight)
 16. Mark Brown (*Game Maker's Toolkit*), *How to Make a Good 2D Camera*: https://gmtk.substack.com/p/how-to-make-a-good-2d-camera
 17. Tutoriales que imitan la cámara de *Hollow Knight* (vía buscador): Sasquatch B Studios, https://www.patreon.com/sasquatchbgames/posts/unity-tutorial-79656408 · Terresquall, https://blog.terresquall.com/2023/04/creating-a-metroidvania-like-hollow-knight-part-1/
+18. GameSpot, *God of War Walkthrough* (inicio en la proa; segunda tanda por una trampilla con cadenas): https://www.gamespot.com/articles/god-of-war-walkthrough/1100-6121675/
+19. *gow-ash*, The Aegean Sea (reja que se abre machacando R2): http://gow-ash.blogspot.com/2010/03/aegean-sea.html
+20. Video de la partida del Egeo (colección remasterizada, en español), visto por la usuaria y el agente; cuadros extraídos en `docs/tmp/egeo-video/`: https://youtu.be/f5Gq_zox7bI (minuto 5:10: vigas después de la Hidra; 6:20: el prisionero)
+21. GameFAQs, guías del original (Start abre la pantalla de mejoras; se mejora manteniendo X con orbes suficientes): https://gamefaqs.gamespot.com/ps2/919864-god-of-war/faqs/37813 · https://gamefaqs.gamespot.com/ps2/919864-god-of-war/answers/245404-collecting-orbs-and-how-to-use-weapons
 
 ## 9. Cámara (D-46)
 
@@ -218,3 +226,47 @@ Modelo: la cámara de los metroidvania 2D actuales, como *Hollow Knight* [14] [1
 | Cámara fija por zona (*region-based-anchors*) | Cada zona puede fijar su propio encuadre o trabar un eje; en los jefes la cámara queda trabada sobre la arena y el jugador nunca tiene que acomodarla, como en *Hollow Knight* [14] [15]. La arena de la Hidra muestra las tres cabezas (§8). |
 
 **Además:** mantener una entrada desplaza la cámara para mirar arriba o abajo, como en *Hollow Knight* [14] (si exige estar quieto: P-07). Es un control del jugador, no parte del seguimiento.
+
+## 10. Vertical slice (D-47)
+
+El vertical slice muestra la calidad final en un tramo corto del Egeo. No es el Nivel 1 completo (once tramos y tres barcos). Lo que entra en la primera versión y no en el slice está marcado como tal.
+
+### Recorrido
+
+| # | Tramo | Qué pasa (detalle del original en §8) |
+| --- | --- | --- |
+| 1 | Cómic de apertura | Kratos en el acantilado ("Los dioses del Olimpo me han abandonado") se tira al mar; "tres semanas antes", la flota en el Egeo atacada por la Hidra. Se salta con cualquier acción (D-30). Debe mostrar que Kratos tiene la *Ira de Poseidón*, o nadie la va a usar. |
+| 2 | Proa | No-muertos con espada cortan el paso; una segunda tanda rompe la reja del piso y otros trepan por los costados (§8, tramo 1). |
+| 3 | Escotilla y cofre | La escotilla se abre machacando ○. Cofre rojo. |
+| 4 | Interior del barco y primera Hidra | Recorrido hasta la mitad del barco y combate con la cabeza, con el remate completo de ○ (requiere el agarre y los remates, BL-06 y BL-07) (§8, tramo 2). |
+| 5 | Vigas | Circuito de equilibrio sobre la bodega inundada (abajo). |
+| 6 | El prisionero | Diálogo en texto abajo de la pantalla (§8, tramo 2c). |
+| 7 | Cofre y puerta al caos | Cofre de orbes rojos y la puerta que da a cubierta: marineros que huyen, no-muertos, arpías volando y una Hidra devorando a alguien. **Por definir según el tiempo:** jugable o solo mostrado. |
+
+**Fuera del slice (primera versión):** el resto del Egeo (§8, tramos 3 a 11), la entrega de la *Ira* en el salón de Poseidón y la mejora completa de armas (§11).
+
+### Vigas del vertical slice
+
+Diseño de la usuaria; en el original las vigas están justo después de la primera Hidra [20], pero en 3D son cortas. En 2D no hay profundidad, así que el circuito es más largo y se arma con alturas:
+
+- **Recorrido:** saltos altos para alcanzar las vigas que siguen, saltos a vigas más bajas y, cerca del final, unos saltos que piden un doble salto preciso.
+- **Maderos que ceden:** algunos tablones ceden al poco de pisarlos; otros se caen apenas Kratos los toca y lo dejan colgando del borde, y se sube machacando saltar. Se distinguen un poco de los firmes, pero no tanto: el jugador debería caer al menos una vez.
+- **Un tablón caído no vuelve:** el que ya hizo tambalear a Kratos desaparece, porque se cayó.
+- **Dos tablas falsas:** una en el primer tramo y otra antes del final, cuando el jugador ya se olvidó de la primera. Si la ve, la salta; si no, cae y repite el circuito.
+- **El agua de abajo es baja (D-44):** no se nada; Kratos camina más lento, el salto es corto y no hay doble salto. Una escalera al inicio de las vigas permite volver a subir.
+
+### Cómic
+
+- Cada hoja se compone de paneles, y cada panel tiene texto.
+- Cada panel entra con un efecto que refuerza la escena: desvanecido, entrada de golpe, sacudida.
+- Las onomatopeyas típicas ("¡PAM!", "¡PUM!") aparecen dibujadas con su sonido.
+- Restricción vigente: D-30 (se salta con cualquier acción y nunca estorba las pruebas).
+
+## 11. HUD, combate visible y menús (D-48, D-49, D-50)
+
+- **Guardia:** Kratos cruza las dos Espadas del Caos al frente. Hoy la guardia muestra `idle-00` quieto con una sola cuchilla (D-29).
+- **HUD:** barras simples de vida, magia y orbes sobre una Espada del Caos dibujada con cuidado: la espada es lo que tiene que ser bonito, no las barras. Es la composición del original [20].
+- **Contador de golpes ("Impactos"):** visible durante el combo, con el multiplicador de orbes de D-49.
+- ***Ira de Poseidón*:** la heredada se rehace para parecerse a la del original: una descarga de energía alrededor de Kratos que daña todo en su radio (su aspecto exacto: P-08). En el slice está activa desde el inicio.
+- **Menú principal:** vertical slice: Nuevo juego, Opciones (volumen, controles, saltar el cómic) y Créditos. Primera versión: suma Continuar, Dificultad y Extras (galería, desafíos). Se pule con el tiempo.
+- **Menú de pausa (por pestañas, como el original [21]):** armas y mejora (en el slice, una sola mejora real de las Espadas del Caos con orbes rojos; en la primera versión, la mejora completa de armas y magia), ataques disponibles y opciones. Nombres y orden de las pestañas: P-09.
