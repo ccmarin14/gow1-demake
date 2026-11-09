@@ -22,7 +22,7 @@
 | `guard` | `Q` | L1 | Guardia y desvío (*parry*) en los primeros ticks. |
 | `pause` | `Escape` | Start | Pausa. |
 
-Tras 2 a 4 □, △ lanza *Plume of Prometheus*; tras 5 □, *Spirit of Hercules* (§6). △ (`I`, o el botón △ táctil) tiene tres niveles por tiempo: tocar es el golpe pesado, mantener hasta el final de la carga lanza a los enemigos sin que Kratos salte y seguir sosteniendo lo hace saltar tras ellos (*Ascension*). En el aire, `J` encadena tres golpes y `I` el golpe vertical; un salto corta un golpe aéreo con el doble salto. Círculo no tiene acción ni tecla (el agarre y *Orion's Harpoon* quedan para después).
+Tras 2 a 4 □, △ lanza *Plume of Prometheus*; tras 5 □, *Spirit of Hercules* (§6). △ (`I`, o el botón △ táctil) tiene tres niveles por tiempo: tocar es el golpe pesado, mantener hasta el final de la carga lanza a los enemigos sin que Kratos salte y seguir sosteniendo lo hace saltar tras ellos (*Ascension*). En el aire, `J` encadena tres golpes y `I` el golpe vertical; un salto corta un golpe aéreo con el doble salto. Círculo no tiene acción todavía: usará `L` (D-42) cuando exista el legionario con arte (el agarre y *Orion's Harpoon* quedan para después).
 
 ## 3. Reglas visuales y de pixel art
 
@@ -92,4 +92,20 @@ Criterio: se implementa lo que respaldan el manual oficial, el cartel del juego 
 | Remate de □ (□6) | Empieza atrás, anillo de atrás hacia adelante y látigo doble al frente | **Decisión de la usuaria**: el análisis del video no fue concluyente |
 | Ataque al salir de una rodada | Solo con búfer, sin golpes especiales | Sin respaldo; la evasión ofensiva es de nivel 4 |
 | Remate aéreo fuerte (□□□△), dos niveles de lanzador en suelo | No existen (*Spirit of Hercules* es un remate de suelo, ver arriba) | Sin respaldo en ninguna fuente |
-| Súper salto (X tras lanzar), agarre con cadena y *Orion's Harpoon* | Pendientes (BL-06) | Manual y wiki (nivel 1) |
+| Súper salto (X tras lanzar), agarre con cadena y *Orion's Harpoon* | Pendientes (BL-06); ○ = `L` (D-42), después del legionario con arte (BL-21) | Manual y wiki (nivel 1); en *Chains of Olympus*, ○ = *Orion's Harpoon* y X tras un salto = *Icarus Lift* (StrategyWiki) |
+
+## 7. Legionario no-muerto: ficha de diseño (BL-21)
+
+**Qué consta en fuentes:** es el soldado común de GoW 1; un concepto descartado era "un esqueleto con espada y escudo" y el legionario maldito es más blindado y de espadas más grandes (God of War Wiki, vía búsqueda; la página del legionario devuelve 402). No se pudo confirmar su casco, escudo ni sus ataques exactos.
+
+**Criterio del agente (sin fuente; la usuaria aprueba la silueta en el paso 3):**
+
+| Elemento | Propuesta |
+| --- | --- |
+| Silueta | Hoplita podrido de la altura de Kratos o algo menos, con el torso inclinado hacia adelante, el escudo adelantado y la espada atrás al caminar. Debe leerse distinto de Kratos en una mancha de 2 colores. |
+| Cabeza | Casco de bronce con cresta, la cara al descubierto en calavera y piel pegada al hueso. |
+| Cuerpo | Piel gris verdosa, coraza de cuero y bronce desgastada, faldón de tiras, grebas. |
+| Armas | Escudo redondo en el brazo cercano a la cámara y espada corta en la mano libre. La cadena de Kratos no interviene. |
+| Paleta | Propia (`palette/legionnaire.json`), no la de Kratos; 12 colores como máximo, con el bronce como único acento cálido para que Kratos (rojo) siga siendo el centro de atención. |
+| Estados de la IA que necesitan cuadros | Reposo, caminar (`approach`), aviso (`windup`, 24 ticks), tajo (`slash`, 8), recuperación (`recover`, 16), aturdimiento (`hitstun`), aire (`juggle`) y muerte (`death`). |
+| Lienzo | El mismo de Kratos, 64×56 con los pies en la fila 55, para reutilizar la física y la sombra. |
