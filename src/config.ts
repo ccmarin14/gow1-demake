@@ -145,6 +145,15 @@ export const CONFIG = {
       slashDamage: 12,
       slashReach: 32,
       parryStunTicks: 32,
+      /** Distance at which it stops chasing and holds in guard before committing. */
+      standoffRange: 72,
+      /** Extra distance Kratos must open before a guarding legionnaire chases again. */
+      standoffSlack: 16,
+      /** Guard hold before committing: `holdTicksMin` plus a per-enemy share of `holdTicksSpan`. */
+      holdTicksMin: 30,
+      holdTicksSpan: 45,
+      /** Legionnaires in `windup` or `slash` at once; the rest wait their turn in guard. */
+      maxAttackers: 2,
     },
     archer: {
       maxHp: 40,

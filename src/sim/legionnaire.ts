@@ -8,7 +8,9 @@ import type { EntityState } from './types';
  *
  * Máquina de estados determinista gobernada por ticks fijos:
  * - `idle`: en reposo cuando el jugador está fuera del alcance de detección (`aggroRange`).
- * - `approach`: persecución a pie avanzando hacia Kratos (`speed` = 65 px/s).
+ * - `approach`: persecución a pie avanzando hacia Kratos (`speed` = 65 px/s) hasta `standoffRange`.
+ * - `guard`: a media distancia se detiene con el escudo arriba (cuadros de reposo) un tiempo
+ *   distinto por enemigo; cuando termina y hay turno libre (`maxAttackers`), avanza y ataca.
  * - `windup`: anticipación / telegraph visual con espada levantada y ojos llameantes (24 ticks = 400 ms).
  *   Si Kratos lo golpea durante el `windup`, se interrumpe inmediatamente a `hitstun`.
  * - `slash`: tajo agresivo hacia adelante (8 ticks). Puede ser esquivado con i-frames,
@@ -23,6 +25,7 @@ export function stepLegionnaire(
   player: EntityState | undefined,
   _platforms: readonly Platform[],
   _dt: number,
+  allies: readonly EntityState[] = [],
 ): void {
   if (enemy.kind !== 'legionnaire') {
     return;
@@ -147,20 +150,61 @@ export function stepLegionnaire(
       enemy.aiState = 'idle';
       enemy.aiTicks = 0;
       enemy.vx = 0;
-    } else if (dist <= CONFIG.enemy.legionnaire.attackRange) {
-      // En rango de ataque
-      if (enemy.attackCooldownTicks === 0) {
-        enemy.aiState = 'windup';
-        enemy.aiTicks = 0;
-        enemy.vx = 0;
-      } else {
-        // Enfriamiento activo: espera en guardia
-        enemy.vx = 0;
-      }
+    } else if (dist <= CONFIG.enemy.legionnaire.standoffRange) {
+      enemy.vx = 0;
+      enterGuard(enemy);
     } else {
       // Desplazamiento activo hacia Kratos
       enemy.vx = enemy.facing * CONFIG.enemy.legionnaire.speed;
       enemy.aiTicks += 1;
     }
+    return;
   }
+
+  // Estado de guardia: espera a media distancia y avanza solo cuando le toca
+  if (enemy.aiState === 'guard') {
+    enemy.facing = dirToPlayer;
+    if (dist > CONFIG.enemy.legionnaire.standoffRange + CONFIG.enemy.legionnaire.standoffSlack) {
+      enemy.aiState = 'approach';
+      enemy.aiTicks = 0;
+      enemy.vx = 0;
+    } else if (enemy.attackCooldownTicks > 0 || !hasTurn(enemy, allies)) {
+      enemy.vx = 0;
+    } else if (dist <= CONFIG.enemy.legionnaire.attackRange) {
+      enemy.aiState = 'windup';
+      enemy.aiTicks = 0;
+      enemy.vx = 0;
+    } else {
+      enemy.vx = enemy.facing * CONFIG.enemy.legionnaire.speed;
+    }
+  }
+}
+
+/** Starts the guard hold: a fixed beat per enemy, so a crowd does not move as one. */
+function enterGuard(enemy: EntityState): void {
+  if (enemy.aiState !== 'guard') {
+    const { holdTicksMin, holdTicksSpan } = CONFIG.enemy.legionnaire;
+    enemy.aiState = 'guard';
+    enemy.aiTicks = 0;
+    enemy.attackCooldownTicks = Math.max(enemy.attackCooldownTicks, holdTicksMin + (idHash(enemy.id) % holdTicksSpan));
+  }
+}
+
+/** Fewer than `maxAttackers` other legionnaires are in `windup` or `slash`. */
+function hasTurn(enemy: EntityState, allies: readonly EntityState[]): boolean {
+  let busy = 0;
+  for (const other of allies) {
+    if (other !== enemy && other.kind === 'legionnaire' && (other.aiState === 'windup' || other.aiState === 'slash')) {
+      busy += 1;
+    }
+  }
+  return busy < CONFIG.enemy.legionnaire.maxAttackers;
+}
+
+function idHash(id: string): number {
+  let hash = 0;
+  for (let i = 0; i < id.length; i += 1) {
+    hash = (hash * 31 + id.charCodeAt(i)) >>> 0;
+  }
+  return hash;
 }

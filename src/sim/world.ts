@@ -948,7 +948,7 @@ export class World {
       for (let i = 0; i < this.targets.length; i += 1) {
         const target = this.targets[i];
         if (target.kind === 'legionnaire') {
-          stepLegionnaire(target, player, this.platforms, TICK_DT);
+          stepLegionnaire(target, player, this.platforms, TICK_DT, this.targets);
           if (target.aiState === 'death' && target.aiTicks === 0) {
             this.totalKills += 1;
             this.spawnOrbs(

@@ -65,6 +65,11 @@ describe('damage table: what each full strike deals', () => {
     }
   });
 
+  it('the finishing square and the triangle count as heavy blows (damage of the feel config)', () => {
+    assert.ok(TABLE.square6 >= CONFIG.combat.feel.heavyDamage);
+    assert.ok(TABLE.triangle >= CONFIG.combat.feel.heavyDamage);
+  });
+
   it('Ascension itself does no damage: its blow is the launcher before it', () => {
     assert.equal(damageOf('ascension'), 0);
   });

@@ -109,3 +109,16 @@ Criterio: se implementa lo que respaldan el manual oficial, el cartel del juego 
 | Paleta | Propia (`palette/legionnaire.json`), no la de Kratos; 12 colores como máximo, con el bronce como único acento cálido para que Kratos (rojo) siga siendo el centro de atención. |
 | Estados de la IA que necesitan cuadros | Reposo, caminar (`approach`), aviso (`windup`, 24 ticks), tajo (`slash`, 8), recuperación (`recover`, 16), aturdimiento (`hitstun`), aire (`juggle`) y muerte (`death`). |
 | Lienzo | El mismo de Kratos, 64×56 con los pies en la fila 55, para reutilizar la física y la sombra. |
+
+### Ritmo del legionario (conducta, criterio del agente)
+
+Pedido de la usuaria: en un *hack and slash* no deben caminar siempre hacia Kratos ni correr siempre; tienen que dar espacio y turnarse. Sin fuente de GoW 1 para los tiempos: es diseño propio, ajustable en `CONFIG.enemy.legionnaire`.
+
+| Fase | Qué hace | Cuadros que usa |
+| --- | --- | --- |
+| Acercarse (`approach`) | Camina de lejos hasta 72 px de Kratos. | Andar (aprobado). |
+| Guardia (`guard`) | A 72 px se detiene con el escudo arriba entre 30 y 75 ticks, distintos por enemigo, para que un grupo no se mueva como uno. Si Kratos se aleja más de 88 px, vuelve a perseguir. | Reposo (aprobado). Sin cuadro nuevo. |
+| Atacar | Cuando termina la espera y hay turno libre, avanza y ataca: aviso (24 ticks), tajo (8), recuperación (16). Nunca hay más de 2 en aviso o tajo a la vez; el resto espera en guardia. | Aviso, tajo, recuperación (por dibujar). |
+| Después del tajo | Vuelve a guardia con la espera completa antes de repetir. | Reposo. |
+
+El andar se queda para cerrar distancia y el reposo para dar espacio: no hay carrera ni cuadros extra. Quedan fuera por ahora: rodear a Kratos, retroceder y romper la guardia del legionario (en GoW 1 los enemigos con escudo se rompen con el agarre ○, sin fuente verificada aquí). El segundo ataque parable (ESE-04) sigue pendiente.

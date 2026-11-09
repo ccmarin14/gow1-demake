@@ -137,16 +137,6 @@ describe('weight of a blow', () => {
     const foe = heavy.snapshot().entities.find((e) => e.kind === 'legionnaire')!;
     assert.ok(foe.x - foeAtHit > 15, `thrown ${(foe.x - foeAtHit).toFixed(1)} px away from Kratos`);
   });
-
-  it('the finishing square and the triangle count as heavy blows', () => {
-    // Heavy blows deal 20 or more damage (see CONFIG.combat.feel).
-    const world = foeWorld();
-    const hp0 = world.snapshot().entities.find((e) => e.kind === 'legionnaire')!.hp;
-    world.step(['heavy-attack']);
-    for (let i = 0; i < 100; i += 1) world.step([]);
-    const hp = world.snapshot().entities.find((e) => e.kind === 'legionnaire')?.hp ?? 0;
-    assert.ok(hp0 - hp >= 20, `took ${hp0 - hp}`);
-  });
 });
 
 describe('a quick tap is not lost', () => {

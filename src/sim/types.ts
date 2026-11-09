@@ -143,6 +143,7 @@ export interface EntityState {
     | 'idle'
     | 'patrol'
     | 'approach'
+    | 'guard'
     | 'windup'
     | 'slash'
     | 'recover'
