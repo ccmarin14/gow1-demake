@@ -118,6 +118,8 @@ export interface StrikePhase {
   gravity?: number;
   /** On the phase's first tick Kratos leaves the ground with this vertical speed (px/s, negative is up). */
   leapVy?: number;
+  /** If true, this phase is permitted to be airborne even if the strike is not declared air: true. */
+  airborne?: boolean;
 }
 
 /**
@@ -958,29 +960,30 @@ const SPIRIT_MOTION = {
   carry: { kind: 'carry', arcPx: 22 },
   // Sweep up behind the back along the spine, reaching the apex overhead as Kratos arches back.
   top: { kind: 'track', from: 0, to: 3 / 7, ease: 'linear' },
-  // Over the head driving forward.
+  // Over the head driving forward into the leap.
   over: { kind: 'track', from: 3 / 7, to: 4 / 7, ease: 'linear' },
-  // Accelerates into the ground with heavy momentum.
+  // Aerial slowdown between maximum height and ground, then snaps downward with heavy momentum.
   down: { kind: 'track', from: 4 / 7, to: 1, ease: 'in' },
   slam: { kind: 'hold', driftPx: 0 },
   recall: { kind: 'recall', sagPx: 5 },
 } as const;
 
-const SPIRIT_GROWTH = { carry: { widthPx: 5 }, top: { widthPx: 7 }, over: { widthPx: 8 }, down: { widthPx: 8 } };
+const SPIRIT_GROWTH = { carry: { widthPx: 6 }, top: { widthPx: 8 }, over: { widthPx: 9 }, down: { widthPx: 9 } };
 
 const SPIRIT_TRAIL = {
   widths: [[0, 3], [0.35, 7], [0.75, 8], [1, 5]],
   taperOld: 0.2,
   taperHead: 0.1,
   minLengthPx: 12,
-  maxLengthPx: 70,
+  maxLengthPx: 75,
   cutWhenDetached: true,
 } as const;
 
 /**
  * Spirit of Hercules (5 squares + triangle; finisher): triangle pressed in square 5's chain window.
- * The same overhead double slam as Plume of Prometheus, but slightly slower, heavier, with amplified
- * fiery lights, multiple ground detonation flashes, wider ground fires, and greater impact.
+ * The same overhead double slam as Plume of Prometheus, but with a deliberate fiery charge,
+ * aerial suspension/slowdown at the peak of the leap, multiple ground detonation flashes,
+ * wider ground fires, heavier hitstop and massive screen shake.
  */
 const SPIRIT: StrikeDef = {
   id: 'spirit',
@@ -989,18 +992,22 @@ const SPIRIT: StrikeDef = {
   heavy: true,
   phases: [
     { id: 'carry', ticks: 8, advancePx: 0, pose: 'plume-a', centerX: CX['plume-a'] },
-    { id: 'top', ticks: 6, advancePx: 0, pose: 'plume-b', centerX: CX['plume-b'] },
-    { id: 'over', ticks: 6, advancePx: 6, pose: 'plume-c', centerX: CX['plume-c'], leapVy: -140, gravity: 1.0 },
-    { id: 'down', ticks: 6, advancePx: 6, pose: 'plume-d', centerX: CX['plume-d'], gravity: 2.2, until: { event: 'grounded', minTicks: 2 } },
+    // A deliberate charge up the spine: holding the blades overhead with full fire trail.
+    { id: 'top', ticks: 8, advancePx: 0, pose: 'plume-b', centerX: CX['plume-b'] },
+    // The forward leap: drives up toward the apex.
+    { id: 'over', ticks: 7, advancePx: 6, pose: 'plume-c', centerX: CX['plume-c'], leapVy: -140, gravity: 0.8 },
+    // Aerial slowdown between maximum height and ground, then snaps downward with violent force.
+    { id: 'down', ticks: 10, advancePx: 8, pose: 'plume-d', centerX: CX['plume-d'], gravity: 1.4, until: { event: 'grounded', minTicks: 6 } },
     {
-      id: 'slam', ticks: 18, advancePx: 0, pose: 'plume-e', centerX: CX['plume-e'],
+      id: 'slam', ticks: 20, advancePx: 0, pose: 'plume-e', centerX: CX['plume-e'],
       effects: [
-        { kind: 'groundFire', from: 16, to: 92, heightPx: 4, ticks: 26, linger: { damage: 14, hitstunTicks: 20, liftVy: -260 } },
-        { kind: 'dust', at: [16, 92] },
-        { kind: 'flash', x: 78, ticks: 3, radiusPx: 9 },
-        { kind: 'flash', x: 60, ticks: 3, radiusPx: 7 },
-        { kind: 'flash', x: 40, ticks: 2, radiusPx: 6 },
-        { kind: 'shake', px: 4, ticks: 7 },
+        { kind: 'groundFire', from: 12, to: 98, heightPx: 5, ticks: 30, linger: { damage: 16, hitstunTicks: 22, liftVy: -280 } },
+        { kind: 'dust', at: [12, 98] },
+        { kind: 'flash', x: 78, ticks: 3, radiusPx: 10 },
+        { kind: 'flash', x: 58, ticks: 3, radiusPx: 8 },
+        { kind: 'flash', x: 38, ticks: 3, radiusPx: 7 },
+        { kind: 'flash', x: 18, ticks: 2, radiusPx: 6 },
+        { kind: 'shake', px: 6, ticks: 9 },
       ],
     },
     {
@@ -1053,12 +1060,12 @@ const SPIRIT: StrikeDef = {
     },
   },
   hitRadiusPx: 4,
-  damage: 28,
-  hitstunTicks: 26,
-  hitstopTicks: 8,
+  damage: 32,
+  hitstunTicks: 30,
+  hitstopTicks: 12,
   trailSamplesPerTick: 6,
   trailFadeWidthPx: 4,
-  impact: { phase: 'slam', from: 16, to: 92, heightPx: 25 },
+  impact: { phase: 'slam', from: 12, to: 98, heightPx: 25 },
   cancel: { from: 'recall', fromTick: 8 },
 };
 

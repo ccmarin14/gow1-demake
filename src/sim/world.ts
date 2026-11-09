@@ -628,7 +628,7 @@ export class World {
         if (this.strike) {
           const def = STRIKES[this.strike.id];
           const phase = strikePhaseAt(def, this.strike.tick).phase;
-          const airborneOk = def.air || phase.leapVy !== undefined || phase.until?.event === 'grounded';
+          const airborneOk = def.air || phase.airborne || phase.leapVy !== undefined || phase.until?.event === 'grounded';
           if (inHitstun || (!player.grounded && !airborneOk)) {
             this.strike = null;
           }

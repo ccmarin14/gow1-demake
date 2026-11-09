@@ -397,32 +397,35 @@ describe('Plume of Prometheus in the world', () => {
 describe('Spirit of Hercules (5 squares + triangle) data and execution', () => {
   const SPIRIT = STRIKES.spirit;
 
-  it('runs deliberate 56 ticks with a forward leap, longer apex hold and impact resonance', () => {
+  it('runs deliberate 65 ticks with aerial suspension, forward leap and massive impact', () => {
     assert.deepEqual(
       SPIRIT.phases.map((p) => [p.id, p.ticks]),
-      [['carry', 8], ['top', 6], ['over', 6], ['down', 6], ['slam', 18], ['recall', 12]],
+      [['carry', 8], ['top', 8], ['over', 7], ['down', 10], ['slam', 20], ['recall', 12]],
     );
-    assert.equal(strikeLength(SPIRIT), 56);
-    assert.equal(SPIRIT.damage, 28);
-    assert.equal(SPIRIT.hitstopTicks, 8);
-    assert.equal(SPIRIT.hitstunTicks, 26);
+    assert.equal(strikeLength(SPIRIT), 65);
+    assert.equal(SPIRIT.damage, 32);
+    assert.equal(SPIRIT.hitstopTicks, 12);
+    assert.equal(SPIRIT.hitstunTicks, 30);
     assert.equal(SPIRIT.heavy, true);
     assert.equal(SPIRIT.phases[2].leapVy, -140);
+    assert.equal(SPIRIT.phases[3].gravity, 1.4);
+    assert.equal(SPIRIT.phases[1].effects, undefined, 'no circular fireball effects during top');
+    assert.equal(SPIRIT.phases[2].effects, undefined, 'no circular fireball effects during over');
   });
 
-  it('amplifies visual fire lights with 3 flashes, wider ground fire and heavier screen shake', () => {
+  it('amplifies visual fire lights with 4 flashes, wider ground fire and heavier screen shake', () => {
     const slam = SPIRIT.phases.find((p) => p.id === 'slam');
     assert.ok(slam?.effects);
     const flashes = slam.effects.filter((e) => e.kind === 'flash');
-    assert.equal(flashes.length, 3, '3 flashes along the detonation line');
+    assert.equal(flashes.length, 4, '4 flashes along the detonation line');
     const fire = slam.effects.find((e) => e.kind === 'groundFire');
     assert.ok(fire && fire.kind === 'groundFire');
-    assert.equal(fire.from, 16);
-    assert.equal(fire.to, 92);
-    assert.equal(fire.heightPx, 4);
+    assert.equal(fire.from, 12);
+    assert.equal(fire.to, 98);
+    assert.equal(fire.heightPx, 5);
     const shake = slam.effects.find((e) => e.kind === 'shake');
     assert.ok(shake && shake.kind === 'shake');
-    assert.equal(shake.px, 4);
+    assert.equal(shake.px, 6);
   });
 
   it('chains from square 5 into spirit when triangle is pressed in its chain window', () => {
@@ -446,13 +449,13 @@ describe('Spirit of Hercules (5 squares + triangle) data and execution', () => {
     assert.equal(strike.entry?.id, 'square5');
   });
 
-  it('deals heavy damage (28 per hit across descent and ground slam) on impact', () => {
+  it('deals heavy damage (32 per hit across descent and ground slam) on impact', () => {
     const world = playingWorld();
     const kratos = player(world.snapshot());
     const target = legionnaireAt(kratos.x + 60, kratos.y, 'spirit-target');
     const state = startStrike(kratos, 'spirit');
-    // Step through carry (8), top (6), over (6) and down (6) -> tick 26 slam
-    for (let i = 0; i <= 26; i += 1) {
+    // Step through carry (8), top (8), over (7) and down (10) -> tick 33 slam
+    for (let i = 0; i <= 33; i += 1) {
       stepStrike(state, kratos, [target], -1e6, 1e6);
     }
     assert.deepEqual(state.hits, ['spirit-target', 'spirit-target@impact']);
@@ -475,21 +478,26 @@ describe('Spirit of Hercules (5 squares + triangle) data and execution', () => {
     assert.equal(world.snapshot().strike?.id, 'spirit');
     const x0 = player(world.snapshot()).x;
     const y0 = player(world.snapshot()).y;
-    // Step through carry (8) and 5 ticks of top -> tick 13 is the last tick of top (still on ground)
-    hold(world, 13, []);
+    // Step through carry (8) and 7 ticks of top -> tick 15 is the last tick of top (still on ground)
+    hold(world, 15, []);
     assert.equal(player(world.snapshot()).grounded, true, 'grounded during windup');
-    // Tick 14 (start of over): Kratos leaps into the air
+    // Tick 16 (start of over): Kratos leaps into the air
     world.step([]);
-    assert.equal(world.snapshot().strike?.tick, 14);
+    assert.equal(world.snapshot().strike?.tick, 16);
     assert.equal(player(world.snapshot()).grounded, false, 'airborne during the leap');
     assert.ok(player(world.snapshot()).vy < 0, 'leaping upward');
-    // At tick 17 (mid-leap): Kratos is airborne above the floor
+    // At tick 19 (mid-leap): Kratos is airborne above the floor
     hold(world, 3, []);
     const mid = player(world.snapshot());
     assert.equal(mid.grounded, false, 'airborne during the leap');
     assert.ok(mid.y < y0, 'leaped up above the ground');
-    // Step into slam (tick 26): Kratos lands and is grounded
-    hold(world, 9, []);
+    // At tick 26 (during down slowdown): Kratos hangs suspended between max height and ground
+    hold(world, 7, []);
+    const hanging = player(world.snapshot());
+    assert.equal(hanging.grounded, false, 'still suspended in air during down slowdown');
+    assert.ok(hanging.y < y0, 'suspended in mid-air');
+    // Step through the snap plunge into slam (tick 33): Kratos lands and is grounded
+    hold(world, 7, []);
     const landed = player(world.snapshot());
     assert.equal(landed.grounded, true, 'landed on slam');
     assert.equal(landed.y, y0, 'on the floor');
