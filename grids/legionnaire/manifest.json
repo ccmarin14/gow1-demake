@@ -62,6 +62,24 @@
       "state": "walk",
       "grounded": true,
       "png": "legionnaire-walk-07"
+    },
+    {
+      "file": "windup-00.txt",
+      "state": "windup",
+      "grounded": true,
+      "png": "legionnaire-windup-00"
+    },
+    {
+      "file": "windup-01.txt",
+      "state": "windup",
+      "grounded": true,
+      "png": "legionnaire-windup-01"
+    },
+    {
+      "file": "windup-02.txt",
+      "state": "windup",
+      "grounded": true,
+      "png": "legionnaire-windup-02"
     }
   ]
 }
