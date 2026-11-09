@@ -122,3 +122,99 @@ Pedido de la usuaria: en un *hack and slash* no deben caminar siempre hacia Krat
 | Después del tajo | Vuelve a guardia con la espera completa antes de repetir. | Reposo. |
 
 El andar se queda para cerrar distancia y el reposo para dar espacio: no hay carrera ni cuadros extra. Quedan fuera por ahora: rodear a Kratos, retroceder y romper la guardia del legionario (en GoW 1 los enemigos con escudo se rompen con el agarre ○, sin fuente verificada aquí). El segundo ataque parable (ESE-04) sigue pendiente.
+
+## 8. Nivel 1: Mar Egeo (D-44, D-45)
+
+Recorrido decidido, fiel al del primer *God of War*. **Respaldo:** *Original* (fuentes al final de la sección), *Usuaria* o *Agente* (propuesta pendiente de aprobación). Las ideas que siguen abiertas están en `docs/ideas.md`.
+
+### Recorrido
+
+| # | Tramo | Qué pasa | Respaldo |
+| --- | --- | --- | --- |
+| 1 | Cubierta del primer barco | Primera tanda de enemigos y punto de guardado (una luz) en la segunda cubierta. Una escotilla en el piso (`context-action`, `E`) baja a la bodega. La puerta del camarote del capitán se ve, pero está cerrada. | Original [1] [4] |
+| 2 | Bodega: primer encuentro con la Hidra | Una cabeza irrumpe en el barco; solo se ven el cuello y la cabeza, que emerge desde abajo por el lateral derecho. Se golpea en la cara; cuando agita las orejas y se echa atrás, se bloquea. Al debilitarse aparece ○ y se remata con agarre y botones. Pilas de escombros cierran el pasillo antes y después y se rompen a golpes. | Original [1] [2]; puesta en escena: Usuaria |
+| 3 | Cubierta: segundo encuentro | La cabeza golpea a la izquierda, a la derecha y hacia la cámara (se esquiva rodando), y muerde sin que se pueda bloquear (se escapa machacando el agarre). Marineros que huyen (inofensivos, pueden soltar salud) y arpías en picada (se bloquean al oír su chillido). Cofre de orbes tras unas puertas que se levantan. | Original [1]. *Agente, pendiente:* en 2D el golpe "hacia la cámara" cae sobre la posición de Kratos con una sombra de aviso. |
+| 4 | Agua | El agujero que deja la Hidra lleva a un tramo inundado que se cruza a pie: más lento, salto corto y sin doble salto, demasiado largo (o con techo bajo) para saltarlo de orilla a orilla. Se sale trepando una red. | Original [1] [4]; vadeo: Usuaria |
+| 5 | Redes y vigas | Enemigos y vigas estrechas con una bifurcación: un lado lleva a un cofre de orbes rojos y hay que volver al centro para seguir. | Original [1] |
+| 6 | Segundo barco | Cinemática de llegada. No-muertos con arco disparan desde el otro extremo; cajas grandes como cobertura (una patada cargada las desliza) y una caja chica que se empuja contra la pared para subir hasta ellos. Soldados espartanos moribundos en una cubierta inferior. | Original [1] [4] |
+| 7 | Mástil | Escalera y red con enemigos que también trepan; el combate es limitado al trepar, conviene saltarlos. En la cima, una viga lleva a un cofre. | Original [1] |
+| 8 | Cuerda al tercer barco | Kratos se desliza de lo alto del mástil al barco siguiente, siempre de un punto alto a uno más bajo. Sin enemigos. | Original [1] [4]; sin enemigos: Usuaria |
+| 9 | Tercer barco | Tres paredes tapiadas: la del centro es el camino, una lateral guarda un Ojo de Gorgona y la otra un cofre de orbes. Tras un pasillo angosto, el salón de Poseidón: un punto de guardado azul entre dos estatuas; al tocarlo, Poseidón le da a Kratos la *Ira de Poseidón* y enseguida aparecen enemigos para estrenarla. Cofres de salud y magia y una red larga hasta la cubierta del jefe. | Original [1] [4] [7] [8] |
+| 10 | Jefe: la Hidra | Ver "Combate final". | Original; disposición: Usuaria |
+| 11 | El capitán y la salida | Kratos se mete en la garganta de la Hidra, le arranca la llave del cuello al capitán y lo vuelve a tirar dentro. Junto al punto de guardado del otro lado de la arena hay dos cofres (el segundo Ojo de Gorgona). Una cuerda baja a una cubierta anterior, una caja chica sube a la plataforma superior y la llave abre el camarote, lo que cierra el nivel. Poseidón nombra Atenas como el siguiente destino. | Original [1] [11] [12] |
+
+### Combate final contra la Hidra (D-45)
+
+- **Arena:** dos cabezas menores, una a cada lado de la pantalla, y la principal arriba, junto a la cima del mástil central. Hay desplazamiento horizontal (cabezas laterales) y vertical (subir por la red hasta la principal). La cámara queda fija sobre la arena y muestra las tres cabezas (§9).
+- **Fase 1, cabezas menores:** si Kratos trepa la red sin neutralizarlas, lo tiran. Se bloquea cuando una se echa atrás y se contraataca. Una cabeza derribada que se deja sola se recupera. Para anularla, se la derriba, se sube por una pila de cajas hasta una plataforma colgante con un pincho abajo y, al pisarla, el pincho cae y la clava a la cubierta. Las dos se resuelven igual.
+- **Fase 2, cabeza principal:** avisa hacia dónde va a morder con un cabeceo. Se rueda al otro lado (o se la provoca para que muerda la plataforma de madera) y se contraataca. Con la vida baja aparece ○: Kratos la engancha con las espadas y estampa la cabeza contra el mástil. La vida de la Hidra se recupera y el ciclo se repite, y con cada golpe el mástil se quiebra más hasta quedar como una pica.
+- **Remate:** Kratos le clava las espadas en los ojos, la engancha por los dos lados de la boca y salta del mástil tirando de ella. Al lanzarse hacia adelante, la Hidra se atraviesa la cabeza con la pica.
+- **Depende de:** el agarre y los remates (BL-06, BL-07) y la cámara por zona (BL-23).
+
+### Enemigos, recolectables y guardado
+
+- **Enemigos (Usuaria):** arpías, no-muertos con espada (legionario, §7), no-muertos con arco y la Hidra. No hay gorgonas, sirenas ni minotauros. Los marineros y los soldados moribundos no atacan.
+- **Recolectables:** 2 Ojos de Gorgona (tramos 9 y 11) y ninguna Pluma de Fénix [7]; cofres de orbes rojos, de salud y de magia en los tramos que los nombran.
+- **Puntos de guardado confirmados:** 3, en los tramos 1, 9 y 11 [4] [13].
+- **Poder nuevo:** la *Ira de Poseidón* (tramo 9). El Tridente no es de este nivel: se obtiene en el Desafío de Poseidón, en el Templo de Pandora [7].
+
+### Por comprobar en el juego
+
+Puntos que las fuentes no aclaran o en los que se contradicen. La usuaria los revisa en el juego o en gameplays y se anota acá el resultado.
+
+| # | Qué comprobar | Por qué queda abierto |
+| --- | --- | --- |
+| P-01 | Qué toca Kratos en el salón de Poseidón (tramo 9): ¿un muro azul o una llama azul? | Una guía dice "muro" [4] y otra "llama" [8]. |
+| P-02 | Cuántas veces se estampa la cabeza principal contra el mástil antes del remate. | Las guías dicen tres o "varias" [1] [9]. |
+| P-03 | Si hay más de tres puntos de guardado en el Egeo y dónde. | Ninguna fuente da el total. |
+| P-04 | Qué ataques tiene la cabeza principal además de la mordida avisada con un cabeceo. | Las fuentes solo describen la mordida. |
+| P-05 | Qué hay dentro del camarote del capitán y cómo se pasa a Atenas (tramo 11). | Las fuentes solo dicen que la llave lo abre y que Poseidón nombra Atenas. |
+| P-06 | Qué golpes tiene Kratos colgado de una cuerda horizontal y trepando una red. | La usuaria lo deja para después (D-44). |
+| P-07 | En *Hollow Knight*, si mirar arriba o abajo exige estar quieto (§9). | La wiki no lo dice. |
+
+### Fuentes
+
+1. Recorrido del Mar Egeo, *Joshua Cheats & Walkthroughs* (2010): https://joshua-cheats-walkthroughs.blogspot.com/2010/05/aegean-sea-god-of-war.html
+2. *God of War Wiki*, Hydra (vía buscador; da 402 a fetch directo): https://godofwar.fandom.com/wiki/Hydra
+3. Wikipedia, *God of War (2005 video game)*: https://en.wikipedia.org/wiki/God_of_War_(2005_video_game)
+4. StrategyWiki, *God of War / Aegean Sea* (vía buscador; da 403 a fetch directo): https://strategywiki.org/wiki/God_of_War/Aegean_Sea
+5. *God of War Wiki*, Kratos' Fleet (vía buscador): https://godofwar.fandom.com/wiki/Kratos%27_Fleet
+6. Itay Keren, *Scroll Back: The Theory and Practice of Cameras in Side-Scrollers* (GDC 2015): https://www.gamedeveloper.com/design/scroll-back-the-theory-and-practice-of-cameras-in-side-scrollers
+7. StrategyWiki, *God of War / Gorgon Eyes* y *Phoenix Feathers* (vía buscador): https://strategywiki.org/wiki/God_of_War/Gorgon_Eyes · https://strategywiki.org/wiki/God_of_War/Phoenix_Feathers
+8. PlayStationTrophies, guía de trofeos de *God of War* (vía buscador): https://www.playstationtrophies.org/game/god-of-war/guide/
+9. GameFAQs, "How do I beat Boss Hydra Serpent?" (vía buscador): https://gamefaqs.gamespot.com/ps2/919864-god-of-war/answers/351441-how-do-i-beat-boss-hydra-serpent
+10. Destructoid, *The Memory Card .27: The battle with the Hydra*: https://www.destructoid.com/the-memory-card-27-the-battle-with-the-hydra/
+11. *God of War Wiki*, Captain (vía buscador): https://godofwar.fandom.com/wiki/Captain
+12. IMDb, *God of War* (2005), personaje del capitán (vía buscador): https://www.imdb.com/title/tt0416779/characters/nm1584992/
+13. *God of War Wiki*, Save Altar (vía buscador): https://godofwar.fandom.com/wiki/Save_Altar
+14. *Hollow Knight Wiki*, Controls: https://hollowknight.wiki/w/Controls_(Hollow_Knight)
+15. *Hollow Knight Wiki*, Updates (arreglo del "Camera Lock" de White Palace): https://hollowknight.wiki/w/Updates_(Hollow_Knight)
+16. Mark Brown (*Game Maker's Toolkit*), *How to Make a Good 2D Camera*: https://gmtk.substack.com/p/how-to-make-a-good-2d-camera
+17. Tutoriales que imitan la cámara de *Hollow Knight* (vía buscador): Sasquatch B Studios, https://www.patreon.com/sasquatchbgames/posts/unity-tutorial-79656408 · Terresquall, https://blog.terresquall.com/2023/04/creating-a-metroidvania-like-hollow-knight-part-1/
+
+## 9. Cámara (D-46)
+
+Modelo: la cámara de los metroidvania 2D actuales, como *Hollow Knight* [14] [15], con las reglas de seguimiento que recopilan Itay Keren [6] y Mark Brown [16]. Team Cherry no publicó el código de su cámara: lo que se atribuye a *Hollow Knight* sale de sus wikis y de tutoriales que la imitan [17], no de valores medidos. **Hoy:** la cámara solo sigue en horizontal (`ShellScene.applyCamera`, CAM-01) y `level1` mide 1440×270, una sola pantalla de alto; los barcos de varios pisos necesitan niveles más altos y seguimiento vertical.
+
+**Principio:** los dos ejes no se tratan igual [16]. En horizontal la cámara acompaña a Kratos de forma continua y deja más pantalla adelante; en vertical se queda quieta mientras Kratos salta y se mueve solo cuando cambia de piso o cae.
+
+**Cómo sigue a Kratos**
+
+| Regla | Qué hace la cámara |
+| --- | --- |
+| Zona muerta (*camera-window*) | Kratos se mueve, da pasos cortos o gira dentro de un rectángulo central sin que la cámara reaccione; la cámara arranca cuando él empuja el borde [6] [16]. |
+| Seguimiento suavizado (*lerp-smoothing*) | La cámara nunca se pega al píxel de Kratos: en cada tick recorre una fracción fija de la distancia que le falta. Un suavizado demasiado lento deja a Kratos delante de la cámara y se come el espacio de adelante [16]. |
+| Adelanto horizontal (*dual-forward-focus*) | El objetivo de la cámara va desplazado hacia donde mira Kratos (`facing`), para ver más de lo que viene que de lo que quedó atrás. Al girar, el objetivo pasa al otro lado y la cámara se desliza hasta él, sin saltar (*Cave Story*, *Hollow Knight*) [16] [17]. |
+| Saltos sin mover la cámara (*platform-snapping*) | Mientras Kratos sube y baja dentro de un salto, el eje Y no se mueve. Al aterrizar en una plataforma de otra altura, la cámara se reacomoda suavemente a ese piso: "la cámara se mueve cuando aterrizas, no a mitad del salto" [6] [16]. |
+| Caídas | Si Kratos cae por debajo de un umbral (sale por abajo de la zona muerta o cae de un piso), la cámara lo sigue hacia abajo, más rápido que al subir, para que se vea dónde va a aterrizar (*fast Y damping when falling* en los tutoriales que imitan *Hollow Knight*) [17]. |
+| Encuadre bajo | Kratos va un poco por debajo del centro de la pantalla, para dejar espacio arriba [16]. |
+| Pausa al recibir daño | Cuando Kratos recibe un golpe, la cámara se frena un instante, como en *Hollow Knight* [16]. Se suma al temblor de los golpes que ya existe (D-39). |
+
+**Límites y zonas**
+
+| Regla | Qué hace la cámara |
+| --- | --- |
+| Límite de borde (*edge-snapping*) | Nunca muestra nada fuera del nivel ni dentro de los muros [6] [16]. |
+| Cámara fija por zona (*region-based-anchors*) | Cada zona puede fijar su propio encuadre o trabar un eje; en los jefes la cámara queda trabada sobre la arena y el jugador nunca tiene que acomodarla, como en *Hollow Knight* [14] [15]. La arena de la Hidra muestra las tres cabezas (§8). |
+
+**Además:** mantener una entrada desplaza la cámara para mirar arriba o abajo, como en *Hollow Knight* [14] (si exige estar quieto: P-07). Es un control del jugador, no parte del seguimiento.

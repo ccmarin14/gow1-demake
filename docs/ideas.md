@@ -1,98 +1,87 @@
 # Banco de ideas y referencias futuras
 
-Ideas, notas sueltas y referencias conceptuales para etapas avanzadas del desarrollo.
+Ideas, notas y referencias de diseño para etapas futuras del desarrollo.
 
-> **Regla para agentes:** este archivo contiene conceptos de diseño y referencias no activas. Ningún agente debe tomarlas como historias de backlog, requerimientos vigentes ni implementar nada de lo listado acá sin la instrucción explícita de la usuaria.
+> **Regla para agentes:** este archivo reúne conceptos de diseño y referencias que no están activos. Ningún agente las toma como historias de backlog ni como requisitos vigentes, y nada de lo listado acá se implementa sin la instrucción explícita de la usuaria. Cuando la usuaria decide una idea, pasa a `docs/decisiones.md` y `docs/direccion.md`, se crea su historia en `docs/estado.md` §3 y se borra de acá.
 
----
+**Ya decidido (fuera de este archivo):** el recorrido del Mar Egeo, sus enemigos, el agua vadeable, las cuerdas y la Hidra (D-44, D-45, `direccion.md` §8), y la cámara de seguimiento (D-46, `direccion.md` §9).
 
-## Nivel 1 (Mar Egeo)
+**Cómo leer cada idea:**
 
-### Tramos con agua en barcos (en lugar de nado profundo)
-- **Alcance:** aplica **únicamente al Nivel 1**. Más adelante sí habrá sistema de nado completo; esto evita implementar nado prematuramente en la primera etapa donde no aporta valor.
-- **Concepto:** el agua interior de las bodegas se resuelve como un desnivel o tramo inundado transitable a pie (vadeo).
-- **Física y movimiento en el agua (Nivel 1):**
-  - **Velocidad reducida:** desplazamiento terrestre más lento mientras se pisa agua.
-  - **Salto limitado:** si se salta desde adentro del agua, el salto es más corto y se bloquea el doble salto.
-  - **Diseño del obstáculo:** longitud o techo suficiente para que no se pueda saltear saltando de orilla a orilla.
-
-### Progresión entre múltiples barcos
-- **Alcance:** específico del **Nivel 1**.
-- **Concepto:** el avance no transcurre en un solo barco estático, sino en el cruce y exploración a través de varias naves enlazadas.
-
-### Deslizamiento por cuerdas
-- **Alcance:** aparece en el **Nivel 1** y puede aplicar a otros niveles.
-- **Concepto:** Kratos se desliza colgado de una cuerda entre dos puntos.
-- **Requisito de diseño:** el recorrido siempre va de un punto alto a uno más bajo, para que el deslizamiento tenga sentido físico.
-
-### Encuentro inicial con la Hidra (interior del barco)
-- **Alcance:** específico del **Nivel 1** (combate temprano en bodegas).
-- **Puesta en escena y comportamiento:**
-  - La criatura no se ve completa: solo el cuello y la cabeza.
-  - Emerge desde abajo (como saliendo del agua) y ataca posicionada sobre el lateral derecho de la pantalla.
-  - Simplifica el arte y el encuadre 2D sin perder la escala ni la tensión del momento original.
-
-### Combate final contra la Hidra (jefe de Nivel 1)
-- **Alcance:** clímax del **Nivel 1**.
-- **Disposición de la arena:**
-  - Dos cabezas secundarias ubicadas en los laterales (una a cada lado).
-  - La cabeza principal gigante ubicada arriba (en la cima/mástil central).
-- **Movimiento y espacio:** la arena debe incorporar desplazamiento tanto horizontal como vertical para enfrentar a las cabezas laterales y escalar hacia la cabeza principal.
+- **Alcance:** *Nivel 1* es el Mar Egeo; *General* aplica a todos los niveles.
+- **Respaldo:** *Original* (está en el *God of War* de 2005, con su fuente al final), *Usuaria* (idea de la usuaria) o *Agente* (propuesta de un agente).
 
 ---
 
-## Diseño general del juego
+## General (todos los niveles)
 
-### Verticalidad, puzles y cámara
-- **Estructura multinivel:** aunque el avance sea principalmente horizontal, los escenarios deben contar con varios pisos y verticalidad real.
-- **Cámara:** seguimiento vertical (scroll en Y) que sube o baja según el piso donde se encuentre el personaje.
-- **Puzles y backtracking:** la verticalidad da espacio a los acertijos de entorno y caminos cerrados que obligan a regresar sobre los pasos para desbloquear el progreso, como en el juego original.
+### G-02 · Calibración de la altura del salto
+- **Respaldo:** observación de la Usuaria. Medición: Agente.
+- **Medición (`src/config.ts`, `PLAYER.vertical`):** con `jumpSpeed` de 380 y `gravity` de 1000, el salto simple sube unos 72 px y el doble salto suma otros 72 aproximadamente, unos 144 px en total. Es más de la mitad de los 270 px de alto de la pantalla, y unas 2,6 veces el lienzo de Kratos (56 px).
+- **Meta:** bajar la altura del salto para que haya espacio de pisos y techos transitables en pantalla.
+- **Pendiente:** el salto está fijado por D-32 y cubierto por pruebas. Si la Usuaria lo decide, pasa a decisión e historia.
 
-### Comportamiento y cinemática de la cámara 2D (buenas prácticas)
-Referencia técnica: patrones de *Scroll Back: The Theory and Practice of Cameras in Side-Scrollers* (Itay Keren).
-- **Seguimiento suavizado con retardo (Lerp / Smooth Damping):**
-  - La cámara nunca debe centrarse de forma rígida instantánea al pixel del jugador. Debe desplazarse con inercia e interpolación suave hacia su objetivo para evitar mareos y vibración visual.
-- **Ventana muerta (Deadzone / Drag Window):**
-  - Rectángulo central donde Kratos puede moverse, dar pequeños pasos o girar sin que la cámara se desplace.
-  - La cámara solo empieza a moverse cuando el personaje cruza el límite exterior de esa caja.
-- **Desacople vertical en saltos (Platform Snapping):**
-  - La cámara **no debe rebotar ni seguir la parábola de cada salto normal**.
-  - El eje Y se mantiene estable durante el brinco y solo se ajusta suavemente si Kratos aterriza en una plataforma de otra elevación o cae por debajo de un umbral seguro.
-- **Anticipación de avance (Look-Ahead):**
-  - La cámara se posiciona con un desplazamiento sesgado hacia el frente de la orientación (`facing`), dando más espacio visible hacia donde Kratos mira/avanza para anticipar enemigos y ataques.
-
-### Calibración de la altura del salto
-- **Observación actual:** el salto de Kratos es excesivamente alto para la resolución lógica (480×270 px) y no deja aire para ubicar niveles o plataformas superiores en pantalla.
-- **Meta:** reducir la altura del salto en el diseño general para habilitar la verticalidad y los techos transitables.
-
-### Travesía y combate en cuerdas horizontales
-- **Alcance:** aplicable a varios niveles según la progresión.
-- **Concepto:** Kratos avanza colgado de manos por cuerdas horizontales y combate contra enemigos a lo largo de la cuerda. Es una mecánica que traslada de forma muy directa la jugabilidad de GoW al plano 2D lateral.
+### G-03 · Cuerdas: balanceo y penalización por caída
+- **Respaldo:** Original [2] (balanceo). Caídas: Usuaria.
+- **Decidido aparte (D-44):** deslizamiento sin enemigos y travesía horizontal colgado con enemigos (BL-24).
+- **Balanceo:** el original incluye balancearse en cuerdas para cruzar abismos [2].
 - **Penalización por caída:**
-  - **Caída no letal:** en ciertas secciones, caer deposita al personaje en un piso inferior y permite retomar el camino sin morir.
-  - **Caída letal:** en tramos sobre abismos o zonas mortales, soltarse o caer causa la muerte directa.
+  - **No letal:** en algunas secciones, caer deja a Kratos en un piso inferior y le permite retomar el camino sin morir.
+  - **Letal:** sobre abismos o zonas mortales, soltarse o caer es la muerte directa.
 
-### Tramos de equilibrio y vigas estrechas (adaptación 2D)
-- **Principio:** el equilibrio en 2D no funciona con inclinación pasiva; se traduce en desafíos de ritmo, reflejos y lectura del entorno.
-- **Variantes por contexto (aplicar de forma independiente, nunca acumuladas todas juntas):**
-  - **Arqueros al extremo:** proyectiles a distancia que obligan a saltar o esquivar en sincronía mientras se avanza.
-  - **Peligros de fuego o vapor:** llamaradas o escapes intermitentes que exigen pausar la marcha y cruzar en la ventana segura.
-  - **Maderos débiles:** tablones que ceden al poco tiempo de pisarlos. **Regla de arte obligatoria:** si hay maderos desconectados, deben mostrar vigas de apoyo, cuerdas o soportes estructurales; nunca deben verse flotando en el aire.
-  - **Ráfagas de viento con recuperación:** golpes de viento que tumban a Kratos dejándolo colgado del borde de la viga; exige machacar un botón rápidamente para reincorporarse antes de caer.
+### G-04 · Equilibrio y vigas estrechas (adaptación 2D)
+- **Respaldo:** Original [1] [2] (vigas). Variantes: Usuaria.
+- **Principio:** en 2D el equilibrio no funciona con inclinación pasiva. Se traduce en desafíos de ritmo, reflejos y lectura del entorno.
+- **Variantes según el contexto** (se usan por separado, nunca todas juntas):
+  - **Arqueros al extremo:** proyectiles a distancia que obligan a saltar o esquivar al ritmo de los disparos mientras se avanza.
+  - **Fuego o vapor:** llamaradas o escapes intermitentes. Hay que detenerse y cruzar en la ventana segura.
+  - **Maderos débiles:** tablones que ceden poco después de pisarlos. **Criterio de arte:** si hay maderos desconectados, se ven sus vigas de apoyo, cuerdas o soportes; nunca flotan en el aire.
+  - **Ráfagas de viento:** el viento tumba a Kratos y lo deja colgado del borde de la viga. Hay que machacar un botón para subir antes de caer.
 
-### Escalada y desplazamiento en superficies verticales (mallas, redes, muros y riscos)
-- **Alcance:** general, aplicable a la exploración vertical de múltiples niveles.
-- **Superficies escalables:** mallas (metálicas o de carga), redes de soga en naves, muros de piedra rugosa y acantilados. Kratos se adhiere y se desplaza en las cuatro direcciones cardinales del plano 2D.
-- **Ventaja en 2D:** traslada de forma limpia y directa la mecánica original de GoW, integrando saltos entre paredes, bajada rápida y esquive de obstáculos verticales sin necesidad de adaptar ejes de cámara complejos.
+### G-05 · Escalada en superficies verticales
+- **Respaldo:** Original [1] [2]. Adaptación 2D: Usuaria.
+- **Superficies:** redes de soga, escaleras, mallas, muros de piedra rugosa y acantilados. Kratos se adhiere y se mueve en las cuatro direcciones del plano.
+- **En el original:** mientras se trepa, el combate es limitado y se puede saltar hacia los costados y hacia arriba [1]. Los enemigos también trepan. Los golpes disponibles trepando quedan para después (P-06 en `direccion.md` §8).
+- **Ventaja en 2D:** traslada de forma directa la mecánica original (saltos entre paredes, bajada rápida, esquivar obstáculos verticales) sin ejes de cámara complejos.
+
+### G-06 · Puzles de entorno
+- **Respaldo:** Original [1] [2].
+- **Cajas:** empujarlas para usarlas de escalón, o deslizarlas con una patada cargada para usarlas de cobertura (en el Egeo, segundo barco).
+- **Paredes y escombros que se rompen a golpes:** abren caminos y cofres.
+- **Llaves y puertas:** algunos puzles piden juntar objetos de varias zonas para abrir una sola puerta [2]. En el Egeo, la llave del capitán.
+- **Escotillas y puertas que se levantan:** con `context-action`.
+
+### G-07 · Nado completo (después del Nivel 1)
+- **Respaldo:** Original [2] [3].
+- **Concepto:** en niveles posteriores el agua deja de ser vadeo (D-44) y pasa a ser un sistema de nado. El Tridente de Poseidón le permite a Kratos respirar bajo el agua y moverse en ella [2]. Esto da lugar a tramos de buceo con puzles y salidas ocultas.
+- **Dónde se obtiene:** en el Desafío de Poseidón, dentro del Templo de Pandora [3].
+
+### G-08 · Mapa de lugares del juego original
+- **Respaldo:** Original [2].
+- **Orden de la historia:** Mar Egeo (Hidra), Atenas sitiada por Ares, Desierto de las Almas Perdidas, Templo de Pandora (secciones de Atlas, Poseidón y Hades), Inframundo, y de vuelta en Atenas para el combate final.
+- **Enemigos del juego:** soldados no-muertos, arpías, minotauros, Medusa y gorgonas, cíclopes, espectros, sirenas, sátiros, centauros y cerberos. Jefes: la Hidra y el Guardián de Pandora, un minotauro gigante.
+- **Uso:** sirve de guía para planear los niveles siguientes. No es un compromiso de alcance.
 
 ---
 
 ## Narrativa y cinemáticas
 
-### Narración mediante paneles de cómic (en lugar de videos)
-- **Concepto:** reemplazar las cinemáticas de video pre-renderizadas por viñetas ilustradas estilo cómic / novela gráfica.
-- **Ventajas de diseño:**
-  - Estética coherente con el formato 2D pixel art clásico sin romper la inmersión con videos comprimidos.
-  - Cero sobrecarga técnica: no requiere decodificación pesada de video ni dispara el tamaño del bundle de assets.
-  - Permite presentar el lore, los diálogos de los dioses y el pasado de Kratos con ritmo pausado y controlado por el jugador.
+### N-01 · Narración con viñetas de cómic, sin video
+- **Respaldo:** Usuaria.
+- **Concepto:** reemplazar las cinemáticas de video por viñetas ilustradas de cómic o novela gráfica.
+- **Ventajas:**
+  - Su estética es coherente con el pixel art 2D y no rompe la inmersión con videos comprimidos.
+  - No hay que decodificar video ni se infla el tamaño de los assets.
+  - El lore, los diálogos de los dioses y el pasado de Kratos se presentan a un ritmo pausado que maneja el jugador.
+- **Lugares de uso en el Egeo** (`direccion.md` §8): la llegada a cada barco nuevo, Poseidón entregando su *Ira*, el remate de la Hidra y el capitán.
+- **Restricción vigente:** D-30. Toda pieza narrativa se salta con cualquier acción y nunca estorba las pruebas. Relación: ESE-05, BL-11.
 
+---
+
+## Fuentes
+
+1. Recorrido del Mar Egeo, *Joshua Cheats & Walkthroughs* (2010): https://joshua-cheats-walkthroughs.blogspot.com/2010/05/aegean-sea-god-of-war.html
+2. Wikipedia, *God of War (2005 video game)*: https://en.wikipedia.org/wiki/God_of_War_(2005_video_game)
+3. StrategyWiki, *God of War / Phoenix Feathers* (Desafío de Poseidón, vía buscador): https://strategywiki.org/wiki/God_of_War/Phoenix_Feathers
+
+Las fuentes del Egeo y de la cámara están en `direccion.md` §8.
