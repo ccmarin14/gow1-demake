@@ -1,9 +1,67 @@
 {
   "character": "legionnaire",
   "palette": "legionnaire.json",
-  "frame_size": { "w": 64, "h": 56 },
-  "anchors": { "ground": 55 },
+  "frame_size": {
+    "w": 64,
+    "h": 56
+  },
+  "anchors": {
+    "ground": 55
+  },
   "frames": [
-    { "file": "idle-00.txt", "state": "idle", "grounded": true, "png": "legionnaire-idle-00" }
+    {
+      "file": "idle-00.txt",
+      "state": "idle",
+      "grounded": true,
+      "png": "legionnaire-idle-00"
+    },
+    {
+      "file": "walk-00.txt",
+      "state": "walk",
+      "grounded": true,
+      "png": "legionnaire-walk-00"
+    },
+    {
+      "file": "walk-01.txt",
+      "state": "walk",
+      "grounded": true,
+      "png": "legionnaire-walk-01"
+    },
+    {
+      "file": "walk-02.txt",
+      "state": "walk",
+      "grounded": true,
+      "png": "legionnaire-walk-02"
+    },
+    {
+      "file": "walk-03.txt",
+      "state": "walk",
+      "grounded": true,
+      "png": "legionnaire-walk-03"
+    },
+    {
+      "file": "walk-04.txt",
+      "state": "walk",
+      "grounded": true,
+      "png": "legionnaire-walk-04"
+    },
+    {
+      "file": "walk-05.txt",
+      "state": "walk",
+      "grounded": true,
+      "png": "legionnaire-walk-05"
+    },
+    {
+      "file": "walk-06.txt",
+      "state": "walk",
+      "grounded": true,
+      "png": "legionnaire-walk-06"
+    },
+    {
+      "file": "walk-07.txt",
+      "state": "walk",
+      "grounded": true,
+      "png": "legionnaire-walk-07"
+    }
   ]
 }
