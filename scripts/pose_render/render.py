@@ -55,6 +55,8 @@ if len(args) > 4:
     pose_offsets = pose.get("rotations", {})
     pose_ik = pose.get("ik", {})
     cfg["camera_yaw_deg"] = pose.get("camera_yaw_deg", cfg["camera_yaw_deg"])
+    for name, override in pose.get("groups", {}).items():
+        cfg.setdefault("groups", {}).setdefault(name, {}).update(override)
 MATERIALS = [(name, red) for name, red in cfg.get("materials", DEFAULT_MATERIALS)]
 frames = [int(value) for value in frame_list.split(",")]
 os.makedirs(out_dir, exist_ok=True)
@@ -72,7 +74,7 @@ if armature.animation_data.action_slot is None and len(action.slots):
     armature.animation_data.action_slot = action.slots[0]
 
 
-def toon_material(name: str, red: float, blue: float) -> bpy.types.Material:
+def toon_material(name: str, red: float, blue: float, flat: float | None = None) -> bpy.types.Material:
     mat = bpy.data.materials.new(name)
     mat.use_nodes = True
     nodes, links = mat.node_tree.nodes, mat.node_tree.links
@@ -87,7 +89,8 @@ def toon_material(name: str, red: float, blue: float) -> bpy.types.Material:
     for i, (position, green) in enumerate(TONE_STOPS):
         element = elements[i] if i < 2 else elements.new(position)
         element.position = position
-        element.color = (red, green, blue, 1)
+        # A flat material keeps one tone in every pose (rigid gear must not change color).
+        element.color = (red, green if flat is None else flat, blue, 1)
     links.new(diffuse.outputs[0], to_rgb.inputs[0])
     links.new(to_rgb.outputs[0], ramp.inputs[0])
     links.new(ramp.outputs[0], emission.inputs[0])
@@ -100,7 +103,7 @@ body.data.materials.clear()
 for mat_name, red in MATERIALS:
     for side, blue in SIDES:
         slots[(mat_name, side)] = len(body.data.materials)
-        body.data.materials.append(toon_material(f"{mat_name}_{side}", red, blue))
+        body.data.materials.append(toon_material(f"{mat_name}_{side}", red, blue, cfg.get("flat", {}).get(mat_name)))
 
 group_names = {group.index: group.name for group in body.vertex_groups}
 
@@ -150,26 +153,57 @@ if skirt:
     cone.data.materials.append(body.data.materials[slots[("leather", "near")]])
 
 # Props (a shield, a sword, a helmet) glued to a bone, for characters whose
-# gear the mannequin lacks. Each is {"shape": "disc"|"box"|"sphere", "bone",
+# gear the mannequin lacks. Each is {"shape": "disc"|"box"|"sphere"|"cone", "bone", optional "tone" (0.2..0.8, fixed),
 # "material", "size": [x, y, z] (meters), "offset" and "rotation" (bone-local
 # from the bone's tail; degrees)}. Kratos' config has none.
+groups: dict = {}
+
+
+def prop_parent(prop):
+    """A prop with a `group` hangs from one empty on the bone, so the whole group tilts together
+    (`cfg["groups"][name] = {"bone", "rotation"}`, degrees); otherwise it hangs from the bone."""
+    name = prop.get("group")
+    if not name:
+        return armature, prop["bone"]
+    if name not in groups:
+        empty = bpy.data.objects.new(name, None)
+        bpy.context.scene.collection.objects.link(empty)
+        empty.parent = armature
+        empty.parent_type = "BONE"
+        empty.parent_bone = prop["bone"]
+        # Roll about the blade (Y) first, then tilt about X, so a roll turns the flat to the camera.
+        empty.rotation_mode = "YXZ"
+        empty.rotation_euler = [math.radians(a) for a in cfg["groups"][name]["rotation"]]
+        groups[name] = empty
+    return groups[name], None
+
+
 for prop in cfg.get("props", []):
     if prop["shape"] == "disc":
         bpy.ops.mesh.primitive_cylinder_add(vertices=24, radius=0.5, depth=1.0)
+    elif prop["shape"] == "cone":
+        bpy.ops.mesh.primitive_cone_add(vertices=4, radius1=0.5, depth=1.0)
     elif prop["shape"] == "sphere":
         bpy.ops.mesh.primitive_uv_sphere_add(segments=24, ring_count=12, radius=0.5)
     else:
         bpy.ops.mesh.primitive_cube_add(size=1.0)
     gear = bpy.context.active_object
     gear.scale = prop["size"]
-    gear.parent = armature
-    gear.parent_type = "BONE"
-    gear.parent_bone = prop["bone"]
+    parent, bone = prop_parent(prop)
+    gear.parent = parent
+    if bone:
+        gear.parent_type = "BONE"
+        gear.parent_bone = bone
     gear.location = prop.get("offset", [0, 0, 0])
     gear.rotation_euler = [math.radians(a) for a in prop.get("rotation", [0, 0, 0])]
-    gear.data.materials.append(
-        body.data.materials[slots[(prop["material"], "far" if prop["bone"].endswith("_l") else "near")]]
-    )
+    side = "far" if prop["bone"].endswith("_l") else "near"
+    if "tone" in prop:
+        # One tone for this piece in every pose (a blade, its edge, its groove).
+        red = dict(MATERIALS)[prop["material"]]
+        blue = dict(SIDES)[side]
+        gear.data.materials.append(toon_material(f'{prop["name"]}_flat', red, blue, prop["tone"]))
+    else:
+        gear.data.materials.append(body.data.materials[slots[(prop["material"], side)]])
 
 sun = bpy.data.lights.new("sun", "SUN")
 sun.energy = 4.0

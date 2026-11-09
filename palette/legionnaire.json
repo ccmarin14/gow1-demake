@@ -4,17 +4,17 @@
   "note": "Semantic palette for the undead legionnaire (BL-21, docs/direccion.md section 7). Rotted grey-green skin in four tones, dark leather, bronze as the only warm accent so that Kratos (red) stays the focus. Weapons are part of the body here: the legionnaire carries a shield and a sword that the 3D draft renders with him.",
   "colors": {
     "o": "#12100f",
-    "d": "#3b4034",
-    "b": "#565d47",
-    "m": "#7a8267",
-    "s": "#a3a98a",
-    "t": "#2d2520",
-    "l": "#4a3828",
-    "e": "#5a3a1a",
-    "a": "#8a5a28",
-    "k": "#b9803a",
-    "y": "#e0b060",
-    "r": "#c0301a"
+    "d": "#2e2b26",
+    "b": "#44413a",
+    "m": "#66625a",
+    "s": "#8d8981",
+    "t": "#241c18",
+    "l": "#4a2c20",
+    "e": "#5a3a26",
+    "a": "#7c4f30",
+    "k": "#a8703c",
+    "y": "#d29a58",
+    "r": "#a83e24"
   },
   "roles": {
     "o": "outline",
