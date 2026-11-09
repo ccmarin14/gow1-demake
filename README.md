@@ -41,5 +41,6 @@ Los sprites de Kratos se dibujan en `grids/kratos/*.txt` con `palette/kratos.jso
   - [`docs/direccion.md`](docs/direccion.md) — Dirección creativa, controles y guía visual.
   - [`docs/decisiones.md`](docs/decisiones.md) — Decisiones vigentes.
   - [`docs/arquitectura.md`](docs/arquitectura.md) — Mapa de módulos y flujo de datos.
+  - [`docs/ideas.md`](docs/ideas.md) — Ideas y referencias para etapas futuras (no activas).
   - `docs/referencias/` — Estudio visual de *God of War: Betrayal*.
 - El material histórico retirado (planes, scripts y arte descartados) ya no está en el árbol; queda en el historial de git, por ejemplo `git show c2e8729:archivo/`.

@@ -10,6 +10,7 @@ Juego de acción lateral 2D hecho con **Phaser 3.90.0**, **TypeScript** y **Vite
 - **[`docs/direccion.md`](docs/direccion.md):** dirección creativa, mapa de controles y guía visual.
 - **[`docs/decisiones.md`](docs/decisiones.md):** decisiones vigentes.
 - **[`docs/arquitectura.md`](docs/arquitectura.md):** separación entre simulación (`src/sim/`) y presentación Phaser (`src/scene/`).
+- **[`docs/ideas.md`](docs/ideas.md):** ideas sueltas y referencias para etapas futuras. No son requerimientos activos; ningún agente implementa nada de acá sin orden explícita de la usuaria.
 - **Historial retirado:** el material viejo (planes, scripts procedurales y arte descartado) solo vive en el historial de git (`git show c2e8729:archivo/`). No lo uses como referencia del estado actual.
 
 ## Flujo de trabajo
@@ -18,7 +19,7 @@ Juego de acción lateral 2D hecho con **Phaser 3.90.0**, **TypeScript** y **Vite
 2. **Juego siempre ejecutable:** al cerrar cada paso, `pnpm build` y `pnpm test` deben pasar y el juego debe cargar en navegador sin errores de consola ni peticiones 404.
 3. **Aprobación visual directa:** en tareas de arte o animación, muestra el cuadro ampliado junto al cuadro de referencia (y en el navegador cuando se conecte al juego) y espera la aprobación de la usuaria antes de avanzar al siguiente cuadro. Un cuadro se commitea solo después de aprobado (un cuadro = un commit, con su línea en `docs/estado.md`); mientras está en revisión queda sin commitear. Los cuadros nuevos parten del borrador 3D (D-34) y se terminan con la cabeza aprobada de `idle-00` dibujado a mano (`git show 0af23ae:grids/kratos/idle-00.txt`, filas 12 a 17). Si la usuaria no puede revisar en el momento, el cuadro se commitea igual y se anota en "Revisiones pendientes" de `docs/estado.md`; si después lo rechaza, se corrige en un commit nuevo. Ningún cuadro nuevo parte de uno pendiente: mientras haya revisiones pendientes se avanza en trabajo verificable sin ojo humano (simulación, harness, código).
 4. **Lo heredado no es requisito:** la tabla "Mecánicas heredadas" de `docs/estado.md` lista lo que implementaron agentes anteriores sin que la usuaria lo decidiera. Antes de dibujar arte para una de ellas, ampliarla o tomarla como base de un plan, pregunta si la quiere. Una mecánica pasa a "Verificada" solo con pruebas en `pnpm test`.
-5. **Sin burocracia:** no crees planes extensos por etapa, ni archivos de auditoría separados, ni documentos nuevos fuera de los cuatro listados arriba. Única excepción: `docs/temporal/` guarda el brief de la tarea en curso para otro agente (uno por tarea); se borra en el mismo commit que cierra la tarea. Registra una línea en `docs/estado.md` por cada paso completado.
+5. **Sin burocracia:** no crees planes extensos por etapa, ni archivos de auditoría separados, ni documentos nuevos fuera de los cinco listados arriba. Única excepción: `docs/temporal/` guarda el brief de la tarea en curso para otro agente (uno por tarea); se borra en el mismo commit que cierra la tarea. Registra una línea en `docs/estado.md` por cada paso completado.
 6. **Imágenes de trabajo dentro del proyecto:** las vistas previas, comparaciones y guías de pose van en `docs/tmp/` (ignorada por git), nunca en `/tmp` del sistema, para que la usuaria pueda abrirlas.
 
 ## Reglas de arte y animación (ASCII → PNG)
