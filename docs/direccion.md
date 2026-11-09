@@ -22,7 +22,7 @@
 | `guard` | `Q` | L1 | Guardia y desvío (*parry*) en los primeros ticks. |
 | `pause` | `Escape` | Start | Pausa. |
 
-△ (`I`, o el botón △ táctil) tiene tres niveles por tiempo: tocar es el golpe pesado, mantener hasta el final de la carga lanza a los enemigos sin que Kratos salte y seguir sosteniendo lo hace saltar tras ellos (*Ascension*). En el aire, `J` encadena tres golpes y `I` el golpe vertical; un salto corta un golpe aéreo con el doble salto. Círculo no tiene acción ni tecla (el agarre y *Orion's Harpoon* quedan para después).
+Tras 2 a 4 □, △ lanza *Plume of Prometheus*; tras 5 □, *Spirit of Hercules* (§6). △ (`I`, o el botón △ táctil) tiene tres niveles por tiempo: tocar es el golpe pesado, mantener hasta el final de la carga lanza a los enemigos sin que Kratos salte y seguir sosteniendo lo hace saltar tras ellos (*Ascension*). En el aire, `J` encadena tres golpes y `I` el golpe vertical; un salto corta un golpe aéreo con el doble salto. Círculo no tiene acción ni tecla (el agarre y *Orion's Harpoon* quedan para después).
 
 ## 3. Reglas visuales y de pixel art
 
@@ -83,11 +83,13 @@ Criterio: se implementa lo que respaldan el manual oficial, el cartel del juego 
 | Tema | Decisión | Respaldo |
 | --- | --- | --- |
 | Cadena de □ | 6 golpes; *Plume of Prometheus* tras □□△ | Cartel "Light Attack" del video (6 □) |
-| △ | Tres niveles por tiempo: golpe, lanzador (el enemigo sube, Kratos no) y *Ascension* (Kratos salta tras él) | Manual: "△ mantener: lanzar al enemigo y seguirlo"; GameFAQs: "Kratos salta con él"; Neoseeker: "lanzar, luego saltar". **Los tiempos son de la usuaria.** |
+| △ | Tres niveles por tiempo: golpe (tajo doble secuencial, dos impactos de 10), lanzador (el enemigo sube, Kratos no) y *Ascension* (Kratos salta tras él) | Manual: "△ mantener: lanzar al enemigo y seguirlo"; GameFAQs: "Kratos salta con él"; Neoseeker: "lanzar, luego saltar". **Los tiempos y el tajo doble son de la usuaria** (pasos 68 a 71; sin fuente). |
+| *Plume of Prometheus* | Tras 2, 3 o 4 □ + △. 1 □ + △ es el △ normal; 6 □ no encadena | *Plume* es de nivel 1 (StrategyWiki, *Chains of Olympus*: □□△). **La regla de 2 a 4 □ es de la usuaria** (pasos 74 y 76). |
+| *Spirit of Hercules* | 5 □ + △: la cinemática de *Plume* más lenta, con salto corto hacia adelante, ralentización entre el ápice y el suelo, 32 de daño y fuego residual | **Sin respaldo.** En *Chains of Olympus* es △△△ de nivel 3; en el GoW 1 original no se confirmó. Decisión de la usuaria (pasos 75 a 78, D-41). |
 | △ dentro de la cadena de □ | Arranca el △ normal desde la ventana de cualquier □ | Regla general de los combos; sin variantes propias en las fuentes |
 | □ aéreo | 3 golpes distintos con la caída frenada | Cartel AIR □□□ y manual ("ataque horizontal") |
 | △ aéreo | Lazo vertical y caída con impacto, igual tras cualquier □ aéreo | Cartel AIR △, manual ("ataque vertical") y video |
 | Remate de □ (□6) | Empieza atrás, anillo de atrás hacia adelante y látigo doble al frente | **Decisión de la usuaria**: el análisis del video no fue concluyente |
 | Ataque al salir de una rodada | Solo con búfer, sin golpes especiales | Sin respaldo; la evasión ofensiva es de nivel 4 |
-| Remate aéreo fuerte (□□□△), dos niveles de lanzador en suelo | No existen | Sin respaldo en ninguna fuente |
+| Remate aéreo fuerte (□□□△), dos niveles de lanzador en suelo | No existen (*Spirit of Hercules* es un remate de suelo, ver arriba) | Sin respaldo en ninguna fuente |
 | Súper salto (X tras lanzar), agarre con cadena y *Orion's Harpoon* | Pendientes (BL-06) | Manual y wiki (nivel 1) |
