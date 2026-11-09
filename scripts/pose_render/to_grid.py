@@ -2,7 +2,10 @@
 """Reduce a `render.py` image to a Kratos palette grid (D-34).
 
 Usage:
-    python3 scripts/pose_render/to_grid.py <render.png> <out.txt> [--ground ROW]
+    python3 scripts/pose_render/to_grid.py <render.png> <out.txt> [--ground ROW] [--config CFG]
+
+`--config CFG` takes the materials and palette roles from that character's
+render config (default: Kratos).
 
 `--ground ROW` frames the pose so its lowest pixel sits on that row, for
 actions whose root leaves the floor (jump, roll); without it the render keeps
@@ -16,6 +19,7 @@ the idle head, tattoo and costume detail by hand.
 
 from __future__ import annotations
 
+import json
 import sys
 
 from PIL import Image
@@ -33,6 +37,19 @@ ROLES = {
     ("leather", "far"): "tttl",
 }
 NEIGHBORS = ((1, 0), (-1, 0), (0, 1), (0, -1))
+
+
+def load_config(path: str) -> None:
+    """Use another character's materials and palette roles (its render config)."""
+    global MATERIALS, ROLES
+    with open(path, encoding="utf-8") as handle:
+        cfg = json.load(handle)
+    MATERIALS = {red: name for name, red in cfg["materials"]}
+    ROLES = {
+        (material, side): tones
+        for material, sides in cfg["grid_roles"].items()
+        for side, tones in sides.items()
+    }
 
 
 def to_linear(channel: int) -> float:
@@ -100,6 +117,10 @@ def reduce_render(source: str, ground: int | None = None) -> tuple[list[str], in
 def main() -> int:
     args = sys.argv[1:]
     ground = None
+    if "--config" in args:
+        at = args.index("--config")
+        load_config(args[at + 1])
+        del args[at : at + 2]
     if "--ground" in args:
         at = args.index("--ground")
         ground = int(args[at + 1])

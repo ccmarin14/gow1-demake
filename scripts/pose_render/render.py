@@ -37,7 +37,7 @@ from mathutils import Quaternion, Vector
 
 SCALE = 8
 TONE_STOPS = [(0.0, 0.2), (0.18, 0.4), (0.42, 0.6), (0.7, 0.8)]
-MATERIALS = [("skin", 0.25), ("leather", 0.5), ("foot", 0.75)]
+DEFAULT_MATERIALS = [("skin", 0.25), ("leather", 0.5), ("foot", 0.75)]
 SIDES = [("near", 0.8), ("far", 0.3)]
 ALWAYS_NEAR = ("Head", "neck_01")
 # Bones exported per frame: the spine, neck and pelvis carry the blades on the back.
@@ -55,6 +55,7 @@ if len(args) > 4:
     pose_offsets = pose.get("rotations", {})
     pose_ik = pose.get("ik", {})
     cfg["camera_yaw_deg"] = pose.get("camera_yaw_deg", cfg["camera_yaw_deg"])
+MATERIALS = [(name, red) for name, red in cfg.get("materials", DEFAULT_MATERIALS)]
 frames = [int(value) for value in frame_list.split(",")]
 os.makedirs(out_dir, exist_ok=True)
 
@@ -113,6 +114,9 @@ def material_of(bone: str) -> str:
     bone = bone.lower()
     if "foot" in bone or "ball" in bone:
         return "foot"
+    for material, keys in cfg.get("bone_materials", {}).items():
+        if any(key in bone for key in keys):
+            return material
     if any(key in bone for key in cfg["leather_bones"]):
         return "leather"
     return "skin"
@@ -144,6 +148,28 @@ if skirt:
     cone.modifiers.new("armature", "ARMATURE").object = armature
     cone.modifiers.new("solidify", "SOLIDIFY").thickness = 0.01
     cone.data.materials.append(body.data.materials[slots[("leather", "near")]])
+
+# Props (a shield, a sword, a helmet) glued to a bone, for characters whose
+# gear the mannequin lacks. Each is {"shape": "disc"|"box"|"sphere", "bone",
+# "material", "size": [x, y, z] (meters), "offset" and "rotation" (bone-local
+# from the bone's tail; degrees)}. Kratos' config has none.
+for prop in cfg.get("props", []):
+    if prop["shape"] == "disc":
+        bpy.ops.mesh.primitive_cylinder_add(vertices=24, radius=0.5, depth=1.0)
+    elif prop["shape"] == "sphere":
+        bpy.ops.mesh.primitive_uv_sphere_add(segments=24, ring_count=12, radius=0.5)
+    else:
+        bpy.ops.mesh.primitive_cube_add(size=1.0)
+    gear = bpy.context.active_object
+    gear.scale = prop["size"]
+    gear.parent = armature
+    gear.parent_type = "BONE"
+    gear.parent_bone = prop["bone"]
+    gear.location = prop.get("offset", [0, 0, 0])
+    gear.rotation_euler = [math.radians(a) for a in prop.get("rotation", [0, 0, 0])]
+    gear.data.materials.append(
+        body.data.materials[slots[(prop["material"], "far" if prop["bone"].endswith("_l") else "near")]]
+    )
 
 sun = bpy.data.lights.new("sun", "SUN")
 sun.energy = 4.0
