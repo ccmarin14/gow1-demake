@@ -140,11 +140,19 @@ export const CONFIG = {
       attackRange: 28,
       windupTicks: 24,
       activeSlashTicks: 8,
+      /** Forward lunge speed during the active slash swing (px/s). */
+      slashLungeSpeed: 80,
       recoveryTicks: 16,
       cooldownTicks: 40,
       slashDamage: 12,
       slashReach: 32,
       parryStunTicks: 32,
+      /** Autonomous patrol pace when outside player aggro range (px/s). */
+      patrolSpeed: 30,
+      /** Duration of patrol walk in one direction before pausing (~1.16 s). */
+      patrolWalkTicks: 70,
+      /** Duration of idle observation before turning and pacing (~0.83 s). */
+      patrolIdleTicks: 50,
       /** Distance at which it stops chasing and holds in guard before committing. */
       standoffRange: 72,
       /** Extra distance Kratos must open before a guarding legionnaire chases again. */

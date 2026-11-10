@@ -101,3 +101,81 @@ describe('legionnaire pacing: a crowd takes turns', () => {
     assert.ok(swings >= 3, 'the crowd still attacks');
   });
 });
+
+describe('legionnaire combat threat: forward lunge during slash', () => {
+  it('lunges forward with momentum during the active swing and stops on recovery', () => {
+    const player = kratos(100);
+    const f = foe('f1', 100 + AI.attackRange);
+    f.facing = -1;
+    f.aiState = 'windup';
+    f.aiTicks = AI.windupTicks - 1;
+
+    // Tick para pasar de windup a slash
+    stepAll([f], player);
+    assert.equal(f.aiState, 'slash');
+
+    const startX = f.x;
+    // Los primeros 5 ticks avanzan hacia el jugador
+    for (let i = 1; i <= 5; i += 1) {
+      stepAll([f], player);
+      assert.equal(f.vx, -AI.slashLungeSpeed, `tick ${i} should have lunge velocity`);
+    }
+    assert.ok(f.x < startX, 'must advance forward toward player');
+
+    // Ticks 6 a 8 frenan la inercia antes de recover
+    stepAll([f], player);
+    assert.equal(f.vx, 0, 'slows down on slash follow-through');
+  });
+});
+
+describe('legionnaire sentry loop: patrols outside aggro range and interrupts on detection', () => {
+  it('alternates between observing in idle and pacing in patrol', () => {
+    const farPlayer = kratos(0);
+    const f = foe('f1', 500); // 500 px >> 160 px aggroRange
+    f.facing = -1;
+    f.aiState = 'idle';
+    f.aiTicks = 0;
+
+    // Durante patrolIdleTicks permanece quieto observando
+    for (let i = 0; i < AI.patrolIdleTicks - 1; i += 1) {
+      stepAll([f], farPlayer);
+      assert.equal(f.aiState, 'idle');
+      assert.equal(f.vx, 0);
+    }
+
+    // Al llegar a patrolIdleTicks cambia a patrol, voltea de lado y avanza a patrolSpeed
+    stepAll([f], farPlayer);
+    assert.equal(f.aiState, 'patrol');
+    assert.equal(f.facing, 1);
+    assert.equal(f.vx, AI.patrolSpeed);
+
+    // Patrulla durante patrolWalkTicks
+    for (let i = 0; i < AI.patrolWalkTicks - 1; i += 1) {
+      stepAll([f], farPlayer);
+      assert.equal(f.aiState, 'patrol');
+      assert.equal(f.vx, AI.patrolSpeed);
+    }
+
+    // Al terminar el recorrido vuelve a idle
+    stepAll([f], farPlayer);
+    assert.equal(f.aiState, 'idle');
+    assert.equal(f.vx, 0);
+  });
+
+  it('interrupts patrol immediately when player enters aggro range', () => {
+    const player = kratos(100);
+    const f = foe('f1', 300); // Inicialmente fuera de aggro (200 px > 160 px)
+    f.aiState = 'patrol';
+    f.facing = 1;
+    f.vx = AI.patrolSpeed;
+
+    stepAll([f], player);
+    assert.equal(f.aiState, 'patrol');
+
+    // Kratos se acerca dentro del rango de alerta (150 px < 160 px)
+    player.x = 150;
+    stepAll([f], player);
+    assert.equal(f.aiState, 'approach');
+    assert.equal(f.facing, -1, 'faces Kratos immediately');
+  });
+});

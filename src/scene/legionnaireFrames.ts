@@ -21,6 +21,7 @@ export function getLegionnaireFrameKey(enemy: Readonly<EntityState>): string {
     default:
       return 'legionnaire-idle-00';
 
+    case 'patrol':
     case 'approach': {
       // 8 cuadros en bucle: walk-00..07 a 4 ticks por cuadro
       const frame = Math.floor(enemy.aiTicks / 4) % 8;

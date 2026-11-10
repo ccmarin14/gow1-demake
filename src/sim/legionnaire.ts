@@ -96,8 +96,14 @@ export function stepLegionnaire(
 
   // Estado de tajo frontal (slash)
   if (enemy.aiState === 'slash') {
-    enemy.vx = 0;
     enemy.aiTicks += 1;
+
+    // Inercia hacia adelante en los primeros 5 ticks del tajo (embestida / paso al frente)
+    if (enemy.aiTicks <= 5) {
+      enemy.vx = enemy.facing * CONFIG.enemy.legionnaire.slashLungeSpeed;
+    } else {
+      enemy.vx = 0;
+    }
 
     // Ventana activa de impacto (ticks 2 a 5 del tajo)
     if (enemy.aiTicks >= 2 && enemy.aiTicks <= 5 && !enemy.attackHits.includes(player.id)) {
@@ -116,6 +122,7 @@ export function stepLegionnaire(
     if (enemy.aiTicks >= CONFIG.enemy.legionnaire.activeSlashTicks) {
       enemy.aiState = 'recover';
       enemy.aiTicks = 0;
+      enemy.vx = 0;
     }
     return;
   }
@@ -139,8 +146,24 @@ export function stepLegionnaire(
       enemy.aiState = 'approach';
       enemy.aiTicks = 0;
       enemy.facing = dirToPlayer;
+    } else if (enemy.aiState === 'patrol') {
+      enemy.vx = enemy.facing * CONFIG.enemy.legionnaire.patrolSpeed;
+      enemy.aiTicks += 1;
+      if (enemy.aiTicks >= CONFIG.enemy.legionnaire.patrolWalkTicks) {
+        enemy.aiState = 'idle';
+        enemy.aiTicks = 0;
+        enemy.vx = 0;
+      }
     } else {
+      // Estado 'idle': permanece en guardia/observación y rota hacia el nuevo sentido al patrullar
       enemy.vx = 0;
+      enemy.aiTicks += 1;
+      if (enemy.aiTicks >= CONFIG.enemy.legionnaire.patrolIdleTicks) {
+        enemy.aiState = 'patrol';
+        enemy.aiTicks = 0;
+        enemy.facing = enemy.facing === 1 ? -1 : 1;
+        enemy.vx = enemy.facing * CONFIG.enemy.legionnaire.patrolSpeed;
+      }
     }
     return;
   }

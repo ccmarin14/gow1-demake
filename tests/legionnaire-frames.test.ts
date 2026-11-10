@@ -47,11 +47,14 @@ describe('legionnaire animation frame selection by AI state', () => {
     assert.equal(getLegionnaireFrameKey(guardEnemy), 'legionnaire-idle-00');
   });
 
-  it('approach cycles walk-00 through walk-07 in loop', () => {
-    const frames = [0, 4, 8, 12, 16, 20, 24, 28].map((ticks) => {
+  it('approach and patrol cycle walk-00 through walk-07 in loop', () => {
+    const framesApproach = [0, 4, 8, 12, 16, 20, 24, 28].map((ticks) => {
       return getLegionnaireFrameKey(dummyLegionnaire({ aiState: 'approach', aiTicks: ticks }));
     });
-    assert.deepEqual(frames, [
+    const framesPatrol = [0, 4, 8, 12, 16, 20, 24, 28].map((ticks) => {
+      return getLegionnaireFrameKey(dummyLegionnaire({ aiState: 'patrol', aiTicks: ticks }));
+    });
+    const expected = [
       'legionnaire-walk-00',
       'legionnaire-walk-01',
       'legionnaire-walk-02',
@@ -60,9 +63,11 @@ describe('legionnaire animation frame selection by AI state', () => {
       'legionnaire-walk-05',
       'legionnaire-walk-06',
       'legionnaire-walk-07',
-    ]);
+    ];
+    assert.deepEqual(framesApproach, expected);
+    assert.deepEqual(framesPatrol, expected);
     // Wraps cleanly around
-    const loop = getLegionnaireFrameKey(dummyLegionnaire({ aiState: 'approach', aiTicks: 32 }));
+    const loop = getLegionnaireFrameKey(dummyLegionnaire({ aiState: 'patrol', aiTicks: 32 }));
     assert.equal(loop, 'legionnaire-walk-00');
   });
 
