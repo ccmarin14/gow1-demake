@@ -33,6 +33,9 @@ function dummyLegionnaire(overrides: Partial<EntityState> = {}): EntityState {
     grabPhase: 'none',
     grabTicks: 0,
     grabTargetId: null,
+    qteAction: null,
+    qteTicksLeft: 0,
+    qteMaxTicks: 0,
     mp: 0,
     maxMp: 0,
     redOrbs: 0,
@@ -177,6 +180,7 @@ describe('legionnaire animation frame selection by AI state', () => {
       'knockdown',
       'get_up',
       'grabbed',
+      'weakened',
       'death',
     ];
     for (const state of states) {

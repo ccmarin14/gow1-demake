@@ -200,6 +200,18 @@ export const CONFIG = {
       holdTicksSpan: 45,
       /** Legionnaires in `windup` or `slash` at once; the rest wait their turn in guard. */
       maxAttackers: 2,
+      /** HP threshold at or below which the legionnaire is weakened and vulnerable to finisher (BL-07, ESE-01). */
+      weakenedThresholdHp: 20,
+      /** Stagger pace when groggy in weakened state (px/s). */
+      weakenedSpeed: 25,
+      /** Duration of QTE input window in ticks (45 ticks = 750 ms at 60 Hz, BL-07). */
+      qteWindowTicks: 45,
+      /** Counterattack damage dealt to Kratos if finisher QTE fails or expires (ESE-01). */
+      qteFailDamage: 16,
+      /** Health restored to Kratos upon successful brutal finisher (GoW 1 green orbs recovery). */
+      finisherHealAmount: 25,
+      /** Bonus red orbs granted on brutal finisher execution. */
+      finisherBonusRedOrbs: 5,
     },
     archer: {
       maxHp: 40,

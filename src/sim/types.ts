@@ -156,6 +156,7 @@ export interface EntityState {
     | 'knockdown'
     | 'get_up'
     | 'grabbed'
+    | 'weakened'
     | 'death'
     | 'reposition'
     | 'aim'
@@ -176,9 +177,12 @@ export interface EntityState {
   maxMp: number;
   magicPhase: 'none' | 'startup' | 'active' | 'recovery';
   magicTicks: number;
-  grabPhase: 'none' | 'whiff' | 'hold' | 'slam' | 'recovery';
+  grabPhase: 'none' | 'whiff' | 'hold' | 'slam' | 'recovery' | 'finisher_qte' | 'finisher_slam';
   grabTicks: number;
   grabTargetId: string | null;
+  qteAction: GameAction | null;
+  qteTicksLeft: number;
+  qteMaxTicks: number;
   dropThroughTicks: number;
   attackCooldownTicks: number;
   hurtInvulTicks: number;
@@ -270,6 +274,13 @@ export interface CombatStats {
   rank: string;
 }
 
+export interface QtePromptState {
+  targetId: string;
+  action: GameAction;
+  ticksRemaining: number;
+  maxTicks: number;
+}
+
 export interface SimulationSnapshot {
   frame: number;
   timeMs: number;
@@ -296,6 +307,8 @@ export interface SimulationSnapshot {
   groundFires?: GroundFireState[];
   /** Ticks the world stays frozen after a strike connects (0 = running). */
   hitstopTicks: number;
+  /** Active QTE prompt during contextual finisher, absent when not in QTE. */
+  qtePrompt?: QtePromptState | null;
   input: GameAction[];
   checksum: string;
 }

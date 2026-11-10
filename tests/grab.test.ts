@@ -129,7 +129,7 @@ describe('combat grab with Circle / L key (BL-06, D-42)', () => {
     p.facing = 1;
     e.x = 330;
     e.y = p.y;
-    e.hp = 20; // Menor al daño de agarre (25)
+    e.hp = 22; // Menor al daño de agarre (25) pero sobre umbral de remate QTE (20)
 
     const initialKills = world.snapshot().stats?.totalKills ?? 0;
 

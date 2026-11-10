@@ -13,6 +13,7 @@ import { getLegionnaireFrameKey } from './legionnaireFrames';
 export class EnemyView {
   private readonly sprite: Phaser.GameObjects.Sprite;
   private readonly shadow: Phaser.GameObjects.Ellipse;
+  private readonly promptText: Phaser.GameObjects.Text;
 
   constructor(
     scene: Phaser.Scene,
@@ -29,6 +30,18 @@ export class EnemyView {
       .sprite(spawnX, spawnY, 'legionnaire-idle-00')
       .setOrigin(0.5, 1)
       .setDepth(1);
+
+    this.promptText = scene.add
+      .text(spawnX, spawnY - 40, '[L] ○', {
+        fontFamily: 'monospace',
+        fontSize: '10px',
+        color: '#ffdd33',
+        stroke: '#000000',
+        strokeThickness: 3,
+      })
+      .setOrigin(0.5, 0.5)
+      .setDepth(2)
+      .setVisible(false);
   }
 
   update(enemy: Readonly<EntityState>): void {
@@ -47,9 +60,15 @@ export class EnemyView {
     this.shadow.setVisible(
       CONFIG.presentation.playerShadow.enabled && enemy.grounded && enemy.aiState !== 'death',
     );
+
+    // Prompt contextual de remate ([L] ○) cuando el legionario está debilitado (BL-07, ESE-01)
+    const isWeakened = enemy.aiState === 'weakened' && !enemy.isDead;
+    this.promptText.setPosition(enemy.x, enemy.y - 40);
+    this.promptText.setVisible(isWeakened);
   }
 
   destroy(): void {
+    this.promptText.destroy();
     this.shadow.destroy();
     this.sprite.destroy();
   }

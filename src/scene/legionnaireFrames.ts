@@ -69,6 +69,11 @@ export function getLegionnaireFrameKey(enemy: Readonly<EntityState>): string {
       return 'legionnaire-hitstun-00';
     }
 
+    case 'weakened': {
+      // Estado de debilitamiento groggy vulnerable a remate contextual (BL-07, ESE-01)
+      return 'legionnaire-hitstun-01';
+    }
+
     case 'juggle': {
       // juggle-00 si sube (vy < 0), juggle-01 si cae (vy >= 0)
       return enemy.vy < 0 ? 'legionnaire-juggle-00' : 'legionnaire-juggle-01';

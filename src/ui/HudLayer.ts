@@ -93,6 +93,12 @@ export class HudLayer {
   private readonly phoenixFeatherSlots: Phaser.GameObjects.Rectangle[] = [];
   private readonly phoenixFeatherGems: Phaser.GameObjects.Rectangle[] = [];
 
+  // Prompt de Remate Contextual QTE (BL-07, ESE-01)
+  private readonly qtePromptBg: Phaser.GameObjects.Rectangle;
+  private readonly qtePromptText: Phaser.GameObjects.Text;
+  private readonly qteTimerBarBg: Phaser.GameObjects.Rectangle;
+  private readonly qteTimerBar: Phaser.GameObjects.Rectangle;
+
   // Barra de salud monumental de Jefe
   private readonly bossElements: (Phaser.GameObjects.Rectangle | Phaser.GameObjects.Text)[] = [];
   private readonly bossFrameBg: Phaser.GameObjects.Rectangle;
@@ -490,6 +496,47 @@ export class HudLayer {
       .setVisible(false);
     this.bossElements.push(this.bossTitleText);
     this.elements.push(this.bossTitleText);
+
+    // 12. Prompt contextual de Remate QTE (BL-07, ESE-01)
+    const qteX = 240;
+    const qteY = 190;
+    this.qtePromptBg = scene.add
+      .rectangle(qteX, qteY, 110, 24, 0x18100c, 0.85)
+      .setOrigin(0.5, 0.5)
+      .setScrollFactor(0)
+      .setDepth(depth + 30)
+      .setStrokeStyle(1, 0xc49a45)
+      .setVisible(false);
+    this.elements.push(this.qtePromptBg);
+
+    this.qtePromptText = scene.add
+      .text(qteX, qteY - 3, 'PULSA [I] ▲', {
+        fontFamily: 'monospace',
+        fontSize: '10px',
+        color: '#ffdd33',
+        fontStyle: 'bold',
+      })
+      .setOrigin(0.5, 0.5)
+      .setScrollFactor(0)
+      .setDepth(depth + 31)
+      .setVisible(false);
+    this.elements.push(this.qtePromptText);
+
+    this.qteTimerBarBg = scene.add
+      .rectangle(qteX, qteY + 6, 80, 3, 0x332211)
+      .setOrigin(0.5, 0.5)
+      .setScrollFactor(0)
+      .setDepth(depth + 31)
+      .setVisible(false);
+    this.elements.push(this.qteTimerBarBg);
+
+    this.qteTimerBar = scene.add
+      .rectangle(qteX - 40, qteY + 5, 80, 2, 0xeab308)
+      .setOrigin(0, 0)
+      .setScrollFactor(0)
+      .setDepth(depth + 32)
+      .setVisible(false);
+    this.elements.push(this.qteTimerBar);
   }
 
   /** Hides the whole HUD (title screen); applied at the end of every `update`. */
@@ -520,6 +567,10 @@ export class HudLayer {
       this.manaBarHighlight.setVisible(false);
       this.manaBarShadow.setVisible(false);
       this.criticalGlow.setVisible(false);
+      this.qtePromptBg.setVisible(false);
+      this.qtePromptText.setVisible(false);
+      this.qteTimerBarBg.setVisible(false);
+      this.qteTimerBar.setVisible(false);
       this.hpText.setText('HP: -/-');
       this.redOrbsText.setText('ORBES: -');
       return;
@@ -714,6 +765,22 @@ export class HudLayer {
       for (const elem of this.bossElements) {
         elem.setVisible(false);
       }
+    }
+
+    // 12. Actualización del prompt de remate QTE
+    const inQte = player.grabPhase === 'finisher_qte';
+    if (inQte && player.qteMaxTicks > 0) {
+      const qteProgress = Math.max(0, Math.min(1, player.qteTicksLeft / player.qteMaxTicks));
+      this.qtePromptBg.setVisible(true);
+      this.qtePromptText.setVisible(true);
+      this.qteTimerBarBg.setVisible(true);
+      this.qteTimerBar.setVisible(true);
+      this.qteTimerBar.setSize(Math.max(1, Math.floor(80 * qteProgress)), 2);
+    } else {
+      this.qtePromptBg.setVisible(false);
+      this.qtePromptText.setVisible(false);
+      this.qteTimerBarBg.setVisible(false);
+      this.qteTimerBar.setVisible(false);
     }
 
     // Registro de métricas para introspección y tests CDP

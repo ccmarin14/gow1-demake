@@ -680,7 +680,7 @@ export class World {
           startGrab(player, this.targets);
         }
         if (player.grabPhase !== 'none') {
-          stepGrab(player, this.targets);
+          stepGrab(player, this.targets, this.input);
         }
         const nowGrabbing = isGrabbing(player);
 
@@ -1133,8 +1133,18 @@ export class World {
   snapshot(): SimulationSnapshot {
     const waveState = this.waveManager ? this.waveManager.getState(this.targets) : undefined;
     const arenaState = this.arenaManager ? this.arenaManager.getState() : undefined;
+    const player = this.peekEntity(PLAYER_ID);
+    const qtePrompt =
+      player && player.grabPhase === 'finisher_qte' && player.grabTargetId && player.qteAction
+        ? {
+            targetId: player.grabTargetId,
+            action: player.qteAction,
+            ticksRemaining: player.qteTicksLeft,
+            maxTicks: player.qteMaxTicks,
+          }
+        : null;
     const currentSegment = this.mapData
-      ? getSegmentAtX(this.mapData, this.peekEntity(PLAYER_ID)?.x ?? 0)
+      ? getSegmentAtX(this.mapData, player?.x ?? 0)
       : undefined;
     const hydra = this.entities.find((e) => e.kind === 'hydra');
     const bossPayload = hydra
@@ -1169,6 +1179,7 @@ export class World {
       ...(this.strike ? { strike: { ...this.strike, hits: [...this.strike.hits] } } : {}),
       ...(this.groundFires.length > 0 ? { groundFires: this.groundFires.map((f) => ({ ...f, hits: [...f.hits] })) } : {}),
       hitstopTicks: this.hitstopTicks,
+      ...(qtePrompt ? { qtePrompt } : {}),
       input: [...this.input],
     };
     return {

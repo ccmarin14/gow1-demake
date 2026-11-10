@@ -156,9 +156,9 @@ export class PlayerView {
     }
     if (simPlayer.grabPhase !== 'none' && !rolling) {
       this.stopLoop();
-      const grabKey = (simPlayer.grabPhase === 'whiff' || simPlayer.grabPhase === 'hold')
+      const grabKey = (simPlayer.grabPhase === 'whiff' || simPlayer.grabPhase === 'hold' || simPlayer.grabPhase === 'finisher_qte')
         ? 'kratos-sq1-a'
-        : simPlayer.grabPhase === 'slam'
+        : (simPlayer.grabPhase === 'slam' || simPlayer.grabPhase === 'finisher_slam')
           ? 'kratos-plume-e'
           : PLAYER_KEY;
       player.setTexture(this.scene.textures.exists(grabKey) ? grabKey : PLAYER_KEY, 0);

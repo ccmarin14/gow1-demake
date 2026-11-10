@@ -97,6 +97,9 @@ export function respawnAtCheckpoint(
   player.grabPhase = 'none';
   player.grabTicks = 0;
   player.grabTargetId = null;
+  player.qteAction = null;
+  player.qteTicksLeft = 0;
+  player.qteMaxTicks = 0;
   player.landingTicks = 0;
 
   if (savedData) {
