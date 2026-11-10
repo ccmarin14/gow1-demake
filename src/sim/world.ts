@@ -753,7 +753,7 @@ export class World {
             if (dodgeEdge) followUpEdges.push('dodge');
           }
           stepGrab(player, this.targets, followUpEdges);
-          if (player.grabPhase === 'throw' && player.grabTicks === 5) {
+          if (player.grabPhase === 'throw' && player.grabTicks === 6) {
             this.strikeHitNotice = {
               x: player.x + player.facing * 20,
               y: player.y - 24,

@@ -143,8 +143,11 @@ describe('combat grab with Circle / L key (BL-06, D-42)', () => {
     world.step([]);
     world.step(['grab']); // Segunda pulsación de ○ ejecuta el azote (slam)
     assert.equal(p.grabPhase, 'slam');
+    assert.equal(e.hp, 15, 'no damage dealt during slam windup (ticks 0..9)');
 
-    assert.equal(e.hp, 0);
+    // Avanza hasta el impacto en tick 10 (grab-slam-b contra las tablas)
+    stepTicks(world, [], 10);
+    assert.equal(e.hp, 0, 'victim killed on deck impact at tick 10');
     assert.equal(e.isDead, true);
     assert.equal(e.aiState, 'death');
 
@@ -213,20 +216,24 @@ describe('combat grab with Circle / L key (BL-06, D-42)', () => {
     world.step(['grab']);
     assert.equal(p.grabPhase, 'hold');
 
-    // 2. Pulsar □ ('light-attack') durante la sujeción para lanzar al enemigo como proyectil
+    // 2. Pulsar □ ('light-attack') durante la sujeción para iniciar el lanzamiento
     world.step(['light-attack']);
     assert.equal(p.grabPhase, 'throw');
-    assert.equal(victim.hp, 60 - CONFIG.player.grab.throwDamage);
+    assert.equal(victim.hp, 60, 'victim held during throw windup (ticks 0..5)');
+
+    // 3. Avanzar hasta el tick 6 (grab-throw-b): Kratos lo suelta e impulsa al frente
+    stepTicks(world, [], 6);
+    assert.equal(victim.hp, 60 - CONFIG.player.grab.throwDamage, 'throw damage dealt on release at tick 6');
     assert.equal(victim.aiState, 'juggle');
     assert.equal(victim.vx, CONFIG.player.grab.throwVx);
 
-    // 3. Avanzar ticks mientras el cuerpo lanzado impacta al segundo enemigo
+    // 4. Avanzar ticks mientras el cuerpo lanzado impacta al segundo enemigo
     stepTicks(world, [], 18);
     assert.equal(bystander.hp, 40 - CONFIG.player.grab.collateralDamage, 'bystander takes collateral damage');
     assert.equal(bystander.aiState, 'knockdown', 'bystander is knocked down by thrown victim');
   });
 
-  it('ground grab option △ (heavy-attack): brutally breaks victim for heavy single-target damage (35)', () => {
+  it('ground grab option △ (heavy-attack): brutally snaps victim overhead for instant lethal execution at tick 11', () => {
     const world = createWorld();
     const p = getPlayer(world);
     const victim = getEnemy(world);
@@ -243,11 +250,16 @@ describe('combat grab with Circle / L key (BL-06, D-42)', () => {
     // Pulsar △ ('heavy-attack') durante hold
     world.step(['heavy-attack']);
     assert.equal(p.grabPhase, 'break');
-    assert.equal(victim.hp, 60 - CONFIG.player.grab.breakDamage);
-    assert.equal(victim.aiState, 'knockdown');
+    assert.equal(victim.hp, 60, 'victim held overhead during break windup (ticks 0..10)');
+
+    // Avanzar hasta el tick 11 (grab-break-b): Kratos lo quiebra sobre su cabeza (ejecución letal instantánea de GoW 1)
+    stepTicks(world, [], 11);
+    assert.equal(victim.hp, 0, 'victim instantly killed when snapped overhead at tick 11');
+    assert.equal(victim.isDead, true);
+    assert.equal(victim.aiState, 'death');
   });
 
-  it('ground grab option ○ (grab): triggers immediate ground slam before hold window expires', () => {
+  it('ground grab option ○ (grab): triggers ground slam with impact and damage at tick 10', () => {
     const world = createWorld();
     const p = getPlayer(world);
     const victim = getEnemy(world);
@@ -261,11 +273,15 @@ describe('combat grab with Circle / L key (BL-06, D-42)', () => {
     world.step(['grab']);
     assert.equal(p.grabPhase, 'hold');
 
-    // Soltar 1 tick y volver a pulsar ○ ('grab') en tick 3 (mucho antes de holdTicks = 18)
+    // Soltar 1 tick y volver a pulsar ○ ('grab') en tick 3 (mucho antes de holdTicks = 120)
     world.step([]);
     world.step(['grab']);
     assert.equal(p.grabPhase, 'slam');
-    assert.equal(victim.hp, 60 - CONFIG.player.grab.damage);
+    assert.equal(victim.hp, 60, 'victim held during slam windup (ticks 0..9)');
+
+    // Avanzar hasta el impacto contra las tablas en tick 10 (grab-slam-b)
+    stepTicks(world, [], 10);
+    assert.equal(victim.hp, 60 - CONFIG.player.grab.damage, 'slam damage dealt on deck impact at tick 10');
     assert.equal(victim.aiState, 'knockdown');
   });
 

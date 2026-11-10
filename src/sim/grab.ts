@@ -286,9 +286,9 @@ export function stepGrab(
     target.aiState = 'grabbed';
 
     // A partir del primer tick posterior al enganche (grabTicks >= 1), el jugador puede elegir:
-    // - □ ('light-attack'): lanzar al enemigo como proyectil humano que derriba a otros en su camino.
-    // - △ ('heavy-attack'): partir / quebrar brutalmente al enemigo con alto daño individual.
-    // - ○ ('grab') o fin de holdTicks: azotar al enemigo contra la cubierta.
+    // - □ ('light-attack'): lanzar al enemigo como proyectil humano que derriba a otros en su camino (lanzamiento en tick 6).
+    // - △ ('heavy-attack'): partir / quebrar brutalmente al enemigo (ejecución letal instantánea en tick 11).
+    // - ○ ('grab') o fin de holdTicks: azotar al enemigo contra la cubierta (impacto en tick 10).
     const canChooseOption = player.grabTicks >= 1;
     const chooseThrow = canChooseOption && inputActions.includes('light-attack');
     const chooseBreak = canChooseOption && !chooseThrow && inputActions.includes('heavy-attack');
@@ -299,94 +299,16 @@ export function stepGrab(
     if (chooseThrow) {
       player.grabPhase = 'throw';
       player.grabTicks = 0;
-
-      const knockdownTicks = CONFIG.enemy.legionnaire.knockdownTicks;
-      const killed = damageEnemy(target, cfg.throwDamage, knockdownTicks);
-      result.hit = true;
-      result.targetId = target.id;
-      result.damageDealt = cfg.throwDamage;
-      result.killed = killed;
-
-      if (killed) {
-        player.redOrbs = (player.redOrbs ?? 0) + CONFIG.enemy.legionnaire.finisherBonusRedOrbs;
-        target.aiState = 'death';
-        target.aiTicks = 0;
-        target.isDead = true;
-        if (onKill) {
-          onKill(target);
-        }
-      } else {
-        target.aiState = 'juggle';
-        target.aiTicks = 0;
-        target.grounded = false;
-        target.vx = player.facing * cfg.throwVx;
-        target.vy = cfg.throwVy;
-        target.attackHits = [];
-      }
-      return result;
-    }
-
-    if (chooseBreak) {
+      target.attackHits = [];
+    } else if (chooseBreak) {
       player.grabPhase = 'break';
       player.grabTicks = 0;
-
-      const knockdownTicks = CONFIG.enemy.legionnaire.knockdownTicks;
-      const killed = damageEnemy(target, cfg.breakDamage, knockdownTicks);
-      result.hit = true;
-      result.targetId = target.id;
-      result.damageDealt = cfg.breakDamage;
-      result.killed = killed;
-
-      if (killed) {
-        player.redOrbs = (player.redOrbs ?? 0) + CONFIG.enemy.legionnaire.finisherBonusRedOrbs;
-        target.aiState = 'death';
-        target.aiTicks = 0;
-        target.isDead = true;
-        if (onKill) {
-          onKill(target);
-        }
-      } else {
-        target.aiState = 'knockdown';
-        target.aiTicks = 0;
-        target.grounded = true;
-        target.vx = player.facing * cfg.slamVx;
-        target.vy = cfg.slamVy;
-      }
-      return result;
-    }
-
-    if (chooseSlamNow) {
+    } else if (chooseSlamNow) {
       player.grabPhase = 'slam';
       player.grabTicks = 0;
-
-      const knockdownTicks = CONFIG.enemy.legionnaire.knockdownTicks;
-      const killed = damageEnemy(target, cfg.damage, knockdownTicks);
-      result.hit = true;
-      result.targetId = target.id;
-      result.damageDealt = cfg.damage;
-      result.killed = killed;
-
-      if (killed) {
-        player.redOrbs = (player.redOrbs ?? 0) + CONFIG.enemy.legionnaire.finisherBonusRedOrbs;
-        target.aiState = 'death';
-        target.aiTicks = 0;
-        target.isDead = true;
-        if (onKill) {
-          onKill(target);
-        }
-      } else {
-        target.aiState = 'knockdown';
-        target.aiTicks = 0;
-        target.grounded = true;
-        target.vx = player.facing * cfg.slamVx;
-        target.vy = cfg.slamVy;
-      }
-      return result;
-    }
-
-    // Si expira el tiempo de sujeción (holdTicks) sin que el jugador elija □, △ o ○,
-    // el enemigo se zafa de la presa y vuelve a 'approach' sin recibir azote automático.
-    if (player.grabTicks >= cfg.holdTicks) {
+    } else if (player.grabTicks >= cfg.holdTicks) {
+      // Si expira el tiempo de sujeción (holdTicks) sin que el jugador elija □, △ o ○,
+      // el enemigo se zafa de la presa y vuelve a 'approach' sin recibir azote automático.
       player.grabPhase = 'recovery';
       player.grabTicks = 0;
       player.grabTargetId = null;
@@ -394,8 +316,10 @@ export function stepGrab(
       target.aiTicks = 0;
       target.vx = player.facing * 35;
       target.vy = 0;
+      return result;
+    } else {
+      return result;
     }
-    return result;
   }
 
   // 5. Fases de Ejecución de Presa (Slam / Throw / Break)
@@ -405,21 +329,120 @@ export function stepGrab(
     }
 
     const target = targets.find((e) => e.id === player.grabTargetId);
-    if (target && (player.grabPhase === 'slam' || player.grabPhase === 'break')) {
-      const impactTick = player.grabPhase === 'break' ? 11 : 10;
-      if (player.grabTicks < impactTick) {
-        // Mientras Kratos lo iza sobre la cabeza (break, ticks 0..10) o frente al hombro (slam, ticks 0..9), sigue anclado a la presa
-        target.x = player.x + player.facing * cfg.holdDistancePx;
-        target.y = player.y;
-        target.vx = 0;
-        target.vy = 0;
-        if (target.aiState === 'knockdown') {
-          target.aiTicks = 0;
+
+    // 5.a Lanzamiento como proyectil (Throw con □):
+    // Ticks 0..5 (grab-throw-a): Kratos carga al enemigo atrás pegado al pecho.
+    // Tick 6 (grab-throw-b): Kratos lo impulsa al frente; se aplica el daño, la velocidad de vuelo y pasa a 'juggle'.
+    if (player.grabPhase === 'throw') {
+      const releaseTick = 6;
+      if (target) {
+        if (player.grabTicks < releaseTick) {
+          target.x = player.x + player.facing * 10;
+          target.y = player.y - 4;
+          target.vx = 0;
+          target.vy = 0;
+          target.aiState = 'grabbed';
+        } else if (player.grabTicks === releaseTick) {
+          const knockdownTicks = CONFIG.enemy.legionnaire.knockdownTicks;
+          const killed = damageEnemy(target, cfg.throwDamage, knockdownTicks);
+          result.hit = true;
+          result.targetId = target.id;
+          result.damageDealt = cfg.throwDamage;
+          result.killed = killed;
+
+          if (killed) {
+            player.redOrbs = (player.redOrbs ?? 0) + CONFIG.enemy.legionnaire.finisherBonusRedOrbs;
+            target.aiState = 'death';
+            target.aiTicks = 0;
+            target.isDead = true;
+            if (onKill) {
+              onKill(target);
+            }
+          } else {
+            target.aiState = 'juggle';
+            target.aiTicks = 0;
+            target.grounded = false;
+            target.vx = player.facing * cfg.throwVx;
+            target.vy = cfg.throwVy;
+            target.attackHits = [];
+          }
         }
-      } else if (player.grabTicks === impactTick && !target.isDead) {
-        // En el tick de impacto contra la cubierta, aplica el rebote
-        target.vx = player.facing * cfg.slamVx;
-        target.vy = cfg.slamVy;
+      }
+    }
+
+    // 5.b Quiebre y partición sobre la cabeza (Break con △):
+    // Ticks 0..10 (grab-break-a): Kratos alza al soldado sobre la cabeza con ambas manos.
+    // Tick 11 (grab-break-b): Kratos lo quiebra hacia abajo; en GoW 1 (PS2) esto es una ejecución letal instantánea.
+    if (player.grabPhase === 'break') {
+      const snapTick = 11;
+      if (target) {
+        if (player.grabTicks < snapTick) {
+          target.x = player.x + player.facing * 6;
+          target.y = player.y - 22;
+          target.vx = 0;
+          target.vy = 0;
+          target.aiState = 'grabbed';
+        } else if (player.grabTicks === snapTick) {
+          // Ejecución brutal como en GoW 1 PS2: parte en dos al soldado raso
+          const overkillDamage = Math.max(target.hp + 20, cfg.breakDamage);
+          damageEnemy(target, overkillDamage, 60);
+          player.redOrbs = (player.redOrbs ?? 0) + CONFIG.enemy.legionnaire.finisherBonusRedOrbs;
+          target.hp = 0;
+          target.aiState = 'death';
+          target.aiTicks = 0;
+          target.isDead = true;
+          target.grounded = true;
+          target.vx = player.facing * cfg.slamVx;
+          target.vy = cfg.slamVy;
+
+          result.hit = true;
+          result.targetId = target.id;
+          result.damageDealt = overkillDamage;
+          result.killed = true;
+
+          if (onKill) {
+            onKill(target);
+          }
+        }
+      }
+    }
+
+    // 5.c Azote contra la cubierta (Slam con ○):
+    // Ticks 0..9 (grab-slam-a): Kratos alza al enemigo frente al hombro.
+    // Tick 10 (grab-slam-b): impacto violento contra las tablas; aplica daño de 25 y derribo/muerte.
+    if (player.grabPhase === 'slam') {
+      const slamImpactTick = 10;
+      if (target) {
+        if (player.grabTicks < slamImpactTick) {
+          target.x = player.x + player.facing * 14;
+          target.y = player.y - 16;
+          target.vx = 0;
+          target.vy = 0;
+          target.aiState = 'grabbed';
+        } else if (player.grabTicks === slamImpactTick) {
+          const knockdownTicks = CONFIG.enemy.legionnaire.knockdownTicks;
+          const killed = damageEnemy(target, cfg.damage, knockdownTicks);
+          result.hit = true;
+          result.targetId = target.id;
+          result.damageDealt = cfg.damage;
+          result.killed = killed;
+
+          if (killed) {
+            player.redOrbs = (player.redOrbs ?? 0) + CONFIG.enemy.legionnaire.finisherBonusRedOrbs;
+            target.aiState = 'death';
+            target.aiTicks = 0;
+            target.isDead = true;
+            if (onKill) {
+              onKill(target);
+            }
+          } else {
+            target.aiState = 'knockdown';
+            target.aiTicks = 0;
+            target.grounded = true;
+            target.vx = player.facing * cfg.slamVx;
+            target.vy = cfg.slamVy;
+          }
+        }
       }
     }
 
