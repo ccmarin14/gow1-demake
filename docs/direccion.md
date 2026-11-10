@@ -107,21 +107,22 @@ Criterio: se implementa lo que respaldan el manual oficial, el cartel del juego 
 | Cuerpo | Piel gris cálida y oscura, torso costroso, paño oscuro en la cintura. **Sin escudo** (en el concepto inventado primero lo tenía y la referencia lo desmintió). |
 | Arma | Espada larga de hoja curva color cobre, con filo claro, canal oscuro en el centro y guarda; se sostiene baja y mide lo mismo en pantalla en todas las poses. |
 | Paleta | Propia (`palette/legionnaire.json`), 11 colores; el bronce y la cresta son el único acento cálido. |
-| Cuadros | Reposo (1), andar (8), aviso `windup` (4, 24 ticks, con ojos llameantes), tajo `slash` (4, 8 ticks), recuperación `recover` (3, 16 ticks); faltan aturdimiento, aire y muerte. |
+| Cuadros | 27 cuadros aprobados en `grids/legionnaire/`: reposo `idle-00` (1), andar `walk-00..07` (8), aviso `windup-00..03` (4), tajo `slash-00..03` (4), recuperación `recover-00..02` (3), aturdimiento `hitstun-00..01` (2), aire `juggle-00..01` (2) y muerte `death-00..02` (3). |
 | Lienzo | El mismo de Kratos, 64×56 con los pies en la fila 55, para reutilizar la física y la sombra. |
 
-### Ritmo del legionario (conducta, criterio del agente)
+### Ritmo y conducta del legionario (diseño de combate 2D)
 
-Pedido de la usuaria: en un *hack and slash* no deben caminar siempre hacia Kratos ni correr siempre; tienen que dar espacio y turnarse. Sin fuente de GoW 1 para los tiempos: es diseño propio, ajustable en `CONFIG.enemy.legionnaire`.
+Pedido de la usuaria: en un *hack and slash* no deben caminar siempre hacia Kratos ni correr siempre; tienen que dar espacio, vigilar y turnarse.
 
 | Fase | Qué hace | Cuadros que usa |
 | --- | --- | --- |
-| Acercarse (`approach`) | Camina de lejos hasta 72 px de Kratos. | Andar (aprobado). |
-| Guardia (`guard`) | A 72 px se detiene con el escudo arriba entre 30 y 75 ticks, distintos por enemigo, para que un grupo no se mueva como uno. Si Kratos se aleja más de 88 px, vuelve a perseguir. | Reposo (aprobado). Sin cuadro nuevo. |
-| Atacar | Cuando termina la espera y hay turno libre, avanza y ataca: aviso (24 ticks), tajo (8), recuperación (16). Nunca hay más de 2 en aviso o tajo a la vez; el resto espera en guardia. | Aviso, tajo, recuperación (por dibujar). |
-| Después del tajo | Vuelve a guardia con la espera completa antes de repetir. | Reposo. |
-
-El andar se queda para cerrar distancia y el reposo para dar espacio: no hay carrera ni cuadros extra. Quedan fuera por ahora: rodear a Kratos, retroceder y romper la guardia del legionario (en GoW 1 los enemigos con escudo se rompen con el agarre ○, sin fuente verificada aquí). El segundo ataque parable (ESE-04) sigue pendiente.
+| Centinela / Patrulla (`idle`, `patrol`) | Fuera del alcance de alerta (>160 px), alterna 50 ticks observando en reposo y 70 ticks patrullando a 30 px/s de un lado a otro. Si Kratos entra en rango, corta de inmediato para encarar. | `idle-00` y `walk-00..07`. |
+| Acercarse (`approach`) | Camina hacia Kratos cerrando distancia (65 px/s) hasta 72 px. | Andar `walk-00..07`. |
+| Guardia (`guard`) | A 72 px se detiene en postura de guardia entre 30 y 75 ticks, distintos por enemigo, para que un grupo no se mueva en bloque. Si Kratos se aleja más de 88 px, vuelve a perseguir. | Reposo `idle-00`. |
+| Tajo frontal (`slash`) | Cuando termina la espera y hay turno libre (máx 2 atacantes), avanza y ataca: aviso (24 ticks, telégrafo con ojos encendidos), tajo con inercia hacia adelante (8 ticks, lunge a 80 px/s durante 5 ticks), recuperación (16 ticks). | Aviso `windup-00..03`, tajo `slash-00..03`, recuperación `recover-00..02`. |
+| Derribo y levantada (`knockdown`, `get_up`, ESE-07) | Al azotar el suelo tras caer de suspensión aérea (`juggle`) o recibir un remate pesado (*Plume* o *Spirit*), queda derribado tendido 30 ticks (~500 ms) inhabilitado y tarda 15 ticks en ponerse de pie antes de reanudar el combate. Otorga control de masas y recompensa a los combos pesados. | Tendido `death-02` e incorporación `death-01`/`idle-00`. |
+| Segundo ataque rompeguardias (ESE-04) | Ataque vertical descendente o estocada con aviso prolongado (36 ticks) y destello distintivo. Penetra la guardia pasiva (`Q`) causando daño y desestabilización; solo se elude rodando (`Shift`) o ejecutando *Parry* en el instante exacto. | Temporalmente sobre aviso/tajo con telégrafo visual hasta contar con cuadros finales. |
+| Agarre con ○ (BL-06) | En proximidad cuerpo a cuerpo, pulsar `L` sujeta al legionario inmovilizando a ambos para rematarlo o lanzarlo como proyectil. | Poses de captura compartidas con Kratos. |
 
 ## 8. Nivel 1: Mar Egeo (D-44, D-45)
 

@@ -20,6 +20,7 @@ Documento único del estado medido de `gow-8b`. Se actualiza en el mismo commit 
 | ID | Problema | Impacto |
 | --- | --- | --- |
 | **ESE-01** | Sin remates contextuales (QTE) ni agarre real (ESE-02); impacto poco brutal (ESE-03); enemigos de un solo truco (ESE-04); sin introducción (ESE-05, regla D-30). | El combate se aparta de la esencia de *God of War*. Plan y criterios en `docs/direccion.md` §4. |
+| **ESE-07** | Sin derribo terrestre (*knockdown*) ni levantada (*get_up*) en enemigos: al caer de un *juggle* o recibir remates pesados (*Plume* o *Spirit*), el enemigo se levanta a los 12 ticks y corre directo a atacar. | Anula el control de masas y la recompensa de espacio y tiempo que otorgan los combos pesados en GoW 1. Plan en `docs/direccion.md` §7. |
 
 ### Revisiones pendientes
 
@@ -110,7 +111,7 @@ Historias de usuario que quedan, con el modelo que las trabaja y qué las bloque
 | **BL-06** | Como jugadora quiero el agarre con cadena (○) y *Orion's Harpoon*, y el súper salto tras lanzar (X). | Agarre en el suelo y en el aire, lanzar al enemigo contra el suelo, súper salto con X tras lanzar; poses nuevas. | Sonnet | Tecla decidida (`L`, D-42); espera el legionario con arte (BL-21) y cupo | S1, S2 |
 | **BL-07** | Como jugadora quiero remates contextuales (QTE) como en GoW 1. | Un enemigo debilitado permite un remate con un botón en una ventana; fallarlo daña a Kratos (ESE-01). | Sonnet | Decisión y BL-08 | S2, S3 |
 | **BL-08** | Como jugadora quiero ver al arquero no-muerto con arte, no como una caja (el legionario es BL-21, la Hidra BL-22 y la arpía BL-26). | Borradores 3D por D-34 aprobados cuadro a cuadro. | Sonnet | Cupo y aprobación visual | S1 |
-| **BL-21** | Como jugadora quiero al legionario no-muerto de GoW 1 con aspecto, animaciones y ataques a la altura de Kratos. | Ficha de diseño (`direccion.md` §7), herramienta de borradores generalizada sin cambiar los 76 grids de Kratos, y cuadros de reposo, caminar, aviso, tajo, recuperación, aturdimiento, aire y muerte aprobados uno a uno; `EnemyView` los muestra por estado de la IA; un segundo ataque que solo se pueda parar (ESE-04). | Sonnet | `EnemyView` completada con los 27 cuadros en el juego (paso 97); falta el segundo ataque parable (requiere cuadros propios de ataque, ESE-04) | S1, S3 |
+| **BL-21** | Como jugadora quiero al legionario no-muerto de GoW 1 con aspecto, animaciones y ataques a la altura de Kratos. | Ficha de diseño (`direccion.md` §7), herramienta de borradores generalizada sin cambiar los 76 grids de Kratos, y cuadros de reposo, caminar, aviso, tajo, recuperación, aturdimiento, aire y muerte aprobados uno a uno; `EnemyView` los muestra por estado de la IA; un segundo ataque que solo se pueda parar (ESE-04). | Sonnet | 27 cuadros aprobados en `EnemyView` (paso 97); inercia de tajo y patrulla en reposo (paso 99); faltan derribo/levantada (ESE-07) y segundo ataque rompeguardias (ESE-04) | S1, S3 |
 | **BL-09** | Como jugadora quiero a Kratos terminado a mano (cabeza aprobada, tatuaje, faldón). | Cada cuadro se aprueba uno a uno (regla de `AGENTS.md`). | Sonnet | La usuaria lo pospuso ("todavía no te metas con el acabado") | S1 |
 | **BL-10** | Como jugadora quiero enemigos con más de un truco (ESE-04). | Un segundo comportamiento que dé sentido a la guardia o a la magia. | Haiku | Decisión | S2 |
 | **BL-11** | *Reemplazada por BL-33* (cómic de apertura, D-50). | — | — | Cerrada | — |
@@ -144,7 +145,7 @@ Historias de usuario que quedan, con el modelo que las trabaja y qué las bloque
 2. **Con aprobación visual de la usuaria:** BL-28 (guardia con espadas cruzadas), BL-29 (HUD sobre la espada) y BL-33 (cómic). Cada cuadro o panel se aprueba antes de seguir (flujo de `AGENTS.md`).
 3. **Menús:** BL-31 (principal y pausa con una mejora real de las Espadas del Caos).
 4. **Escenario del slice, en este orden:** BL-23 (cámara vertical), BL-25 (agua baja) y BL-34 (vigas).
-5. **Enemigos y jefe, en este orden:** BL-21 (el legionario, en curso: reposo, andar, aviso, tajo y recuperación aprobados; faltan aturdimiento, aire y muerte, uno a uno, y después `EnemyView` y el segundo ataque parable), BL-06 (agarre con ○), BL-07 (remates) y BL-22 (solo el primer encuentro con la Hidra).
+5. **Enemigos y combate, en este orden:** cierre del legionario con derribo/levantada (ESE-07) y segundo ataque rompeguardias (ESE-04, BL-21); agarre con ○ (BL-06), remates (BL-07) y BL-22 (solo el primer encuentro con la Hidra).
 6. **Cuando haya referencia visual (P-08):** BL-32 (*Ira de Poseidón* rehecha).
 7. **Cierre:** BL-27, la integración de todo en un escenario jugable de punta a punta.
 
