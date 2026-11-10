@@ -584,7 +584,21 @@ export class World {
         queueChain(this.strike, steadyDirection, 'heavy');
       }
       if (this.strike && grabEdge) {
-        queueChain(this.strike, steadyDirection, 'grab');
+        const playerNow = this.entities.find((entity) => entity.id === PLAYER_ID);
+        const juggledNow = Boolean(
+          playerNow &&
+            this.targets.some(
+              (t) =>
+                t.id !== playerNow.id &&
+                !t.isDead &&
+                (t.aiState === 'juggle' || !t.grounded) &&
+                (t.x - playerNow.x) * playerNow.facing >= -8 &&
+                (t.x - playerNow.x) * playerNow.facing <= 95,
+            ),
+        );
+        if (juggledNow) {
+          queueChain(this.strike, steadyDirection, 'grab');
+        }
       }
       if (this.strike && jumpEdge) {
         this.jumpQueuedTicks = CONFIG.combat.feel.jumpQueueTicks;
@@ -684,7 +698,7 @@ export class World {
           (t) =>
             t.id !== player.id &&
             !t.isDead &&
-            t.aiState === 'juggle' &&
+            (t.aiState === 'juggle' || !t.grounded) &&
             (t.x - player.x) * player.facing >= -8 &&
             (t.x - player.x) * player.facing <= 95,
         );
@@ -716,14 +730,15 @@ export class World {
         // animation does (a finger on a phone is not frame-exact).
         let graceChained = false;
         const grace = this.comboGrace;
-        if (grace && !striking && (lightAttackEdge || heavyAttackPress || grabEdge)) {
+        const grabAllowedForHarpoon = grabEdge && hasJuggledAhead;
+        if (grace && !striking && (lightAttackEdge || heavyAttackPress || grabAllowedForHarpoon)) {
           const usable = STRIKES[grace.state.id].air ? airFree : free;
           if (usable) {
             const state: StrikeState = { ...grace.state, tick: strikeLength(STRIKES[grace.state.id]) - 1, queued: false };
             delete state.queuedHeavy;
             delete state.queuedGrab;
             delete state.queuedDirection;
-            queueChain(state, steadyDirection, grabEdge ? 'grab' : heavyAttackPress ? 'heavy' : 'light');
+            queueChain(state, steadyDirection, grabAllowedForHarpoon ? 'grab' : heavyAttackPress ? 'heavy' : 'light');
             const next = chainStrike(state, player, steadyDirection);
             if (next) {
               this.strike = next;
@@ -734,8 +749,8 @@ export class World {
         }
         if (graceChained) {
           this.comboGrace = null;
-        } else if (!striking && grabEdge && free && hasJuggledAhead) {
-          // Orion's Harpoon from the ground against a launched enemy in the air.
+        } else if (!striking && grabAllowedForHarpoon && free) {
+          // Orion's Harpoon from the ground ONLY when an enemy is airborne in front of Kratos.
           this.strike = startStrike(player, 'harpoon');
           startedNow = true;
         } else if (!striking && heavyAttackPress && free) {
@@ -754,8 +769,8 @@ export class World {
           if (direction !== 0) player.facing = direction;
           this.strike = startStrike(player, buffered.button === 'heavy' ? 'triangle' : 'square1');
           startedNow = true;
-        } else if (!striking && airFree && (lightAttackEdge || heavyAttackPress || grabEdge)) {
-          if (grabEdge) {
+        } else if (!striking && airFree && (lightAttackEdge || heavyAttackPress || grabAllowedForHarpoon)) {
+          if (grabAllowedForHarpoon) {
             this.strike = startStrike(player, 'harpoon');
             startedNow = true;
           } else if (heavyAttackPress && player.vy >= 0 && this.altitudeAboveGround(player) < CONFIG.combat.feel.minAirHeavyAltitudePx) {
@@ -782,8 +797,8 @@ export class World {
           if (heavyAttackPress) {
             queueChain(this.strike, steadyDirection, 'heavy');
           }
-          // Circle in launcher or air combo chain window starts Orion's Harpoon.
-          if (grabEdge) {
+          // Circle in launcher or air combo chain window starts Orion's Harpoon ONLY if an enemy is airborne.
+          if (grabAllowedForHarpoon) {
             queueChain(this.strike, steadyDirection, 'grab');
           }
           const next = chainStrike(this.strike, player, steadyDirection);

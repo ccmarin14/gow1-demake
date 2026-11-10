@@ -290,4 +290,26 @@ describe('combat grab with Circle / L key (BL-06, D-42)', () => {
     assert.equal(victim.grounded, true, 'harpooned enemy slammed back onto deck');
     assert.equal(victim.aiState, 'knockdown', 'harpooned enemy ends in knockdown');
   });
+
+  it('does NOT trigger Orion\'s Harpoon in the air when no enemy is airborne', () => {
+    const world = createWorld();
+    const p = getPlayer(world);
+    const victim = getEnemy(world);
+
+    // Enemigo en tierra (grounded = true, aiState = 'idle')
+    p.x = 300;
+    p.facing = 1;
+    victim.x = 345;
+    victim.y = p.y;
+    victim.grounded = true;
+    victim.aiState = 'idle';
+
+    // Kratos salta y pulsa ○ ('grab') en el aire sin enemigos en el aire
+    world.step(['jump']);
+    stepTicks(world, [], 6);
+    assert.equal(p.grounded, false);
+
+    world.step(['grab']);
+    assert.equal(world.snapshot().strike, undefined, 'harpoon does not fire when no enemy is airborne');
+  });
 });

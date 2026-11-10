@@ -156,13 +156,7 @@ export class PlayerView {
     }
     if (simPlayer.grabPhase !== 'none' && !rolling) {
       this.stopLoop();
-      const grabKey = (simPlayer.grabPhase === 'whiff' || simPlayer.grabPhase === 'hold' || simPlayer.grabPhase === 'finisher_qte')
-        ? 'kratos-sq1-a'
-        : (simPlayer.grabPhase === 'slam' || simPlayer.grabPhase === 'finisher_slam' || simPlayer.grabPhase === 'break')
-          ? 'kratos-plume-e'
-          : simPlayer.grabPhase === 'throw'
-            ? 'kratos-sq2-b'
-            : PLAYER_KEY;
+      const grabKey = this.selectGrabFrameKey(simPlayer);
       player.setTexture(this.scene.textures.exists(grabKey) ? grabKey : PLAYER_KEY, 0);
       player.setFlipX(facing === -1);
       player.setRotation(0);
@@ -214,6 +208,56 @@ export class PlayerView {
       this.playRun(speed);
     } else {
       this.playLoop(IDLE_KEY);
+    }
+  }
+
+  private selectGrabFrameKey(simPlayer: Readonly<EntityState>): string {
+    const t = simPlayer.grabTicks;
+    switch (simPlayer.grabPhase) {
+      case 'whiff': {
+        // Zarpazo en el vacío (15 ticks): impulso -> zarpazo al frente -> recogida
+        if (t < 3) return 'kratos-sq1-a';
+        if (t < 7) return 'kratos-sq1-b';
+        if (t < 11) return 'kratos-sq3-d';
+        return 'kratos-sq1-e';
+      }
+      case 'hold':
+      case 'finisher_qte': {
+        // Enganche y sujeción en vilo: embestida -> captura -> tensión sosteniendo al enemigo arriba
+        if (t < 2) return 'kratos-sq1-a';
+        if (t < 5) return 'kratos-sq1-b';
+        return Math.floor((t - 5) / 6) % 2 === 0 ? 'kratos-sq3-g' : 'kratos-sq3-f';
+      }
+      case 'throw': {
+        // Lanzamiento con □ (16 ticks): torsión atrás -> empujón explosivo a dos manos -> extensión final
+        if (t < 3) return 'kratos-sq2-a';
+        if (t < 6) return 'kratos-sq3-a';
+        if (t < 10) return 'kratos-sq4-b2';
+        if (t < 13) return 'kratos-sq4-c';
+        return 'kratos-sq4-e';
+      }
+      case 'break': {
+        // Quiebre con △ (16 ticks): iza al enemigo sobre la cabeza -> quiebre violento hacia abajo
+        if (t < 3) return 'kratos-sq3-g';
+        if (t < 6) return 'kratos-sq3-h';
+        if (t < 9) return 'kratos-plume-b';
+        if (t < 12) return 'kratos-plume-d';
+        return 'kratos-plume-e';
+      }
+      case 'slam':
+      case 'finisher_slam': {
+        // Azote con ○ (16 ticks): levanta en arco -> descarga contra las tablas -> impacto agachado
+        if (t < 3) return 'kratos-tri-c';
+        if (t < 6) return 'kratos-sq5-d';
+        if (t < 9) return 'kratos-sq5-e';
+        if (t < 13) return 'kratos-plume-e';
+        return 'kratos-tri-f';
+      }
+      case 'recovery': {
+        return t < 4 ? 'kratos-sq1-e' : PLAYER_KEY;
+      }
+      default:
+        return PLAYER_KEY;
     }
   }
 

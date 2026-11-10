@@ -385,6 +385,24 @@ export function stepGrab(
       player.invulTicks = 2;
     }
 
+    const target = targets.find((e) => e.id === player.grabTargetId);
+    if (target && (player.grabPhase === 'slam' || player.grabPhase === 'break')) {
+      if (player.grabTicks < 9) {
+        // Mientras Kratos lo iza y descarga en arco (ticks 0..8), sigue anclado a la presa
+        target.x = player.x + player.facing * cfg.holdDistancePx;
+        target.y = player.y;
+        target.vx = 0;
+        target.vy = 0;
+        if (target.aiState === 'knockdown') {
+          target.aiTicks = 0;
+        }
+      } else if (player.grabTicks === 9 && !target.isDead) {
+        // En el tick de impacto contra la cubierta (tick 9), aplica el rebote
+        target.vx = player.facing * cfg.slamVx;
+        target.vy = cfg.slamVy;
+      }
+    }
+
     player.grabTicks += 1;
     if (player.grabTicks >= cfg.slamTicks) {
       player.grabPhase = 'recovery';

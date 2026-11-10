@@ -107,8 +107,8 @@ grab: {
   holdDistancePx: 22,
   /** Recovery ticks when grab whiffs with no target in reach (~250 ms at 60 Hz). */
   whiffTicks: 15,
-  /** Ticks spent pinning the victim before initiating slam (~300 ms). */
-  holdTicks: 18,
+  /** Ticks spent pinning the victim before initiating slam (~500 ms). */
+  holdTicks: 30,
   /** Ticks spent slamming the victim down to the deck (~260 ms). */
   slamTicks: 16,
   /** Ticks recovering from the slam animation (~130 ms). */

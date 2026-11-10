@@ -362,6 +362,15 @@ export class ShellScene extends Phaser.Scene {
           this.vfxLayer.emitParryFlash(player.x + player.facing * 18, player.y - 18);
         }
         this.prevParryActive = Boolean(player.parryActive);
+
+        // Feedback de impacto en los remates de agarre (slam, break, finisher_slam)
+        if (
+          (player.grabPhase === 'slam' || player.grabPhase === 'break' || player.grabPhase === 'finisher_slam') &&
+          player.grabTicks === 9
+        ) {
+          this.cameras.main.shake(90, 0.008);
+          this.vfxLayer.emitParryFlash(player.x + player.facing * 24, player.y - 4);
+        }
       }
 
       this.vfxLayer.update(delta / 1000, flowState === 'paused');
@@ -460,7 +469,7 @@ export class ShellScene extends Phaser.Scene {
           view = new EnemyView(this, target.x, target.y);
           this.enemyViews.set(target.id, view);
         }
-        view.update(target);
+        view.update(target, player);
         continue;
       }
 
