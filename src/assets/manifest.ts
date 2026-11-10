@@ -75,6 +75,22 @@ export const PLAYER_FRAME_KEYS: readonly string[] = [
   ...STRIKE_KEYS,
 ];
 
+/** All 27 approved legionnaire frames (64x56, ground anchor at 55). */
+export const LEGIONNAIRE_FRAME_KEYS: readonly string[] = [
+  'legionnaire-idle-00',
+  ...Array.from({ length: 8 }, (_, i) => `legionnaire-walk-0${i}`),
+  ...Array.from({ length: 4 }, (_, i) => `legionnaire-windup-0${i}`),
+  ...Array.from({ length: 4 }, (_, i) => `legionnaire-slash-0${i}`),
+  ...Array.from({ length: 3 }, (_, i) => `legionnaire-recover-0${i}`),
+  'legionnaire-hitstun-00',
+  'legionnaire-hitstun-01',
+  'legionnaire-juggle-00',
+  'legionnaire-juggle-01',
+  'legionnaire-death-00',
+  'legionnaire-death-01',
+  'legionnaire-death-02',
+];
+
 export const ASSETS: Record<AssetDomain, readonly AssetEntry[]> = {
   characters: [
     characterSheet(STATIC_KEY, `assets/characters/${STATIC_KEY}.png`),
@@ -83,6 +99,10 @@ export const ASSETS: Record<AssetDomain, readonly AssetEntry[]> = {
       path: `assets/characters/${key}.png`,
     })),
     { key: BLADE_KEY, path: `assets/characters/${BLADE_KEY}.png` },
+    ...LEGIONNAIRE_FRAME_KEYS.map((key) => ({
+      key,
+      path: `assets/characters/${key}.png`,
+    })),
   ],
   environment: [
     { key: 'egeo-fondo', path: 'assets/environment/egeo-fondo.png' },
