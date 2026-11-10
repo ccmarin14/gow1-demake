@@ -100,7 +100,11 @@ guard: {
 },
 grab: {
   /** Maximum forward reach to latch onto an enemy (px). */
-  reachPx: 52,
+  reachPx: 64,
+  /** Forward lunge velocity when initiating grab or on whiff (px/s). */
+  lungeSpeedPx: 90,
+  /** Maximum forward advance during grab-lunge step (px). */
+  lungeMaxAdvancePx: 26,
   /** Maximum vertical alignment offset to allow grab (px). */
   verticalReachPx: 20,
   /** Fixed horizontal separation between Kratos and the victim during hold (px). */
@@ -109,6 +113,12 @@ grab: {
   whiffTicks: 15,
   /** Ticks spent holding the victim while waiting for player decision □ / △ / ○ (~2.0 s at 60 Hz). */
   holdTicks: 120,
+  /** Direct damage dealt per bare-handed knee/punch strike in Grab 1. */
+  pummelDamage: 10,
+  /** Duration in ticks of each pummel strike (~230 ms at 60 Hz). */
+  pummelTicks: 14,
+  /** Maximum number of pummel strikes before transitioning to ground slam. */
+  maxPummels: 3,
   /** Ticks spent executing a grab follow-up (throw / break / slam, ~430 ms at 60 Hz). */
   slamTicks: 26,
   /** Ticks recovering from the slam animation (~130 ms). */

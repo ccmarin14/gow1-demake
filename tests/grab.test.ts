@@ -30,21 +30,44 @@ function getEnemy(world: World, id = 'legionnaire-deck-1'): EntityState {
 }
 
 describe('combat grab with Circle / L key (BL-06, D-42)', () => {
-  it('whiffs when no enemy is within reach', () => {
+  it('whiffs when no enemy is within reach: lunges forward with physical advance and recovery', () => {
     const world = createWorld();
     const p = getPlayer(world);
-    // En level1, Kratos arranca en x=100 y el legionario en x=360 (260 px de separación, fuera de reachPx 38)
+    const startX = p.x;
     assert.equal(p.grabPhase, 'none');
 
     // Pulsa grab ('L')
     world.step(['grab']);
     assert.equal(p.grabPhase, 'whiff');
     assert.equal(p.grabTargetId, null);
-    assert.equal(p.vx, 0);
+    assert.equal(p.vx, CONFIG.player.grab.lungeSpeedPx, 'Kratos steps forward on whiff lunge');
 
-    // Debe durar exactamente CONFIG.player.grab.whiffTicks (15 ticks)
-    stepTicks(world, [], CONFIG.player.grab.whiffTicks - 1);
+    // Avanza durante la embestida inicial de whiff (ticks 0..4)
+    stepTicks(world, [], 4);
+    assert.ok(p.x > startX, 'Kratos physically moved forward during lunge');
+    assert.equal(p.vx, 0, 'brakes to stop for recovery');
+
+    // Completa whiffTicks
+    stepTicks(world, [], CONFIG.player.grab.whiffTicks - 5);
     assert.equal(p.grabPhase, 'none');
+  });
+
+  it('connects grab from distance with forward lunge step (grab-lunge) closing the gap', () => {
+    const world = createWorld();
+    const p = getPlayer(world);
+    const e = getEnemy(world);
+
+    // Separación de 50 px (cubre la distancia con el paso de lunge)
+    p.x = 300;
+    p.facing = 1;
+    e.x = 350;
+    e.y = p.y;
+    e.aiState = 'approach';
+
+    world.step(['grab']);
+    assert.equal(p.grabPhase, 'hold');
+    assert.ok(p.x > 300, 'Kratos lunged forward to close the gap');
+    assert.equal(e.x, p.x + CONFIG.player.grab.holdDistancePx, 'victim pinned at hold distance');
   });
 
   it('whiffs when enemy is beyond reach or behind Kratos', () => {
@@ -259,7 +282,7 @@ describe('combat grab with Circle / L key (BL-06, D-42)', () => {
     assert.equal(victim.aiState, 'death');
   });
 
-  it('ground grab option ○ (grab): triggers ground slam with impact and damage at tick 10', () => {
+  it('ground grab option ○ (grab): delivers consecutive bare-handed pummels (Grab 1) and finishes with deck slam', () => {
     const world = createWorld();
     const p = getPlayer(world);
     const victim = getEnemy(world);
@@ -273,15 +296,33 @@ describe('combat grab with Circle / L key (BL-06, D-42)', () => {
     world.step(['grab']);
     assert.equal(p.grabPhase, 'hold');
 
-    // Soltar 1 tick y volver a pulsar ○ ('grab') en tick 3 (mucho antes de holdTicks = 120)
+    // 1. Primer toque de ○ ('grab'): inicia el primer rodillazo / golpe a mano limpia (pummel 1)
     world.step([]);
     world.step(['grab']);
-    assert.equal(p.grabPhase, 'slam');
-    assert.equal(victim.hp, 60, 'victim held during slam windup (ticks 0..9)');
+    assert.equal(p.grabPhase, 'pummel');
+    assert.equal(victim.hp, 60, 'no damage before pummel impact');
 
-    // Avanzar hasta el impacto contra las tablas en tick 10 (grab-slam-b)
+    // Avanzar hasta el impacto del rodillazo en tick 4
+    stepTicks(world, [], 4);
+    assert.equal(victim.hp, 60 - CONFIG.player.grab.pummelDamage, 'pummel 1 deals 10 damage on knee strike');
+
+    // Completar el pummel (pummelTicks = 14) -> vuelve a 'hold'
+    stepTicks(world, [], CONFIG.player.grab.pummelTicks - 4);
+    assert.equal(p.grabPhase, 'hold', 'returns to hold after pummel 1 so player can choose next action');
+
+    // 2. Segundo toque de ○ ('grab'): segundo rodillazo (pummel 2)
+    world.step(['grab']);
+    assert.equal(p.grabPhase, 'pummel');
+    stepTicks(world, [], 4);
+    assert.equal(victim.hp, 60 - CONFIG.player.grab.pummelDamage * 2, 'pummel 2 deals another 10 damage');
+    stepTicks(world, [], CONFIG.player.grab.pummelTicks - 4);
+    assert.equal(p.grabPhase, 'hold');
+
+    // 3. Tercer toque de ○ ('grab'): habiendo alcanzado maxPummels (3), Kratos remata con el azote (slam)
+    world.step(['grab']);
+    assert.equal(p.grabPhase, 'slam', 'third Circle tap transitions into final deck slam');
     stepTicks(world, [], 10);
-    assert.equal(victim.hp, 60 - CONFIG.player.grab.damage, 'slam damage dealt on deck impact at tick 10');
+    assert.equal(victim.hp, 60 - CONFIG.player.grab.pummelDamage * 2 - CONFIG.player.grab.damage, 'final deck slam deals 25 damage');
     assert.equal(victim.aiState, 'knockdown');
   });
 

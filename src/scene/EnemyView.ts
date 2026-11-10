@@ -40,12 +40,19 @@ export class EnemyView {
     if (isGrabVictim && player) {
       const t = player.grabTicks;
       const f = player.facing;
-      if (player.grabPhase === 'hold' || player.grabPhase === 'finisher_qte') {
+      if (player.grabPhase === 'hold' || player.grabPhase === 'finisher_qte' || player.grabPhase === 'pummel') {
         // Sujeto del cuello a +16 px frente a Kratos y alzado 2..3 px sobre la cubierta (alineado con hand_l en grab-hold)
         const lift = t < 3 ? t : Math.floor(t / 12) % 2 === 0 ? 2 : 3;
         drawX = player.x + f * 16;
         drawY = player.y - lift;
-        textureKey = t < 3 || Math.floor(t / 12) % 2 === 0 ? 'legionnaire-hitstun-00' : 'legionnaire-juggle-00';
+        textureKey =
+          player.grabPhase === 'pummel'
+            ? t < 6
+              ? 'legionnaire-hitstun-01'
+              : 'legionnaire-hitstun-00'
+            : t < 3 || Math.floor(t / 12) % 2 === 0
+              ? 'legionnaire-hitstun-00'
+              : 'legionnaire-juggle-00';
       } else if (player.grabPhase === 'throw') {
         // Lanzamiento con □: cargado atrás durante grab-throw-a (ticks 0..5) y despedido al frente en grab-throw-b (ticks 6+)
         if (t < 6) {

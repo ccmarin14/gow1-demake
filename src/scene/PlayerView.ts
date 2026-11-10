@@ -229,6 +229,9 @@ export class PlayerView {
       case 'finisher_qte': {
         return t < 3 ? 'kratos-grab-lunge' : 'kratos-grab-hold';
       }
+      case 'pummel': {
+        return t < 6 ? 'kratos-grab-slam-a' : 'kratos-grab-hold';
+      }
       case 'throw': {
         return t < 6 ? 'kratos-grab-throw-a' : 'kratos-grab-throw-b';
       }

@@ -179,9 +179,10 @@ export interface EntityState {
   maxMp: number;
   magicPhase: 'none' | 'startup' | 'active' | 'recovery';
   magicTicks: number;
-  grabPhase: 'none' | 'whiff' | 'hold' | 'slam' | 'throw' | 'break' | 'recovery' | 'finisher_qte' | 'finisher_slam';
+  grabPhase: 'none' | 'whiff' | 'hold' | 'pummel' | 'slam' | 'throw' | 'break' | 'recovery' | 'finisher_qte' | 'finisher_slam';
   grabTicks: number;
   grabTargetId: string | null;
+  grabPummelCount?: number;
   qteAction: GameAction | null;
   qteTicksLeft: number;
   qteMaxTicks: number;

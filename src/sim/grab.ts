@@ -58,19 +58,21 @@ export function startGrab(player: EntityState, targets: readonly EntityState[]):
   }
 
   if (!closestTarget) {
-    // Whiff: falló el agarre, vulnerable durante whiffTicks
+    // Whiff: falló el agarre, Kratos se abalanza al frente (lunge) pero no atrapa a nadie
     player.grabPhase = 'whiff';
     player.grabTicks = 0;
     player.grabTargetId = null;
-    player.vx = 0;
+    player.vx = player.facing * cfg.lungeSpeedPx;
     return true;
   }
 
   // Agarre conectado:
-  // Si el enemigo está a media distancia (p. ej. tras el retroceso de un combo □), Kratos da un paso al frente (grab-lunge)
-  if (minDistance > 32) {
-    player.x += player.facing * Math.min(18, Math.round(minDistance - cfg.holdDistancePx));
+  // Kratos da un paso de embestida al frente (grab-lunge) para acortar distancia y prender al enemigo por el cuello
+  if (minDistance > cfg.holdDistancePx) {
+    const advance = Math.min(cfg.lungeMaxAdvancePx, Math.round(minDistance - cfg.holdDistancePx));
+    player.x += player.facing * advance;
   }
+  player.grabPummelCount = 0;
 
   // Solo inicia el QTE contextual si el objetivo está explícitamente en estado 'weakened'.
   // Los legionarios básicos se agarran siempre en 'hold' para elegir □ (lanzar), △ (partir) o ○ (azotar).
@@ -145,17 +147,24 @@ export function stepGrab(
   }
 
   const cfg = CONFIG.player.grab;
-  player.vx = 0;
 
-  // 1. Fase de Whiff (intento en el vacío)
+  // 1. Fase de Whiff (intento en el vacío con embestida hacia adelante y freno)
   if (player.grabPhase === 'whiff') {
     player.grabTicks += 1;
+    if (player.grabTicks < 5) {
+      player.vx = player.facing * cfg.lungeSpeedPx;
+    } else {
+      player.vx = 0;
+    }
     if (player.grabTicks >= cfg.whiffTicks) {
       player.grabPhase = 'none';
       player.grabTicks = 0;
+      player.vx = 0;
     }
     return result;
   }
+
+  player.vx = 0;
 
   // 2. Fase de QTE de Remate Contextual (BL-07, ESE-01)
   if (player.grabPhase === 'finisher_qte') {
@@ -288,11 +297,11 @@ export function stepGrab(
     // A partir del primer tick posterior al enganche (grabTicks >= 1), el jugador puede elegir:
     // - □ ('light-attack'): lanzar al enemigo como proyectil humano que derriba a otros en su camino (lanzamiento en tick 6).
     // - △ ('heavy-attack'): partir / quebrar brutalmente al enemigo (ejecución letal instantánea en tick 11).
-    // - ○ ('grab') o fin de holdTicks: azotar al enemigo contra la cubierta (impacto en tick 10).
+    // - ○ ('grab') o fin de holdTicks: Grab 1 (golpiza a mano limpia 'pummel' con ○ repetido, o azote final 'slam').
     const canChooseOption = player.grabTicks >= 1;
     const chooseThrow = canChooseOption && inputActions.includes('light-attack');
     const chooseBreak = canChooseOption && !chooseThrow && inputActions.includes('heavy-attack');
-    const chooseSlamNow = canChooseOption && !chooseThrow && !chooseBreak && inputActions.includes('grab');
+    const chooseCircle = canChooseOption && !chooseThrow && !chooseBreak && inputActions.includes('grab');
 
     player.grabTicks += 1;
 
@@ -303,9 +312,18 @@ export function stepGrab(
     } else if (chooseBreak) {
       player.grabPhase = 'break';
       player.grabTicks = 0;
-    } else if (chooseSlamNow) {
-      player.grabPhase = 'slam';
-      player.grabTicks = 0;
+    } else if (chooseCircle) {
+      const pummelsSoFar = (player.grabPummelCount ?? 0) + 1;
+      player.grabPummelCount = pummelsSoFar;
+      if (pummelsSoFar >= cfg.maxPummels || target.hp <= cfg.damage) {
+        // En el 3er toque de ○ o si la vida del enemigo ya es crítica (<= 25), ejecuta el azote final contra cubierta
+        player.grabPhase = 'slam';
+        player.grabTicks = 0;
+      } else {
+        // Grab 1: golpe/rodillazo a mano limpia que daña y suma impactos
+        player.grabPhase = 'pummel';
+        player.grabTicks = 0;
+      }
     } else if (player.grabTicks >= cfg.holdTicks) {
       // Si expira el tiempo de sujeción (holdTicks) sin que el jugador elija □, △ o ○,
       // el enemigo se zafa de la presa y vuelve a 'approach' sin recibir azote automático.
@@ -320,6 +338,58 @@ export function stepGrab(
     } else {
       return result;
     }
+  }
+
+  // 4.b Fase de Golpiza a Mano Limpia (Pummel en Grab 1)
+  if (player.grabPhase === 'pummel') {
+    if (player.invulTicks < 2) {
+      player.invulTicks = 2;
+    }
+
+    const target = targets.find((e) => e.id === player.grabTargetId);
+    if (!target || target.isDead) {
+      player.grabPhase = 'none';
+      player.grabTicks = 0;
+      player.grabTargetId = null;
+      return result;
+    }
+
+    target.x = player.x + player.facing * cfg.holdDistancePx;
+    target.y = player.y;
+    target.vx = 0;
+    target.vy = 0;
+    target.aiState = 'grabbed';
+
+    // Impacto del golpe/rodillazo en tick 4
+    if (player.grabTicks === 4) {
+      const killed = damageEnemy(target, cfg.pummelDamage, 14);
+      result.hit = true;
+      result.targetId = target.id;
+      result.damageDealt = cfg.pummelDamage;
+      result.killed = killed;
+
+      if (killed) {
+        player.redOrbs = (player.redOrbs ?? 0) + CONFIG.enemy.legionnaire.finisherBonusRedOrbs;
+        target.aiState = 'death';
+        target.aiTicks = 0;
+        target.isDead = true;
+        if (onKill) {
+          onKill(target);
+        }
+      }
+    }
+
+    player.grabTicks += 1;
+    if (player.grabTicks >= cfg.pummelTicks) {
+      if (target.isDead) {
+        player.grabPhase = 'slam';
+        player.grabTicks = 10;
+      } else {
+        player.grabPhase = 'hold';
+        player.grabTicks = 1;
+      }
+    }
+    return result;
   }
 
   // 5. Fases de Ejecución de Presa (Slam / Throw / Break)

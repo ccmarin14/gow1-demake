@@ -753,7 +753,14 @@ export class World {
             if (dodgeEdge) followUpEdges.push('dodge');
           }
           stepGrab(player, this.targets, followUpEdges);
-          if (player.grabPhase === 'throw' && player.grabTicks === 6) {
+          if (player.grabPhase === 'pummel' && player.grabTicks === 4) {
+            this.strikeHitNotice = {
+              x: player.x + player.facing * 16,
+              y: player.y - 18,
+              power: CONFIG.player.grab.pummelDamage,
+              kind: 'light',
+            };
+          } else if (player.grabPhase === 'throw' && player.grabTicks === 6) {
             this.strikeHitNotice = {
               x: player.x + player.facing * 20,
               y: player.y - 24,
@@ -983,7 +990,7 @@ export class World {
         }
 
         // Lock horizontal control/facing during rolls, guard, magic, hitstun, and chest opening
-        if (nowGuarding || nowCastingMagic || nowGrabbing || isOpeningChest || nowStriking) {
+        if (nowGuarding || nowCastingMagic || (nowGrabbing && player.grabPhase !== 'whiff') || isOpeningChest || nowStriking) {
           player.vx = 0;
         }
         if (this.mapData && this.arenaManager && !this.arenaTriggered && !this.arenaManager.isActive()) {
