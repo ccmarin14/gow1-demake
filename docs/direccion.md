@@ -271,3 +271,32 @@ Diseño de la usuaria; en el original las vigas están justo después de la prim
 - ***Ira de Poseidón*:** la heredada se rehace para parecerse a la del original: una descarga de energía alrededor de Kratos que daña todo en su radio (su aspecto exacto: P-08). En el slice está activa desde el inicio.
 - **Menú principal:** vertical slice: Nuevo juego, Opciones (volumen, controles, saltar el cómic) y Créditos. Primera versión: suma Continuar, Dificultad y Extras (galería, desafíos). Se pule con el tiempo.
 - **Menú de pausa (por pestañas, como el original [21]):** armas y mejora (en el slice, una sola mejora real de las Espadas del Caos con orbes rojos; en la primera versión, la mejora completa de armas y magia), ataques disponibles y opciones. Nombres y orden de las pestañas: P-09.
+
+## 12. Construcción del entorno y arquitectura de capas (D-52)
+
+**Principio:** separar la **atmósfera escénica** (fondos no interactivos con volumen e iluminación renderizados en Blender y cuantizados) de la **geometría jugable e interactiva** (piezas modulares posicionadas dinámicamente según las coordenadas y estados de `src/sim/`). Ningún suelo caminable, viga ni objeto rompible va "cocido" en la imagen de fondo, para que ajustar alturas o distancias en la simulación nunca obligue a re-renderizar un escenario entero.
+
+### Planos de profundidad y lectura visual
+
+Todos los elementos del entorno usan una paleta dedicada (`palette/environment.json`) más oscura y desaturada que la de Kratos y los enemigos, preservando la jerarquía de lectura de §3 (`Kratos y armas → enemigo → suelo y bordes → fondo y lluvia`):
+
+| Plano | Profundidad (`depth`) | Qué contiene | Método de creación y renderizado |
+| --- | --- | --- | --- |
+| **1. Lejano (Parallax)** | `-20` a `-10` | Cielo nocturno de tormenta, relámpagos, mar Egeo embravecido y siluetas de barcos en llamas (en exterior) o penumbra profunda de la sentina (en interior). | Render 3D en Blender cuantizado a `palette/environment.json`, desplazado con factor de parallax reducido (`scrollFactor < 0.3`). |
+| **2. Medio (Arquitectura del barco)** | `-5` a `-1` | Mástil, barandillas, cadenas, tragaluz y puerta cerrada del camarote en cubierta; costillas curvas de madera, faroles colgantes con halo cálido y muros en la bodega; barrotes de la celda del prisionero. | Bloques escénicos modelados e iluminados en Blender con cámara ortográfica/lateral y cuantizados a PNG (`public/assets/environment/`). |
+| **3. Jugable (Suelo y props de simulación)** | `0` a `1` | Tablones de cubierta y bordes de plataforma, escotilla encadenada que se abre con ○, pilas de escombros destructibles, vigas de equilibrio (firmes, quebradizas y tablas falsas), escaleras de madera, cofres y haz de luz de guardado, junto a `PlayerView` y `EnemyView`. | Sprites y tiles modulares repetibles (generados desde grid ASCII o piezas 3D cuantizadas) que `EnvironmentLayer` instancia y actualiza leyendo en cada cuadro las coordenadas y estados de `src/sim/`. Reemplaza los rectángulos planos de `ShellScene`. |
+| **4. Primer plano y atmósfera** | `15` a `30` | Superficie semitransparente y espuma del agua baja (cubre las piernas de Kratos al vadear en BL-25), lluvia diagonal e impactos de gotas en cubierta, siluetas oscuras de aparejos o vigas cercanas a cámara. | Capa frontal de `EnvironmentLayer` y `VfxLayer`. |
+
+### Piezas requeridas para el Vertical Slice (§10)
+
+| Tramo del slice | Fondos (Blender → Paleta) | Piezas modulares e interactivas (`src/sim/` → `EnvironmentLayer`) |
+| --- | --- | --- |
+| **1. Proa y escotilla** (§10, tramos 2 y 3) | Tormenta marina en parallax + cubierta de proa con barandillas rotas, mástil y puerta cerrada del camarote al fondo. | Suelo de tablones de madera con borde iluminado, escotilla de piso con cadenas (estados: `closed`, `shaking`, `open`), punto de guardado (haz dorado) y cofre rojo. |
+| **2. Bodega y primera Hidra** (§10, tramo 4) | Interior del casco con costillas de madera, faroles colgantes y abertura lateral derecha inundada por donde emerge el cuello de la Hidra. | Suelo de bodega, pilas de escombros destructibles que bloquean el paso (estados: `intact`, `damaged`, `broken`). |
+| **3. Vigas sobre agua baja** (§10, tramo 5) | Continuación alta de la bodega con entramado de madera al fondo y nivel inferior inundado. | Tres módulos de viga visualmente distinguibles con sutileza (madero firme, madero agrietado que cede/cae y tabla falsa con nudo/tono distinto), escalera vertical de retorno y superficie de agua baja con espuma. |
+| **4. El prisionero y salida** (§10, tramos 6 y 7) | Muro de bodega con celda enrejada (marinero detrás de los barrotes) y marco de la puerta hacia cubierta. | Reja interactiva (R2 / `E`), cofre de orbes rojos y puerta final al caos de cubierta. |
+
+### Flujo de trabajo y aprobación
+
+1. **Separación simulación / arte:** las pruebas de cámara (BL-23), agua baja (BL-25) y vigas (BL-34) verifican primero la física sobre la geometría de `src/sim/`; `EnvironmentLayer` viste cada elemento sin alterar cajas de colisión.
+2. **Aprobación visual por tramo:** igual que con los personajes (`AGENTS.md` §3), cada fondo y lote de piezas modulares se previsualiza ampliado en `docs/tmp/entorno/` junto a los fotogramas de referencia del video (`docs/tmp/egeo-video/`), y solo se da por cerrado tras la aprobación de la usuaria.
