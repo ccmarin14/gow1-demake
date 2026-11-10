@@ -98,6 +98,30 @@ guard: {
   parryWindowTicks: 6,
   recoveryTicks: 4,
 },
+grab: {
+  /** Maximum forward reach to latch onto an enemy (px). */
+  reachPx: 38,
+  /** Maximum vertical alignment offset to allow grab (px). */
+  verticalReachPx: 20,
+  /** Fixed horizontal separation between Kratos and the victim during hold (px). */
+  holdDistancePx: 22,
+  /** Recovery ticks when grab whiffs with no target in reach (~250 ms at 60 Hz). */
+  whiffTicks: 15,
+  /** Ticks spent pinning the victim before initiating slam (~300 ms). */
+  holdTicks: 18,
+  /** Ticks spent slamming the victim down to the deck (~260 ms). */
+  slamTicks: 16,
+  /** Ticks recovering from the slam animation (~130 ms). */
+  recoveryTicks: 8,
+  /** Direct damage dealt to the victim on ground slam. */
+  damage: 25,
+  /** Horizontal knockback impulse on victim on slam (px/s). */
+  slamVx: 40,
+  /** Slight rebound bounce on victim on slam (px/s). */
+  slamVy: -60,
+  /** Total invulnerability window granted to Kratos during grab hold & slam execution. */
+  invulTicks: 45,
+},
 damage: {
   maxHp: 100,
   hurtHitstunTicks: 14,

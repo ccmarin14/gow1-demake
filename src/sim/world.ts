@@ -17,6 +17,7 @@ import { isGuarding, startGuard, stepGuard } from './guard';
 import { stepLegionnaire } from './legionnaire';
 import { stepHydra } from './hydra';
 import { isCastingMagic, stepMagic } from './magic';
+import { isGrabbing, startGrab, stepGrab } from './grab';
 import { STRIKES, branchStrike, chainStrike, stepGroundFires, strikeGravityAt, queueChain, startStrike, stepStrike, strikeCancellable, strikeLength, strikePhaseAt, type HeldDirection, type StrikeImpactNotice, type StrikeState } from './strike';
 import { buildLevel1Map, computeCameraScrollX, getSegmentAtX, type LevelMapData } from './map';
 
@@ -46,6 +47,7 @@ export class World {
   private jumpHeld = false;
   private dodgeHeld = false;
   private magicHeld = false;
+  private grabHeld = false;
   private lightAttackHeld = false;
   /**
    * Triangle: held on the previous tick, and for how many ticks in a row.
@@ -403,6 +405,7 @@ export class World {
     this.jumpHeld = false;
     this.dodgeHeld = false;
     this.magicHeld = false;
+    this.grabHeld = false;
     this.lightAttackHeld = false;
     this.heavyAttackHeld = false;
     this.heavyHeldTicks = 0;
@@ -545,6 +548,10 @@ export class World {
     this.dodgeHeld = wantsDodge;
 
     const wantsGuard = this.input.includes('guard');
+    const wantsGrab = this.input.includes('grab');
+    const grabEdge = wantsGrab && !this.grabHeld;
+    this.grabHeld = wantsGrab;
+
     const wantsMagic = this.input.includes('magic');
     const magicEdge = wantsMagic && !this.magicHeld;
     this.magicHeld = wantsMagic;
@@ -604,6 +611,9 @@ export class World {
         player.invulTicks = 0;
         player.magicPhase = 'none';
         player.magicTicks = 0;
+        player.grabPhase = 'none';
+        player.grabTicks = 0;
+        player.grabTargetId = null;
         this.strike = null;
 
         stepVertical(
@@ -657,9 +667,23 @@ export class World {
           stepMagic(player, false, this.targets);
         }
         const nowCastingMagic = isCastingMagic(player);
-
         const rolling = isRolling(player);
         const guarding = isGuarding(player);
+
+        // Invocación y ejecución de agarre (○ / tecla L, BL-06, D-42)
+        if (inHitstun && player.grabPhase !== 'none') {
+          player.grabPhase = 'none';
+          player.grabTicks = 0;
+          player.grabTargetId = null;
+        }
+        if (grabEdge && player.grounded && !inHitstun && !isOpeningChest && !striking && !nowCastingMagic && !rolling && !guarding && player.grabPhase === 'none') {
+          startGrab(player, this.targets);
+        }
+        if (player.grabPhase !== 'none') {
+          stepGrab(player, this.targets);
+        }
+        const nowGrabbing = isGrabbing(player);
+
         if (rolling && (lightAttackEdge || heavyAttackPress)) {
           this.rollAttackBuffer = {
             button: heavyAttackPress ? 'heavy' : 'light',
@@ -672,9 +696,9 @@ export class World {
         // window opens (from the strike's pose, not from the guard).
         let startedNow = false;
         let bufferedNow = false;
-        const free = player.grounded && !rolling && !guarding && !nowCastingMagic && !inHitstun && !isOpeningChest;
+        const free = player.grounded && !rolling && !guarding && !nowCastingMagic && !nowGrabbing && !inHitstun && !isOpeningChest;
         // In the air, square starts the air square and triangle the air triangle.
-        const airFree = !player.grounded && !rolling && !guarding && !nowCastingMagic && !inHitstun && !isOpeningChest;
+        const airFree = !player.grounded && !rolling && !guarding && !nowCastingMagic && !nowGrabbing && !inHitstun && !isOpeningChest;
         // A press just after a strike ended still carries the combo on, from
         // that strike's last pose: the chain does not close the instant the
         // animation does (a finger on a phone is not frame-exact).
@@ -780,7 +804,7 @@ export class World {
         }
 
         // Dodge: only on ground, consume action on new flank (edge), uninterruptible while active
-        if (!rolling && !nowCastingMagic && !isOpeningChest && !nowStriking && dodgeEdge && player.grounded && !inHitstun) {
+        if (!rolling && !nowCastingMagic && !nowGrabbing && !isOpeningChest && !nowStriking && dodgeEdge && player.grounded && !inHitstun) {
           const wantsLeft = this.input.includes('move-left');
           const wantsRight = this.input.includes('move-right');
           startRoll(player, wantsLeft === wantsRight ? 0 : wantsRight ? 1 : -1);
@@ -790,7 +814,7 @@ export class World {
         if (!nowRolling && this.strike === null && this.rollAttackBuffer) {
           const buffered = this.rollAttackBuffer;
           this.rollAttackBuffer = null;
-          if (player.grounded && !guarding && !nowCastingMagic && !inHitstun && !isOpeningChest) {
+          if (player.grounded && !guarding && !nowCastingMagic && !nowGrabbing && !inHitstun && !isOpeningChest) {
             if (direction !== 0) player.facing = direction;
             this.strike = startStrike(player, buffered.button === 'heavy' ? 'triangle' : 'square1');
             startedNow = true;
@@ -809,10 +833,10 @@ export class World {
         }
 
         // Guard: only on ground, not rolling, not casting, not in hitstun, not opening chest
-        if (!nowRolling && !nowCastingMagic && !isOpeningChest && !nowStriking && wantsGuard && player.grounded && player.guardPhase === 'none' && !inHitstun) {
+        if (!nowRolling && !nowCastingMagic && !nowGrabbing && !isOpeningChest && !nowStriking && wantsGuard && player.grounded && player.guardPhase === 'none' && !inHitstun) {
           startGuard(player);
         }
-        stepGuard(player, wantsGuard && !nowRolling && !nowCastingMagic && !inHitstun && !isOpeningChest && !nowStriking);
+        stepGuard(player, wantsGuard && !nowRolling && !nowCastingMagic && !nowGrabbing && !inHitstun && !isOpeningChest && !nowStriking);
         const nowGuarding = isGuarding(player);
 
         // Decelerate knockback during hitstun
@@ -826,7 +850,7 @@ export class World {
         }
 
         // Lock horizontal control/facing during rolls, guard, magic, hitstun, and chest opening
-        if (nowGuarding || nowCastingMagic || isOpeningChest || nowStriking) {
+        if (nowGuarding || nowCastingMagic || nowGrabbing || isOpeningChest || nowStriking) {
           player.vx = 0;
         }
         if (this.mapData && this.arenaManager && !this.arenaTriggered && !this.arenaManager.isActive()) {
@@ -836,7 +860,7 @@ export class World {
             this.arenaManager.activate();
           }
         }
-        const horizontalLocked = nowRolling || nowGuarding || inHitstun || nowCastingMagic || isOpeningChest || nowStriking;
+        const horizontalLocked = nowRolling || nowGuarding || inHitstun || nowCastingMagic || nowGrabbing || isOpeningChest || nowStriking;
         const marginX = CONFIG.player.bounds.marginX;
         const playerMinX = (this.arenaManager && this.arenaManager.isActive())
           ? this.arenaManager.getMinX() + marginX
@@ -857,7 +881,7 @@ export class World {
           playerMovementParams,
           horizontalLocked,
         );
-        const canJumpEdge = jumpNow && !nowRolling && !nowGuarding && !inHitstun && !nowCastingMagic && !isOpeningChest && !nowStriking;
+        const canJumpEdge = jumpNow && !nowRolling && !nowGuarding && !inHitstun && !nowCastingMagic && !nowGrabbing && !isOpeningChest && !nowStriking;
         const wantsDown = this.input.includes('move-down');
         // An air strike sets how fast Kratos falls for its next tick (hang time, a drop).
         // Between air lashes (the combo grace window) he keeps floating too.

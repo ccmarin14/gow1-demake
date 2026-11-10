@@ -64,6 +64,11 @@ export function getLegionnaireFrameKey(enemy: Readonly<EntityState>): string {
       return `legionnaire-hitstun-0${frame}`;
     }
 
+    case 'grabbed': {
+      // Sujeto por Kratos: sostenido e inmovilizado
+      return 'legionnaire-hitstun-00';
+    }
+
     case 'juggle': {
       // juggle-00 si sube (vy < 0), juggle-01 si cae (vy >= 0)
       return enemy.vy < 0 ? 'legionnaire-juggle-00' : 'legionnaire-juggle-01';

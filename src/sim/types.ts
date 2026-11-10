@@ -7,6 +7,7 @@ export type GameAction =
   | 'jump'
   | 'light-attack'
   | 'heavy-attack'
+  | 'grab'
   | 'magic'
   | 'dodge'
   | 'guard'
@@ -21,6 +22,7 @@ export const DOMAIN_ACTIONS: readonly GameAction[] = [
   'jump',
   'light-attack',
   'heavy-attack',
+  'grab',
   'magic',
   'dodge',
   'guard',
@@ -153,6 +155,7 @@ export interface EntityState {
     | 'juggle'
     | 'knockdown'
     | 'get_up'
+    | 'grabbed'
     | 'death'
     | 'reposition'
     | 'aim'
@@ -173,6 +176,9 @@ export interface EntityState {
   maxMp: number;
   magicPhase: 'none' | 'startup' | 'active' | 'recovery';
   magicTicks: number;
+  grabPhase: 'none' | 'whiff' | 'hold' | 'slam' | 'recovery';
+  grabTicks: number;
+  grabTargetId: string | null;
   dropThroughTicks: number;
   attackCooldownTicks: number;
   hurtInvulTicks: number;

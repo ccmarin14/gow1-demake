@@ -79,6 +79,14 @@ export function stepLegionnaire(
     return;
   }
 
+  // Estado de apresado / agarre por Kratos (grabbed, BL-06)
+  if (enemy.aiState === 'grabbed') {
+    enemy.vx = 0;
+    enemy.vy = 0;
+    enemy.aiTicks += 1;
+    return;
+  }
+
   // Estado de impacto terrestre (hitstun)
   if (enemy.aiState === 'hitstun') {
     enemy.aiTicks += 1;

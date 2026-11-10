@@ -94,6 +94,9 @@ export function respawnAtCheckpoint(
   player.invulTicks = 0;
   player.magicPhase = 'none';
   player.magicTicks = 0;
+  player.grabPhase = 'none';
+  player.grabTicks = 0;
+  player.grabTargetId = null;
   player.landingTicks = 0;
 
   if (savedData) {

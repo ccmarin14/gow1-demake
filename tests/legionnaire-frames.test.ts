@@ -30,6 +30,9 @@ function dummyLegionnaire(overrides: Partial<EntityState> = {}): EntityState {
     parryActive: false,
     magicPhase: 'none',
     magicTicks: 0,
+    grabPhase: 'none',
+    grabTicks: 0,
+    grabTargetId: null,
     mp: 0,
     maxMp: 0,
     redOrbs: 0,
@@ -139,6 +142,11 @@ describe('legionnaire animation frame selection by AI state', () => {
     assert.equal(getLegionnaireFrameKey(dummyLegionnaire({ aiState: 'get_up', aiTicks: 14 })), 'legionnaire-idle-00');
   });
 
+  it('grabbed state selects legionnaire-hitstun-00 (BL-06)', () => {
+    assert.equal(getLegionnaireFrameKey(dummyLegionnaire({ aiState: 'grabbed', aiTicks: 0 })), 'legionnaire-hitstun-00');
+    assert.equal(getLegionnaireFrameKey(dummyLegionnaire({ aiState: 'grabbed', aiTicks: 10 })), 'legionnaire-hitstun-00');
+  });
+
   it('heavy_windup uses windup-00..03 across 36 ticks and heavy_slash uses slash-00..03 (ESE-04)', () => {
     assert.equal(getLegionnaireFrameKey(dummyLegionnaire({ aiState: 'heavy_windup', aiTicks: 0 })), 'legionnaire-windup-00');
     assert.equal(getLegionnaireFrameKey(dummyLegionnaire({ aiState: 'heavy_windup', aiTicks: 5 })), 'legionnaire-windup-00');
@@ -168,6 +176,7 @@ describe('legionnaire animation frame selection by AI state', () => {
       'juggle',
       'knockdown',
       'get_up',
+      'grabbed',
       'death',
     ];
     for (const state of states) {
