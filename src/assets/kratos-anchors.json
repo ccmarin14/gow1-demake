@@ -1746,5 +1746,189 @@
       33.8,
       24.4
     ]
+  },
+  "kratos-grab-lunge": {
+    "back": [
+      32.9,
+      31.9
+    ],
+    "spineRad": 1.969,
+    "hand": [
+      43.8,
+      28.3
+    ],
+    "farHand": [
+      49.5,
+      27.1
+    ],
+    "shoulder": [
+      31.4,
+      29.3
+    ],
+    "farShoulder": [
+      37.4,
+      29.9
+    ]
+  },
+  "kratos-grab-hold": {
+    "back": [
+      31.3,
+      27.3
+    ],
+    "spineRad": 1.757,
+    "hand": [
+      17.5,
+      23.5
+    ],
+    "farHand": [
+      44.2,
+      20.3
+    ],
+    "shoulder": [
+      30.5,
+      24.7
+    ],
+    "farShoulder": [
+      33.3,
+      24.4
+    ]
+  },
+  "kratos-grab-throw-a": {
+    "back": [
+      31.5,
+      25.4
+    ],
+    "spineRad": 1.751,
+    "hand": [
+      17.6,
+      20.9
+    ],
+    "farHand": [
+      24.7,
+      20.2
+    ],
+    "shoulder": [
+      27.8,
+      22.0
+    ],
+    "farShoulder": [
+      36.9,
+      23.3
+    ]
+  },
+  "kratos-grab-throw-b": {
+    "back": [
+      32.2,
+      31.6
+    ],
+    "spineRad": 1.867,
+    "hand": [
+      43.3,
+      27.3
+    ],
+    "farHand": [
+      47.8,
+      26.5
+    ],
+    "shoulder": [
+      31.0,
+      29.1
+    ],
+    "farShoulder": [
+      35.5,
+      28.8
+    ]
+  },
+  "kratos-grab-break-a": {
+    "back": [
+      29.6,
+      26.4
+    ],
+    "spineRad": 1.523,
+    "hand": [
+      31.5,
+      12.1
+    ],
+    "farHand": [
+      37.4,
+      11.5
+    ],
+    "shoulder": [
+      26.2,
+      23.6
+    ],
+    "farShoulder": [
+      32.4,
+      23.6
+    ]
+  },
+  "kratos-grab-break-b": {
+    "back": [
+      33.3,
+      31.2
+    ],
+    "spineRad": 2.035,
+    "hand": [
+      21.1,
+      35.0
+    ],
+    "farHand": [
+      49.3,
+      35.4
+    ],
+    "shoulder": [
+      32.0,
+      28.7
+    ],
+    "farShoulder": [
+      38.0,
+      29.4
+    ]
+  },
+  "kratos-grab-slam-a": {
+    "back": [
+      30.2,
+      26.3
+    ],
+    "spineRad": 1.605,
+    "hand": [
+      35.4,
+      15.2
+    ],
+    "farHand": [
+      42.6,
+      13.3
+    ],
+    "shoulder": [
+      26.4,
+      23.4
+    ],
+    "farShoulder": [
+      34.5,
+      23.4
+    ]
+  },
+  "kratos-grab-slam-b": {
+    "back": [
+      33.9,
+      33.7
+    ],
+    "spineRad": 2.145,
+    "hand": [
+      42.2,
+      40.3
+    ],
+    "farHand": [
+      48.1,
+      41.4
+    ],
+    "shoulder": [
+      32.9,
+      31.6
+    ],
+    "farShoulder": [
+      38.8,
+      32.3
+    ]
   }
 }

@@ -464,6 +464,54 @@
       "state": "attack",
       "grounded": true,
       "png": "kratos-asc-b"
+    },
+    {
+      "file": "grab-lunge.txt",
+      "state": "grab",
+      "grounded": true,
+      "png": "kratos-grab-lunge"
+    },
+    {
+      "file": "grab-hold.txt",
+      "state": "grab",
+      "grounded": true,
+      "png": "kratos-grab-hold"
+    },
+    {
+      "file": "grab-throw-a.txt",
+      "state": "grab",
+      "grounded": true,
+      "png": "kratos-grab-throw-a"
+    },
+    {
+      "file": "grab-throw-b.txt",
+      "state": "grab",
+      "grounded": true,
+      "png": "kratos-grab-throw-b"
+    },
+    {
+      "file": "grab-break-a.txt",
+      "state": "grab",
+      "grounded": true,
+      "png": "kratos-grab-break-a"
+    },
+    {
+      "file": "grab-break-b.txt",
+      "state": "grab",
+      "grounded": true,
+      "png": "kratos-grab-break-b"
+    },
+    {
+      "file": "grab-slam-a.txt",
+      "state": "grab",
+      "grounded": true,
+      "png": "kratos-grab-slam-a"
+    },
+    {
+      "file": "grab-slam-b.txt",
+      "state": "grab",
+      "grounded": true,
+      "png": "kratos-grab-slam-b"
     }
   ]
 }

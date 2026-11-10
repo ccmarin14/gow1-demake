@@ -303,6 +303,7 @@ export function stepGrab(
       result.killed = killed;
 
       if (killed) {
+        player.redOrbs = (player.redOrbs ?? 0) + CONFIG.enemy.legionnaire.finisherBonusRedOrbs;
         target.aiState = 'death';
         target.aiTicks = 0;
         target.isDead = true;
@@ -332,6 +333,7 @@ export function stepGrab(
       result.killed = killed;
 
       if (killed) {
+        player.redOrbs = (player.redOrbs ?? 0) + CONFIG.enemy.legionnaire.finisherBonusRedOrbs;
         target.aiState = 'death';
         target.aiTicks = 0;
         target.isDead = true;
@@ -360,6 +362,7 @@ export function stepGrab(
       result.killed = killed;
 
       if (killed) {
+        player.redOrbs = (player.redOrbs ?? 0) + CONFIG.enemy.legionnaire.finisherBonusRedOrbs;
         target.aiState = 'death';
         target.aiTicks = 0;
         target.isDead = true;

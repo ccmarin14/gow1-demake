@@ -215,40 +215,21 @@ export class PlayerView {
     const t = simPlayer.grabTicks;
     switch (simPlayer.grabPhase) {
       case 'whiff': {
-        // Zarpazo en el vacío (15 ticks): impulso -> zarpazo al frente -> recogida
-        if (t < 3) return 'kratos-sq1-a';
-        if (t < 7) return 'kratos-sq1-b';
-        if (t < 11) return 'kratos-sq3-d';
-        return 'kratos-sq1-e';
+        return t < 10 ? 'kratos-grab-lunge' : 'kratos-sq1-e';
       }
       case 'hold':
       case 'finisher_qte': {
-        // Enganche y sujeción en vilo con ambas manos al frente (kratos-sq5-d/e, manos en +16 px, -29 px)
-        if (t < 2) return 'kratos-sq1-b';
-        if (t < 4) return 'kratos-sq4-a';
-        return Math.floor((t - 4) / 15) % 2 === 0 ? 'kratos-sq5-d' : 'kratos-sq5-e';
+        return t < 3 ? 'kratos-grab-lunge' : 'kratos-grab-hold';
       }
       case 'throw': {
-        // Lanzamiento con □ (16 ticks): carga al pecho -> empujón explosivo al frente -> extensión a dos manos
-        if (t < 2) return 'kratos-sq4-a';
-        if (t < 7) return 'kratos-sq4-b';
-        if (t < 12) return 'kratos-sq5-d';
-        return 'kratos-sq1-e';
+        return t < 4 ? 'kratos-grab-throw-a' : 'kratos-grab-throw-b';
       }
       case 'break': {
-        // Quiebre con △ (16 ticks): iza sobre la cabeza (tri-d) -> quiebre violento hacia abajo (plume-d -> plume-e)
-        if (t < 3) return 'kratos-sq3-g';
-        if (t < 7) return 'kratos-tri-d';
-        if (t < 10) return 'kratos-plume-d';
-        return 'kratos-plume-e';
+        return t < 7 ? 'kratos-grab-break-a' : 'kratos-grab-break-b';
       }
       case 'slam':
       case 'finisher_slam': {
-        // Azote con ○ (16 ticks): levanta en arco (plume-c) -> descarga al frente (tri-e) -> estampa contra el suelo (tri-f)
-        if (t < 4) return 'kratos-plume-c';
-        if (t < 8) return 'kratos-tri-e';
-        if (t < 13) return 'kratos-tri-f';
-        return 'kratos-tri-g';
+        return t < 7 ? 'kratos-grab-slam-a' : 'kratos-grab-slam-b';
       }
       case 'recovery': {
         return t < 4 ? 'kratos-sq1-e' : PLAYER_KEY;

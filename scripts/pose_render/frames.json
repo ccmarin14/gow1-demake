@@ -76,6 +76,14 @@
     "aq2-c": { "action": "Jump_Start", "frame": 4, "pose": "aq2-c.json", "ground": true },
     "aq3-m": { "action": "Jump_Start", "frame": 4, "pose": "aq3-m.json", "ground": true },
     "tri-pc": { "action": "Idle_Loop", "frame": 0, "pose": "tri-pc.json", "ground": true },
-    "asc-b": { "action": "Jump_Start", "frame": 4, "pose": "asc-b.json", "ground": true }
+    "asc-b": { "action": "Jump_Start", "frame": 4, "pose": "asc-b.json", "ground": true },
+    "grab-lunge": { "action": "Idle_Loop", "frame": 0, "pose": "grab-lunge.json", "ground": true },
+    "grab-hold": { "action": "Idle_Loop", "frame": 0, "pose": "grab-hold.json", "ground": true },
+    "grab-throw-a": { "action": "Idle_Loop", "frame": 0, "pose": "grab-throw-a.json", "ground": true },
+    "grab-throw-b": { "action": "Idle_Loop", "frame": 0, "pose": "grab-throw-b.json", "ground": true },
+    "grab-break-a": { "action": "Idle_Loop", "frame": 0, "pose": "grab-break-a.json", "ground": true },
+    "grab-break-b": { "action": "Idle_Loop", "frame": 0, "pose": "grab-break-b.json", "ground": true },
+    "grab-slam-a": { "action": "Idle_Loop", "frame": 0, "pose": "grab-slam-a.json", "ground": true },
+    "grab-slam-b": { "action": "Idle_Loop", "frame": 0, "pose": "grab-slam-b.json", "ground": true }
   }
 }

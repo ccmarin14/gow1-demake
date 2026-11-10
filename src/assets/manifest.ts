@@ -64,6 +64,18 @@ export const STRIKE_KEYS: readonly string[] = [
   ...new Set(Object.values(STRIKES).flatMap((strike) => strike.phases.map((phase) => strikeFrameKey(phase.pose)))),
 ];
 
+/** Body poses of the Circle grab and its three follow-ups (□ throw, △ break, ○ slam). */
+export const GRAB_KEYS: readonly string[] = [
+  'kratos-grab-lunge',
+  'kratos-grab-hold',
+  'kratos-grab-throw-a',
+  'kratos-grab-throw-b',
+  'kratos-grab-break-a',
+  'kratos-grab-break-b',
+  'kratos-grab-slam-a',
+  'kratos-grab-slam-b',
+];
+
 /** Additional grid-derived frames, one PNG each, drawn in full. */
 export const PLAYER_FRAME_KEYS: readonly string[] = [
   ...IDLE_POSES.slice(1),
@@ -73,6 +85,7 @@ export const PLAYER_FRAME_KEYS: readonly string[] = [
   AIR_DOUBLE_KEY,
   ...ROLL_KEYS,
   ...STRIKE_KEYS,
+  ...GRAB_KEYS,
 ];
 
 /** All 27 approved legionnaire frames (64x56, ground anchor at 55). */
