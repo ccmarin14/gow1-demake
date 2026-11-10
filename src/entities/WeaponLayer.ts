@@ -118,20 +118,34 @@ export class WeaponLayer {
   update(player: Readonly<EntityState> | null, frameKey = '', strike: Readonly<StrikeSnapshot> | null = null): void {
     const alive = CONFIG.presentation.weaponArt && player !== null && !player.isDead;
     const striking = alive && strike !== null && this.directions.keys.length > 0;
-    this.updateBackBlades(alive && !striking ? player : null, frameKey);
+    const isGrabStab =
+      alive &&
+      !striking &&
+      player !== null &&
+      (player.grabPhase === 'hold' || player.grabPhase === 'pummel' || player.grabPhase === 'finisher_qte') &&
+      this.directions.keys.length > 0;
+
+    this.updateBackBlades(alive && !striking ? player : null, frameKey, isGrabStab);
     if (striking && player && strike) {
       this.drawStrike(player, strike);
+    } else if (isGrabStab && player) {
+      this.drawGrabStab(player);
     } else {
       this.hideStrike();
     }
   }
 
-  private updateBackBlades(player: Readonly<EntityState> | null, frameKey: string): void {
+  private updateBackBlades(player: Readonly<EntityState> | null, frameKey: string, isGrabStab = false): void {
     const anchors = FRAME_ANCHORS[frameKey];
     const slots = CONFIG.presentation.backBlades;
     for (let i = 0; i < this.backBlades.length; i += 1) {
       const image = this.backBlades[i];
       if (!player || !anchors) {
+        image.setVisible(false);
+        continue;
+      }
+      // Durante hold y pummel, la espada derecha (slot 0) está desenfundada en la mano de Kratos
+      if (isGrabStab && i === 0) {
         image.setVisible(false);
         continue;
       }
@@ -147,6 +161,50 @@ export class WeaponLayer {
         .setFlipY(facing === -1)
         .setVisible(true);
     }
+  }
+
+  /** Dibuja la Espada del Caos en mano derecha para estocadas en agarre (Grab 1 - TAP ○ REPEATEDLY). */
+  private drawGrabStab(player: Readonly<EntityState>): void {
+    if (!this.nearBlade) return;
+    this.farBlade?.setVisible(false);
+    for (const layer of this.pixelLayers()) {
+      layer.clear();
+      layer.flush();
+    }
+
+    const facing = player.facing === -1 ? -1 : 1;
+    const t = player.grabTicks;
+    let bladeX = player.x + facing * 8;
+    let bladeY = player.y - 18;
+    let deg = 0;
+
+    if (player.grabPhase === 'hold' || player.grabPhase === 'finisher_qte') {
+      // Espada desenfundada lista al costado del cuerpo
+      bladeX = player.x + facing * 8;
+      bladeY = player.y - 18;
+      deg = -10;
+    } else if (player.grabPhase === 'pummel') {
+      // Estocada con la Espada del Caos:
+      // ticks 0..3: recogida hacia atrás para impulso
+      // ticks 4..8: estocada profunda que penetra el torso del soldado
+      // ticks 9..13: retroceso hacia la posición de sujeción
+      if (t < 4) {
+        bladeX = player.x + facing * 2;
+        bladeY = player.y - 18;
+        deg = 0;
+      } else if (t <= 8) {
+        bladeX = player.x + facing * 20;
+        bladeY = player.y - 18;
+        deg = 0;
+      } else {
+        bladeX = player.x + facing * 8;
+        bladeY = player.y - 18;
+        deg = 0;
+      }
+    }
+
+    this.nearBlade.setDepth(DEPTH_BLADE);
+    this.placeBlade(this.nearBlade, [bladeX, bladeY], deg, facing);
   }
 
   private drawStrike(player: Readonly<EntityState>, strike: Readonly<StrikeSnapshot>): void {

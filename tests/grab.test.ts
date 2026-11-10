@@ -243,6 +243,7 @@ describe('combat grab with Circle / L key (BL-06, D-42)', () => {
     world.step(['light-attack']);
     assert.equal(p.grabPhase, 'throw');
     assert.equal(victim.hp, 60, 'victim held during throw windup (ticks 0..5)');
+    assert.equal(victim.y, p.y - 12, 'victim held horizontally across chest off floor (ticks 0..5)');
 
     // 3. Avanzar hasta el tick 6 (grab-throw-b): Kratos lo suelta e impulsa al frente
     stepTicks(world, [], 6);
@@ -275,14 +276,19 @@ describe('combat grab with Circle / L key (BL-06, D-42)', () => {
     assert.equal(p.grabPhase, 'break');
     assert.equal(victim.hp, 60, 'victim held overhead during break windup (ticks 0..10)');
 
-    // Avanzar hasta el tick 11 (grab-break-b): Kratos lo quiebra sobre su cabeza (ejecución letal instantánea de GoW 1)
+    // Avanzar hasta el tick 11 (grab-break-b): Kratos lo quiebra sobre su cabeza y lo asienta en cubierta (ejecución letal de GoW 1)
     stepTicks(world, [], 11);
     assert.equal(victim.hp, 0, 'victim instantly killed when snapped overhead at tick 11');
     assert.equal(victim.isDead, true);
     assert.equal(victim.aiState, 'death');
+    assert.equal(victim.y, p.y, 'victim corpse rests on deck floor altitude, not floating in air');
+
+    // Tras completar la presa y volver a neutro, el cadáver permanece en el suelo
+    stepTicks(world, [], CONFIG.player.grab.slamTicks - 11 + 5);
+    assert.equal(victim.y, p.y, 'victim corpse stays firmly on deck floor after grab finishes');
   });
 
-  it('ground grab option ○ (grab): delivers consecutive bare-handed pummels (Grab 1) and finishes with deck slam', () => {
+  it('ground grab option ○ (grab): delivers consecutive Blade of Chaos stabs (Grab 1 - TAP ○ REPEATEDLY) and finishes with deck slam', () => {
     const world = createWorld();
     const p = getPlayer(world);
     const victim = getEnemy(world);
@@ -296,25 +302,25 @@ describe('combat grab with Circle / L key (BL-06, D-42)', () => {
     world.step(['grab']);
     assert.equal(p.grabPhase, 'hold');
 
-    // 1. Primer toque de ○ ('grab'): inicia el primer rodillazo / golpe a mano limpia (pummel 1)
+    // 1. Primer toque de ○ ('grab'): inicia la primera estocada con la Espada del Caos (stab 1)
     world.step([]);
     world.step(['grab']);
     assert.equal(p.grabPhase, 'pummel');
-    assert.equal(victim.hp, 60, 'no damage before pummel impact');
+    assert.equal(victim.hp, 60, 'no damage before blade stab impact');
 
-    // Avanzar hasta el impacto del rodillazo en tick 4
+    // Avanzar hasta el impacto de la estocada en tick 4
     stepTicks(world, [], 4);
-    assert.equal(victim.hp, 60 - CONFIG.player.grab.pummelDamage, 'pummel 1 deals 10 damage on knee strike');
+    assert.equal(victim.hp, 60 - CONFIG.player.grab.pummelDamage, 'stab 1 deals 10 damage when blade plunges into torso');
 
-    // Completar el pummel (pummelTicks = 14) -> vuelve a 'hold'
+    // Completar la estocada (pummelTicks = 14) -> vuelve a 'hold'
     stepTicks(world, [], CONFIG.player.grab.pummelTicks - 4);
-    assert.equal(p.grabPhase, 'hold', 'returns to hold after pummel 1 so player can choose next action');
+    assert.equal(p.grabPhase, 'hold', 'returns to hold after stab 1 so player can choose next action');
 
-    // 2. Segundo toque de ○ ('grab'): segundo rodillazo (pummel 2)
+    // 2. Segundo toque de ○ ('grab'): segunda estocada (stab 2)
     world.step(['grab']);
     assert.equal(p.grabPhase, 'pummel');
     stepTicks(world, [], 4);
-    assert.equal(victim.hp, 60 - CONFIG.player.grab.pummelDamage * 2, 'pummel 2 deals another 10 damage');
+    assert.equal(victim.hp, 60 - CONFIG.player.grab.pummelDamage * 2, 'stab 2 deals another 10 damage');
     stepTicks(world, [], CONFIG.player.grab.pummelTicks - 4);
     assert.equal(p.grabPhase, 'hold');
 
@@ -324,6 +330,7 @@ describe('combat grab with Circle / L key (BL-06, D-42)', () => {
     stepTicks(world, [], 10);
     assert.equal(victim.hp, 60 - CONFIG.player.grab.pummelDamage * 2 - CONFIG.player.grab.damage, 'final deck slam deals 25 damage');
     assert.equal(victim.aiState, 'knockdown');
+    assert.equal(victim.y, p.y, 'victim on floor after slam');
   });
 
   it('launcher (held △) lifts enemy straight up vertically (vx = 0) and ○ chains Orion\'s Harpoon to slam it down', () => {

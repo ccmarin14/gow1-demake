@@ -340,7 +340,7 @@ export function stepGrab(
     }
   }
 
-  // 4.b Fase de Golpiza a Mano Limpia (Pummel en Grab 1)
+  // 4.b Fase de Apuñalamiento con la Espada del Caos (Grab 1 - TAP ○ REPEATEDLY)
   if (player.grabPhase === 'pummel') {
     if (player.invulTicks < 2) {
       player.invulTicks = 2;
@@ -360,7 +360,7 @@ export function stepGrab(
     target.vy = 0;
     target.aiState = 'grabbed';
 
-    // Impacto del golpe/rodillazo en tick 4
+    // Penetración de la Espada del Caos en el torso en tick 4
     if (player.grabTicks === 4) {
       const killed = damageEnemy(target, cfg.pummelDamage, 14);
       result.hit = true;
@@ -401,14 +401,14 @@ export function stepGrab(
     const target = targets.find((e) => e.id === player.grabTargetId);
 
     // 5.a Lanzamiento como proyectil (Throw con □):
-    // Ticks 0..5 (grab-throw-a): Kratos carga al enemigo atrás pegado al pecho.
+    // Ticks 0..5 (grab-throw-a): Kratos carga al enemigo horizontalmente a dos manos cruzando el pecho.
     // Tick 6 (grab-throw-b): Kratos lo impulsa al frente; se aplica el daño, la velocidad de vuelo y pasa a 'juggle'.
     if (player.grabPhase === 'throw') {
       const releaseTick = 6;
       if (target) {
         if (player.grabTicks < releaseTick) {
-          target.x = player.x + player.facing * 10;
-          target.y = player.y - 4;
+          target.x = player.x + player.facing * 12;
+          target.y = player.y - 12;
           target.vx = 0;
           target.vy = 0;
           target.aiState = 'grabbed';
@@ -425,6 +425,8 @@ export function stepGrab(
             target.aiState = 'death';
             target.aiTicks = 0;
             target.isDead = true;
+            target.grounded = true;
+            target.y = player.y;
             if (onKill) {
               onKill(target);
             }
@@ -440,9 +442,9 @@ export function stepGrab(
       }
     }
 
-    // 5.b Quiebre y partición sobre la cabeza (Break con △):
+    // 5.b Quiebre brutal sobre cubierta (Break con △):
     // Ticks 0..10 (grab-break-a): Kratos alza al soldado sobre la cabeza con ambas manos.
-    // Tick 11 (grab-break-b): Kratos lo quiebra hacia abajo; en GoW 1 (PS2) esto es una ejecución letal instantánea.
+    // Tick 11 (grab-break-b): Kratos lo estrella y quiebra contra las tablas; en GoW 1 (PS2) esto es una ejecución letal instantánea.
     if (player.grabPhase === 'break') {
       const snapTick = 11;
       if (target) {
@@ -453,7 +455,7 @@ export function stepGrab(
           target.vy = 0;
           target.aiState = 'grabbed';
         } else if (player.grabTicks === snapTick) {
-          // Ejecución brutal como en GoW 1 PS2: parte en dos al soldado raso
+          // Ejecución brutal como en GoW 1 PS2: quiebra al soldado y lo asienta en la cubierta
           const overkillDamage = Math.max(target.hp + 20, cfg.breakDamage);
           damageEnemy(target, overkillDamage, 60);
           player.redOrbs = (player.redOrbs ?? 0) + CONFIG.enemy.legionnaire.finisherBonusRedOrbs;
@@ -462,8 +464,10 @@ export function stepGrab(
           target.aiTicks = 0;
           target.isDead = true;
           target.grounded = true;
-          target.vx = player.facing * cfg.slamVx;
-          target.vy = cfg.slamVy;
+          target.x = player.x + player.facing * 18;
+          target.y = player.y;
+          target.vx = 0;
+          target.vy = 0;
 
           result.hit = true;
           result.targetId = target.id;
@@ -473,6 +477,13 @@ export function stepGrab(
           if (onKill) {
             onKill(target);
           }
+        } else {
+          // Mantener al cadáver asentado firmemente en el piso de la cubierta
+          target.x = player.x + player.facing * 18;
+          target.y = player.y;
+          target.grounded = true;
+          target.vx = 0;
+          target.vy = 0;
         }
       }
     }
@@ -497,11 +508,17 @@ export function stepGrab(
           result.damageDealt = cfg.damage;
           result.killed = killed;
 
+          target.x = player.x + player.facing * 18;
+          target.y = player.y;
+
           if (killed) {
             player.redOrbs = (player.redOrbs ?? 0) + CONFIG.enemy.legionnaire.finisherBonusRedOrbs;
             target.aiState = 'death';
             target.aiTicks = 0;
             target.isDead = true;
+            target.grounded = true;
+            target.vx = 0;
+            target.vy = 0;
             if (onKill) {
               onKill(target);
             }

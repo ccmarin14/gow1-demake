@@ -230,7 +230,8 @@ export class PlayerView {
         return t < 3 ? 'kratos-grab-lunge' : 'kratos-grab-hold';
       }
       case 'pummel': {
-        return t < 6 ? 'kratos-grab-slam-a' : 'kratos-grab-hold';
+        // En Grab 1, Kratos sostiene al soldado por el cuello con la mano izquierda mientras apuñala con la derecha
+        return 'kratos-grab-hold';
       }
       case 'throw': {
         return t < 6 ? 'kratos-grab-throw-a' : 'kratos-grab-throw-b';

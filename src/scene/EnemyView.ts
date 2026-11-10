@@ -47,32 +47,36 @@ export class EnemyView {
         drawY = player.y - lift;
         textureKey =
           player.grabPhase === 'pummel'
-            ? t < 6
+            ? t >= 4 && t <= 8
               ? 'legionnaire-hitstun-01'
               : 'legionnaire-hitstun-00'
             : t < 3 || Math.floor(t / 12) % 2 === 0
               ? 'legionnaire-hitstun-00'
               : 'legionnaire-juggle-00';
       } else if (player.grabPhase === 'throw') {
-        // Lanzamiento con □: cargado atrás durante grab-throw-a (ticks 0..5) y despedido al frente en grab-throw-b (ticks 6+)
+        // Lanzamiento con □: alzado horizontalmente cruzando el pecho (ticks 0..5, grab-throw-a) y proyectado en vuelo (ticks 6+)
         if (t < 6) {
-          drawX = player.x + f * 10;
-          drawY = player.y - 4;
-          textureKey = 'legionnaire-hitstun-00';
+          drawX = player.x + f * 12;
+          drawY = player.y - 12;
+          textureKey = 'legionnaire-juggle-01';
+        } else {
+          drawX = enemy.x;
+          drawY = enemy.y;
+          textureKey = 'legionnaire-juggle-01';
         }
       } else if (player.grabPhase === 'break') {
-        // Quiebre con △: izado sobre la cabeza de Kratos (ticks 0..10, grab-break-a) y quebrado hacia abajo (ticks 11+, grab-break-b)
+        // Quiebre con △: izado sobre la cabeza de Kratos (ticks 0..10, grab-break-a) y quebrado contra el suelo (ticks 11+)
         if (t < 11) {
           drawX = player.x + f * 6;
           drawY = player.y - 22;
           textureKey = 'legionnaire-juggle-01';
-        } else if (t < 17) {
-          drawX = player.x + f * 16;
-          drawY = player.y - 6;
+        } else if (t < 18) {
+          drawX = player.x + f * 18;
+          drawY = player.y;
           textureKey = 'legionnaire-death-01';
         } else {
-          drawX = enemy.x;
-          drawY = enemy.y;
+          drawX = player.x + f * 18;
+          drawY = player.y;
           textureKey = 'legionnaire-death-02';
         }
       } else if (player.grabPhase === 'slam' || player.grabPhase === 'finisher_slam') {
@@ -81,13 +85,13 @@ export class EnemyView {
           drawX = player.x + f * 14;
           drawY = player.y - 16;
           textureKey = 'legionnaire-juggle-00';
-        } else if (t < 16) {
+        } else if (t < 18) {
           drawX = player.x + f * 18;
-          drawY = player.y - 2;
+          drawY = player.y;
           textureKey = 'legionnaire-death-01';
         } else {
           drawX = enemy.x;
-          drawY = enemy.y;
+          drawY = player.y;
           textureKey = 'legionnaire-death-02';
         }
       }

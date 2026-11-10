@@ -363,13 +363,16 @@ export class ShellScene extends Phaser.Scene {
         }
         this.prevParryActive = Boolean(player.parryActive);
 
-        // Feedback de impacto en los remates de agarre (slam, break, finisher_slam)
+        // Feedback de impacto en los remates de agarre y estocadas de Grab 1
         if (
-          (player.grabPhase === 'slam' || player.grabPhase === 'break' || player.grabPhase === 'finisher_slam') &&
-          player.grabTicks === 9
+          ((player.grabPhase === 'slam' || player.grabPhase === 'finisher_slam') && player.grabTicks === 10) ||
+          (player.grabPhase === 'break' && player.grabTicks === 11)
         ) {
-          this.cameras.main.shake(90, 0.008);
-          this.vfxLayer.emitParryFlash(player.x + player.facing * 24, player.y - 4);
+          this.cameras.main.shake(90, 0.009);
+          this.vfxLayer.emitParryFlash(player.x + player.facing * 20, player.y - 4);
+        } else if (player.grabPhase === 'pummel' && player.grabTicks === 4) {
+          this.cameras.main.shake(40, 0.004);
+          this.vfxLayer.emitParryFlash(player.x + player.facing * 20, player.y - 18);
         }
       }
 
