@@ -179,3 +179,57 @@ describe('legionnaire sentry loop: patrols outside aggro range and interrupts on
     assert.equal(f.facing, -1, 'faces Kratos immediately');
   });
 });
+
+describe('legionnaire knockdown and recovery (ESE-07)', () => {
+  it('enters knockdown on landing from juggle, stays down for knockdownTicks, then gets up', () => {
+    assert.equal(AI.knockdownTicks, 30, 'knockdown duration is fixed at 30 ticks (~500 ms)');
+    assert.equal(AI.getUpTicks, 15, 'get up duration is fixed at 15 ticks (~250 ms)');
+
+    const player = kratos(100);
+    const f = foe('f1', 200);
+    f.aiState = 'juggle';
+    f.grounded = false;
+    f.vy = 80;
+
+    // Al tocar tierra entra en knockdown
+    f.grounded = true;
+    stepAll([f], player);
+    assert.equal(f.aiState, 'knockdown');
+    assert.equal(f.vx, 0);
+
+    // Permanece tendido durante knockdownTicks
+    for (let i = 1; i < AI.knockdownTicks; i += 1) {
+      stepAll([f], player);
+      assert.equal(f.aiState, 'knockdown');
+      assert.equal(f.vx, 0);
+    }
+
+    // Al cumplirse knockdownTicks pasa a get_up
+    stepAll([f], player);
+    assert.equal(f.aiState, 'get_up');
+    assert.equal(f.vx, 0);
+
+    // Tarda getUpTicks en incorporarse
+    for (let i = 1; i < AI.getUpTicks; i += 1) {
+      stepAll([f], player);
+      assert.equal(f.aiState, 'get_up');
+      assert.equal(f.vx, 0);
+    }
+
+    // Una vez de pie reanuda el combate
+    stepAll([f], player);
+    assert.equal(f.aiState, 'approach');
+  });
+
+  it('remains in knockdown when damaged by standard ground attacks without standing up prematurely', () => {
+    const player = kratos(100);
+    const f = foe('f1', 120);
+    f.aiState = 'knockdown';
+    f.aiTicks = 5;
+
+    // Simula impacto de golpe común
+    f.hp -= 10;
+    stepAll([f], player);
+    assert.equal(f.aiState, 'knockdown', 'must not revert to standing hitstun');
+  });
+});

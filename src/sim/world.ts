@@ -1031,7 +1031,11 @@ export class World {
                   if (target.aiState === 'spawning') {
                     target.aiState = target.kind === 'archer' ? 'reposition' : 'approach';
                     target.aiTicks = 0;
-                  } else if ((target.kind === 'legionnaire' || target.kind === 'archer') && target.aiState === 'juggle') {
+                  } else if (target.kind === 'legionnaire' && target.aiState === 'juggle') {
+                    target.aiState = 'knockdown';
+                    target.aiTicks = 0;
+                    target.vx = 0;
+                  } else if (target.kind === 'archer' && target.aiState === 'juggle') {
                     target.aiState = 'hitstun';
                     target.hitstunTicks = 12;
                     target.aiTicks = 0;

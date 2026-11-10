@@ -57,6 +57,16 @@ export function getLegionnaireFrameKey(enemy: Readonly<EntityState>): string {
       return enemy.vy < 0 ? 'legionnaire-juggle-00' : 'legionnaire-juggle-01';
     }
 
+    case 'knockdown': {
+      // Yace tendido de espaldas sobre la cubierta (death-02)
+      return 'legionnaire-death-02';
+    }
+
+    case 'get_up': {
+      // Se reincorpora: alza torso en death-01 (ticks 0 a 7) y asienta guardia en idle-00 (ticks 8+)
+      return enemy.aiTicks < 8 ? 'legionnaire-death-01' : 'legionnaire-idle-00';
+    }
+
     case 'death': {
       // 3 cuadros: desmoronamiento en ~40 ticks; death-02 se sostiene tendido
       const frame = Math.min(Math.floor(enemy.aiTicks / 8), 2);

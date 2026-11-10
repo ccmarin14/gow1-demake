@@ -128,16 +128,30 @@ describe('legionnaire animation frame selection by AI state', () => {
     assert.equal(getLegionnaireFrameKey(dummyLegionnaire({ aiState: 'death', aiTicks: 40 })), 'legionnaire-death-02');
   });
 
+  it('knockdown chooses death-02 while get_up transitions death-01 to idle-00 (ESE-07)', () => {
+    assert.equal(getLegionnaireFrameKey(dummyLegionnaire({ aiState: 'knockdown', aiTicks: 0 })), 'legionnaire-death-02');
+    assert.equal(getLegionnaireFrameKey(dummyLegionnaire({ aiState: 'knockdown', aiTicks: 25 })), 'legionnaire-death-02');
+
+    // get_up: torso arriba en death-01 y luego de pie en idle-00
+    assert.equal(getLegionnaireFrameKey(dummyLegionnaire({ aiState: 'get_up', aiTicks: 0 })), 'legionnaire-death-01');
+    assert.equal(getLegionnaireFrameKey(dummyLegionnaire({ aiState: 'get_up', aiTicks: 7 })), 'legionnaire-death-01');
+    assert.equal(getLegionnaireFrameKey(dummyLegionnaire({ aiState: 'get_up', aiTicks: 8 })), 'legionnaire-idle-00');
+    assert.equal(getLegionnaireFrameKey(dummyLegionnaire({ aiState: 'get_up', aiTicks: 14 })), 'legionnaire-idle-00');
+  });
+
   it('every selected frame exists in LEGIONNAIRE_FRAME_KEYS manifest', () => {
     const states: EntityState['aiState'][] = [
       'idle',
       'guard',
       'approach',
+      'patrol',
       'windup',
       'slash',
       'recover',
       'hitstun',
       'juggle',
+      'knockdown',
+      'get_up',
       'death',
     ];
     for (const state of states) {

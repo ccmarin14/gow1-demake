@@ -147,6 +147,10 @@ export const CONFIG = {
       slashDamage: 12,
       slashReach: 32,
       parryStunTicks: 32,
+      /** Ticks spent lying knocked down on the floor (~500 ms at 60 Hz, ESE-07). */
+      knockdownTicks: 30,
+      /** Ticks spent getting up from the ground (~250 ms at 60 Hz, ESE-07). */
+      getUpTicks: 15,
       /** Autonomous patrol pace when outside player aggro range (px/s). */
       patrolSpeed: 30,
       /** Duration of patrol walk in one direction before pausing (~1.16 s). */

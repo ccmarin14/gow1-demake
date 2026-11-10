@@ -149,6 +149,8 @@ export interface EntityState {
     | 'recover'
     | 'hitstun'
     | 'juggle'
+    | 'knockdown'
+    | 'get_up'
     | 'death'
     | 'reposition'
     | 'aim'

@@ -2216,9 +2216,11 @@ export function stepStrike(
       target.aiState = 'juggle';
       target.aiTicks = 0;
     } else if (!killed && (target.kind === 'legionnaire' || target.kind === 'archer')) {
-      // A blade hit staggers foot soldiers (the magic only stuns them).
-      target.aiState = 'hitstun';
-      target.aiTicks = 0;
+      // Un tajo común aturde a soldados de pie; si ya están derribados reciben daño en el suelo
+      if (target.aiState !== 'knockdown' && target.aiState !== 'get_up') {
+        target.aiState = 'hitstun';
+        target.aiTicks = 0;
+      }
     }
     result.hits.push({ target, x: b[0], y: b[1] });
   }

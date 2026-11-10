@@ -48,12 +48,33 @@ export function stepLegionnaire(
   // Estado de suspensión aérea (juggle): Kratos lo elevó con Ascensión o golpe aéreo
   if (enemy.aiState === 'juggle') {
     enemy.aiTicks += 1;
-    // Si aterriza en el suelo, colisiona y transiciona a hitstun con aturdimiento de caída
+    // Si aterriza en el suelo, azota la cubierta y entra a derribo (knockdown, ESE-07)
     if (enemy.grounded && enemy.vy >= 0) {
-      enemy.aiState = 'hitstun';
+      enemy.aiState = 'knockdown';
       enemy.aiTicks = 0;
-      enemy.hitstunTicks = 12;
       enemy.vx = 0;
+    }
+    return;
+  }
+
+  // Estado de derribo en el suelo (knockdown, ESE-07)
+  if (enemy.aiState === 'knockdown') {
+    enemy.vx = 0;
+    enemy.aiTicks += 1;
+    if (enemy.aiTicks >= CONFIG.enemy.legionnaire.knockdownTicks) {
+      enemy.aiState = 'get_up';
+      enemy.aiTicks = 0;
+    }
+    return;
+  }
+
+  // Estado de reincorporación (get_up, ESE-07)
+  if (enemy.aiState === 'get_up') {
+    enemy.vx = 0;
+    enemy.aiTicks += 1;
+    if (enemy.aiTicks >= CONFIG.enemy.legionnaire.getUpTicks) {
+      enemy.aiState = 'approach';
+      enemy.aiTicks = 0;
     }
     return;
   }
