@@ -39,6 +39,9 @@ export function stepLegionnaire(
   // Estado de muerte: permanece inerte en la cubierta
   if (enemy.aiState === 'death') {
     enemy.vx = 0;
+    if (enemy.aiTicks > 0) {
+      enemy.aiTicks += 1;
+    }
     return;
   }
 

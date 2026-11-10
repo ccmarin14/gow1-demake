@@ -13,6 +13,7 @@ import { InputManager } from '../input/InputManager';
 import { HudLayer } from '../ui/HudLayer';
 import { GameFlowOverlay } from '../ui/GameFlowOverlay';
 import { PlayerView } from './PlayerView';
+import { EnemyView } from './EnemyView';
 import { VfxLayer } from './VfxLayer';
 import { SoundManager } from '../audio/SoundManager';
 import { STRIKES } from '../sim/strike';
@@ -30,6 +31,7 @@ export class ShellScene extends Phaser.Scene {
   private platformRects: (Phaser.GameObjects.Rectangle | Phaser.GameObjects.Graphics)[] = [];
   private renderedScenario = '';
   private targetRects = new Map<string, Phaser.GameObjects.Rectangle>();
+  private readonly enemyViews = new Map<string, EnemyView>();
   private arrowRects = new Map<string, Phaser.GameObjects.Rectangle>();
   private readonly orbSprites = new Map<string, { outer: Phaser.GameObjects.Arc; core: Phaser.GameObjects.Arc; highlight: Phaser.GameObjects.Arc }>();
   private readonly chestGfx = new Map<
@@ -431,6 +433,12 @@ export class ShellScene extends Phaser.Scene {
     const enemy = CONFIG.presentation.enemyPlaceholder;
     const hydraBox = CONFIG.presentation.hydraPlaceholder;
 
+    for (const [id, view] of this.enemyViews.entries()) {
+      if (!targets.some((t) => t.id === id)) {
+        view.destroy();
+        this.enemyViews.delete(id);
+      }
+    }
     for (const [id, rect] of this.targetRects.entries()) {
       if (!targets.some((t) => t.id === id)) {
         rect.destroy();
@@ -439,8 +447,23 @@ export class ShellScene extends Phaser.Scene {
     }
 
     // Every target is a placeholder box the size of its hit area until its art
-    // is drawn; the hydra box is larger.
+    // is drawn; legionnaires use EnemyView with their 27 approved frames.
     for (const target of targets) {
+      if (target.kind === 'legionnaire') {
+        const oldRect = this.targetRects.get(target.id);
+        if (oldRect) {
+          oldRect.destroy();
+          this.targetRects.delete(target.id);
+        }
+        let view = this.enemyViews.get(target.id);
+        if (!view) {
+          view = new EnemyView(this, target.x, target.y);
+          this.enemyViews.set(target.id, view);
+        }
+        view.update(target);
+        continue;
+      }
+
       const boxHalfW = target.kind === 'hydra' ? hydraBox.width / 2 : halfW;
       const boxHalfH = target.kind === 'hydra' ? hydraBox.height / 2 : halfH;
       let rect = this.targetRects.get(target.id);
@@ -454,7 +477,6 @@ export class ShellScene extends Phaser.Scene {
 
       const telegraphing = target.aiState === 'windup' || target.aiState === 'aim';
       let color: number = CONFIG.presentation.targetColor;
-      if (target.kind === 'legionnaire') color = enemy.legionnaireColor;
       if (target.kind === 'archer') color = enemy.archerColor;
       if (telegraphing) color = enemy.telegraphColor;
       if (target.hitstunTicks > 0) {
@@ -485,6 +507,10 @@ export class ShellScene extends Phaser.Scene {
       rect.destroy();
     }
     this.platformRects = [];
+    for (const view of this.enemyViews.values()) {
+      view.destroy();
+    }
+    this.enemyViews.clear();
     for (const rect of this.targetRects.values()) {
       rect.destroy();
     }
@@ -1115,6 +1141,10 @@ export class ShellScene extends Phaser.Scene {
 
   shutdown(): void {
     this.hudLayer?.destroy();
+    for (const view of this.enemyViews.values()) {
+      view.destroy();
+    }
+    this.enemyViews.clear();
     for (const gfx of this.orbSprites.values()) {
       gfx.outer.destroy();
       gfx.core.destroy();
