@@ -19,7 +19,7 @@ import { stepHydra } from './hydra';
 import { isCastingMagic, stepMagic } from './magic';
 import { isGrabbing, startGrab, stepGrab } from './grab';
 import { damageEnemy } from './damage';
-import { STRIKES, branchStrike, chainStrike, stepGroundFires, strikeGravityAt, queueChain, startStrike, stepStrike, strikeCancellable, strikeLength, strikePhaseAt, type HeldDirection, type StrikeImpactNotice, type StrikeState } from './strike';
+import { STRIKES, branchStrike, chainStrike, stepGroundFires, strikeChainTicks, strikeGravityAt, queueChain, startStrike, stepStrike, strikeCancellable, strikeLength, strikePhaseAt, type HeldDirection, type StrikeImpactNotice, type StrikeState } from './strike';
 import { buildLevel1Map, computeCameraScrollX, getSegmentAtX, type LevelMapData } from './map';
 
 const TICK_DT = 1 / CONFIG.sim.tickRate;
@@ -71,6 +71,8 @@ export class World {
   private strikeHitNotice: { x: number; y: number; power: number; kind: 'light' | 'heavy' | 'air' } | null = null;
   /** A jump pressed during a ground strike, remembered for a few ticks (it fires once the strike ends). */
   private jumpQueuedTicks = 0;
+  /** A ground grab pressed during a strike's slash/hold/recall, fired once its chain window opens. */
+  private grabQueuedTicks = 0;
   /** The strike that just ended, for a few ticks: a press then still carries the combo on. */
   private comboGrace: { state: StrikeState; ticks: number } | null = null;
   /** A strike's ground impact on the last tick (the view adds flash, dust and a shake). */
@@ -420,6 +422,7 @@ export class World {
     this.hitstopTicks = 0;
     this.strikeHitNotice = null;
     this.jumpQueuedTicks = 0;
+    this.grabQueuedTicks = 0;
     this.comboGrace = null;
     this.platforms = scenario.platforms;
     this.targetPhysics = Boolean(scenario.targetPhysics);
@@ -592,12 +595,14 @@ export class World {
                 t.id !== playerNow.id &&
                 !t.isDead &&
                 (t.aiState === 'juggle' || !t.grounded) &&
-                (t.x - playerNow.x) * playerNow.facing >= -8 &&
-                (t.x - playerNow.x) * playerNow.facing <= 95,
+                (t.x - playerNow.x) * playerNow.facing >= -12 &&
+                (t.x - playerNow.x) * playerNow.facing <= 110,
             ),
         );
-        if (juggledNow) {
+        if (juggledNow || this.strike.id === 'launcher' || this.strike.id === 'ascension') {
           queueChain(this.strike, steadyDirection, 'grab');
+        } else if (!STRIKES[this.strike.id].air) {
+          this.grabQueuedTicks = 16;
         }
       }
       if (this.strike && jumpEdge) {
@@ -676,7 +681,7 @@ export class World {
         if (this.strike === null) {
           this.jumpQueuedTicks = jumpNow ? 0 : Math.max(0, this.jumpQueuedTicks - 1);
         }
-        const striking = this.strike !== null;
+        let striking = this.strike !== null;
 
         // Invocación y ejecución de magia 'Ira de Poseidón'
         if (magicEdge && player.grounded && !inHitstun && !isOpeningChest && !striking) {
@@ -688,7 +693,7 @@ export class World {
         const rolling = isRolling(player);
         const guarding = isGuarding(player);
 
-        // Invocación y ejecución de agarre (○ / tecla L, BL-06, D-42)
+        // Invocación y ejecución de agarre (○ / tecla K o L, BL-06, D-42)
         if (inHitstun && player.grabPhase !== 'none') {
           player.grabPhase = 'none';
           player.grabTicks = 0;
@@ -699,11 +704,43 @@ export class World {
             t.id !== player.id &&
             !t.isDead &&
             (t.aiState === 'juggle' || !t.grounded) &&
-            (t.x - player.x) * player.facing >= -8 &&
-            (t.x - player.x) * player.facing <= 95,
+            (t.x - player.x) * player.facing >= -12 &&
+            (t.x - player.x) * player.facing <= 110,
         );
+        // Pulsar ○ desde el tajo de un golpe terrestre (tick >= 5) recuerda el agarre para encadenarlo al abrir la ventana
+        if (grabEdge && this.strike && !STRIKES[this.strike.id].air && this.strike.id !== 'launcher' && this.strike.tick >= 5 && !hasJuggledAhead) {
+          this.grabQueuedTicks = 16;
+        }
+        const strikeChainWindow = this.strike ? strikeChainTicks(STRIKES[this.strike.id]) : null;
+        const canCancelStrikeToGrab = Boolean(
+          this.strike &&
+            !STRIKES[this.strike.id].air &&
+            this.strike.id !== 'launcher' &&
+            ((strikeChainWindow && this.strike.tick >= strikeChainWindow.opens) ||
+              strikeCancellable(STRIKES[this.strike.id], this.strike.tick)),
+        );
+        const wantsGroundGrabNow =
+          (grabEdge && (!striking || canCancelStrikeToGrab)) ||
+          (this.grabQueuedTicks > 0 && (!striking || canCancelStrikeToGrab));
+        if (!striking || canCancelStrikeToGrab) {
+          this.grabQueuedTicks = wantsGroundGrabNow ? 0 : Math.max(0, this.grabQueuedTicks - 1);
+        }
         let grabStartedNow = false;
-        if (grabEdge && player.grounded && !inHitstun && !isOpeningChest && !striking && !nowCastingMagic && !rolling && !guarding && player.grabPhase === 'none' && !hasJuggledAhead) {
+        if (
+          wantsGroundGrabNow &&
+          player.grounded &&
+          !inHitstun &&
+          !isOpeningChest &&
+          (!striking || canCancelStrikeToGrab) &&
+          !nowCastingMagic &&
+          !rolling &&
+          !guarding &&
+          player.grabPhase === 'none' &&
+          !hasJuggledAhead
+        ) {
+          this.strike = null;
+          striking = false;
+          this.comboGrace = null;
           grabStartedNow = startGrab(player, this.targets);
         }
         if (player.grabPhase !== 'none') {
@@ -716,6 +753,40 @@ export class World {
             if (dodgeEdge) followUpEdges.push('dodge');
           }
           stepGrab(player, this.targets, followUpEdges);
+          if (player.grabPhase === 'throw' && player.grabTicks === 5) {
+            this.strikeHitNotice = {
+              x: player.x + player.facing * 20,
+              y: player.y - 24,
+              power: CONFIG.player.grab.throwDamage,
+              kind: 'heavy',
+            };
+          } else if (player.grabPhase === 'break' && player.grabTicks === 11) {
+            this.strikeImpactNotice = {
+              x: player.x + player.facing * 18,
+              y: player.y,
+              dust: [player.x + player.facing * 8, player.x + player.facing * 28],
+              shake: { px: 5, ticks: 8 },
+            };
+            this.strikeHitNotice = {
+              x: player.x + player.facing * 18,
+              y: player.y - 12,
+              power: CONFIG.player.grab.breakDamage,
+              kind: 'heavy',
+            };
+          } else if ((player.grabPhase === 'slam' || player.grabPhase === 'finisher_slam') && player.grabTicks === 10) {
+            this.strikeImpactNotice = {
+              x: player.x + player.facing * 18,
+              y: player.y,
+              dust: [player.x + player.facing * 10, player.x + player.facing * 26],
+              shake: { px: 4, ticks: 7 },
+            };
+            this.strikeHitNotice = {
+              x: player.x + player.facing * 18,
+              y: player.y - 8,
+              power: CONFIG.player.grab.damage,
+              kind: 'heavy',
+            };
+          }
         }
         const nowGrabbing = isGrabbing(player);
 
@@ -739,7 +810,8 @@ export class World {
         // animation does (a finger on a phone is not frame-exact).
         let graceChained = false;
         const grace = this.comboGrace;
-        const grabAllowedForHarpoon = grabEdge && hasJuggledAhead;
+        const grabAllowedForHarpoon =
+          grabEdge && (hasJuggledAhead || this.strike?.id === 'launcher' || this.strike?.id === 'ascension');
         if (grace && !striking && (lightAttackEdge || heavyAttackPress || grabAllowedForHarpoon)) {
           const usable = STRIKES[grace.state.id].air ? airFree : free;
           if (usable) {
@@ -793,34 +865,39 @@ export class World {
             startedNow = true;
           }
         } else if (this.strike) {
-          // Triangle held through its windup branches (Ascension).
-          const branched = branchStrike(this.strike, player, this.heavyHeldTicks);
-          if (branched) {
-            this.strike = branched;
+          if (this.strike.id === 'ascension' && grabEdge && hasJuggledAhead && !player.grounded) {
+            this.strike = startStrike(player, 'harpoon');
             startedNow = true;
-          }
-          if (lightAttackEdge) {
-            queueChain(this.strike, steadyDirection);
-          }
-          // Triangle in a square's chain window starts the plain triangle.
-          if (heavyAttackPress) {
-            queueChain(this.strike, steadyDirection, 'heavy');
-          }
-          // Circle in launcher or air combo chain window starts Orion's Harpoon ONLY if an enemy is airborne.
-          if (grabAllowedForHarpoon) {
-            queueChain(this.strike, steadyDirection, 'grab');
-          }
-          const next = chainStrike(this.strike, player, steadyDirection);
-          if (next) {
-            if (next.id === 'airTriangle' && player.vy >= 0 && this.altitudeAboveGround(player) < CONFIG.combat.feel.minAirHeavyAltitudePx) {
-              this.landingAttackBuffer = {
-                button: 'heavy',
-                ticks: CONFIG.combat.feel.landingAttackBufferTicks,
-              };
-              bufferedNow = true;
-            } else {
-              this.strike = next;
+          } else {
+            // Triangle held through its windup branches (Ascension), unless Circle was already queued for Harpoon.
+            const branched = this.strike.queuedGrab ? null : branchStrike(this.strike, player, this.heavyHeldTicks);
+            if (branched) {
+              this.strike = branched;
               startedNow = true;
+            }
+            if (lightAttackEdge) {
+              queueChain(this.strike, steadyDirection);
+            }
+            // Triangle in a square's chain window starts the plain triangle.
+            if (heavyAttackPress) {
+              queueChain(this.strike, steadyDirection, 'heavy');
+            }
+            // Circle in launcher or air combo chain window starts Orion's Harpoon.
+            if (grabAllowedForHarpoon) {
+              queueChain(this.strike, steadyDirection, 'grab');
+            }
+            const next = chainStrike(this.strike, player, steadyDirection);
+            if (next) {
+              if (next.id === 'airTriangle' && player.vy >= 0 && this.altitudeAboveGround(player) < CONFIG.combat.feel.minAirHeavyAltitudePx) {
+                this.landingAttackBuffer = {
+                  button: 'heavy',
+                  ticks: CONFIG.combat.feel.landingAttackBufferTicks,
+                };
+                bufferedNow = true;
+              } else {
+                this.strike = next;
+                startedNow = true;
+              }
             }
           }
         }
@@ -831,8 +908,16 @@ export class World {
         // The air lashes and the air triangle's loop hang Kratos: a fall already
         // under way is cut to a crawl as the strike starts (GoW 1 keeps him
         // floating through the whole air combo).
-        if (this.strike && startedNow && CONFIG.combat.feel.hoverStrikes.includes(this.strike.id as typeof CONFIG.combat.feel.hoverStrikes[number])) {
-          player.vy = Math.max(CONFIG.combat.feel.hoverVyMin, Math.min(CONFIG.combat.feel.hoverVyMax, player.vy));
+        if (
+          this.strike &&
+          startedNow &&
+          (this.strike.id === 'harpoon' ||
+            CONFIG.combat.feel.hoverStrikes.includes(this.strike.id as typeof CONFIG.combat.feel.hoverStrikes[number]))
+        ) {
+          player.vy =
+            this.strike.id === 'harpoon'
+              ? Math.max(-40, Math.min(20, player.vy))
+              : Math.max(CONFIG.combat.feel.hoverVyMin, Math.min(CONFIG.combat.feel.hoverVyMax, player.vy));
         }
         let nowStriking = this.strike !== null;
         if (this.comboGrace) {
@@ -1145,6 +1230,11 @@ export class World {
               const platform = this.platforms[p];
               if (target.x >= platform.x1 && target.x <= platform.x2) {
                 if (target.vy >= 0 && target.y >= platform.yTop) {
+                  const wasHarpoonSlam =
+                    target.aiState === 'juggle' &&
+                    target.vy >= 280 &&
+                    player !== undefined &&
+                    (target.vx * player.facing < 0 || Math.abs((target.x - player.x) * player.facing - 18) < 1);
                   target.y = platform.yTop;
                   target.vy = 0;
                   target.grounded = true;
@@ -1155,6 +1245,21 @@ export class World {
                     target.aiState = 'knockdown';
                     target.aiTicks = 0;
                     target.vx = 0;
+                    if (wasHarpoonSlam && !target.isDead) {
+                      const killedBySlam = damageEnemy(target, 15, CONFIG.enemy.legionnaire.knockdownTicks);
+                      if (killedBySlam) {
+                        target.aiState = 'death';
+                        target.aiTicks = 0;
+                        target.isDead = true;
+                      }
+                      this.strikeImpactNotice = {
+                        x: target.x,
+                        y: target.y,
+                        dust: [target.x - 10, target.x + 10],
+                        shake: { px: 4, ticks: 7 },
+                      };
+                      this.strikeHitNotice = { x: target.x, y: target.y - 10, power: 25, kind: 'heavy' };
+                    }
                   } else if (target.kind === 'archer' && target.aiState === 'juggle') {
                     target.aiState = 'hitstun';
                     target.hitstunTicks = 12;

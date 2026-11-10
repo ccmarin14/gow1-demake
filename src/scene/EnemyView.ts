@@ -46,13 +46,20 @@ export class EnemyView {
         drawX = player.x + f * 16;
         drawY = player.y - lift;
         textureKey = t < 3 || Math.floor(t / 12) % 2 === 0 ? 'legionnaire-hitstun-00' : 'legionnaire-juggle-00';
+      } else if (player.grabPhase === 'throw') {
+        // Lanzamiento con □: cargado atrás durante grab-throw-a (ticks 0..5) y despedido al frente en grab-throw-b (ticks 6+)
+        if (t < 6) {
+          drawX = player.x + f * 10;
+          drawY = player.y - 4;
+          textureKey = 'legionnaire-hitstun-00';
+        }
       } else if (player.grabPhase === 'break') {
-        // Quiebre con △: izado sobre la cabeza de Kratos (ticks 0..6, grab-break-a) y quebrado hacia abajo (ticks 7+, grab-break-b)
-        if (t < 7) {
+        // Quiebre con △: izado sobre la cabeza de Kratos (ticks 0..10, grab-break-a) y quebrado hacia abajo (ticks 11+, grab-break-b)
+        if (t < 11) {
           drawX = player.x + f * 6;
           drawY = player.y - 22;
           textureKey = 'legionnaire-juggle-01';
-        } else if (t < 11) {
+        } else if (t < 17) {
           drawX = player.x + f * 16;
           drawY = player.y - 6;
           textureKey = 'legionnaire-death-01';
@@ -62,12 +69,12 @@ export class EnemyView {
           textureKey = 'legionnaire-death-02';
         }
       } else if (player.grabPhase === 'slam' || player.grabPhase === 'finisher_slam') {
-        // Azote con ○: levantado frente al hombro (ticks 0..6, grab-slam-a) y estrellado contra las tablas (ticks 7+, grab-slam-b)
-        if (t < 7) {
+        // Azote con ○: levantado frente al hombro (ticks 0..9, grab-slam-a) y estrellado contra las tablas (ticks 10+, grab-slam-b)
+        if (t < 10) {
           drawX = player.x + f * 14;
           drawY = player.y - 16;
           textureKey = 'legionnaire-juggle-00';
-        } else if (t < 10) {
+        } else if (t < 16) {
           drawX = player.x + f * 18;
           drawY = player.y - 2;
           textureKey = 'legionnaire-death-01';

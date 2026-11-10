@@ -1135,7 +1135,7 @@ const LAUNCHER: StrikeDef = {
   trailFadeWidthPx: 4,
   // Held through the lift, Kratos leaps after the enemy immediately.
   branch: { atEndOf: 'lift', ifHeld: 'heavy-attack', into: 'ascension' },
-  chain: { grab: 'harpoon', from: 'sweep', fromTick: 8 },
+  chain: { grab: 'harpoon', from: 'lift', fromTick: 2 },
   cancel: { from: 'recall', fromTick: 4 },
 };
 
@@ -1403,7 +1403,7 @@ const HARPOON: StrikeDef = {
   heldBlade: { from: 'previous', ticks: 9, sagPx: 5 },
   air: true,
   grabsAirborne: true,
-  launch: { vy: 240, vx: -200 },
+  launch: { vy: 320, vx: -220 },
   phases: [
     { id: 'carry', ticks: 2, advancePx: 0, pose: 'air-00', centerX: CX['air-00'], gravity: 0.6 },
     { id: 'throw', ticks: 5, advancePx: 1, pose: 'air-02', centerX: CX['air-02'], gravity: 0.6 },
@@ -1413,7 +1413,7 @@ const HARPOON: StrikeDef = {
   blades: {
     far: {
       shoulder: [3.6, -23.6],
-      track: [[6.4, -2.4], [6.4, -2.4], [36.4, -20.4], [66.4, -38.4], [82.4, -42.4], [76.4, -8.4]],
+      track: [[6.4, -2.4], [6.4, -2.4], [36.4, -20.4], [66.4, -38.4], [64.0, 12.0], [40.0, 26.0], [40.0, 26.0]],
       chainFrom: 0,
       motion: {
         carry: { kind: 'carry' },
@@ -1423,10 +1423,10 @@ const HARPOON: StrikeDef = {
       },
       trailGrowth: { throw: { widthPx: 4, tailPx: 20, tailFromU: 0.5 } },
       trail: { kind: 'profile', ...TRIANGLE_TRAIL },
-      active: { fromS: 0.2 },
+      active: { fromS: 0.15 },
     },
   },
-  hitRadiusPx: 6,
+  hitRadiusPx: 22,
   damage: 10,
   hitstunTicks: 16,
   hitstopTicks: 4,

@@ -147,7 +147,15 @@ export class PlayerView {
     if (strike) {
       // Strike body pose by phase (D-37); the weapon layer draws the blades.
       this.stopLoop();
-      player.setTexture(strikeFrameKey(strikePoseAt(STRIKES[strike.id], strike.tick)), 0);
+      const poseKey =
+        strike.id === 'harpoon' && grounded
+          ? strike.tick < 6
+            ? 'kratos-grab-lunge'
+            : strike.tick < 11
+              ? 'kratos-grab-throw-b'
+              : 'kratos-grab-slam-b'
+          : strikeFrameKey(strikePoseAt(STRIKES[strike.id], strike.tick));
+      player.setTexture(poseKey, 0);
       player.setFlipX(strike.facing === -1);
       player.setRotation(0);
       player.setAlpha(1);
@@ -222,14 +230,14 @@ export class PlayerView {
         return t < 3 ? 'kratos-grab-lunge' : 'kratos-grab-hold';
       }
       case 'throw': {
-        return t < 4 ? 'kratos-grab-throw-a' : 'kratos-grab-throw-b';
+        return t < 6 ? 'kratos-grab-throw-a' : 'kratos-grab-throw-b';
       }
       case 'break': {
-        return t < 7 ? 'kratos-grab-break-a' : 'kratos-grab-break-b';
+        return t < 11 ? 'kratos-grab-break-a' : 'kratos-grab-break-b';
       }
       case 'slam':
       case 'finisher_slam': {
-        return t < 7 ? 'kratos-grab-slam-a' : 'kratos-grab-slam-b';
+        return t < 10 ? 'kratos-grab-slam-a' : 'kratos-grab-slam-b';
       }
       case 'recovery': {
         return t < 4 ? 'kratos-sq1-e' : PLAYER_KEY;

@@ -67,6 +67,11 @@ export function startGrab(player: EntityState, targets: readonly EntityState[]):
   }
 
   // Agarre conectado:
+  // Si el enemigo está a media distancia (p. ej. tras el retroceso de un combo □), Kratos da un paso al frente (grab-lunge)
+  if (minDistance > 32) {
+    player.x += player.facing * Math.min(18, Math.round(minDistance - cfg.holdDistancePx));
+  }
+
   // Solo inicia el QTE contextual si el objetivo está explícitamente en estado 'weakened'.
   // Los legionarios básicos se agarran siempre en 'hold' para elegir □ (lanzar), △ (partir) o ○ (azotar).
   const isWeakened = closestTarget.aiState === 'weakened';
@@ -401,8 +406,9 @@ export function stepGrab(
 
     const target = targets.find((e) => e.id === player.grabTargetId);
     if (target && (player.grabPhase === 'slam' || player.grabPhase === 'break')) {
-      if (player.grabTicks < 9) {
-        // Mientras Kratos lo iza y descarga en arco (ticks 0..8), sigue anclado a la presa
+      const impactTick = player.grabPhase === 'break' ? 11 : 10;
+      if (player.grabTicks < impactTick) {
+        // Mientras Kratos lo iza sobre la cabeza (break, ticks 0..10) o frente al hombro (slam, ticks 0..9), sigue anclado a la presa
         target.x = player.x + player.facing * cfg.holdDistancePx;
         target.y = player.y;
         target.vx = 0;
@@ -410,8 +416,8 @@ export function stepGrab(
         if (target.aiState === 'knockdown') {
           target.aiTicks = 0;
         }
-      } else if (player.grabTicks === 9 && !target.isDead) {
-        // En el tick de impacto contra la cubierta (tick 9), aplica el rebote
+      } else if (player.grabTicks === impactTick && !target.isDead) {
+        // En el tick de impacto contra la cubierta, aplica el rebote
         target.vx = player.facing * cfg.slamVx;
         target.vy = cfg.slamVy;
       }

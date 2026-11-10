@@ -100,7 +100,7 @@ guard: {
 },
 grab: {
   /** Maximum forward reach to latch onto an enemy (px). */
-  reachPx: 38,
+  reachPx: 52,
   /** Maximum vertical alignment offset to allow grab (px). */
   verticalReachPx: 20,
   /** Fixed horizontal separation between Kratos and the victim during hold (px). */
@@ -109,8 +109,8 @@ grab: {
   whiffTicks: 15,
   /** Ticks spent holding the victim while waiting for player decision □ / △ / ○ (~2.0 s at 60 Hz). */
   holdTicks: 120,
-  /** Ticks spent slamming the victim down to the deck (~260 ms). */
-  slamTicks: 16,
+  /** Ticks spent executing a grab follow-up (throw / break / slam, ~430 ms at 60 Hz). */
+  slamTicks: 26,
   /** Ticks recovering from the slam animation (~130 ms). */
   recoveryTicks: 8,
   /** Direct damage dealt to the victim on ground slam (○ / K / L). */

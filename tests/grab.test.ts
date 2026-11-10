@@ -320,4 +320,65 @@ describe('combat grab with Circle / L key (BL-06, D-42)', () => {
     world.step(['grab']);
     assert.equal(world.snapshot().strike, undefined, 'harpoon does not fire when no enemy is airborne');
   });
+
+  it('chains a ground combo (□ -> ○) directly into grab hold by cancelling recovery and lunging across knockback', () => {
+    const world = createWorld();
+    const p = getPlayer(world);
+    const victim = getEnemy(world);
+
+    p.x = 300;
+    p.facing = 1;
+    victim.x = 334;
+    victim.y = p.y;
+    victim.hp = 60;
+    victim.aiState = 'idle';
+
+    // 1. Iniciar golpe □1 ('light-attack') y avanzar hasta el impacto (tick ~11)
+    world.step(['light-attack']);
+    stepTicks(world, [], 13);
+    assert.equal(victim.hp, 50, 'square1 hit the legionnaire');
+
+    // 2. Pulsar ○ ('grab') durante el tajo / hitstop para encadenar hacia el agarre
+    world.step(['grab']);
+    stepTicks(world, [], 15);
+
+    assert.equal(p.grabPhase, 'hold', 'Kratos chains from square1 into grab hold');
+    assert.equal(p.grabTargetId, victim.id);
+    assert.equal(victim.aiState, 'grabbed');
+    assert.equal(victim.x, p.x + CONFIG.player.grab.holdDistancePx);
+  });
+
+  it('chains Orion\'s Harpoon reliably from Ascension in mid-air and slams the enemy onto the deck with impact', () => {
+    const world = createWorld();
+    const p = getPlayer(world);
+    const victim = getEnemy(world);
+
+    p.x = 300;
+    p.facing = 1;
+    victim.x = 338;
+    victim.y = p.y;
+    victim.hp = 60;
+    victim.aiState = 'idle';
+
+    // Mantener △ durante 42 ticks para lanzar al enemigo y saltar con él en Ascension
+    stepTicks(world, ['heavy-attack'], 42);
+    assert.equal(p.grounded, false, 'Kratos is airborne in Ascension');
+    assert.equal(victim.aiState, 'juggle', 'victim is airborne in front of Kratos');
+
+    // Pulsar ○ ('grab') en pleno vuelo de Ascension
+    world.step(['grab']);
+    assert.equal(world.snapshot().strike?.id, 'harpoon', 'Ascension immediately transitions to Orion\'s Harpoon on Circle');
+
+    let sawDeckImpact = false;
+    for (let i = 0; i < 40; i += 1) {
+      world.step([]);
+      if (world.consumeStrikeImpactNotice()) {
+        sawDeckImpact = true;
+      }
+    }
+    assert.equal(victim.grounded, true, 'harpooned enemy slammed onto deck from mid-air');
+    assert.equal(victim.aiState, 'knockdown', 'enemy in knockdown after mid-air harpoon slam');
+    assert.ok(sawDeckImpact, 'deck slam emits dust and camera shake impact notice');
+    assert.equal(victim.hp, 60 - 10 - 10 - 15, 'deals launcher (10) + harpoon (10) + deck slam (15) damage');
+  });
 });
