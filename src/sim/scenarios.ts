@@ -328,13 +328,15 @@ register({
 });
 
 /**
- * The level holds only Kratos, the deck and its platforms (user decision,
- * D-33). Enemies, chests, checkpoints, waves and the arena live in their own
- * scenarios until the user puts each one back.
+ * The level holds Kratos and the undead legionnaire on the deck (user decision,
+ * returning the enemy to the main scenario).
  */
 register({
   name: 'level1',
-  entities: [playerAt(100, GROUND_Y)],
+  entities: [
+    playerAt(100, GROUND_Y),
+    legionnaireAt('legionnaire-deck-1', 360, GROUND_Y, -1),
+  ],
   platforms: [
     { x1: 0, x2: 1440, yTop: 262 },
     { x1: 200, x2: 290, yTop: 226 },

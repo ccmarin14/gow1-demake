@@ -4,25 +4,27 @@ import { describe, it } from 'node:test';
 import { World } from '../src/sim/world';
 
 describe('level1', () => {
-  it('starts with only Kratos: no enemies, chests, checkpoints, waves or arena', () => {
+  it('starts with Kratos and the legionnaire on the deck: no chests, checkpoints, waves or arena', () => {
     const world = new World();
     world.step(['jump']);
     for (let i = 0; i < 60; i += 1) world.step([]);
     const snapshot = world.snapshot();
-    assert.deepEqual(snapshot.entities.map((e) => e.kind), ['player']);
+    assert.deepEqual(snapshot.entities.map((e) => e.kind), ['player', 'legionnaire']);
     assert.equal(snapshot.chests.length, 0);
     assert.equal(snapshot.checkpoints.length, 0);
     assert.equal(snapshot.wave, undefined);
     assert.equal(snapshot.arena, undefined);
   });
 
-  it('stays empty after running through the whole level', () => {
+  it('legionnaire moves autonomously towards Kratos on the deck', () => {
     const world = new World();
     world.step(['jump']);
-    for (let i = 0; i < 900; i += 1) world.step(['move-right']);
-    const snapshot = world.snapshot();
-    assert.deepEqual(snapshot.entities.map((e) => e.kind), ['player']);
-    assert.equal(snapshot.arena, undefined);
-    assert.ok(snapshot.entities[0].x > 1000, 'crossed the old arena');
+    // Kratos approaches the legionnaire to enter aggro range (160 px)
+    for (let i = 0; i < 65; i += 1) world.step(['move-right']);
+    const startX = world.snapshot().entities.find((e) => e.kind === 'legionnaire')?.x;
+    for (let i = 0; i < 30; i += 1) world.step([]);
+    const endX = world.snapshot().entities.find((e) => e.kind === 'legionnaire')?.x;
+    assert.ok(startX !== undefined && endX !== undefined);
+    assert.ok(endX < startX, `legionnaire moved towards Kratos: start=${startX}, end=${endX}`);
   });
 });
