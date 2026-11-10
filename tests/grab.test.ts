@@ -181,4 +181,113 @@ describe('combat grab with Circle / L key (BL-06, D-42)', () => {
     world.step(['grab']);
     assert.equal(p.grabPhase, 'none');
   });
+
+  it('ground grab option □ (light-attack): throws victim as projectile and bowls over another enemy in path', () => {
+    const world = new World();
+    world.loadScenario('magic');
+    const p = getPlayer(world);
+    const victim = getEnemy(world, 'legionnaire-1');
+    const bystander = getEnemy(world, 'archer-1');
+
+    p.x = 200;
+    p.facing = 1;
+    victim.x = 228;
+    victim.y = p.y;
+    victim.hp = 60;
+
+    // Colocar al segundo enemigo en la trayectoria del lanzamiento
+    bystander.x = 290;
+    bystander.y = p.y;
+    bystander.hp = 40;
+    bystander.aiState = 'idle';
+
+    // 1. Iniciar agarre con ○ ('grab')
+    world.step(['grab']);
+    assert.equal(p.grabPhase, 'hold');
+
+    // 2. Pulsar □ ('light-attack') durante la sujeción para lanzar al enemigo como proyectil
+    world.step(['light-attack']);
+    assert.equal(p.grabPhase, 'throw');
+    assert.equal(victim.hp, 60 - CONFIG.player.grab.throwDamage);
+    assert.equal(victim.aiState, 'juggle');
+    assert.equal(victim.vx, CONFIG.player.grab.throwVx);
+
+    // 3. Avanzar ticks mientras el cuerpo lanzado impacta al segundo enemigo
+    stepTicks(world, [], 18);
+    assert.equal(bystander.hp, 40 - CONFIG.player.grab.collateralDamage, 'bystander takes collateral damage');
+    assert.equal(bystander.aiState, 'knockdown', 'bystander is knocked down by thrown victim');
+  });
+
+  it('ground grab option △ (heavy-attack): brutally breaks victim for heavy single-target damage (35)', () => {
+    const world = createWorld();
+    const p = getPlayer(world);
+    const victim = getEnemy(world);
+
+    p.x = 300;
+    p.facing = 1;
+    victim.x = 328;
+    victim.y = p.y;
+    victim.hp = 60;
+
+    world.step(['grab']);
+    assert.equal(p.grabPhase, 'hold');
+
+    // Pulsar △ ('heavy-attack') durante hold
+    world.step(['heavy-attack']);
+    assert.equal(p.grabPhase, 'break');
+    assert.equal(victim.hp, 60 - CONFIG.player.grab.breakDamage);
+    assert.equal(victim.aiState, 'knockdown');
+  });
+
+  it('ground grab option ○ (grab): triggers immediate ground slam before hold window expires', () => {
+    const world = createWorld();
+    const p = getPlayer(world);
+    const victim = getEnemy(world);
+
+    p.x = 300;
+    p.facing = 1;
+    victim.x = 328;
+    victim.y = p.y;
+    victim.hp = 60;
+
+    world.step(['grab']);
+    assert.equal(p.grabPhase, 'hold');
+
+    // Soltar 1 tick y volver a pulsar ○ ('grab') en tick 3 (mucho antes de holdTicks = 18)
+    world.step([]);
+    world.step(['grab']);
+    assert.equal(p.grabPhase, 'slam');
+    assert.equal(victim.hp, 60 - CONFIG.player.grab.damage);
+    assert.equal(victim.aiState, 'knockdown');
+  });
+
+  it('launcher (held △) lifts enemy straight up vertically (vx = 0) and ○ chains Orion\'s Harpoon to slam it down', () => {
+    const world = createWorld();
+    const p = getPlayer(world);
+    const victim = getEnemy(world);
+
+    p.x = 300;
+    p.facing = 1;
+    victim.x = 338;
+    victim.y = p.y;
+    victim.hp = 60;
+    victim.aiState = 'idle';
+
+    // Mantener △ ('heavy-attack') durante el windup hasta disparar el launcher (tick 9+)
+    stepTicks(world, ['heavy-attack'], 28);
+    assert.equal(victim.aiState, 'juggle', 'victim is launched into juggle');
+    assert.equal(victim.vx, 0, 'victim rises straight up vertically with zero horizontal drift');
+    assert.ok(victim.y < p.y, 'victim is airborne above the deck');
+
+    // Soltar △ y pulsar ○ ('grab') para encadenar Orion's Harpoon y estrellar al enemigo contra la cubierta
+    world.step([]);
+    world.step(['grab']);
+    stepTicks(world, [], 4);
+    assert.equal(world.snapshot().strike?.id, 'harpoon', 'Circle chains into Orion\'s Harpoon');
+
+    // Avanzar hasta que el arpón conecte y el enemigo caiga derribado a la cubierta
+    stepTicks(world, [], 25);
+    assert.equal(victim.grounded, true, 'harpooned enemy slammed back onto deck');
+    assert.equal(victim.aiState, 'knockdown', 'harpooned enemy ends in knockdown');
+  });
 });

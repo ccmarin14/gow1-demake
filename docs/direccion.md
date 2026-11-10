@@ -17,12 +17,13 @@
 | `light-attack` | `J` (□ en pantalla táctil) | Cuadrado (□) | Combo de 6 □ en el suelo: cada `J` en el final del golpe anterior encadena el siguiente, y mantener la dirección contraria da vuelta a Kratos (D-37). En □6 no hace nada. |
 | `dodge` | `Shift` | Stick derecho | Evasión terrestre con ventana de invulnerabilidad. |
 | `heavy-attack` | `I` (△ en pantalla táctil) | Triángulo (△) | △ en tres niveles por tiempo; en el aire, el golpe vertical (D-37). |
+| `grab` | `K` / `L` (○ en pantalla táctil) | Círculo (○) | Agarre terrestre (con elección `□` lanzar, `△` quebrar o `○` azotar), *Orion's Harpoon* con cadena contra enemigos en el aire (`juggle`) y remates contextuales QTE (D-42, BL-06, BL-07). |
 | `magic` | `U` | L2 | Magia activa (*Ira de Poseidón*). |
 | `context-action` | `E` | R2 | Interacción con cofres y entorno. |
 | `guard` | `Q` | L1 | Guardia y desvío (*parry*) en los primeros ticks. |
 | `pause` | `Escape` | Start | Pausa. |
 
-Tras 2 a 4 □, △ lanza *Plume of Prometheus*; tras 5 □, *Spirit of Hercules* (§6). △ (`I`, o el botón △ táctil) tiene tres niveles por tiempo: tocar es el golpe pesado, mantener hasta el final de la carga lanza a los enemigos sin que Kratos salte y seguir sosteniendo lo hace saltar tras ellos (*Ascension*). En el aire, `J` encadena tres golpes y `I` el golpe vertical; un salto corta un golpe aéreo con el doble salto. Círculo no tiene acción todavía: usará `L` (D-42) cuando exista el legionario con arte (el agarre y *Orion's Harpoon* quedan para después).
+Tras 2 a 4 □, △ lanza *Plume of Prometheus*; tras 5 □, *Spirit of Hercules* (§6). △ (`I`, o el botón △ táctil) tiene tres niveles por tiempo: tocar es el golpe pesado, mantener hasta el final de la carga lanza a los enemigos **verticalmente hacia arriba** sin que Kratos salte y seguir sosteniendo lo hace saltar tras ellos (*Ascension*). En el aire, `J` encadena tres golpes que mantienen suspendido al enemigo, `I` el golpe vertical y `K`/`L` (○) lanza *Orion's Harpoon* para enganchar al enemigo elevado y estamparlo contra el suelo; un salto corta un golpe aéreo con el doble salto. En el suelo, `K`/`L` (○) sujeta a un enemigo sano permitiendo elegir entre arrojarlo como proyectil (`J`/□), quebrarlo (`I`/△) o azotarlo (`K`/`L`/○), o inicia el remate QTE si está debilitado (`hp <= 20`).
 
 ## 3. Reglas visuales y de pixel art
 
@@ -83,16 +84,16 @@ Criterio: se implementa lo que respaldan el manual oficial, el cartel del juego 
 | Tema | Decisión | Respaldo |
 | --- | --- | --- |
 | Cadena de □ | 6 golpes; *Plume of Prometheus* tras □□△ | Cartel "Light Attack" del video (6 □) |
-| △ | Tres niveles por tiempo: golpe (tajo doble secuencial, dos impactos de 10), lanzador (el enemigo sube, Kratos no) y *Ascension* (Kratos salta tras él) | Manual: "△ mantener: lanzar al enemigo y seguirlo"; GameFAQs: "Kratos salta con él"; Neoseeker: "lanzar, luego saltar". **Los tiempos y el tajo doble son de la usuaria** (pasos 68 a 71; sin fuente). |
+| △ | Tres niveles por tiempo: golpe (tajo doble secuencial, dos impactos de 10), lanzador (el enemigo sube **verticalmente** sin empuje horizontal, Kratos se queda en tierra) y *Ascension* (Kratos salta tras él) | Manual: "△ mantener: lanzar al enemigo y seguirlo"; GameFAQs: "Kratos salta con él"; Neoseeker: "lanzar, luego saltar". **Los tiempos y el tajo doble son de la usuaria** (pasos 68 a 71; sin fuente). |
 | *Plume of Prometheus* | Tras 2, 3 o 4 □ + △. 1 □ + △ es el △ normal; 6 □ no encadena | *Plume* es de nivel 1 (StrategyWiki, *Chains of Olympus*: □□△). **La regla de 2 a 4 □ es de la usuaria** (pasos 74 y 76). |
 | *Spirit of Hercules* | 5 □ + △: la cinemática de *Plume* más lenta, con salto corto hacia adelante, ralentización entre el ápice y el suelo, 64 de daño en total (dos impactos de 32) y fuego residual | **Sin respaldo.** En *Chains of Olympus* es △△△ de nivel 3; en el GoW 1 original no se confirmó. Decisión de la usuaria (pasos 75 a 78, D-41). |
 | △ dentro de la cadena de □ | Arranca el △ normal desde la ventana de cualquier □ | Regla general de los combos; sin variantes propias en las fuentes |
-| □ aéreo | 3 golpes distintos con la caída frenada | Cartel AIR □□□ y manual ("ataque horizontal") |
+| □ aéreo | 3 golpes distintos con la caída frenada que mantienen suspendido al enemigo en `juggle` sin alejarlo | Cartel AIR □□□ y manual ("ataque horizontal") |
 | △ aéreo | Lazo vertical y caída con impacto, igual tras cualquier □ aéreo | Cartel AIR △, manual ("ataque vertical") y video |
 | Remate de □ (□6) | Empieza atrás, anillo de atrás hacia adelante y látigo doble al frente | **Decisión de la usuaria**: el análisis del video no fue concluyente |
 | Ataque al salir de una rodada | Solo con búfer, sin golpes especiales | Sin respaldo; la evasión ofensiva es de nivel 4 |
 | Remate aéreo fuerte (□□□△), dos niveles de lanzador en suelo | No existen (*Spirit of Hercules* es un remate de suelo, ver arriba) | Sin respaldo en ninguna fuente |
-| Súper salto (X tras lanzar), agarre con cadena y *Orion's Harpoon* | Pendientes (BL-06); ○ = `L` (D-42), después del legionario con arte (BL-21) | Manual y wiki (nivel 1); en *Chains of Olympus*, ○ = *Orion's Harpoon* y X tras un salto = *Icarus Lift* (StrategyWiki) |
+| Agarre con ○, opciones de presa y *Orion's Harpoon* | ○ = `K` / `L` en teclado y botón `○` táctil (D-42, BL-06, BL-07): (1) **Enemigo en el aire (`juggle`):** pulsar ○ (desde el suelo tras el lanzador o en el aire durante *Ascension* / combos aéreos) lanza *Orion's Harpoon* con la cadena, engancha al enemigo en vuelo y lo estampa contra la cubierta (`knockdown`); (2) **Agarre en suelo a enemigo sano:** Kratos lo sujeta (`hold`) abriendo tres opciones: `□` (`J`) lo arroja como proyectil horizontal que derriba a otros enemigos, `△` (`I`) lo quiebra en seco con daño alto (35) y `○` (`K`/`L`) lo azota contra el piso (25 de daño y `knockdown`), o se zafa si vence la ventana; (3) **Enemigo debilitado (`hp <= 20`):** inicia el remate QTE con recompensa de vida y orbes | Manual oficial PS2, GameSpot y StrategyWiki (nivel 1: agarre con opciones `□`/`△`/`○` y *Orion's Harpoon* tras elevar con △) |
 
 ## 7. Legionario no-muerto: ficha de diseño (BL-21)
 

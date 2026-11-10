@@ -158,9 +158,11 @@ export class PlayerView {
       this.stopLoop();
       const grabKey = (simPlayer.grabPhase === 'whiff' || simPlayer.grabPhase === 'hold' || simPlayer.grabPhase === 'finisher_qte')
         ? 'kratos-sq1-a'
-        : (simPlayer.grabPhase === 'slam' || simPlayer.grabPhase === 'finisher_slam')
+        : (simPlayer.grabPhase === 'slam' || simPlayer.grabPhase === 'finisher_slam' || simPlayer.grabPhase === 'break')
           ? 'kratos-plume-e'
-          : PLAYER_KEY;
+          : simPlayer.grabPhase === 'throw'
+            ? 'kratos-sq2-b'
+            : PLAYER_KEY;
       player.setTexture(this.scene.textures.exists(grabKey) ? grabKey : PLAYER_KEY, 0);
       player.setFlipX(facing === -1);
       player.setRotation(0);

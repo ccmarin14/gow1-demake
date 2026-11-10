@@ -100,6 +100,8 @@ export interface StrikeSnapshot {
   queuedDirection?: -1 | 1;
   /** The queued press was triangle: the chain's `heavy` strike starts. */
   queuedHeavy?: boolean;
+  /** The queued press was circle (grab): the chain's `grab` strike starts (Orion's Harpoon). */
+  queuedGrab?: boolean;
   /** The strike this one chained from (absent when it started on its own). */
   entry?: StrikeEntry;
 }
@@ -177,7 +179,7 @@ export interface EntityState {
   maxMp: number;
   magicPhase: 'none' | 'startup' | 'active' | 'recovery';
   magicTicks: number;
-  grabPhase: 'none' | 'whiff' | 'hold' | 'slam' | 'recovery' | 'finisher_qte' | 'finisher_slam';
+  grabPhase: 'none' | 'whiff' | 'hold' | 'slam' | 'throw' | 'break' | 'recovery' | 'finisher_qte' | 'finisher_slam';
   grabTicks: number;
   grabTargetId: string | null;
   qteAction: GameAction | null;

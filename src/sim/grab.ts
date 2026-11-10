@@ -262,7 +262,7 @@ export function stepGrab(
     return result;
   }
 
-  // 4. Fase de Sujeción Estándar (Hold)
+  // 4. Fase de Sujeción Estándar (Hold) — 3 opciones clásicas de GoW 1 (□ Lanzar / △ Partir / ○ Azotar)
   if (player.grabPhase === 'hold') {
     if (player.invulTicks < 2) {
       player.invulTicks = 2;
@@ -282,8 +282,75 @@ export function stepGrab(
     target.vy = 0;
     target.aiState = 'grabbed';
 
+    // A partir del primer tick posterior al enganche (grabTicks >= 1), el jugador puede elegir:
+    // - □ ('light-attack'): lanzar al enemigo como proyectil humano que derriba a otros en su camino.
+    // - △ ('heavy-attack'): partir / quebrar brutalmente al enemigo con alto daño individual.
+    // - ○ ('grab') o fin de holdTicks: azotar al enemigo contra la cubierta.
+    const canChooseOption = player.grabTicks >= 1;
+    const chooseThrow = canChooseOption && inputActions.includes('light-attack');
+    const chooseBreak = canChooseOption && !chooseThrow && inputActions.includes('heavy-attack');
+    const chooseSlamNow = canChooseOption && !chooseThrow && !chooseBreak && inputActions.includes('grab');
+
     player.grabTicks += 1;
-    if (player.grabTicks >= cfg.holdTicks) {
+
+    if (chooseThrow) {
+      player.grabPhase = 'throw';
+      player.grabTicks = 0;
+
+      const knockdownTicks = CONFIG.enemy.legionnaire.knockdownTicks;
+      const killed = damageEnemy(target, cfg.throwDamage, knockdownTicks);
+      result.hit = true;
+      result.targetId = target.id;
+      result.damageDealt = cfg.throwDamage;
+      result.killed = killed;
+
+      if (killed) {
+        target.aiState = 'death';
+        target.aiTicks = 0;
+        target.isDead = true;
+        if (onKill) {
+          onKill(target);
+        }
+      } else {
+        target.aiState = 'juggle';
+        target.aiTicks = 0;
+        target.grounded = false;
+        target.vx = player.facing * cfg.throwVx;
+        target.vy = cfg.throwVy;
+        target.attackHits = [];
+      }
+      return result;
+    }
+
+    if (chooseBreak) {
+      player.grabPhase = 'break';
+      player.grabTicks = 0;
+
+      const knockdownTicks = CONFIG.enemy.legionnaire.knockdownTicks;
+      const killed = damageEnemy(target, cfg.breakDamage, knockdownTicks);
+      result.hit = true;
+      result.targetId = target.id;
+      result.damageDealt = cfg.breakDamage;
+      result.killed = killed;
+
+      if (killed) {
+        target.aiState = 'death';
+        target.aiTicks = 0;
+        target.isDead = true;
+        if (onKill) {
+          onKill(target);
+        }
+      } else {
+        target.aiState = 'knockdown';
+        target.aiTicks = 0;
+        target.grounded = true;
+        target.vx = player.facing * cfg.slamVx;
+        target.vy = cfg.slamVy;
+      }
+      return result;
+    }
+
+    if (chooseSlamNow || player.grabTicks >= cfg.holdTicks) {
       player.grabPhase = 'slam';
       player.grabTicks = 0;
 
@@ -312,8 +379,8 @@ export function stepGrab(
     return result;
   }
 
-  // 5. Fase de Azote Estándar (Slam)
-  if (player.grabPhase === 'slam') {
+  // 5. Fases de Ejecución de Presa (Slam / Throw / Break)
+  if (player.grabPhase === 'slam' || player.grabPhase === 'throw' || player.grabPhase === 'break') {
     if (player.invulTicks < 2) {
       player.invulTicks = 2;
     }

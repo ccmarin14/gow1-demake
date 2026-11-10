@@ -113,8 +113,18 @@ grab: {
   slamTicks: 16,
   /** Ticks recovering from the slam animation (~130 ms). */
   recoveryTicks: 8,
-  /** Direct damage dealt to the victim on ground slam. */
+  /** Direct damage dealt to the victim on ground slam (○ / K / L). */
   damage: 25,
+  /** Direct damage dealt to the victim when thrown as a projectile (□ / J). */
+  throwDamage: 15,
+  /** Collateral damage dealt to other enemies hit by a thrown victim. */
+  collateralDamage: 20,
+  /** Horizontal projectile speed of a thrown victim (px/s). */
+  throwVx: 280,
+  /** Slight upward arc impulse of a thrown victim (px/s). */
+  throwVy: -160,
+  /** Direct damage dealt to the victim on brutal snap/break (△ / I). */
+  breakDamage: 35,
   /** Horizontal knockback impulse on victim on slam (px/s). */
   slamVx: 40,
   /** Slight rebound bounce on victim on slam (px/s). */

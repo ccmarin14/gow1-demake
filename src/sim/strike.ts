@@ -239,10 +239,12 @@ export type HeldBlade = { from: 'back' } | { from: 'previous'; ticks: number; sa
  * until then.
  */
 export interface StrikeChain {
-  /** What a light press in the window starts; absent when only triangle chains. */
+  /** What a light press in the window starts; absent when only triangle/grab chains. */
   into?: StrikeId;
   /** What triangle pressed in the same window starts (the plain triangle; Plume after square 2, later). */
   heavy?: StrikeId;
+  /** What circle (grab) pressed in the same window starts (Orion's Harpoon). */
+  grab?: StrikeId;
   from: string;
   fromTick: number;
   until?: string;
@@ -1133,6 +1135,7 @@ const LAUNCHER: StrikeDef = {
   trailFadeWidthPx: 4,
   // Held through the lift, Kratos leaps after the enemy immediately.
   branch: { atEndOf: 'lift', ifHeld: 'heavy-attack', into: 'ascension' },
+  chain: { grab: 'harpoon', from: 'sweep', fromTick: 8 },
   cancel: { from: 'recall', fromTick: 4 },
 };
 
@@ -1170,8 +1173,8 @@ const ASCENSION: StrikeDef = {
   hitstopTicks: 6,
   trailSamplesPerTick: 6,
   trailFadeWidthPx: 4,
-  // Square or triangle during the follow-up starts the normal air strikes; closes upon touching the ground (land).
-  chain: { into: 'air1', heavy: 'airTriangle', from: 'hang', fromTick: 0, until: 'land' },
+  // Square, triangle or circle during the follow-up starts the air strikes or Orion's Harpoon; closes upon touching the ground (land).
+  chain: { into: 'air1', heavy: 'airTriangle', grab: 'harpoon', from: 'hang', fromTick: 0, until: 'land' },
 };
 
 /** What the three air squares share: a light hit, the near-identical trail of the ground strikes. */
@@ -1217,7 +1220,7 @@ const AIR1: StrikeDef = {
     },
   },
   ...AIR_SQUARE_BASE,
-  chain: { into: 'air2', heavy: 'airTriangle', from: 'lash', fromTick: 2 },
+  chain: { into: 'air2', heavy: 'airTriangle', grab: 'harpoon', from: 'lash', fromTick: 2 },
 };
 
 /**
@@ -1261,7 +1264,7 @@ const AIR2: StrikeDef = {
     },
   },
   ...AIR_SQUARE_BASE,
-  chain: { into: 'air3', heavy: 'airTriangle', from: 'orbitB', fromTick: 2 },
+  chain: { into: 'air3', heavy: 'airTriangle', grab: 'harpoon', from: 'orbitB', fromTick: 2 },
 };
 
 /**
@@ -1302,7 +1305,7 @@ const AIR3: StrikeDef = {
     },
   },
   ...AIR_SQUARE_BASE,
-  chain: { heavy: 'airTriangle', from: 'slash', fromTick: 1 },
+  chain: { heavy: 'airTriangle', grab: 'harpoon', from: 'slash', fromTick: 1 },
 };
 
 /** Air triangle's motion, shared by both blades (GoW1 38.9-40.3 s): one and a quarter turns of a vertical circle. */
@@ -1400,7 +1403,7 @@ const HARPOON: StrikeDef = {
   heldBlade: { from: 'previous', ticks: 9, sagPx: 5 },
   air: true,
   grabsAirborne: true,
-  launch: { vy: -120, vx: -260 },
+  launch: { vy: 240, vx: -200 },
   phases: [
     { id: 'carry', ticks: 2, advancePx: 0, pose: 'air-00', centerX: CX['air-00'], gravity: 0.6 },
     { id: 'throw', ticks: 5, advancePx: 1, pose: 'air-02', centerX: CX['air-02'], gravity: 0.6 },
@@ -1410,7 +1413,7 @@ const HARPOON: StrikeDef = {
   blades: {
     far: {
       shoulder: [3.6, -23.6],
-      track: [[6.4, -2.4], [6.4, -2.4], [36.4, -20.4], [66.4, -38.4], [82.4, -42.4], [82.4, -42.4]],
+      track: [[6.4, -2.4], [6.4, -2.4], [36.4, -20.4], [66.4, -38.4], [82.4, -42.4], [76.4, -8.4]],
       chainFrom: 0,
       motion: {
         carry: { kind: 'carry' },
@@ -1423,7 +1426,7 @@ const HARPOON: StrikeDef = {
       active: { fromS: 0.2 },
     },
   },
-  hitRadiusPx: 3.5,
+  hitRadiusPx: 6,
   damage: 10,
   hitstunTicks: 16,
   hitstopTicks: 4,
@@ -1989,15 +1992,27 @@ export function strikeChainTicks(def: StrikeDef): { opens: number; buffersFrom: 
  * held with the press (`direction`) so the next strike can turn around even
  * if it is released before the window opens. Returns whether it queued.
  */
-export function queueChain(state: StrikeState, direction: HeldDirection = 0, button: 'light' | 'heavy' = 'light'): boolean {
+export function queueChain(state: StrikeState, direction: HeldDirection = 0, button: 'light' | 'heavy' | 'grab' = 'light'): boolean {
   const def = STRIKES[state.id];
   const ticks = strikeChainTicks(def);
-  const accepts = button === 'heavy' ? Boolean(def.chain?.heavy) : Boolean(def.chain?.into);
+  const accepts = button === 'grab'
+    ? Boolean(def.chain?.grab)
+    : button === 'heavy'
+      ? Boolean(def.chain?.heavy)
+      : Boolean(def.chain?.into);
   if (ticks && state.tick >= ticks.buffersFrom && (ticks.closes === undefined || state.tick < ticks.closes) && accepts) {
     state.queued = true;
     // The last button pressed decides the next strike.
-    if (button === 'heavy') state.queuedHeavy = true;
-    else delete state.queuedHeavy;
+    if (button === 'grab') {
+      state.queuedGrab = true;
+      delete state.queuedHeavy;
+    } else if (button === 'heavy') {
+      state.queuedHeavy = true;
+      delete state.queuedGrab;
+    } else {
+      delete state.queuedHeavy;
+      delete state.queuedGrab;
+    }
     if (direction !== 0) state.queuedDirection = direction;
   }
   return state.queued;
@@ -2016,9 +2031,13 @@ export function chainStrike(state: StrikeState, player: EntityState, direction: 
   if (!def.chain || !ticks || !state.queued || state.tick < ticks.opens || (ticks.closes !== undefined && state.tick >= ticks.closes)) {
     return null;
   }
-  const target = state.queuedHeavy && def.chain.heavy ? def.chain.heavy : def.chain.into;
+  const target = state.queuedGrab && def.chain.grab
+    ? def.chain.grab
+    : state.queuedHeavy && def.chain.heavy
+      ? def.chain.heavy
+      : def.chain.into;
   if (!target) return null;
-  if (STRIKES[target].air && player.grounded) {
+  if (STRIKES[target].air && player.grounded && target !== 'harpoon') {
     return null;
   }
   if (!STRIKES[target].air && !player.grounded) {
@@ -2032,7 +2051,7 @@ export function chainStrike(state: StrikeState, player: EntityState, direction: 
     // Mirroring the sprite flips the body around the feet: move the feet so
     // the body's centre stays where it was.
     const before = strikePhaseAt(def, state.tick).phase.centerX;
-    const after = STRIKES[def.chain.into ?? def.chain.heavy ?? state.id].phases[0].centerX;
+    const after = STRIKES[target].phases[0].centerX;
     player.x += state.facing * (before + after);
   }
   const entry: StrikeEntry = {
@@ -2212,6 +2231,13 @@ export function stepStrike(
       // A launch lifts the foot soldier into the air (juggle) instead of stunning it.
       target.vy = def.launch.vy;
       target.vx = (def.launch.vx ?? 0) * state.facing;
+      target.grounded = false;
+      target.aiState = 'juggle';
+      target.aiTicks = 0;
+    } else if (!killed && def.air && (!target.grounded || target.aiState === 'juggle') && (target.kind === 'legionnaire' || target.kind === 'archer')) {
+      // Golpes aéreos sobre un enemigo ya elevado lo mantienen suspendido frente a Kratos (o lo derriban en airTriangle)
+      target.vy = def.id === 'airTriangle' ? 260 : -150;
+      target.vx = 0;
       target.grounded = false;
       target.aiState = 'juggle';
       target.aiTicks = 0;

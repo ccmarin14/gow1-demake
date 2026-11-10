@@ -13,8 +13,8 @@ const KEY_BINDINGS: Record<GameAction, number[]> = {
   'light-attack': [KeyCodes.J],
   // Triangle (user: "triangulo mapealo con la letra i del teclado").
   'heavy-attack': [KeyCodes.I],
-  // Circle (grab, D-42: "La tecla de ○ es L").
-  grab: [KeyCodes.L],
+  // Circle (grab, D-42: teclas K y L).
+  grab: [KeyCodes.K, KeyCodes.L],
   magic: [KeyCodes.U],
   dodge: [KeyCodes.SHIFT],
   guard: [KeyCodes.Q],

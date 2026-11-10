@@ -18,6 +18,7 @@ import { stepLegionnaire } from './legionnaire';
 import { stepHydra } from './hydra';
 import { isCastingMagic, stepMagic } from './magic';
 import { isGrabbing, startGrab, stepGrab } from './grab';
+import { damageEnemy } from './damage';
 import { STRIKES, branchStrike, chainStrike, stepGroundFires, strikeGravityAt, queueChain, startStrike, stepStrike, strikeCancellable, strikeLength, strikePhaseAt, type HeldDirection, type StrikeImpactNotice, type StrikeState } from './strike';
 import { buildLevel1Map, computeCameraScrollX, getSegmentAtX, type LevelMapData } from './map';
 
@@ -582,6 +583,9 @@ export class World {
       if (this.strike && heavyAttackPress) {
         queueChain(this.strike, steadyDirection, 'heavy');
       }
+      if (this.strike && grabEdge) {
+        queueChain(this.strike, steadyDirection, 'grab');
+      }
       if (this.strike && jumpEdge) {
         this.jumpQueuedTicks = CONFIG.combat.feel.jumpQueueTicks;
       }
@@ -676,7 +680,15 @@ export class World {
           player.grabTicks = 0;
           player.grabTargetId = null;
         }
-        if (grabEdge && player.grounded && !inHitstun && !isOpeningChest && !striking && !nowCastingMagic && !rolling && !guarding && player.grabPhase === 'none') {
+        const hasJuggledAhead = this.targets.some(
+          (t) =>
+            t.id !== player.id &&
+            !t.isDead &&
+            t.aiState === 'juggle' &&
+            (t.x - player.x) * player.facing >= -8 &&
+            (t.x - player.x) * player.facing <= 95,
+        );
+        if (grabEdge && player.grounded && !inHitstun && !isOpeningChest && !striking && !nowCastingMagic && !rolling && !guarding && player.grabPhase === 'none' && !hasJuggledAhead) {
           startGrab(player, this.targets);
         }
         if (player.grabPhase !== 'none') {
@@ -704,13 +716,14 @@ export class World {
         // animation does (a finger on a phone is not frame-exact).
         let graceChained = false;
         const grace = this.comboGrace;
-        if (grace && !striking && (lightAttackEdge || heavyAttackPress)) {
+        if (grace && !striking && (lightAttackEdge || heavyAttackPress || grabEdge)) {
           const usable = STRIKES[grace.state.id].air ? airFree : free;
           if (usable) {
             const state: StrikeState = { ...grace.state, tick: strikeLength(STRIKES[grace.state.id]) - 1, queued: false };
             delete state.queuedHeavy;
+            delete state.queuedGrab;
             delete state.queuedDirection;
-            queueChain(state, steadyDirection, heavyAttackPress ? 'heavy' : 'light');
+            queueChain(state, steadyDirection, grabEdge ? 'grab' : heavyAttackPress ? 'heavy' : 'light');
             const next = chainStrike(state, player, steadyDirection);
             if (next) {
               this.strike = next;
@@ -721,6 +734,10 @@ export class World {
         }
         if (graceChained) {
           this.comboGrace = null;
+        } else if (!striking && grabEdge && free && hasJuggledAhead) {
+          // Orion's Harpoon from the ground against a launched enemy in the air.
+          this.strike = startStrike(player, 'harpoon');
+          startedNow = true;
         } else if (!striking && heavyAttackPress && free) {
           // Triangle from the ground, on the press (see `heavyHeldTicks`); a
           // direction held as it starts turns Kratos that way first. It does
@@ -737,8 +754,11 @@ export class World {
           if (direction !== 0) player.facing = direction;
           this.strike = startStrike(player, buffered.button === 'heavy' ? 'triangle' : 'square1');
           startedNow = true;
-        } else if (!striking && airFree && (lightAttackEdge || heavyAttackPress)) {
-          if (heavyAttackPress && player.vy >= 0 && this.altitudeAboveGround(player) < CONFIG.combat.feel.minAirHeavyAltitudePx) {
+        } else if (!striking && airFree && (lightAttackEdge || heavyAttackPress || grabEdge)) {
+          if (grabEdge) {
+            this.strike = startStrike(player, 'harpoon');
+            startedNow = true;
+          } else if (heavyAttackPress && player.vy >= 0 && this.altitudeAboveGround(player) < CONFIG.combat.feel.minAirHeavyAltitudePx) {
             this.landingAttackBuffer = {
               button: 'heavy',
               ticks: CONFIG.combat.feel.landingAttackBufferTicks,
@@ -762,6 +782,10 @@ export class World {
           if (heavyAttackPress) {
             queueChain(this.strike, steadyDirection, 'heavy');
           }
+          // Circle in launcher or air combo chain window starts Orion's Harpoon.
+          if (grabEdge) {
+            queueChain(this.strike, steadyDirection, 'grab');
+          }
           const next = chainStrike(this.strike, player, steadyDirection);
           if (next) {
             if (next.id === 'airTriangle' && player.vy >= 0 && this.altitudeAboveGround(player) < CONFIG.combat.feel.minAirHeavyAltitudePx) {
@@ -777,7 +801,7 @@ export class World {
           }
         }
         // Attacking in the air spends the double jump: no more jumps until he lands.
-        if (this.strike && startedNow && STRIKES[this.strike.id].air) {
+        if (this.strike && startedNow && STRIKES[this.strike.id].air && !player.grounded) {
           player.jumpsUsed = VERTICAL_PARAMS.maxJumps;
         }
         // The air lashes and the air triangle's loop hang Kratos: a fall already
@@ -925,12 +949,14 @@ export class World {
                 ? 'heavy'
                 : 'light';
             this.strikeHitNotice = { x: last.x, y: last.y, power: def.damage, kind };
-            if (this.targetPhysics) {
+            if (this.targetPhysics && !def.launch) {
               const knock = isHeavy
                 ? CONFIG.combat.feel.knockbackHeavy
                 : CONFIG.combat.feel.knockbackLight;
               for (const hit of result.hits) {
-                if (hit.target.kind !== 'hydra' && !hit.target.isDead) hit.target.vx = this.strike.facing * knock;
+                if (hit.target.kind !== 'hydra' && !hit.target.isDead && hit.target.grounded && hit.target.aiState !== 'juggle') {
+                  hit.target.vx = this.strike.facing * knock;
+                }
               }
             }
           }
@@ -1027,6 +1053,52 @@ export class World {
 
         if (target.kind !== 'hydra') {
           target.x += target.vx * TICK_DT;
+          // Si el enemigo fue arponeado hacia Kratos (Orion's Harpoon), frena su tracción frente a Kratos para estrellarse a sus pies
+          if (
+            player &&
+            target.aiState === 'juggle' &&
+            target.vy > 100 &&
+            target.vx * player.facing < 0 &&
+            (target.x - player.x) * player.facing <= 18
+          ) {
+            target.x = player.x + player.facing * 18;
+            target.vx = 0;
+          }
+          // Si el enemigo fue lanzado como proyectil humano (□ en agarre), derriba a otros enemigos en su trayectoria
+          if (target.aiState === 'juggle' && Math.abs(target.vx) >= 180) {
+            for (let j = 0; j < this.targets.length; j += 1) {
+              const other = this.targets[j];
+              if (
+                other.id === target.id ||
+                other.id === PLAYER_ID ||
+                other.isDead ||
+                other.aiState === 'death' ||
+                other.kind === 'hydra' ||
+                target.attackHits.includes(other.id)
+              ) {
+                continue;
+              }
+              if (Math.abs(other.x - target.x) <= 24 && Math.abs(other.y - target.y) <= 28) {
+                target.attackHits.push(other.id);
+                const killed = damageEnemy(
+                  other,
+                  CONFIG.player.grab.collateralDamage,
+                  CONFIG.enemy.legionnaire.knockdownTicks,
+                );
+                if (killed) {
+                  other.aiState = 'death';
+                  other.aiTicks = 0;
+                  other.isDead = true;
+                } else {
+                  other.aiState = 'knockdown';
+                  other.aiTicks = 0;
+                  other.grounded = true;
+                  other.vx = Math.sign(target.vx) * 60;
+                  other.vy = 0;
+                }
+              }
+            }
+          }
           if (target.grounded) {
             if (target.vx > 0) {
               target.vx = Math.max(0, target.vx - friction * TICK_DT);

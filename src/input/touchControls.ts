@@ -26,6 +26,7 @@ const ACTION_BUTTONS: readonly TouchButton[] = [
   { label: 'Guardia', action: 'guard' },
   { label: '□', action: 'light-attack' },
   { label: '△', action: 'heavy-attack' },
+  { label: '○', action: 'grab' },
   { label: 'Saltar', action: 'jump' },
 ];
 

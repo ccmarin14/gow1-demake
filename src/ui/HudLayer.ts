@@ -767,15 +767,25 @@ export class HudLayer {
       }
     }
 
-    // 12. Actualización del prompt de remate QTE
+    // 12. Actualización del prompt de remate QTE o elección de agarre en tierra
     const inQte = player.grabPhase === 'finisher_qte';
+    const inHold = player.grabPhase === 'hold';
     if (inQte && player.qteMaxTicks > 0) {
       const qteProgress = Math.max(0, Math.min(1, player.qteTicksLeft / player.qteMaxTicks));
+      this.qtePromptText.setText('¡REMATE! PULSA [I] / △');
       this.qtePromptBg.setVisible(true);
       this.qtePromptText.setVisible(true);
       this.qteTimerBarBg.setVisible(true);
       this.qteTimerBar.setVisible(true);
       this.qteTimerBar.setSize(Math.max(1, Math.floor(80 * qteProgress)), 2);
+    } else if (inHold) {
+      const holdProgress = Math.max(0, Math.min(1, 1 - player.grabTicks / CONFIG.player.grab.holdTicks));
+      this.qtePromptText.setText('[J] LANZAR  [I] PARTIR  [K] AZOTAR');
+      this.qtePromptBg.setVisible(true);
+      this.qtePromptText.setVisible(true);
+      this.qteTimerBarBg.setVisible(true);
+      this.qteTimerBar.setVisible(true);
+      this.qteTimerBar.setSize(Math.max(1, Math.floor(80 * holdProgress)), 2);
     } else {
       this.qtePromptBg.setVisible(false);
       this.qtePromptText.setVisible(false);
