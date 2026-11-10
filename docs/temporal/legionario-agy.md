@@ -1,59 +1,40 @@
-# Brief: cuadros que faltan del legionario (BL-21), para Antigravity
+# Brief: animar al legionario en el juego (BL-21), para Antigravity
 
 Brief temporal (AGENTS.md, paso 5): se borra en el commit que cierra BL-21.
-Antes de empezar lee `AGENTS.md` (reglas de arte) y `docs/direccion.md` §7 (ficha de diseño, D-51).
+Antes de empezar lee `AGENTS.md`, `docs/estado.md` §1 a §3 y `docs/direccion.md` §7.
 
-## Qué falta
+## Reparto
 
-Hecho y aprobado por la usuaria (20 cuadros en `grids/legionnaire/`): `idle` 1, `walk` 8, `windup` 4, `slash` 4, `recover` 3.
+- **Los cuadros los dibuja y aprueba otro lado** (borrador 3D D-34, aprobación visual de la usuaria). No generes ni edites nada en `grids/`.
+- **Tu parte es el código:** mostrar esos cuadros en el juego según el estado de la IA, y el segundo ataque parable.
 
-Por hacer, en este orden. Un cuadro = una pose completa del cuerpo; nunca se parchea otro cuadro.
+## Cuadros disponibles (`grids/legionnaire/`, 64×56, pies en la fila 55)
 
-| Estado | Cuadros | Base 3D (acción del maniquí) | Qué debe leerse | Ticks en la IA |
-| --- | --- | --- | --- | --- |
-| `hitstun` | 2 | `Hit_Chest` (cuadros del impacto y del tope), `Hit_Head` si hace falta | Torso echado atrás, espada baja, ojos sin llama | 12 (golpe); 32 si lo para un *Parry* |
-| `juggle` | 2 | `Hit_Chest` con la columna arqueada, o `Jump_Loop`: uno subiendo y otro cayendo | Cuerpo en el aire, brazos y espada flojos, sin pisar el suelo (`grounded: false`) | mientras esté en el aire |
-| `death` | 5 | `Death01`, cuadros repartidos de principio a fin | Se desploma y queda tendido en el suelo; el último cuadro es el que se queda | ~40 en total, el último se sostiene |
+| Estado de la IA (`aiState`) | Cuadros | Ticks | Notas |
+| --- | --- | --- | --- |
+| `idle`, `guard` | `idle-00` | — | Reposo; también la guardia. |
+| `approach` | `walk-00..07` | — | Ciclo en bucle, seguir `vx`. |
+| `windup` | `windup-00..03` | 24 | El último se sostiene hasta el tajo. |
+| `slash` | `slash-00..03` | 8 | |
+| `recover` | `recover-00..02` | 16 | |
+| `hitstun` | `hitstun-00..01` | 12 (32 si lo para un *Parry*) | Aprobados. |
+| `juggle` | `juggle-00..01` | mientras esté en el aire | Subiendo y cayendo (según `vy`). `grounded: false`. |
+| `death` | `death-00..02` | ~40 | El último se sostiene. |
 
-No hay escudo (D-51). Si el texto de otro documento habla de "escudo arriba", está viejo.
+`grids/legionnaire/manifest.json` es la lista real de lo aprobado; trabaja solo con lo que aparezca ahí.
 
-## Herramienta
+## Qué hacer
 
-Un cuadro con un solo comando (necesita Blender en `~/.local/bin/blender`):
+1. **`EnemyView`** en `src/scene/` (hoy `ShellScene.ts` ~l.431-464 pinta rectángulos de color con `CONFIG.presentation.enemyPlaceholder`): un sprite por legionario que elige textura por `aiState`, con la animación de la tabla. Mantén el rectángulo para el arquero y la hidra.
+2. Registra las texturas en `src/assets/manifest.ts` (mira cómo están las de Kratos, `kratos-idle-00`…); no dispersar `this.load`.
+3. Orientación por `facing`, sombra de contacto como la de Kratos, telégrafo del aviso ya está en los cuadros (ojos llameantes), no añadas parpadeos de color encima.
+4. La simulación (`src/sim/`) no debe saber nada de Phaser ni de los cuadros: el estado sigue mandando, la vista solo lo lee.
+5. **Segundo ataque que solo se puede parar** (ESE-04), solo después de lo anterior y si los cuadros aprobados alcanzan; si no, déjalo anotado en `docs/estado.md` con lo que falta.
 
-```bash
-scripts/pose_render/legionnaire_frame.sh hitstun-00 Hit_Chest 6
-scripts/pose_render/legionnaire_frame.sh hitstun-01 Hit_Chest 10 scripts/pose_render/poses/mi-pose.json
-```
+## Reglas
 
-Deja `docs/tmp/legionario/draft/<nombre>.txt` (el grid, pies en la fila 55) y `<nombre>-preview.png` (ampliado 10×). No escribe en `grids/`.
-
-- **Acciones disponibles** del maniquí: `Hit_Chest`, `Hit_Head`, `Death01`, `Jump_Loop`, `Jump_Start`, `Jump_Land`, `Sword_Attack`, `Sword_Idle`, `Idle_Loop`, `Walk_Loop`, entre otras. Para ver los cuadros de una acción, renderiza varios con `render.py` directamente: `blender -b --python scripts/pose_render/render.py -- scripts/pose_render/legionnaire.json <acción> <carpeta> 0,4,8,12` (`docs/tmp/legionario/` ya tiene ejemplos de lo hecho).
-- **Poses a medida:** `scripts/pose_render/poses/leg-*.json` y el generador `legionnaire_poses.py` (rotaciones por hueso en grados y cinemática inversa para las manos; adelante es -Y, arriba +Z, -X mira a la cámara). Una pose nueva = un `.json` nuevo; no cambies las existentes (son las de los cuadros aprobados).
-- **Config y paleta:** `scripts/pose_render/legionnaire.json` (materiales, accesorios, volúmenes) y `palette/legionnaire.json` (letras `o d b m s` piel, `t l` cuero, `e a k y` bronce, `r` ojo llameante). No toques el diseño del personaje; si un accesorio no se ve bien en una pose, cuéntalo en vez de retocar la config, porque la config también genera los cuadros aprobados.
-- **No rompas a Kratos:** `render.py` y `to_grid.py` los comparten. Si los modificas, `python3 scripts/pose_render/build_anchors.py --jobs 2` debe seguir sin fallos y sin cambios en `grids/kratos` ni `src/assets`. Mejor no tocarlos.
-- **Memoria:** Blender gasta mucha; no corras más de 2 trabajos a la vez.
-
-## Reglas de arte que se aplican
-
-- Lienzo 64×56, pies en la fila 55 en las poses de suelo. Solo letras de `palette/legionnaire.json` y `.`. En `death` el cuerpo tendido también debe apoyarse en la fila 55.
-- El borrador 3D se termina a mano en el `.txt`: lo único que se ha añadido hasta ahora es el píxel de ojo `r` en los avisos. En `hitstun` y `death` los ojos se apagan (sin `r`).
-- Prohibido componer un cuadro pegando partes de otro o desplazar bloques por script. Cada cuadro sale de su propio render.
-- La espada mide lo mismo en pantalla en todas las poses.
-
-## Cómo se entrega cada cuadro
-
-1. Genera el borrador con el script y revisa la vista ampliada tú mismo: ¿se entiende la pose?, ¿la espada está completa?, ¿los pies o el cuerpo tendido tocan la fila 55?
-2. Arma una comparación para la usuaria: el cuadro nuevo junto al `idle-00` aprobado, ampliados, en `docs/tmp/legionario/` (ver `scripts/preview_grid.py`, acepta varios grids).
-3. **La usuaria aprueba cada cuadro.** Hasta que lo haga, el cuadro no entra a `grids/legionnaire/` ni se commitea. Espera su respuesta antes del siguiente (AGENTS.md §3).
-4. Con la aprobación: copia el `.txt` a `grids/legionnaire/<estado>-0N.txt`, añade su entrada a `grids/legionnaire/manifest.json` (mismo formato que las existentes; `grounded: false` en `juggle`), corre `pnpm art` y `pnpm art:check`, añade una línea en `docs/estado.md` y haz **un commit por cuadro** (conventional commits, sin atribución de IA).
-
-## Después de los cuadros (otra sesión, no es de este brief)
-
-`EnemyView` que cambie de cuadro según `aiState` (`src/sim/legionnaire.ts`), registro de texturas en `src/assets/manifest.ts` (no dispersar `this.load`), y el segundo ataque que solo se puede parar (ESE-04). Antes de cerrar: `pnpm test`, `pnpm build`, `pnpm art:check` y `scripts/verify/browser-check.sh` (debe imprimir `errors 0 failed 0`).
-
-## No hagas
-
-- No edites `grids/kratos/`, `src/assets/kratos-anchors.json` ni los cuadros aprobados del legionario.
-- No cambies el diseño (casco de bronce con cresta roja, torso gris grueso, paño en la cintura, espada curva de cobre, sin escudo).
-- No avances por tu cuenta a `EnemyView` ni a la IA sin que la usuaria lo pida.
+- Una unidad chica y revisable por commit, conventional commits, sin atribución de IA; una línea por paso en `docs/estado.md`.
+- Cada paso deja `pnpm test`, `pnpm build`, `pnpm art:check` en verde y `scripts/verify/browser-check.sh` con `errors 0 failed 0`. Verifica en navegador real: un build en verde no detecta texturas 404.
+- Pruebas por regla (Node nativo, `tests/*.test.ts`): cada estado de la IA elige el cuadro esperado.
+- No toques `grids/`, `palette/`, `scripts/pose_render/` ni `src/assets/kratos-anchors.json`.
+- `src/config.ts` tiene cambios de otra sesión sin commitear (`hitCounter`); no los mezcles en tus commits.

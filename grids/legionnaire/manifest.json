@@ -128,6 +128,48 @@
       "state": "recover",
       "grounded": true,
       "png": "legionnaire-recover-02"
+    },
+    {
+      "file": "hitstun-00.txt",
+      "state": "hitstun",
+      "grounded": true,
+      "png": "legionnaire-hitstun-00"
+    },
+    {
+      "file": "hitstun-01.txt",
+      "state": "hitstun",
+      "grounded": true,
+      "png": "legionnaire-hitstun-01"
+    },
+    {
+      "file": "juggle-00.txt",
+      "state": "juggle",
+      "grounded": false,
+      "png": "legionnaire-juggle-00"
+    },
+    {
+      "file": "juggle-01.txt",
+      "state": "juggle",
+      "grounded": false,
+      "png": "legionnaire-juggle-01"
+    },
+    {
+      "file": "death-00.txt",
+      "state": "death",
+      "grounded": true,
+      "png": "legionnaire-death-00"
+    },
+    {
+      "file": "death-01.txt",
+      "state": "death",
+      "grounded": true,
+      "png": "legionnaire-death-01"
+    },
+    {
+      "file": "death-02.txt",
+      "state": "death",
+      "grounded": true,
+      "png": "legionnaire-death-02"
     }
   ]
 }
