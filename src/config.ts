@@ -107,8 +107,8 @@ grab: {
   holdDistancePx: 22,
   /** Recovery ticks when grab whiffs with no target in reach (~250 ms at 60 Hz). */
   whiffTicks: 15,
-  /** Ticks spent pinning the victim before initiating slam (~500 ms). */
-  holdTicks: 30,
+  /** Ticks spent holding the victim while waiting for player decision □ / △ / ○ (~2.0 s at 60 Hz). */
+  holdTicks: 120,
   /** Ticks spent slamming the victim down to the deck (~260 ms). */
   slamTicks: 16,
   /** Ticks recovering from the slam animation (~130 ms). */
@@ -129,8 +129,8 @@ grab: {
   slamVx: 40,
   /** Slight rebound bounce on victim on slam (px/s). */
   slamVy: -60,
-  /** Total invulnerability window granted to Kratos during grab hold & slam execution. */
-  invulTicks: 45,
+  /** Total invulnerability window granted to Kratos during grab hold & execution. */
+  invulTicks: 125,
 },
 damage: {
   maxHp: 100,

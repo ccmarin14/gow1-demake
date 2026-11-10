@@ -29,19 +29,18 @@ function stepTicks(world: World, actions: readonly GameAction[], ticks: number):
 }
 
 describe('contextual QTE finisher (BL-07, ESE-01)', () => {
-  it('legionnaire enters weakened state when hp falls to or below threshold (<= 20)', () => {
+  it('basic legionnaire does NOT automatically enter weakened state on low HP (<= 20) in vertical slice', () => {
     const world = createWorld();
     const p = getPlayer(world);
     const e = getEnemy(world);
 
     p.x = 200;
     e.x = 280;
-    e.hp = 20;
+    e.hp = 15;
     e.aiState = 'approach';
 
     world.step([]);
-    assert.equal(e.aiState, 'weakened');
-    assert.ok(e.vx !== 0, 'moves slowly in weakened state');
+    assert.equal(e.aiState, 'approach', 'basic legionnaire stays in normal combat state without red circle');
   });
 
   it('initiates QTE finisher on grab (L) when enemy is weakened', () => {
@@ -132,7 +131,7 @@ describe('contextual QTE finisher (BL-07, ESE-01)', () => {
     assert.equal(p.grabPhase, 'none');
     assert.equal(p.hp, 100 - CONFIG.enemy.legionnaire.qteFailDamage);
     assert.ok(p.hitstunTicks > 0, 'Kratos enters hitstun');
-    assert.equal(e.aiState, 'weakened', 'enemy breaks free and remains weakened');
+    assert.equal(e.aiState, 'guard', 'enemy breaks free and raises guard at close range');
     assert.equal(e.isDead, false);
   });
 
@@ -160,7 +159,7 @@ describe('contextual QTE finisher (BL-07, ESE-01)', () => {
     assert.equal(p.grabPhase, 'none');
     assert.equal(p.hp, 100 - CONFIG.enemy.legionnaire.qteFailDamage);
     assert.ok(p.hitstunTicks > 0, 'Kratos enters hitstun on fail');
-    assert.equal(e.aiState, 'weakened');
+    assert.equal(e.aiState, 'guard');
     assert.equal(e.isDead, false);
   });
 });

@@ -223,35 +223,32 @@ export class PlayerView {
       }
       case 'hold':
       case 'finisher_qte': {
-        // Enganche y sujeción en vilo: embestida -> captura -> tensión sosteniendo al enemigo arriba
-        if (t < 2) return 'kratos-sq1-a';
-        if (t < 5) return 'kratos-sq1-b';
-        return Math.floor((t - 5) / 6) % 2 === 0 ? 'kratos-sq3-g' : 'kratos-sq3-f';
+        // Enganche y sujeción en vilo con ambas manos al frente (kratos-sq5-d/e, manos en +16 px, -29 px)
+        if (t < 2) return 'kratos-sq1-b';
+        if (t < 4) return 'kratos-sq4-a';
+        return Math.floor((t - 4) / 15) % 2 === 0 ? 'kratos-sq5-d' : 'kratos-sq5-e';
       }
       case 'throw': {
-        // Lanzamiento con □ (16 ticks): torsión atrás -> empujón explosivo a dos manos -> extensión final
-        if (t < 3) return 'kratos-sq2-a';
-        if (t < 6) return 'kratos-sq3-a';
-        if (t < 10) return 'kratos-sq4-b2';
-        if (t < 13) return 'kratos-sq4-c';
-        return 'kratos-sq4-e';
+        // Lanzamiento con □ (16 ticks): carga al pecho -> empujón explosivo al frente -> extensión a dos manos
+        if (t < 2) return 'kratos-sq4-a';
+        if (t < 7) return 'kratos-sq4-b';
+        if (t < 12) return 'kratos-sq5-d';
+        return 'kratos-sq1-e';
       }
       case 'break': {
-        // Quiebre con △ (16 ticks): iza al enemigo sobre la cabeza -> quiebre violento hacia abajo
+        // Quiebre con △ (16 ticks): iza sobre la cabeza (tri-d) -> quiebre violento hacia abajo (plume-d -> plume-e)
         if (t < 3) return 'kratos-sq3-g';
-        if (t < 6) return 'kratos-sq3-h';
-        if (t < 9) return 'kratos-plume-b';
-        if (t < 12) return 'kratos-plume-d';
+        if (t < 7) return 'kratos-tri-d';
+        if (t < 10) return 'kratos-plume-d';
         return 'kratos-plume-e';
       }
       case 'slam':
       case 'finisher_slam': {
-        // Azote con ○ (16 ticks): levanta en arco -> descarga contra las tablas -> impacto agachado
-        if (t < 3) return 'kratos-tri-c';
-        if (t < 6) return 'kratos-sq5-d';
-        if (t < 9) return 'kratos-sq5-e';
-        if (t < 13) return 'kratos-plume-e';
-        return 'kratos-tri-f';
+        // Azote con ○ (16 ticks): levanta en arco (plume-c) -> descarga al frente (tri-e) -> estampa contra el suelo (tri-f)
+        if (t < 4) return 'kratos-plume-c';
+        if (t < 8) return 'kratos-tri-e';
+        if (t < 13) return 'kratos-tri-f';
+        return 'kratos-tri-g';
       }
       case 'recovery': {
         return t < 4 ? 'kratos-sq1-e' : PLAYER_KEY;

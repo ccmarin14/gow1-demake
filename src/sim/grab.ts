@@ -67,11 +67,9 @@ export function startGrab(player: EntityState, targets: readonly EntityState[]):
   }
 
   // Agarre conectado:
-  // Si el objetivo está debilitado (hp <= weakenedThresholdHp o aiState === 'weakened'),
-  // inicia el remate contextual QTE (BL-07, ESE-01).
-  const isWeakened =
-    closestTarget.hp <= CONFIG.enemy.legionnaire.weakenedThresholdHp ||
-    closestTarget.aiState === 'weakened';
+  // Solo inicia el QTE contextual si el objetivo está explícitamente en estado 'weakened'.
+  // Los legionarios básicos se agarran siempre en 'hold' para elegir □ (lanzar), △ (partir) o ○ (azotar).
+  const isWeakened = closestTarget.aiState === 'weakened';
 
   if (isWeakened) {
     player.grabPhase = 'finisher_qte';
@@ -350,7 +348,7 @@ export function stepGrab(
       return result;
     }
 
-    if (chooseSlamNow || player.grabTicks >= cfg.holdTicks) {
+    if (chooseSlamNow) {
       player.grabPhase = 'slam';
       player.grabTicks = 0;
 
@@ -375,6 +373,19 @@ export function stepGrab(
         target.vx = player.facing * cfg.slamVx;
         target.vy = cfg.slamVy;
       }
+      return result;
+    }
+
+    // Si expira el tiempo de sujeción (holdTicks) sin que el jugador elija □, △ o ○,
+    // el enemigo se zafa de la presa y vuelve a 'approach' sin recibir azote automático.
+    if (player.grabTicks >= cfg.holdTicks) {
+      player.grabPhase = 'recovery';
+      player.grabTicks = 0;
+      player.grabTargetId = null;
+      target.aiState = 'approach';
+      target.aiTicks = 0;
+      target.vx = player.facing * 35;
+      target.vy = 0;
     }
     return result;
   }

@@ -86,14 +86,18 @@ describe('combat grab with Circle / L key (BL-06, D-42)', () => {
     assert.equal(e.vy, 0);
     assert.ok(p.invulTicks >= CONFIG.player.grab.invulTicks - 1, 'Kratos gets grab i-frames');
 
-    // Durante la sujeción (hold), se mantienen anclados
+    // Durante la sujeción (hold), se mantienen anclados incluso si el dedo mantiene presionado 'grab' 15 ticks (250 ms)
+    stepTicks(world, ['grab'], 15);
+    assert.equal(p.grabPhase, 'hold', 'holding down Circle button from initial press does NOT auto-slam');
+    assert.equal(e.hp, 60, 'no slam damage while holding');
+
     stepTicks(world, ['move-right', 'jump'], 5);
     assert.equal(p.grabPhase, 'hold');
     assert.equal(p.vx, 0, 'Kratos locked during hold');
     assert.equal(e.x, p.x + CONFIG.player.grab.holdDistancePx);
   });
 
-  it('resolves grab with ground slam, deals damage, and transitions victim to knockdown (ESE-07)', () => {
+  it('releases victim back to approach if holdTicks (120 ticks = 2s) expires without player pressing □, △, or ○', () => {
     const world = createWorld();
     const p = getPlayer(world);
     const e = getEnemy(world);
@@ -106,21 +110,22 @@ describe('combat grab with Circle / L key (BL-06, D-42)', () => {
 
     // Conectar agarre en tick 1
     world.step(['grab']);
+    assert.equal(p.grabPhase, 'hold');
 
-    // Esperar toda la fase hold (holdTicks = 18)
+    // Esperar toda la fase hold (holdTicks = 120) sin pulsar □, △ ni ○
     stepTicks(world, [], CONFIG.player.grab.holdTicks);
 
-    assert.equal(p.grabPhase, 'slam', 'transitions to slam phase');
-    assert.equal(e.hp, 60 - CONFIG.player.grab.damage, 'damage dealt on slam');
-    assert.equal(e.aiState, 'knockdown', 'surviving victim transitions to knockdown (ESE-07)');
+    assert.equal(p.grabPhase, 'recovery', 'transitions to recovery when hold expires without choice');
+    assert.equal(e.hp, 60, 'no slam damage dealt when hold expires');
+    assert.equal(e.aiState, 'guard', 'victim breaks free and raises guard at close range');
 
-    // Esperar fase slam (slamTicks = 16) y recovery (recoveryTicks = 8)
-    stepTicks(world, [], CONFIG.player.grab.slamTicks + CONFIG.player.grab.recoveryTicks);
+    // Esperar recovery (recoveryTicks = 8)
+    stepTicks(world, [], CONFIG.player.grab.recoveryTicks);
     assert.equal(p.grabPhase, 'none', 'returns to neutral');
     assert.equal(p.grabTargetId, null);
   });
 
-  it('kills low-HP victim on slam, triggers death state and orbs', () => {
+  it('grabs low-HP legionnaire into normal hold (not QTE) and kills on chosen slam (○)', () => {
     const world = createWorld();
     const p = getPlayer(world);
     const e = getEnemy(world);
@@ -129,12 +134,15 @@ describe('combat grab with Circle / L key (BL-06, D-42)', () => {
     p.facing = 1;
     e.x = 330;
     e.y = p.y;
-    e.hp = 22; // Menor al daño de agarre (25) pero sobre umbral de remate QTE (20)
+    e.hp = 15; // Incluso con vida baja (<= 20), el legionario básico entra a hold normal
 
     const initialKills = world.snapshot().stats?.totalKills ?? 0;
 
     world.step(['grab']);
-    stepTicks(world, [], CONFIG.player.grab.holdTicks);
+    assert.equal(p.grabPhase, 'hold', 'low-HP basic legionnaire enters hold so player can choose □, △, or ○');
+    world.step([]);
+    world.step(['grab']); // Segunda pulsación de ○ ejecuta el azote (slam)
+    assert.equal(p.grabPhase, 'slam');
 
     assert.equal(e.hp, 0);
     assert.equal(e.isDead, true);

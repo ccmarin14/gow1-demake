@@ -702,11 +702,20 @@ export class World {
             (t.x - player.x) * player.facing >= -8 &&
             (t.x - player.x) * player.facing <= 95,
         );
+        let grabStartedNow = false;
         if (grabEdge && player.grounded && !inHitstun && !isOpeningChest && !striking && !nowCastingMagic && !rolling && !guarding && player.grabPhase === 'none' && !hasJuggledAhead) {
-          startGrab(player, this.targets);
+          grabStartedNow = startGrab(player, this.targets);
         }
         if (player.grabPhase !== 'none') {
-          stepGrab(player, this.targets, this.input);
+          const followUpEdges: GameAction[] = [];
+          if (!grabStartedNow) {
+            if (lightAttackEdge) followUpEdges.push('light-attack');
+            if (heavyAttackPress) followUpEdges.push('heavy-attack');
+            if (grabEdge) followUpEdges.push('grab');
+            if (jumpEdge) followUpEdges.push('jump');
+            if (dodgeEdge) followUpEdges.push('dodge');
+          }
+          stepGrab(player, this.targets, followUpEdges);
         }
         const nowGrabbing = isGrabbing(player);
 

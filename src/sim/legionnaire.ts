@@ -91,11 +91,7 @@ export function stepLegionnaire(
   if (enemy.aiState === 'hitstun') {
     enemy.aiTicks += 1;
     if (enemy.hitstunTicks <= 0) {
-      if (enemy.hp <= CONFIG.enemy.legionnaire.weakenedThresholdHp) {
-        enemy.aiState = 'weakened';
-      } else {
-        enemy.aiState = 'approach';
-      }
+      enemy.aiState = 'approach';
       enemy.aiTicks = 0;
       enemy.vx = 0;
     }
@@ -113,16 +109,7 @@ export function stepLegionnaire(
   const dist = Math.abs(dx);
   const dirToPlayer: -1 | 1 = dx >= 0 ? 1 : -1;
 
-  // Transición a estado de debilitamiento / groggy cuando la vida es crítica (BL-07, ESE-01)
-  if (
-    enemy.hp <= CONFIG.enemy.legionnaire.weakenedThresholdHp &&
-    (enemy.aiState === 'approach' || enemy.aiState === 'idle' || enemy.aiState === 'guard' || enemy.aiState === 'patrol')
-  ) {
-    enemy.aiState = 'weakened';
-    enemy.aiTicks = 0;
-  }
-
-  // Estado de debilitamiento / groggy (weakened, BL-07, ESE-01):
+  // Estado de debilitamiento / groggy explícito (si un escenario o jefe lo asigna):
   // Avanza tambaleándose lentamente hacia Kratos, sin atacar, exponiendo el remate contextual
   if (enemy.aiState === 'weakened') {
     enemy.aiTicks += 1;

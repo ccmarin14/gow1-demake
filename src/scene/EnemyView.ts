@@ -13,7 +13,6 @@ import { getLegionnaireFrameKey } from './legionnaireFrames';
 export class EnemyView {
   private readonly sprite: Phaser.GameObjects.Sprite;
   private readonly shadow: Phaser.GameObjects.Ellipse;
-  private readonly markerGfx: Phaser.GameObjects.Graphics;
 
   constructor(
     scene: Phaser.Scene,
@@ -30,9 +29,6 @@ export class EnemyView {
       .sprite(spawnX, spawnY, 'legionnaire-idle-00')
       .setOrigin(0.5, 1)
       .setDepth(1);
-
-    // Ícono gráfico minimalista estilo GoW 1 sobre la cabeza cuando el enemigo está debilitado (sin texto)
-    this.markerGfx = scene.add.graphics().setDepth(2).setVisible(false);
   }
 
   update(enemy: Readonly<EntityState>, player?: Readonly<EntityState> | null): void {
@@ -107,36 +103,9 @@ export class EnemyView {
     this.shadow.setVisible(
       CONFIG.presentation.playerShadow.enabled && (enemy.grounded || isGrabVictim) && enemy.aiState !== 'death',
     );
-
-    // Indicador visual clásico de GoW 1 (solo aro rojo ○ sobre la cabeza cuando está debilitado, sin texto ni barras)
-    const isWeakened = enemy.aiState === 'weakened' && !enemy.isDead;
-    const isQteActive = Boolean(isGrabVictim && player?.grabPhase === 'finisher_qte' && !enemy.isDead);
-    if (isWeakened || isQteActive) {
-      this.markerGfx.clear();
-      this.markerGfx.setVisible(true);
-      const cx = drawX;
-      const cy = drawY - 40;
-      if (isQteActive) {
-        // Símbolo triangular limpio sobre la cabeza durante el QTE de remate
-        this.markerGfx.lineStyle(2, 0x000000, 0.9);
-        this.markerGfx.strokeTriangle(cx, cy - 4, cx - 4, cy + 3, cx + 4, cy + 3);
-        this.markerGfx.lineStyle(1.2, 0xfbbf24, 1.0);
-        this.markerGfx.strokeTriangle(cx, cy - 4, cx - 4, cy + 3, cx + 4, cy + 3);
-      } else {
-        // Aro carmesí clásico (○) sobre el enemigo debilitado
-        this.markerGfx.lineStyle(2.2, 0x000000, 0.85);
-        this.markerGfx.strokeCircle(cx, cy, 4);
-        this.markerGfx.lineStyle(1.4, 0xef4444, 1.0);
-        this.markerGfx.strokeCircle(cx, cy, 4);
-      }
-    } else {
-      this.markerGfx.clear();
-      this.markerGfx.setVisible(false);
-    }
   }
 
   destroy(): void {
-    this.markerGfx.destroy();
     this.shadow.destroy();
     this.sprite.destroy();
   }
