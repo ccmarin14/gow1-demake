@@ -233,3 +233,72 @@ describe('legionnaire knockdown and recovery (ESE-07)', () => {
     assert.equal(f.aiState, 'knockdown', 'must not revert to standing hitstun');
   });
 });
+
+describe('legionnaire break-guard heavy attack (ESE-04)', () => {
+  it('triggers heavy_windup with 36 ticks when player holds passive guard and breaks guard on hit', () => {
+    assert.equal(AI.heavyWindupTicks, 36, 'heavy windup tell is 36 ticks (600 ms)');
+    assert.equal(AI.heavyDamage, 18, 'heavy attack damage is 18');
+
+    const player = kratos(100);
+    player.guardPhase = 'active';
+    player.parryActive = false;
+    const hp0 = player.hp;
+
+    const f = foe('f1', 100 + AI.attackRange);
+    f.aiState = 'guard';
+    f.attackCooldownTicks = 0;
+
+    // En guardia contra Kratos cubriéndose, opta por heavy_windup
+    stepAll([f], player);
+    assert.equal(f.aiState, 'heavy_windup');
+
+    // Mantiene el aviso durante heavyWindupTicks
+    for (let i = 1; i < AI.heavyWindupTicks; i += 1) {
+      stepAll([f], player);
+      assert.equal(f.aiState, 'heavy_windup');
+    }
+
+    // Pasa a heavy_slash
+    stepAll([f], player);
+    assert.equal(f.aiState, 'heavy_slash');
+    assert.equal(f.aiTicks, 0);
+
+    // Tick 1 del tajo
+    stepAll([f], player);
+    assert.equal(f.aiTicks, 1);
+
+    // Tick 2: ventana activa de impacto, rompe la guardia de Kratos
+    stepAll([f], player);
+    assert.equal(player.guardPhase, 'none', 'passive guard must be broken');
+    assert.ok(player.hitstunTicks > 0, 'Kratos must be staggered');
+    assert.equal(player.hp, hp0 - AI.heavyDamage, 'deals full heavy damage');
+  });
+
+  it('can be deflected by a perfect Parry on tick 0, stunning the attacker', () => {
+    const player = kratos(100);
+    player.guardPhase = 'active';
+    player.parryActive = true; // Parry activo
+
+    const f = foe('f1', 100 + AI.attackRange);
+    f.aiState = 'heavy_slash';
+    f.aiTicks = 1; // El siguiente paso entra en ventana activa (tick 2)
+
+    stepAll([f], player);
+    assert.equal(f.aiState, 'hitstun', 'attacker must be stunned by Parry');
+    assert.equal(f.hitstunTicks, AI.parryStunTicks);
+    assert.equal(player.guardPhase, 'active', 'guard remains intact on parry');
+  });
+
+  it('can be completely dodged with dodge roll i-frames', () => {
+    const player = kratos(100);
+    player.invulTicks = 10; // Rodada activa
+    const hp0 = player.hp;
+
+    const f = foe('f1', 100 + AI.attackRange);
+    f.aiState = 'heavy_slash';
+    f.aiTicks = 1;
+
+    stepAll([f], player);
+    assert.equal(player.hp, hp0, 'takes 0 damage while dodging');
+  });
+});

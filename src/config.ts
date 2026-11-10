@@ -146,6 +146,16 @@ export const CONFIG = {
       cooldownTicks: 40,
       slashDamage: 12,
       slashReach: 32,
+      /** Heavy break-guard attack telegraph ticks (36 ticks = 600 ms, ESE-04). */
+      heavyWindupTicks: 36,
+      /** Active ticks for heavy break-guard slash (ESE-04). */
+      heavyActiveTicks: 10,
+      /** Forward lunge speed during heavy slash (px/s). */
+      heavySlashLungeSpeed: 95,
+      /** Heavy break-guard attack damage (ESE-04). */
+      heavyDamage: 18,
+      /** Reach of heavy attack (px). */
+      heavyReach: 36,
       parryStunTicks: 32,
       /** Ticks spent lying knocked down on the floor (~500 ms at 60 Hz, ESE-07). */
       knockdownTicks: 30,

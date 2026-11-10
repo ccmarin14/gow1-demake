@@ -139,6 +139,20 @@ describe('legionnaire animation frame selection by AI state', () => {
     assert.equal(getLegionnaireFrameKey(dummyLegionnaire({ aiState: 'get_up', aiTicks: 14 })), 'legionnaire-idle-00');
   });
 
+  it('heavy_windup uses windup-00..03 across 36 ticks and heavy_slash uses slash-00..03 (ESE-04)', () => {
+    assert.equal(getLegionnaireFrameKey(dummyLegionnaire({ aiState: 'heavy_windup', aiTicks: 0 })), 'legionnaire-windup-00');
+    assert.equal(getLegionnaireFrameKey(dummyLegionnaire({ aiState: 'heavy_windup', aiTicks: 5 })), 'legionnaire-windup-00');
+    assert.equal(getLegionnaireFrameKey(dummyLegionnaire({ aiState: 'heavy_windup', aiTicks: 6 })), 'legionnaire-windup-01');
+    assert.equal(getLegionnaireFrameKey(dummyLegionnaire({ aiState: 'heavy_windup', aiTicks: 12 })), 'legionnaire-windup-02');
+    assert.equal(getLegionnaireFrameKey(dummyLegionnaire({ aiState: 'heavy_windup', aiTicks: 18 })), 'legionnaire-windup-03');
+    assert.equal(getLegionnaireFrameKey(dummyLegionnaire({ aiState: 'heavy_windup', aiTicks: 35 })), 'legionnaire-windup-03');
+
+    assert.equal(getLegionnaireFrameKey(dummyLegionnaire({ aiState: 'heavy_slash', aiTicks: 0 })), 'legionnaire-slash-00');
+    assert.equal(getLegionnaireFrameKey(dummyLegionnaire({ aiState: 'heavy_slash', aiTicks: 3 })), 'legionnaire-slash-01');
+    assert.equal(getLegionnaireFrameKey(dummyLegionnaire({ aiState: 'heavy_slash', aiTicks: 6 })), 'legionnaire-slash-02');
+    assert.equal(getLegionnaireFrameKey(dummyLegionnaire({ aiState: 'heavy_slash', aiTicks: 9 })), 'legionnaire-slash-03');
+  });
+
   it('every selected frame exists in LEGIONNAIRE_FRAME_KEYS manifest', () => {
     const states: EntityState['aiState'][] = [
       'idle',
@@ -146,7 +160,9 @@ describe('legionnaire animation frame selection by AI state', () => {
       'approach',
       'patrol',
       'windup',
+      'heavy_windup',
       'slash',
+      'heavy_slash',
       'recover',
       'hitstun',
       'juggle',

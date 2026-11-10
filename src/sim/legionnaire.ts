@@ -115,6 +115,20 @@ export function stepLegionnaire(
     return;
   }
 
+  // Estado de anticipación de ataque pesado rompeguardias (heavy_windup, ESE-04)
+  if (enemy.aiState === 'heavy_windup') {
+    enemy.vx = 0;
+    enemy.facing = dirToPlayer;
+    enemy.aiTicks += 1;
+
+    if (enemy.aiTicks >= CONFIG.enemy.legionnaire.heavyWindupTicks) {
+      enemy.aiState = 'heavy_slash';
+      enemy.aiTicks = 0;
+      enemy.attackHits = [];
+    }
+    return;
+  }
+
   // Estado de tajo frontal (slash)
   if (enemy.aiState === 'slash') {
     enemy.aiTicks += 1;
@@ -141,6 +155,39 @@ export function stepLegionnaire(
     }
 
     if (enemy.aiTicks >= CONFIG.enemy.legionnaire.activeSlashTicks) {
+      enemy.aiState = 'recover';
+      enemy.aiTicks = 0;
+      enemy.vx = 0;
+    }
+    return;
+  }
+
+  // Estado de tajo pesado rompeguardias (heavy_slash, ESE-04)
+  if (enemy.aiState === 'heavy_slash') {
+    enemy.aiTicks += 1;
+
+    // Inercia pesada hacia adelante en los primeros 6 ticks del tajo (embestida profunda)
+    if (enemy.aiTicks <= 6) {
+      enemy.vx = enemy.facing * CONFIG.enemy.legionnaire.heavySlashLungeSpeed;
+    } else {
+      enemy.vx = 0;
+    }
+
+    // Ventana activa de impacto (ticks 2 a 6 del tajo pesado)
+    if (enemy.aiTicks >= 2 && enemy.aiTicks <= 6 && !enemy.attackHits.includes(player.id)) {
+      const reach = CONFIG.enemy.legionnaire.heavyReach;
+      const inReach =
+        (enemy.facing === 1 && dx >= 0 && dx <= reach) ||
+        (enemy.facing === -1 && dx <= 0 && dx >= -reach);
+      const inVerticalReach = Math.abs(player.y - enemy.y) <= 32;
+
+      if (inReach && inVerticalReach) {
+        enemy.attackHits.push(player.id);
+        applyDamageToPlayer(player, enemy, CONFIG.enemy.legionnaire.heavyDamage, { breaksGuard: true });
+      }
+    }
+
+    if (enemy.aiTicks >= CONFIG.enemy.legionnaire.heavyActiveTicks) {
       enemy.aiState = 'recover';
       enemy.aiTicks = 0;
       enemy.vx = 0;
@@ -218,9 +265,12 @@ export function stepLegionnaire(
     } else if (enemy.attackCooldownTicks > 0 || !hasTurn(enemy, allies)) {
       enemy.vx = 0;
     } else if (dist <= CONFIG.enemy.legionnaire.attackRange) {
-      enemy.aiState = 'windup';
+      // Si Kratos sostiene guardia pasiva o por alternancia de ataques, desata el ataque pesado rompeguardias (ESE-04)
+      const wantsHeavy = player.guardPhase === 'active' || (enemy.attackChain % 2 === 1);
+      enemy.aiState = wantsHeavy ? 'heavy_windup' : 'windup';
       enemy.aiTicks = 0;
       enemy.vx = 0;
+      enemy.attackChain += 1;
     } else {
       enemy.vx = enemy.facing * CONFIG.enemy.legionnaire.speed;
     }
@@ -237,11 +287,18 @@ function enterGuard(enemy: EntityState): void {
   }
 }
 
-/** Fewer than `maxAttackers` other legionnaires are in `windup` or `slash`. */
+/** Fewer than `maxAttackers` other legionnaires are in `windup`, `slash`, `heavy_windup` or `heavy_slash`. */
 function hasTurn(enemy: EntityState, allies: readonly EntityState[]): boolean {
   let busy = 0;
   for (const other of allies) {
-    if (other !== enemy && other.kind === 'legionnaire' && (other.aiState === 'windup' || other.aiState === 'slash')) {
+    if (
+      other !== enemy &&
+      other.kind === 'legionnaire' &&
+      (other.aiState === 'windup' ||
+        other.aiState === 'slash' ||
+        other.aiState === 'heavy_windup' ||
+        other.aiState === 'heavy_slash')
+    ) {
       busy += 1;
     }
   }

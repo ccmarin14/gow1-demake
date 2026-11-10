@@ -146,6 +146,8 @@ export interface EntityState {
     | 'guard'
     | 'windup'
     | 'slash'
+    | 'heavy_windup'
+    | 'heavy_slash'
     | 'recover'
     | 'hitstun'
     | 'juggle'

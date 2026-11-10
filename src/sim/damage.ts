@@ -5,14 +5,22 @@ export interface PlayerDamageResult {
   hit: boolean;
   parried: boolean;
   blocked: boolean;
+  guardBroken?: boolean;
   damageDealt: number;
+}
+
+export interface PlayerDamageOptions {
+  /** If true, standard passive guard is broken while perfect parry still deflects. */
+  breaksGuard?: boolean;
 }
 
 /**
  * Resuelve el impacto de un ataque enemigo sobre Kratos:
  * - Rodada (invulTicks > 0) o post-daño (hurtInvulTicks > 0): evasión total (0 daño).
  * - Desvío Parry (parryActive === true): 0 daño, 0 retroceso, y el enemigo sufre aturdimiento largo.
- * - Guardia activa (guardPhase === 'active'): mitigación del 85% (daño residual menor), guardia intacta.
+ * - Guardia activa (guardPhase === 'active'): si el ataque rompe guardia (`breaksGuard`),
+ *   la guardia se quiebra, Kratos entra en desestabilización e inflige daño completo.
+ *   Si es golpe normal, mitigación del 85% y guardia intacta.
  * - Desprotegido: 100% daño, interrupción de ataque, retroceso horizontal y 45 ticks de invulnerabilidad.
  * - Vida 0: transición a `isDead = true` y detención total.
  */
@@ -20,6 +28,7 @@ export function applyDamageToPlayer(
   player: EntityState,
   attacker: EntityState,
   baseDamage: number,
+  options: PlayerDamageOptions = {},
 ): PlayerDamageResult {
   if (player.isDead) {
     return { hit: false, parried: false, blocked: false, damageDealt: 0 };
@@ -30,7 +39,7 @@ export function applyDamageToPlayer(
     return { hit: false, parried: false, blocked: false, damageDealt: 0 };
   }
 
-  // 2. Desvío perfecto (Parry)
+  // 2. Desvío perfecto (Parry: desvía tanto golpes comunes como ataques pesados)
   if (player.guardPhase === 'active' && player.parryActive) {
     attacker.aiState = 'hitstun';
     attacker.aiTicks = 0;
@@ -41,8 +50,27 @@ export function applyDamageToPlayer(
     return { hit: false, parried: true, blocked: false, damageDealt: 0 };
   }
 
-  // 3. Guardia estándar sostenida (mitigación del 85%)
+  // 3. Guardia estándar sostenida
   if (player.guardPhase === 'active') {
+    if (options.breaksGuard) {
+      // Rompe la guardia pasiva: cancela la postura, desestabiliza a Kratos y aplica daño completo
+      player.guardPhase = 'none';
+      player.guardTicks = 0;
+      player.parryActive = false;
+      const damageDealt = baseDamage;
+      player.hp = Math.max(0, player.hp - damageDealt);
+      player.hitstunTicks = CONFIG.player.damage.hurtHitstunTicks;
+      player.hurtInvulTicks = CONFIG.player.damage.hurtInvulTicks;
+      const knockbackDir = attacker.x < player.x ? 1 : -1;
+      player.vx = knockbackDir * CONFIG.player.damage.knockbackVx;
+
+      if (player.hp === 0) {
+        player.isDead = true;
+        player.vx = 0;
+      }
+      return { hit: true, parried: false, blocked: false, guardBroken: true, damageDealt };
+    }
+
     const mitigation = CONFIG.player.damage.guardMitigationRatio;
     const residualDamage = Math.max(1, Math.round(baseDamage * (1 - mitigation)));
     player.hp = Math.max(0, player.hp - residualDamage);

@@ -34,9 +34,21 @@ export function getLegionnaireFrameKey(enemy: Readonly<EntityState>): string {
       return `legionnaire-windup-0${frame}`;
     }
 
+    case 'heavy_windup': {
+      // Aviso prolongado de 36 ticks: 00..02 avanzan cada 6 ticks y 03 se sostiene de tick 18 a 36+
+      const frame = Math.min(Math.floor(enemy.aiTicks / 6), 3);
+      return `legionnaire-windup-0${frame}`;
+    }
+
     case 'slash': {
       // 4 cuadros en 8 ticks (2 ticks por cuadro)
       const frame = Math.min(Math.floor(enemy.aiTicks / 2), 3);
+      return `legionnaire-slash-0${frame}`;
+    }
+
+    case 'heavy_slash': {
+      // Tajo pesado en 10 ticks (~2.5 ticks por cuadro)
+      const frame = Math.min(Math.floor(enemy.aiTicks / 2.5), 3);
       return `legionnaire-slash-0${frame}`;
     }
 
