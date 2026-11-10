@@ -99,6 +99,7 @@ export class World {
   private arenaTriggered = false;
   private hydraSlamImpactNotice = false;
   private hydraDefeatedNotice = false;
+  private resetNotice = false;
   private flowState: GameFlowState = 'playing';
   private pauseHeld = false;
   private totalKills = 0;
@@ -199,8 +200,14 @@ export class World {
     return ok;
   }
 
-  spawnEnemy(kind: 'legionnaire' | 'archer', x: number, facing: -1 | 1 = -1): EntityState {
-    return this.spawnWaveEnemy(kind, x, facing);
+  spawnEnemy(kind: 'legionnaire' | 'archer', x: number, facing: -1 | 1 = -1, immediate = true): EntityState {
+    const enemy = this.spawnWaveEnemy(kind, x, facing);
+    if (immediate) {
+      enemy.aiState = kind === 'archer' ? 'idle' : 'approach';
+      enemy.vy = 0;
+      enemy.grounded = true;
+    }
+    return enemy;
   }
 
   peekCheckpoints(): readonly CheckpointState[] {
@@ -325,6 +332,12 @@ export class World {
   consumeHydraDefeatNotice(): boolean {
     const val = this.hydraDefeatedNotice;
     this.hydraDefeatedNotice = false;
+    return val;
+  }
+
+  consumeResetNotice(): boolean {
+    const val = this.resetNotice;
+    this.resetNotice = false;
     return val;
   }
 
@@ -477,6 +490,7 @@ export class World {
 
   reset(): void {
     this.loadScenario(this.activeScenario);
+    this.resetNotice = true;
   }
 
   step(actions: readonly GameAction[] = []): void {

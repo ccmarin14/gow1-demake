@@ -1,7 +1,9 @@
 import type { Simulation } from '../sim/engine';
 import { scenarioNames } from '../sim/scenarios';
 import type { ScaleReference } from '../scale';
+import { PLAYER_ID } from '../sim/types';
 import type {
+  EntityState,
   GameAction,
   HarnessMetrics,
   InputTrace,
@@ -21,6 +23,8 @@ export interface DevHarness {
   snapshot(): SimulationSnapshot;
   loadScenario(name: string): SimulationSnapshot;
   reset(): SimulationSnapshot;
+  restart(): SimulationSnapshot;
+  spawnEnemy(kind?: 'legionnaire' | 'archer', x?: number): EntityState;
   step(frames?: number, actions?: GameAction[]): SimulationSnapshot;
   advance(deltaMs: number, actions?: GameAction[]): SimulationSnapshot;
   metrics(): HarnessMetrics;
@@ -57,6 +61,17 @@ export function installHarness(app: HarnessApp): DevHarness | null {
       simulation.world.reset();
       simulation.resetClock();
       return simulation.world.snapshot();
+    },
+    restart: () => {
+      simulation.world.reset();
+      simulation.resetClock();
+      return simulation.world.snapshot();
+    },
+    spawnEnemy: (kind = 'legionnaire', x) => {
+      const p = simulation.world.peekEntity(PLAYER_ID);
+      const spawnX = x ?? (p ? p.x + (p.facing === 1 ? 55 : -55) : 300);
+      const facing = p ? (p.facing === 1 ? -1 : 1) : -1;
+      return simulation.world.spawnEnemy(kind, spawnX, facing);
     },
     step: (frames = 1, actions = []) => {
       simulation.stepManual(frames, actions);

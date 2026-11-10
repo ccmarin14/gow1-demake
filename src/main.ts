@@ -14,6 +14,7 @@ import type { PresentationMetrics } from './sim/types';
 
 const simulation = new Simulation();
 const metrics = new FrameMetrics();
+const shellScene = new ShellScene(simulation, metrics);
 
 const game = new Phaser.Game({
   type: Phaser.CANVAS,
@@ -30,7 +31,18 @@ const game = new Phaser.Game({
     pixelArt: true,
     roundPixels: true,
   },
-  scene: [new ShellScene(simulation, metrics)],
+  scene: [shellScene],
+});
+
+// Botonera de prueba rápida para reiniciar o añadir enemigos en caliente
+document.getElementById('btn-restart')?.addEventListener('click', () => {
+  shellScene.restartScene();
+});
+document.getElementById('btn-spawn-legionnaire')?.addEventListener('click', () => {
+  shellScene.spawnDebugEnemy('legionnaire');
+});
+document.getElementById('btn-spawn-archer')?.addEventListener('click', () => {
+  shellScene.spawnDebugEnemy('archer');
 });
 
 /**

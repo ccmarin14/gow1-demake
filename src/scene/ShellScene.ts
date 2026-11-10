@@ -190,12 +190,35 @@ export class ShellScene extends Phaser.Scene {
       });
       this.debugText.setDepth(10).setScrollFactor(0);
       attachScaleReferenceOverlay(this);
+
+      // Atajos de teclado para pruebas rápidas
+      this.input.keyboard?.on('keydown-R', () => {
+        this.restartScene();
+      });
+      this.input.keyboard?.on('keydown-P', () => {
+        this.spawnDebugEnemy('legionnaire');
+      });
+      this.input.keyboard?.on('keydown-O', () => {
+        this.spawnDebugEnemy('archer');
+      });
     }
+  }
+
+  restartScene(): void {
+    this.simulation.world.reset();
+    this.redrawPlatforms();
+  }
+
+  spawnDebugEnemy(kind: 'legionnaire' | 'archer' = 'legionnaire'): EntityState | null {
+    const player = this.simulation.world.peekEntity(PLAYER_ID);
+    const facing = player ? (player.facing === 1 ? -1 : 1) : -1;
+    const spawnX = player ? player.x + (player.facing === 1 ? 55 : -55) : 300;
+    return this.simulation.world.spawnEnemy(kind, spawnX, facing);
   }
 
   update(_time: number, delta: number): void {
     this.metrics.record(delta);
-    if (this.simulation.world.scenarioName !== this.renderedScenario) {
+    if (this.simulation.world.scenarioName !== this.renderedScenario || this.simulation.world.consumeResetNotice()) {
       this.redrawPlatforms();
     }
     const actions = this.inputManager.poll();

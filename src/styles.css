@@ -58,6 +58,38 @@ p {
   font-size: 12px;
 }
 
+.test-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.test-controls button {
+  background: #1f2937;
+  color: #e5e7eb;
+  border: 1px solid #374151;
+  border-radius: 4px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-family: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s, transform 0.05s;
+}
+
+.test-controls button:hover {
+  background: #374151;
+  border-color: #60a5fa;
+  color: #ffffff;
+}
+
+.test-controls button:active {
+  background: #4b5563;
+  transform: translateY(1px);
+}
+
 /* Touch controls (src/input/touchControls.ts), only on touch screens. */
 body.has-touch-controls {
   place-items: start center;

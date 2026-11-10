@@ -27,4 +27,33 @@ describe('level1', () => {
     assert.ok(startX !== undefined && endX !== undefined);
     assert.ok(endX < startX, `legionnaire moved towards Kratos: start=${startX}, end=${endX}`);
   });
+
+  it('resets the scene and notifies view without page reload', () => {
+    const world = new World();
+    world.step(['jump']);
+    world.step(['move-right']);
+    assert.equal(world.consumeResetNotice(), false);
+
+    world.reset();
+    assert.equal(world.consumeResetNotice(), true, 'emits reset notice so scene re-renders fresh platforms and views');
+    assert.equal(world.consumeResetNotice(), false, 'notice consumed');
+  });
+
+  it('spawns additional enemies dynamically on demand for testing', () => {
+    const world = new World();
+    world.step(['jump']);
+    const initialCount = world.snapshot().entities.length;
+
+    const leg = world.spawnEnemy('legionnaire', 250, -1);
+    assert.equal(leg.kind, 'legionnaire');
+    assert.equal(leg.grounded, true);
+    assert.equal(leg.aiState, 'approach');
+    assert.equal(world.snapshot().entities.length, initialCount + 1);
+
+    const archer = world.spawnEnemy('archer', 320, -1);
+    assert.equal(archer.kind, 'archer');
+    assert.equal(archer.grounded, true);
+    assert.equal(archer.aiState, 'idle');
+    assert.equal(world.snapshot().entities.length, initialCount + 2);
+  });
 });
