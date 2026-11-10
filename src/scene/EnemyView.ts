@@ -41,13 +41,14 @@ export class EnemyView {
       const t = player.grabTicks;
       const f = player.facing;
       if (player.grabPhase === 'hold' || player.grabPhase === 'finisher_qte' || player.grabPhase === 'pummel') {
-        // Sujeto del cuello a +16 px frente a Kratos y alzado 2..3 px sobre la cubierta (alineado con hand_l en grab-hold)
+        const isStab = player.grabPhase === 'pummel' && t >= 4 && t <= 8;
+        // Sujeto del cuello a +16 px frente a Kratos; retrocede a +19 px y se sacude al penetrar la hoja en el pecho
         const lift = t < 3 ? t : Math.floor(t / 12) % 2 === 0 ? 2 : 3;
-        drawX = player.x + f * 16;
-        drawY = player.y - lift;
+        drawX = player.x + f * (isStab ? 19 : 16);
+        drawY = player.y - lift + (isStab ? (t % 2 === 0 ? 1 : -1) : 0);
         textureKey =
           player.grabPhase === 'pummel'
-            ? t >= 4 && t <= 8
+            ? isStab
               ? 'legionnaire-hitstun-01'
               : 'legionnaire-hitstun-00'
             : t < 3 || Math.floor(t / 12) % 2 === 0
@@ -97,6 +98,13 @@ export class EnemyView {
       }
     }
 
+    // Inercia e inclinación del cuerpo lanzado como proyectil humano en vuelo rápido
+    let rotation = 0;
+    if (enemy.aiState === 'juggle' && Math.abs(enemy.vx) >= 160) {
+      rotation = enemy.facing === 1 ? -0.45 : 0.45;
+      textureKey = 'legionnaire-juggle-01';
+    }
+
     if (this.sprite.texture.key !== textureKey) {
       this.sprite.setTexture(textureKey);
     }
@@ -105,7 +113,7 @@ export class EnemyView {
     const shakeX = !isGrabVictim && enemy.hitstunTicks > 0 && enemy.hitstunTicks % 2 === 1 ? 1 : 0;
     this.sprite.setPosition(drawX + shakeX, drawY);
     this.sprite.setFlipX(enemy.facing === -1);
-    this.sprite.setRotation(0);
+    this.sprite.setRotation(rotation);
 
     // Sombra de contacto terrestre (se atenúa cuando está alzado en el aire o muere)
     this.shadow.setPosition(drawX, enemy.y - 1);

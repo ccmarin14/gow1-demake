@@ -230,8 +230,11 @@ export class PlayerView {
         return t < 3 ? 'kratos-grab-lunge' : 'kratos-grab-hold';
       }
       case 'pummel': {
-        // En Grab 1, Kratos sostiene al soldado por el cuello con la mano izquierda mientras apuñala con la derecha
-        return 'kratos-grab-hold';
+        // En Grab 1 (TAP ○ REPEATEDLY):
+        // ticks 0..3: recogida hacia atrás con espada armada (grab-hold)
+        // ticks 4..8: estocada frontal profunda clavando la Espada del Caos en el torso (grab-lunge)
+        // ticks 9..13: recuperación a posición de sujeción (grab-hold)
+        return t >= 4 && t <= 8 ? 'kratos-grab-lunge' : 'kratos-grab-hold';
       }
       case 'throw': {
         return t < 6 ? 'kratos-grab-throw-a' : 'kratos-grab-throw-b';

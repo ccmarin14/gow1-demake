@@ -35,6 +35,17 @@ interface ParryFlash {
   maxRadius: number;
 }
 
+interface BloodParticle {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  color: number;
+  life: number;
+  maxLife: number;
+  size: number;
+}
+
 // Deterministic pseudo-random number generator for reproducible VFX simulation
 function createDeterministicRandom(seed: number = 42) {
   let s = seed;
@@ -53,6 +64,7 @@ export class VfxLayer {
   private readonly rainFrontGfx: Phaser.GameObjects.Graphics;
   private readonly combatSparksGfx: Phaser.GameObjects.Graphics;
   private readonly parryFlashGfx: Phaser.GameObjects.Graphics;
+  private readonly bloodGfx: Phaser.GameObjects.Graphics;
 
   // Rain state
   private readonly drops: RainDrop[] = [];
@@ -67,6 +79,7 @@ export class VfxLayer {
   // Combat VFX state
   private readonly sparks: Spark[] = [];
   private readonly parryFlashes: ParryFlash[] = [];
+  private readonly bloodParticles: BloodParticle[] = [];
 
   constructor(scene: Phaser.Scene) {
     const { width, height } = CONFIG.internal;
@@ -107,6 +120,12 @@ export class VfxLayer {
       .setScrollFactor(1)
       .setDepth(vfxCfg.parryFlash.depth);
 
+    // 5. Blood VFX layer (arterial blood and gore from blade penetrations and brutal breaks)
+    this.bloodGfx = scene.add
+      .graphics()
+      .setScrollFactor(1)
+      .setDepth(37);
+
     // Initialize 60 rain drops (30 back, 30 front)
     const dropCount = vfxCfg.rain.dropCount;
     for (let i = 0; i < dropCount; i += 1) {
@@ -143,6 +162,52 @@ export class VfxLayer {
 
   isParryFlashActive(): boolean {
     return this.parryFlashes.length > 0;
+  }
+
+  getActiveBloodParticlesCount(): number {
+    return this.bloodParticles.length;
+  }
+
+  /** Arterial blood spurt on blade stabbing (Grab 1 pummel). */
+  emitBloodSpurt(worldX: number, worldY: number, facing: -1 | 1, count: number = 20): void {
+    const bloodColors = [0x4a0404, 0x7f1d1d, 0x991b1b, 0xdc2626, 0xef4444];
+    for (let i = 0; i < count; i += 1) {
+      const angle = (facing === 1 ? -0.15 : Math.PI + 0.15) + (this.rnd() - 0.5) * 1.2;
+      const speed = 70 + this.rnd() * 150;
+      const color = bloodColors[Math.floor(this.rnd() * bloodColors.length)];
+      const maxLife = 14 + Math.floor(this.rnd() * 10);
+      this.bloodParticles.push({
+        x: worldX + (this.rnd() - 0.5) * 4,
+        y: worldY + (this.rnd() - 0.5) * 4,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 25,
+        color,
+        life: maxLife,
+        maxLife,
+        size: this.rnd() > 0.4 ? 2 : 1,
+      });
+    }
+  }
+
+  /** Massive radial blood burst on bone break or lethal execution (Grab 2 break / slam). */
+  emitBloodBurst(worldX: number, worldY: number, count: number = 32): void {
+    const bloodColors = [0x4a0404, 0x7f1d1d, 0x991b1b, 0xdc2626, 0xef4444];
+    for (let i = 0; i < count; i += 1) {
+      const angle = this.rnd() * Math.PI * 2;
+      const speed = 60 + this.rnd() * 160;
+      const color = bloodColors[Math.floor(this.rnd() * bloodColors.length)];
+      const maxLife = 16 + Math.floor(this.rnd() * 12);
+      this.bloodParticles.push({
+        x: worldX + (this.rnd() - 0.5) * 8,
+        y: worldY + (this.rnd() - 0.5) * 8,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed * 0.7 - 55,
+        color,
+        life: maxLife,
+        maxLife,
+        size: this.rnd() > 0.45 ? 2 : 1,
+      });
+    }
   }
 
   /** `force` shows the sparks even while the inherited effect is off (Kratos' strike hits). */
@@ -356,6 +421,29 @@ export class VfxLayer {
       this.parryFlashGfx.lineTo(pf.x, pf.y + flareLen);
       this.parryFlashGfx.strokePath();
     }
+
+    // ========================================================
+    // 5. UPDATE BLOOD PARTICLES
+    // ========================================================
+    this.bloodGfx.clear();
+    const bloodGravity = 360 * dt;
+
+    for (let i = this.bloodParticles.length - 1; i >= 0; i -= 1) {
+      const b = this.bloodParticles[i];
+      b.life -= 1;
+      if (b.life <= 0) {
+        this.bloodParticles.splice(i, 1);
+        continue;
+      }
+
+      b.x += b.vx * dt;
+      b.y += b.vy * dt;
+      b.vy += bloodGravity;
+
+      const alpha = Math.min(1, (b.life / b.maxLife) * 1.3);
+      this.bloodGfx.fillStyle(b.color, alpha);
+      this.bloodGfx.fillRect(Math.round(b.x), Math.round(b.y), b.size, b.size);
+    }
   }
 
   destroy(): void {
@@ -364,9 +452,11 @@ export class VfxLayer {
     this.rainFrontGfx.destroy();
     this.combatSparksGfx.destroy();
     this.parryFlashGfx.destroy();
+    this.bloodGfx.destroy();
     this.drops.length = 0;
     this.splashes.length = 0;
     this.sparks.length = 0;
     this.parryFlashes.length = 0;
+    this.bloodParticles.length = 0;
   }
 }

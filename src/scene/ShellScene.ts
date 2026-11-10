@@ -386,16 +386,31 @@ export class ShellScene extends Phaser.Scene {
         }
         this.prevParryActive = Boolean(player.parryActive);
 
-        // Feedback de impacto en los remates de agarre y estocadas de Grab 1
-        if (
-          ((player.grabPhase === 'slam' || player.grabPhase === 'finisher_slam') && player.grabTicks === 10) ||
-          (player.grabPhase === 'break' && player.grabTicks === 11)
-        ) {
-          this.cameras.main.shake(90, 0.009);
-          this.vfxLayer.emitParryFlash(player.x + player.facing * 20, player.y - 4);
-        } else if (player.grabPhase === 'pummel' && player.grabTicks === 4) {
-          this.cameras.main.shake(40, 0.004);
-          this.vfxLayer.emitParryFlash(player.x + player.facing * 20, player.y - 18);
+        // Feedback visceral de impacto en los agarres clásicos de GoW 1 (○ Pummel, △ Break, □ Throw, ○ Slam)
+        if (player.grabPhase === 'pummel' && player.grabTicks === 4) {
+          // Estocada con Espada del Caos en el torso (Grab 1 - TAP ○ REPEATEDLY)
+          this.cameras.main.shake(60, 0.008);
+          this.vfxLayer.emitBloodSpurt(player.x + player.facing * 18, player.y - 18, player.facing, 22);
+          this.soundManager?.playStab();
+        } else if (player.grabPhase === 'break' && player.grabTicks === 11) {
+          // Quiebre brutal sobre la cabeza/cubierta (Grab 2 - △ Break)
+          this.cameras.main.shake(150, 0.016);
+          this.vfxLayer.emitBloodBurst(player.x + player.facing * 18, player.y - 8, 36);
+          this.vfxLayer.emitDust(player.x + player.facing * 18, player.y);
+          this.soundManager?.playBoneBreak();
+          this.soundManager?.playStrikeHit('heavy');
+        } else if (player.grabPhase === 'throw' && player.grabTicks === 6) {
+          // Impulso y despegue del proyectil humano (Grab 3 - □ Throw)
+          this.cameras.main.shake(50, 0.006);
+          this.vfxLayer.emitDust(player.x, player.y);
+          this.soundManager?.playThrowRelease();
+        } else if ((player.grabPhase === 'slam' || player.grabPhase === 'finisher_slam') && player.grabTicks === 10) {
+          // Azote brutal contra las tablas de cubierta (○ Slam)
+          this.cameras.main.shake(120, 0.014);
+          this.vfxLayer.emitBloodBurst(player.x + player.facing * 18, player.y - 6, 24);
+          this.vfxLayer.emitDust(player.x + player.facing * 18, player.y);
+          this.soundManager?.playSlamImpact();
+          this.soundManager?.playStrikeHit('heavy');
         }
       }
 

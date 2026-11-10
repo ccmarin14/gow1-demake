@@ -23,4 +23,21 @@ describe('strike audio profiles', () => {
     assert.equal(stats.lastPlayed, 'strikeHitAir');
     assert.equal(stats.totalPlayed, 9);
   });
+
+  it('records grab execution audio generators (stab, bone break, throw release, slam)', () => {
+    const sound = new SoundManager();
+
+    sound.playStab();
+    sound.playBoneBreak();
+    sound.playThrowRelease();
+    sound.playSlamImpact();
+
+    const stats = sound.getStats();
+    assert.equal(stats.playCounts.stab, 1);
+    assert.equal(stats.playCounts.boneBreak, 1);
+    assert.equal(stats.playCounts.throwRelease, 1);
+    assert.equal(stats.playCounts.slamImpact, 1);
+    assert.equal(stats.lastPlayed, 'slamImpact');
+    assert.equal(stats.totalPlayed, 4);
+  });
 });

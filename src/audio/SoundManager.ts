@@ -30,6 +30,10 @@ export class SoundManager {
     orbAbsorb: 0,
     chestOpen: 0,
     victoryFanfare: 0,
+    stab: 0,
+    boneBreak: 0,
+    throwRelease: 0,
+    slamImpact: 0,
   };
   private lastPlayed: string | null = null;
   private totalPlayed = 0;
@@ -191,6 +195,106 @@ export class SoundManager {
         osc.start(now);
         osc.stop(now + 0.35);
       }
+    } catch {}
+  }
+
+  /** Blade plunge into victim's torso during Grab 1 (TAP ○ REPEATEDLY). */
+  playStab(): void {
+    this.recordSound('stab');
+    if (!this.ctx || !this.sfxGain || this.muted) return;
+
+    try {
+      const now = this.ctx.currentTime;
+
+      // 1. Sharp metallic plunge / scrape
+      const metalOsc = this.ctx.createOscillator();
+      const metalGain = this.ctx.createGain();
+      metalOsc.type = 'sawtooth';
+      metalOsc.frequency.setValueAtTime(880, now);
+      metalOsc.frequency.exponentialRampToValueAtTime(140, now + 0.08);
+      metalGain.gain.setValueAtTime(0.4, now);
+      metalGain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+      metalOsc.connect(metalGain);
+      metalGain.connect(this.sfxGain);
+      metalOsc.start(now);
+      metalOsc.stop(now + 0.08);
+
+      // 2. Visceral meat puncture thud
+      const bodyOsc = this.ctx.createOscillator();
+      const bodyGain = this.ctx.createGain();
+      bodyOsc.type = 'triangle';
+      bodyOsc.frequency.setValueAtTime(180, now);
+      bodyOsc.frequency.exponentialRampToValueAtTime(38, now + 0.14);
+      bodyGain.gain.setValueAtTime(0.65, now);
+      bodyGain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+      bodyOsc.connect(bodyGain);
+      bodyGain.connect(this.sfxGain);
+      bodyOsc.start(now);
+      bodyOsc.stop(now + 0.14);
+    } catch {}
+  }
+
+  /** Brutal overhead bone crack / spine snap during Grab 2 (△ Break). */
+  playBoneBreak(): void {
+    this.recordSound('boneBreak');
+    if (!this.ctx || !this.sfxGain || this.muted) return;
+
+    try {
+      const now = this.ctx.currentTime;
+
+      const snapOsc = this.ctx.createOscillator();
+      const snapGain = this.ctx.createGain();
+      snapOsc.type = 'sawtooth';
+      snapOsc.frequency.setValueAtTime(240, now);
+      snapOsc.frequency.exponentialRampToValueAtTime(25, now + 0.22);
+      snapGain.gain.setValueAtTime(0.7, now);
+      snapGain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+      snapOsc.connect(snapGain);
+      snapGain.connect(this.sfxGain);
+      snapOsc.start(now);
+      snapOsc.stop(now + 0.22);
+    } catch {}
+  }
+
+  /** Heavy projectile whoosh on throwing victim (Grab 3 □ Throw). */
+  playThrowRelease(): void {
+    this.recordSound('throwRelease');
+    if (!this.ctx || !this.sfxGain || this.muted) return;
+
+    try {
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(320, now);
+      osc.frequency.exponentialRampToValueAtTime(70, now + 0.18);
+      gain.gain.setValueAtTime(0.35, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+      osc.connect(gain);
+      gain.connect(this.sfxGain);
+      osc.start(now);
+      osc.stop(now + 0.18);
+    } catch {}
+  }
+
+  /** Deck slam impact on ○ final slam or finisher. */
+  playSlamImpact(): void {
+    this.recordSound('slamImpact');
+    if (!this.ctx || !this.sfxGain || this.muted) return;
+
+    try {
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(130, now);
+      osc.frequency.exponentialRampToValueAtTime(28, now + 0.24);
+      gain.gain.setValueAtTime(0.75, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
+      osc.connect(gain);
+      gain.connect(this.sfxGain);
+      osc.start(now);
+      osc.stop(now + 0.24);
     } catch {}
   }
 

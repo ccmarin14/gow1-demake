@@ -1215,6 +1215,13 @@ export class World {
                   CONFIG.player.grab.collateralDamage,
                   CONFIG.enemy.legionnaire.knockdownTicks,
                 );
+                this.strikeHitNotice = { x: other.x, y: other.y - 14, power: 20, kind: 'heavy' };
+                this.strikeImpactNotice = {
+                  x: other.x,
+                  y: other.y,
+                  dust: [other.x - 8, other.x + 8],
+                  shake: { px: 4, ticks: 6 },
+                };
                 if (killed) {
                   other.aiState = 'death';
                   other.aiTicks = 0;
@@ -1263,6 +1270,7 @@ export class World {
                     target.aiState = target.kind === 'archer' ? 'reposition' : 'approach';
                     target.aiTicks = 0;
                   } else if (target.kind === 'legionnaire' && target.aiState === 'juggle') {
+                    const wasThrownFlight = Math.abs(target.vx) >= 120;
                     target.aiState = 'knockdown';
                     target.aiTicks = 0;
                     target.vx = 0;
@@ -1280,6 +1288,13 @@ export class World {
                         shake: { px: 4, ticks: 7 },
                       };
                       this.strikeHitNotice = { x: target.x, y: target.y - 10, power: 25, kind: 'heavy' };
+                    } else if (wasThrownFlight) {
+                      this.strikeImpactNotice = {
+                        x: target.x,
+                        y: target.y,
+                        dust: [target.x - 12, target.x + 12],
+                        shake: { px: 3, ticks: 5 },
+                      };
                     }
                   } else if (target.kind === 'archer' && target.aiState === 'juggle') {
                     target.aiState = 'hitstun';
