@@ -309,7 +309,7 @@ El vertical slice muestra la calidad final en un tramo corto del Egeo. No es el 
 | # | Tramo | Qué pasa (detalle del original en §8) |
 | --- | --- | --- |
 | 1 | Cómic de apertura | Kratos en el acantilado ("Los dioses del Olimpo me han abandonado") se tira al mar; "tres semanas antes", la flota en el Egeo atacada por la Hidra. Se salta con cualquier acción (D-30). Debe mostrar que Kratos tiene la *Ira de Poseidón*, o nadie la va a usar. |
-| 2 | Proa | No-muertos con espada cortan el paso; una segunda tanda rompe la reja del piso y otros trepan por los costados (§8, tramo 1). |
+| 2 | Proa | Combate obligatorio en cubierta plana (D-53, sin verticalidad). Tope de 5 legionarios, con 2 a 4 en pantalla a la vez. Bloqueo inicial con sellos espectrales rojos (en fase final, reja de piso con cadenas). Los refuerzos trepan por las bordas o salen del piso cuando un enemigo activo llega a vida crítica, alternando lados (izquierda, derecha, reja) e invulnerables hasta apoyar los pies. D-43 limita a máximo 2 atacando a la vez (§8, tramo 1). |
 | 3 | Escotilla y cofre | La escotilla se abre machacando ○. Cofre rojo. |
 | 4 | Interior del barco y primera Hidra | Recorrido hasta la mitad del barco y combate con la cabeza, con el remate completo de ○ (requiere el agarre y los remates, BL-06 y BL-07) (§8, tramo 2). |
 | 5 | Vigas | Circuito de equilibrio sobre la bodega inundada (abajo). |

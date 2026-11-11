@@ -77,6 +77,7 @@ Ideas, notas y referencias de diseño para etapas futuras del desarrollo.
      - Los demás adoptan conductas de espera, guardia con escudo (como `guard` a 72 px en `legionnaire.ts`) o retroceso para no saturar al jugador.
   3. **Arenas multinivel (Verticalidad para aislar amenazas):**
      - Las zonas de pelea deben contar con 2 o 3 plataformas o pisos. Permiten a Kratos saltar para matar primero al arquero, o elevar a un legionario con *Ascension* (△) para rematarlo en el aire sin interferencia de los de abajo.
+     - *Alcance y Vertical Slice:* la verticalidad para aislar enemigos queda como concepto para el Nivel 1 completo y niveles posteriores. En el **vertical slice (D-53)** el combate es 100% sobre cubierta plana, resolviendo la dosificación mediante alternancia de bordas (izquierda/derecha/reja), umbrales de vida crítica y los turnos de D-43.
   4. **Arenas de bloqueo con sellos espectrales (Lockdown por oleadas):**
      - Al entrar a un combate obligatorio de GoW, rejas o sellos espectrales rojos bloquean ambos extremos de la pantalla.
      - **Dosificación por oleadas:** en vez de spawnear 8 enemigos juntos, la arena se supera en 2 o 3 oleadas cortas y diferenciadas (ej: oleada 1 con 2 legionarios; oleada 2 con 1 arquero en altura + 2 legionarios; oleada 3 con un enemigo pesado). Al limpiar la última oleada, el sello espectral se destruye y desbloquea el avance.
