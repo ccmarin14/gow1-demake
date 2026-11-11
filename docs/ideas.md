@@ -62,6 +62,25 @@ Ideas, notas y referencias de diseño para etapas futuras del desarrollo.
 - **Enemigos del juego:** soldados no-muertos, arpías, minotauros, Medusa y gorgonas, cíclopes, espectros, sirenas, sátiros, centauros y cerberos. Jefes: la Hidra y el Guardián de Pandora, un minotauro gigante.
 - **Uso:** sirve de guía para planear los niveles siguientes. No es un compromiso de alcance.
 
+### G-09 · Dosificación de enemigos, arenas de bloqueo y combate 2D
+- **Respaldo:** observación y propuesta de la Usuaria. Referencias técnicas: *Dead Cells*, *Hollow Knight*, *Blasphemous*.
+- **El problema del combate 2D lateral:**
+  - En 3D (GoW PS2), los enemigos rodean a Kratos en $360^\circ$ y la cámara gira.
+  - En 2D lateral solo existen dos direcciones de entrada: izquierda y derecha. Apilar muchos enemigos en el suelo genera superposición de sprites (*sprite stacking*), tapa las animaciones de aviso (*windup*) y convierte la pelea en un cuello de botella ilegible o en un tiro al blanco.
+- **Técnicas clave de resolución:**
+  1. **Composición de roles (Tríada de arquetipos):** nunca enfrentar al jugador contra una masa idéntica en el suelo. Se combinan roles complementarios:
+     - *Línea de frente (meleé):* 1 o 2 legionarios que fijan a Kratos en tierra y exigen guardia (`Q`) o rodada (`Shift`).
+     - *Artillería (rango):* 1 arquero en plataforma elevada o al fondo que presiona con proyectiles periódicos.
+     - *Disruptor (aéreo):* arpías o voladores que atacan en diagonal, obligando al combate vertical o aéreo.
+  2. **Tokens de agresión y concurrencia (IA de turnos):**
+     - En pantalla puede haber 3 o 4 enemigos, pero un sistema de turnos limita cuántos atacan a la vez: **máximo 1 atacante por flanco simultáneamente**.
+     - Los demás adoptan conductas de espera, guardia con escudo (como `guard` a 72 px en `legionnaire.ts`) o retroceso para no saturar al jugador.
+  3. **Arenas multinivel (Verticalidad para aislar amenazas):**
+     - Las zonas de pelea deben contar con 2 o 3 plataformas o pisos. Permiten a Kratos saltar para matar primero al arquero, o elevar a un legionario con *Ascension* (△) para rematarlo en el aire sin interferencia de los de abajo.
+  4. **Arenas de bloqueo con sellos espectrales (Lockdown por oleadas):**
+     - Al entrar a un combate obligatorio de GoW, rejas o sellos espectrales rojos bloquean ambos extremos de la pantalla.
+     - **Dosificación por oleadas:** en vez de spawnear 8 enemigos juntos, la arena se supera en 2 o 3 oleadas cortas y diferenciadas (ej: oleada 1 con 2 legionarios; oleada 2 con 1 arquero en altura + 2 legionarios; oleada 3 con un enemigo pesado). Al limpiar la última oleada, el sello espectral se destruye y desbloquea el avance.
+
 ---
 
 ## Fuentes
