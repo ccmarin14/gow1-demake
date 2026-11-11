@@ -42,13 +42,16 @@ describe('combat grab with Circle / L key (BL-06, D-42)', () => {
     assert.equal(p.grabTargetId, null);
     assert.equal(p.vx, CONFIG.player.grab.lungeSpeedPx, 'Kratos steps forward on whiff lunge');
 
-    // Avanza durante la embestida inicial de whiff (ticks 0..4)
-    stepTicks(world, [], 4);
-    assert.ok(p.x > startX, 'Kratos physically moved forward during lunge');
+    // Avanza durante la embestida inicial de whiff (ticks 0..whiffLungeTicks-1)
+    stepTicks(world, [], CONFIG.player.grab.whiffLungeTicks - 1);
+    assert.ok(p.x - startX >= 10, 'Kratos physically stepped forward at least 10 px during whiff lunge');
+
+    // Al llegar al final de la embestida frena en seco para la recuperación vulnerable
+    world.step([]);
     assert.equal(p.vx, 0, 'brakes to stop for recovery');
 
-    // Completa whiffTicks
-    stepTicks(world, [], CONFIG.player.grab.whiffTicks - 5);
+    // Completa el resto de whiffTicks en recuperación vulnerable
+    stepTicks(world, [], CONFIG.player.grab.whiffTicks - CONFIG.player.grab.whiffLungeTicks - 1);
     assert.equal(p.grabPhase, 'none');
   });
 

@@ -223,11 +223,11 @@ export class PlayerView {
     const t = simPlayer.grabTicks;
     switch (simPlayer.grabPhase) {
       case 'whiff': {
-        return t < 10 ? 'kratos-grab-lunge' : 'kratos-sq1-e';
+        return t <= (CONFIG.player.grab.whiffLungeTicks ?? 8) ? 'kratos-grab-lunge' : 'kratos-sq1-e';
       }
       case 'hold':
       case 'finisher_qte': {
-        return t < 3 ? 'kratos-grab-lunge' : 'kratos-grab-hold';
+        return t < (CONFIG.player.grab.lungeTicks ?? 2) ? 'kratos-grab-lunge' : 'kratos-grab-hold';
       }
       case 'pummel': {
         // En Grab 1 (TAP ○ REPEATEDLY):

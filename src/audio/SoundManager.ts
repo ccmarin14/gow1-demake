@@ -34,6 +34,8 @@ export class SoundManager {
     boneBreak: 0,
     throwRelease: 0,
     slamImpact: 0,
+    grabWhoosh: 0,
+    grabClamp: 0,
   };
   private lastPlayed: string | null = null;
   private totalPlayed = 0;
@@ -295,6 +297,48 @@ export class SoundManager {
       gain.connect(this.sfxGain);
       osc.start(now);
       osc.stop(now + 0.24);
+    } catch {}
+  }
+
+  /** Outstretched arm swish during grab lunge in empty air (E1 Whiff). */
+  playGrabWhoosh(): void {
+    this.recordSound('grabWhoosh');
+    if (!this.ctx || !this.sfxGain || this.muted) return;
+
+    try {
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(320, now);
+      osc.frequency.exponentialRampToValueAtTime(140, now + 0.09);
+      gain.gain.setValueAtTime(0.25, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+      osc.connect(gain);
+      gain.connect(this.sfxGain);
+      osc.start(now);
+      osc.stop(now + 0.09);
+    } catch {}
+  }
+
+  /** Meaty grip sound when Kratos locks hand onto victim's throat (E2 Lunge & Grab). */
+  playGrabClamp(): void {
+    this.recordSound('grabClamp');
+    if (!this.ctx || !this.sfxGain || this.muted) return;
+
+    try {
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(180, now);
+      osc.frequency.exponentialRampToValueAtTime(50, now + 0.08);
+      gain.gain.setValueAtTime(0.5, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+      osc.connect(gain);
+      gain.connect(this.sfxGain);
+      osc.start(now);
+      osc.stop(now + 0.08);
     } catch {}
   }
 

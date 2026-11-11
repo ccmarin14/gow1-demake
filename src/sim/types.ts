@@ -183,6 +183,7 @@ export interface EntityState {
   grabTicks: number;
   grabTargetId: string | null;
   grabPummelCount?: number;
+  grabAdvancePx?: number;
   qteAction: GameAction | null;
   qteTicksLeft: number;
   qteMaxTicks: number;

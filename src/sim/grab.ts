@@ -67,11 +67,14 @@ export function startGrab(player: EntityState, targets: readonly EntityState[]):
   }
 
   // Agarre conectado:
-  // Kratos da un paso de embestida al frente (grab-lunge) para acortar distancia y prender al enemigo por el cuello
+  // Kratos da un paso de embestida al frente (grab-lunge) cerrando la brecha física con la víctima
+  let advance = 0;
   if (minDistance > cfg.holdDistancePx) {
-    const advance = Math.min(cfg.lungeMaxAdvancePx, Math.round(minDistance - cfg.holdDistancePx));
-    player.x += player.facing * advance;
+    advance = Math.min(cfg.lungeMaxAdvancePx, Math.max(0, Math.round(minDistance - cfg.holdDistancePx)));
   }
+  const step0 = Math.floor(advance / 2);
+  player.x += player.facing * step0;
+  player.grabAdvancePx = advance - step0;
   player.grabPummelCount = 0;
 
   // Solo inicia el QTE contextual si el objetivo está explícitamente en estado 'weakened'.
@@ -94,7 +97,7 @@ export function startGrab(player: EntityState, targets: readonly EntityState[]):
     closestTarget.vy = 0;
     closestTarget.attackHits = [];
     closestTarget.facing = player.facing === 1 ? -1 : 1;
-    closestTarget.x = player.x + player.facing * cfg.holdDistancePx;
+    closestTarget.x = player.x + player.facing * (cfg.holdDistancePx + (player.grabAdvancePx ?? 0));
     closestTarget.y = player.y;
 
     return true;
@@ -113,7 +116,7 @@ export function startGrab(player: EntityState, targets: readonly EntityState[]):
   closestTarget.vy = 0;
   closestTarget.attackHits = [];
   closestTarget.facing = player.facing === 1 ? -1 : 1;
-  closestTarget.x = player.x + player.facing * cfg.holdDistancePx;
+  closestTarget.x = player.x + player.facing * (cfg.holdDistancePx + (player.grabAdvancePx ?? 0));
   closestTarget.y = player.y;
 
   return true;
@@ -151,7 +154,8 @@ export function stepGrab(
   // 1. Fase de Whiff (intento en el vacío con embestida hacia adelante y freno)
   if (player.grabPhase === 'whiff') {
     player.grabTicks += 1;
-    if (player.grabTicks < 5) {
+    const lungeTicks = cfg.whiffLungeTicks ?? 8;
+    if (player.grabTicks <= lungeTicks) {
       player.vx = player.facing * cfg.lungeSpeedPx;
     } else {
       player.vx = 0;
@@ -181,6 +185,11 @@ export function stepGrab(
       player.qteTicksLeft = 0;
       player.qteMaxTicks = 0;
       return result;
+    }
+
+    if (player.grabAdvancePx && player.grabAdvancePx > 0) {
+      player.x += player.facing * player.grabAdvancePx;
+      player.grabAdvancePx = 0;
     }
 
     // Mantener al enemigo inmovilizado frente a Kratos
@@ -286,6 +295,11 @@ export function stepGrab(
       player.grabTicks = 0;
       player.grabTargetId = null;
       return result;
+    }
+
+    if (player.grabAdvancePx && player.grabAdvancePx > 0) {
+      player.x += player.facing * player.grabAdvancePx;
+      player.grabAdvancePx = 0;
     }
 
     target.x = player.x + player.facing * cfg.holdDistancePx;

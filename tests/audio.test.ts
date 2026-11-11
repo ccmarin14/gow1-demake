@@ -24,20 +24,24 @@ describe('strike audio profiles', () => {
     assert.equal(stats.totalPlayed, 9);
   });
 
-  it('records grab execution audio generators (stab, bone break, throw release, slam)', () => {
+  it('records grab execution audio generators (stab, bone break, throw release, slam, whoosh, clamp)', () => {
     const sound = new SoundManager();
 
+    sound.playGrabWhoosh();
+    sound.playGrabClamp();
     sound.playStab();
     sound.playBoneBreak();
     sound.playThrowRelease();
     sound.playSlamImpact();
 
     const stats = sound.getStats();
+    assert.equal(stats.playCounts.grabWhoosh, 1);
+    assert.equal(stats.playCounts.grabClamp, 1);
     assert.equal(stats.playCounts.stab, 1);
     assert.equal(stats.playCounts.boneBreak, 1);
     assert.equal(stats.playCounts.throwRelease, 1);
     assert.equal(stats.playCounts.slamImpact, 1);
     assert.equal(stats.lastPlayed, 'slamImpact');
-    assert.equal(stats.totalPlayed, 4);
+    assert.equal(stats.totalPlayed, 6);
   });
 });

@@ -386,6 +386,17 @@ export class ShellScene extends Phaser.Scene {
         }
         this.prevParryActive = Boolean(player.parryActive);
 
+        // Feedback sonoro de inicio de agarre (E1 Whiff y E2 Enganche)
+        if (player.grabPhase === 'whiff' && player.grabTicks === 0) {
+          this.soundManager?.playGrabWhoosh();
+        } else if (player.grabPhase === 'hold' || player.grabPhase === 'finisher_qte') {
+          if (player.grabTicks === 0) {
+            this.soundManager?.playGrabWhoosh();
+          } else if (player.grabTicks === (CONFIG.player.grab.lungeTicks ?? 2)) {
+            this.soundManager?.playGrabClamp();
+          }
+        }
+
         // Feedback visceral de impacto en los agarres clásicos de GoW 1 (○ Pummel, △ Break, □ Throw, ○ Slam)
         if (player.grabPhase === 'pummel' && player.grabTicks === 4) {
           // Estocada con Espada del Caos en el torso (Grab 1 - TAP ○ REPEATEDLY)
