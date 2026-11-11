@@ -93,7 +93,78 @@ Criterio: se implementa lo que respaldan el manual oficial, el cartel del juego 
 | Remate de □ (□6) | Empieza atrás, anillo de atrás hacia adelante y látigo doble al frente | **Decisión de la usuaria**: el análisis del video no fue concluyente |
 | Ataque al salir de una rodada | Solo con búfer, sin golpes especiales | Sin respaldo; la evasión ofensiva es de nivel 4 |
 | Remate aéreo fuerte (□□□△), dos niveles de lanzador en suelo | No existen (*Spirit of Hercules* es un remate de suelo, ver arriba) | Sin respaldo en ninguna fuente |
-| Agarre con ○, opciones de presa y *Orion's Harpoon* | ○ = `K` / `L` en teclado y botón `○` táctil (D-42, BL-06, BL-07):<br><br>1. **Grab 1 (`TAP ○ REPEATEDLY`):** Kratos prende al soldado por el cuello con la mano izquierda manteniéndolo inmóvil (`kratos-grab-hold`), desenfunda la Espada del Caos en la mano derecha (`WeaponLayer`) y en cada pulsación de ○ clava la hoja profundamente en el torso/abdomen de la víctima (10 de daño por estocada en tick 4, con destello de impacto y retroceso). Al tercer toque de ○ (`maxPummels: 3`) o si la vida del soldado es crítica (<= 25 HP), lo remata automáticamente azotándolo contra la cubierta (`slam`).<br><br>2. **Grab 2 (`○`, luego `△` — *Brutal Break*):** Kratos alza al soldado sobre su cabeza con ambas manos extendidas horizontalmente (`grab-break-a`, ticks 0..10, `y - 22`). En el tick 11 (`grab-break-b`), Kratos lo quiebra violentamente hacia abajo estampándolo y quebrándolo contra las tablas de la cubierta. Es una ejecución letal instantánea contra soldados comunes: la víctima muere en el acto, brotan orbes rojos y su cadáver yace tendido firmemente en el suelo (`target.y = player.y`), con sacudida pesada de cámara.<br><br>3. **Grab 3 (`○`, luego `□` — *Human Projectile Throw*):** Kratos levanta al soldado cruzándolo horizontalmente a dos manos sobre su pecho (`grab-throw-a`, ticks 0..5, `y - 12`). En el tick 6 (`grab-throw-b`), Kratos lo impulsa al frente con ambos brazos lanzándolo a 280 px/s en vuelo horizontal tendido (`juggle-01`). Al colisionar con otros enemigos en su camino, les inflige 20 de daño colateral y los derriba (`knockdown`).<br><br>4. ***Orion's Harpoon* (`○` contra enemigo en el aire):** Si el enemigo está suspendido en el aire (`juggle`), pulsar ○ dispara la cadena hacia lo alto, lo engancha en vuelo y lo estrella violentamente contra las tablas provocando sacudida y derribo. | Manual oficial de PS2 (pág. 10 y 14), video *Moveset Showcase* (435s a 475s: Grab 1 estocadas repetidas con espada, Grab 2 quiebre letal, Grab 3 lanzamiento con dos manos y *Orion's Harpoon*). |
+| Agarre con ○, opciones de presa y *Orion's Harpoon* | ○ = `K` / `L` en teclado y botón `○` táctil (D-42, BL-06, BL-07). Sistema de 10 eslabones secuenciales desglosados en el apartado siguiente (§6.1). | Manual oficial de PS2 (pág. 10 y 14: controles de presa y arpón); video *Kratos Moveset Showcase* (`0X9RiODtCB4`, fotogramas 75 a 96: *Lunge*, *Break Free*, *Grab 1* tap ○, *Grab 2* □ throw, *Grab 3* △ rip, *Orion's Harpoon*); guías técnicas canónicas de combate de GameFAQs (A_I_e_x, DragonicFlare: penalización de 0 orbes en desgarro con △ y crowd control de □). |
+
+### Desglose y anatomía técnica de los 10 eslabones del botón Círculo (○)
+
+En *God of War 1* (PS2), el botón Círculo (`○`) no es una acción atómica ni se reduce a 3 finales: es un sistema secuencial de 10 eslabones específicos. Cada uno posee mecánicas, físicas, timings, audio, VFX y poses visuales independientes:
+
+1. **Eslabón 1: Intento fallido en el vacío (*Whiff*)**
+   - **Disparo:** Pulsar ○ en tierra sin ningún enemigo dentro del alcance frontal (`reachPx: 64`, `verticalReachPx: 20`).
+   - **Cinemática:** Kratos ejecuta un zarpazo al frente con el brazo izquierdo estirado, avanzando físicamente con inercia (`lungeSpeedPx: 90`, desplazamiento de ~14 px en los primeros 4 ticks).
+   - **Vulnerabilidad:** Dura 15 ticks (`whiffTicks`). Durante los ticks 5 a 15 Kratos se frena y queda en recuperación estática, completamente expuesto a ataques enemigos (sin *i-frames*).
+   - **Visual:** Transiciona de `kratos-grab-lunge` a recuperación `kratos-sq1-e` o reposo.
+
+2. **Eslabón 2: Embestida de aproximación y enganche (*Lunge & Grab*)**
+   - **Disparo:** Pulsar ○ con un enemigo frontal a distancia `<= reachPx`.
+   - **Aproximación física:** Kratos da un paso profundo hacia adelante (`lungeMaxAdvancePx: 26`) para cerrar la brecha espacial de forma natural antes de prender al enemigo.
+   - **Acoplamiento e Inmovilización:** Kratos prende al soldado por el cuello con la mano izquierda y lo fija a `holdDistancePx: 22` px. La IA enemiga se suspende de inmediato (`aiState: 'grabbed'`), cancelando cualquier ataque o movimiento en curso.
+   - **Protección:** Se otorgan *i-frames* temporales a Kratos (`invulTicks: 45`) para evitar que golpes colaterales menores corten el inicio de la presa.
+
+3. **Eslabón 3: Sujeción estática y forcejeo pasivo (*Hold & Break Free*)**
+   - **Sujeción en vilo:** Kratos sostiene firmemente al legionario por la garganta con el brazo izquierdo extendido (`kratos-grab-hold`), con el cuerpo del enemigo suspendido ligeramente en vilo sobre la cubierta.
+   - **Ventana de decisión:** Dura hasta 120 ticks (~2.0 s, `holdTicks`). Durante esta ventana, el jugador puede ramificar a □ (Lanzar), △ (Partir) o ○ (Apuñalar).
+   - **Mecánica pasiva de *Break Free*:** Si el jugador NO presiona ningún botón durante la ventana de sujeción:
+     - El legionario no muere ni es azotado automáticamente: empieza a forcejear y patalear.
+     - Al expirar el tiempo, el enemigo empuja con fuerza a Kratos hacia atrás, rompiendo la presa.
+     - Kratos entra en recuperación corta y el legionario recupera su guardia volviendo a `approach` o atacando.
+
+4. **Eslabón 4: Apuñalamiento visceral continuo (*Pummel* — `TAP ○ REPEATEDLY` / Grab 1)**
+   - **Coreografía:** Kratos mantiene la sujeción por el cuello con la mano izquierda y con la mano derecha empuña la Espada del Caos en agarre invertido.
+   - **Cadencia e interacción ("mash"):** Cada pulsación individual de ○ activa una estocada profunda que penetra el torso/abdomen del enemigo en el tick 4 (`pummelDamage: 10`).
+   - **Audio y VFX:** En el tick de impacto reproduce `playStab()` (impacto metálico punzante + desgarro de carne) y emite un chorro direccional de sangre arterial balística (`emitBloodSpurt`, 22 partículas carmesí).
+   - **Reacción del enemigo:** La víctima convulsiona y retrocede en `legionnaire-hitstun-01`.
+   - **Recompensa táctica:** Cada impacto suma +1 Hit al contador de combo y genera orbes rojos directos.
+   - **Transición:** Al alcanzar el tope de pulsaciones (`maxPummels: 3` a 4) o si la vida del enemigo se agota (`hp <= damage`), Kratos transiciona forzosamente al *Slam* final contra la cubierta.
+
+5. **Eslabón 5: Azote pesado contra cubierta (*Deck Slam* — `○` directo o remate de Pummel)**
+   - **Coreografía:** Kratos levanta al enemigo por encima de su hombro (`kratos-grab-slam-a`, ticks 0..9) y en el tick 10 (`kratos-grab-slam-b`) lo estampa violentamente de espaldas/cabeza contra los tablones.
+   - **Impacto y VFX:** En el tick 10 produce daño masivo (`damage: 25`), estallido radial de polvo en cubierta (`emitDust`), sacudida de pantalla (`shake(100, 0.012)`) y crujido seco de madera e impacto sordo (`playSlamImpact()`).
+   - **Física del enemigo:** El cuerpo golpea en `player.x + 18, player.y`. Si sobrevive, transiciona inmediatamente a estado derribado en suelo (`knockdown`, 30 ticks) antes de reincorporarse (`get_up`); si muere, pasa a `death` soltando su recompensa de orbes.
+
+6. **Eslabón 6: Lanzamiento de proyectil humano para control de masas (*Throw* — `○ -> □` / Grab 2)**
+   - **Preparación:** Kratos levanta al soldado horizontalmente a dos manos cruzándolo sobre su pecho (`kratos-grab-throw-a`, ticks 0..5, `y - 12`).
+   - **Impulso:** En el tick 6 (`kratos-grab-throw-b`), Kratos catapulta con fuerza explosiva de ambos brazos y torsión de torso al soldado hacia adelante, acompañado por el zumbido de expulsión rápida (`playThrowRelease()`).
+   - **Balística del proyectil:** El enemigo sale disparado a gran velocidad horizontal (`throwVx: 280` px/s, `vy: -40`) en trayectoria rasante con el cuerpo inclinado aerodinámicamente (`rotation = 0.45` en `juggle-01`).
+   - **Efecto Bola de Boliche (*Crowd Control*):** Si el proyectil impacta a otros enemigos en su camino:
+     - Les inflige 20 de daño colateral pesado (`throwCollateralDamage`).
+     - Los derriba a todos al piso en fila (`knockdown`), despejando la línea de avance.
+   - **Aterrizaje:** Al tocar el suelo, la víctima sufre el daño final (`throwDamage: 15`) y queda derribada o muerta en cubierta.
+
+7. **Eslabón 7: Desgarro en dos / Quiebre brutal (*Rip in Half* — `○ -> △` / Grab 3)**
+   - **Alzada:** Kratos sujeta al enemigo con ambas manos y lo eleva en prensa vertical sobre su cabeza (`kratos-grab-break-a`, ticks 0..10, `y - 22`).
+   - **Fractura letal en tick 11:** Kratos lo quiebra violentamente hacia abajo sobre su rodilla levantada o desgarra el torso en dos mitades contra la cubierta (`kratos-grab-break-b`).
+   - **Audio y VFX:** Crujido sordo de fractura ósea espinal (`playBoneBreak()`), estallido radial masivo de sangre (`emitBloodBurst`, 36 gotas), nube de polvo y sacudida pesada de cámara.
+   - **Muerte instantánea:** Muerte garantizada sin importar el HP remanente del legionario.
+   - **REGLA DE BALANCE CANÓNICA DE GOW 1 (PS2): 0 ORBES ROJOS.** El juego penaliza la muerte instantánea sin combate no otorgando ningún orbe rojo. Quien quiera orbes debe pelear o usar Pummel.
+   - **Arte visual:** Exige que el esbirro muestre la fractura o desmembramiento del torso/columna, asentándose firmemente en la cubierta (`target.y = player.y`), erradicando cuerpos flotantes o intactos.
+
+8. **Eslabón 8: Arpón de Orión (*Orion's Harpoon* — `○` vs enemigo elevado)**
+   - **Activación:** Se ejecuta pulsando ○ desde tierra o durante combo aéreo única y exclusivamente cuando un enemigo está suspendido en el aire frente a Kratos (`hasJuggledAhead`).
+   - **Lanzamiento y tracción:** Kratos dispara una Espada del Caos hacia arriba en ángulo diagonal; la hoja clava al enemigo aéreo y Kratos pega un tirón brutal de la cadena hacia abajo en trayectoria Catmull-Rom.
+   - **Azote y rebote:** El enemigo es azotado violentamente de espaldas contra la cubierta (`+15` daño de impacto), generando onda de choque expansiva en el piso que derriba enemigos circundantes y produce un rebote de suelo (*ground bounce*) para extender combos aéreos.
+
+9. **Eslabón 9: Agarre cuerpo a cuerpo en el aire (*Air Slam* — `○` en salto)**
+   - **Activación:** Kratos en el aire presiona ○ cuerpo a cuerpo pegado a un enemigo aéreo o arpía.
+   - **Coreografía:** Kratos engancha físicamente al enemigo en pleno vuelo, se monta sobre su espalda y cae en picada estampándolo contra la cubierta (*Power Bomb*).
+   - **Aterrizaje:** Impacto masivo en el suelo, onda expansiva con derribo radial y Kratos se recupera erguido de pie.
+
+10. **Eslabón 10: Remate contextual cinematográfico (*QTE Finisher* — `○` sobre jefes o debilitados)**
+    - **Activación:** Enemigos mayores (Minotauros, Medusas, Cíclopes, Hidra) o esbirros en estado crítico (`weakened`) muestran el prompt de Círculo titilando sobre su cabeza.
+    - **Minijuego:** Inicia una secuencia cinemática con ventana de tiempo descendente para pulsar los botones requeridos (`□`, `△`, `○`, `X`).
+    - **Resolución:**
+      - *Acierto:* Animación de ejecución letal cinematográfica y entrega de recompensas masivas (orbes verdes de vida, orbes azules de magia o gran cantidad de orbes rojos).
+      - *Fallo / Timeout:* El enemigo rompe la animación, propina un contragolpe severo que daña y desestabiliza a Kratos (`qteFailDamage`), y devuelve el control al combate normal.
 
 ## 7. Legionario no-muerto: ficha de diseño (BL-21)
 
