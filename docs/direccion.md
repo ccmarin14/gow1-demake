@@ -104,7 +104,7 @@ Criterio: se implementa lo que respaldan el manual oficial, el cartel del juego 
 | ○ agarra. Con el enemigo sujeto hay **tres combinaciones**: *Grab and Toss* (○, □), *Grab and Rip* (○, △) y *Grab and Pummel* (○ repetido, "GBS"). | Supercheats (orbes); [FAQ de GameRevolution](https://www.gamerevolution.com/?p=30372) |
 | *Toss*: lanza al enemigo contra otro cercano **marcado con una luz azul**; da **los menos orbes** y puede cortar el combo. | Supercheats (orbes) |
 | *Rip*: desgarra al enemigo en dos; pulsar ○ varias veces antes de △ alarga la secuencia; da **orbes medios** y permite seguir el combo contra los cercanos. | Supercheats (orbes) |
-| *Pummel*: se machaca ○ hasta que el enemigo muere; es **la más rápida y la que más orbes da**. Qué golpea Kratos (puños o hoja) **las fuentes lo cuentan distinto**: "pega tres puñetazos" (Fandom, resumen de búsqueda) contra "lo apuñala cuatro veces" (otra guía de GameFAQs). | Supercheats (orbes); Fandom y GameFAQs (resúmenes) |
+| *Pummel*: se machaca ○ hasta que el enemigo muere; es **la más rápida y la que más orbes da**. Las fuentes se contradicen sobre qué golpea Kratos ("tres puñetazos", Fandom; "cuatro puñaladas", GameFAQs, ambos resúmenes de búsqueda); la usuaria los concilia: **3 puñetazos sujetándolo en alto y, tras tirarlo al suelo, 4 puñaladas**. | Supercheats (orbes); Fandom y GameFAQs (resúmenes) |
 | Muchos enemigos se agarran sin más, y el legionario no-muerto es uno de ellos; los grandes o blindados solo se agarran cuando aparece un círculo sobre su cabeza (el blindado) o tras romperles la defensa. | Supercheats (orbes y por secciones) |
 | Se puede agarrar en suelo, trepando, en cuerdas y **en el aire** ("los agarres aéreos dan muertes interesantes"); no se describe ninguna maniobra concreta. | Supercheats (por secciones) |
 | Una arpía agarrada y despojada de las alas muere al instante, **sin orbes**. Es el único caso documentado de 0 orbes con un desgarro. | Supercheats (por secciones) |
@@ -118,7 +118,7 @@ Criterio: se implementa lo que respaldan el manual oficial, el cartel del juego 
 - **El *Toss* apunta solo** al enemigo cercano, y no es un lanzamiento recto.
 - **Un remate contextual sobre el legionario común no está documentado:** el circulito aparece en los grandes y blindados; el legionario se agarra directamente. Nuestro remate con círculo sobre el legionario debilitado es **decisión de la usuaria**, no del juego.
 
-**Sigue sin confirmarse:** qué golpea Kratos en el *Pummel* (puños u hoja); el *Air Slam* con montarse a la espalda y caer en picada (*Power Bomb*): solo consta que el agarre aéreo existe; los tiempos de cualquier movimiento; y la cadencia exacta de cada lanzamiento. Esos huecos quedan como criterio del equipo.
+**Sigue sin confirmarse:** el *Air Slam* con montarse a la espalda y caer en picada (*Power Bomb*): solo consta que el agarre aéreo existe; los tiempos de cualquier movimiento; y la cadencia exacta de cada lanzamiento. Se miró el video de gameplay que sugirió la usuaria (`f5Gq_zox7bI`, desde 5:12): el tramo de combate (hacia 7:00 a 8:20) muestra a Kratos sujetando a un enemigo en alto con los dos brazos y un orbe verde al soltarlo, pero la cámara está lejos y el video es de baja resolución, así que **no muestra un agarre aéreo ni una caída en picada**. Esos huecos quedan como criterio del equipo.
 
 **Cómo se organiza nuestro trabajo.** Los "eslabones" son **nuestra** lista de trabajo (paso 115), no un sistema del juego. Los números (alcances, ticks, daños) viven en `CONFIG.grab` y en `tests/grab.test.ts`; aquí no se copian para que no se desfasen. El avance y los defectos abiertos están en `docs/estado.md` §3 (BL-37 a BL-44).
 
@@ -127,7 +127,7 @@ Criterio: se implementa lo que respaldan el manual oficial, el cartel del juego 
 | 1 | *Whiff* | ○ sin enemigo al alcance: zarpazo al aire y recuperación vulnerable, sin i-frames. | Sin respaldo; criterio de la usuaria. |
 | 2 | *Lunge* y enganche | Con un enemigo al alcance, Kratos avanza, lo sujeta por el cuello y queda con i-frames. | Video; TV Tropes (invulnerable). |
 | 3 | *Hold* y *Break Free* | Presa con ventana de elección (□, △, ○). Sin pulsar nada, el enemigo se suelta y empuja a Kratos. | Video. |
-| 4 | *Pummel* | ○ repetido hasta un tope y azote final. Da los orbes más altos de las tres. | Supercheats (existe y rinde más); el arma que golpea, sin confirmar. |
+| 4 | *Pummel* | ○ repetido: Kratos lo sujeta en alto con una mano y le da **3 puñetazos**; luego lo tira al suelo y le da **4 puñaladas** con la espada. Da los orbes más altos de las tres. | Supercheats (existe y rinde más); la secuencia de 3 puñetazos y 4 puñaladas es **testimonio de la usuaria (2026-11-12)**, que concilia a las dos guías contradictorias. |
 | 5 | *Deck Slam* | ○ sobre la presa: azote contra la cubierta, derribo si sobrevive. | Video; sin segunda fuente. |
 | 6 | *Toss* | □ en la presa: lo arroja como proyectil hacia otro enemigo cercano; da los menos orbes. | Supercheats, GameRevolution, TV Tropes, video. |
 | 7 | *Rip in Half* | △ en la presa: desgarro que mata; orbes medios. **Hoy el código hace 35 de daño y puede no matar** (BL-39). | Supercheats, video (*Grab 3*). |

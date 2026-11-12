@@ -123,7 +123,7 @@ grab: {
   breakFreePlayerVx: 150,
   /** Forward impulse applied to the victim while breaking free (px/s). */
   breakFreeEnemyVx: 90,
-  /** Direct damage dealt per strike in Grab 1 (Pummel); sources disagree on punch vs blade stab. */
+  /** Direct damage dealt per strike in Grab 1 (Pummel). Target design: 3 punches held aloft, then thrown down and 4 blade stabs (user, 2026-11-12); not implemented yet. */
   pummelDamage: 10,
   /** Duration in ticks of each pummel strike (~230 ms at 60 Hz). */
   pummelTicks: 14,
