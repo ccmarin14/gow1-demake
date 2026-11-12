@@ -223,14 +223,10 @@ export class PlayerView {
     const t = simPlayer.grabTicks;
     switch (simPlayer.grabPhase) {
       case 'whiff': {
-        // Ticks 0..4: anticipación del paso con torso inclinado al frente (sq1-a)
-        if (t <= 4) return 'kratos-sq1-a';
-        // Ticks 5..12: zarpazo frontal a máxima extensión con zumbido de aire (grab-lunge)
+        // Ticks 0..12: zarpazo frontal a máxima extensión con zumbido de aire (grab-lunge)
         if (t <= (CONFIG.player.grab.whiffLungeTicks ?? 12)) return 'kratos-grab-lunge';
-        // Ticks 13..22: frenado y pie asentado bajo, absorbiendo inercia de la embestida (sq1-d)
-        if (t <= 22) return 'kratos-sq1-d';
-        // Ticks 23..32: recuperación erguida vulnerable hacia el reposo (sq1-e)
-        return 'kratos-sq1-e';
+        // Ticks 13..32: frena en seco y retrae el brazo a su guardia neutral de combate (idle-00)
+        return 'kratos-idle-00';
       }
       case 'hold':
       case 'finisher_qte': {
