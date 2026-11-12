@@ -93,36 +93,47 @@ Criterio: se implementa lo que respaldan el manual oficial, el cartel del juego 
 | Remate de □ (□6) | Empieza atrás, anillo de atrás hacia adelante y látigo doble al frente | **Decisión de la usuaria**: el análisis del video no fue concluyente |
 | Ataque al salir de una rodada | Solo con búfer, sin golpes especiales | Sin respaldo; la evasión ofensiva es de nivel 4 |
 | Remate aéreo fuerte (□□□△), dos niveles de lanzador en suelo | No existen (*Spirit of Hercules* es un remate de suelo, ver arriba) | Sin respaldo en ninguna fuente |
-| Agarre con ○, opciones de presa y *Orion's Harpoon* | ○ = `K` / `L` en teclado y botón `○` táctil (D-42, BL-06, BL-07). Sistema de 10 eslabones secuenciales desglosados en el apartado siguiente (§6.1). | Manual oficial de PS2 (pág. 10 y 14: controles de presa y arpón); video *Kratos Moveset Showcase* (`0X9RiODtCB4`, fotogramas 75 a 96: *Lunge*, *Break Free*, *Grab 1* tap ○, *Grab 2* □ throw, *Grab 3* △ rip, *Orion's Harpoon*); contraste web del 2026-11-12 en §6.1 (la penalización de 0 orbes del desgarro con △ no se pudo confirmar). |
+| Agarre con ○, opciones de presa y *Orion's Harpoon* | ○ = `K` / `L` en teclado y botón `○` táctil (D-42, BL-06, BL-07). Sistema de 10 eslabones secuenciales desglosados en el apartado siguiente (§6.1). | Manual oficial de PS2 (pág. 10 y 14: controles de presa y arpón); video *Kratos Moveset Showcase* (`0X9RiODtCB4`, fotogramas 75 a 96: *Lunge*, *Break Free*, *Grab 1* tap ○, *Grab 2* □ throw, *Grab 3* △ rip, *Orion's Harpoon*); contraste web del 2026-11-12 en §6.1 (el desgarro con △ da orbes medios; el 0 solo consta para la arpía). |
 
 ### El botón Círculo (○): qué dicen las fuentes y qué hace el juego
 
-**Contraste con el juego real (2026-11-12).** Las páginas de StrategyWiki, GameFAQs, TV Tropes y la wiki de Fandom devolvieron 403 o 402 al abrirlas; lo que sigue sale de lo que mostraron las búsquedas y de las fuentes ya citadas arriba (manual de PS2 y video `0X9RiODtCB4`).
+**Contraste con el juego real (2026-11-12, dos pasadas).** Las guías de texto de Supercheats ([guía de orbes](https://www.supercheats.com/playstation2/walkthroughs/godofwar-walkthrough35.txt) y [guía por secciones](https://www.supercheats.com/playstation2/walkthroughs/godofwar-walkthrough33.txt)) abrieron completas y son la fuente más sólida. StrategyWiki, GameFAQs, TV Tropes, Fandom y Neoseeker devolvieron 403 o 402; de ellos solo se usan resúmenes de búsqueda, marcados como tales.
 
 | Hecho del GoW 1 de PS2 | Fuente |
 | --- | --- |
-| ○ agarra al enemigo. Con el enemigo sujeto, ○, △ o □ ejecutan **tres lanzamientos distintos**. | [FAQ de GameRevolution](https://www.gamerevolution.com/?p=30372) |
-| Un enemigo pequeño sujeto se mata o se daña mucho y Kratos es invulnerable mientras lo hace; los de élite, gigantes y jefes exigen órdenes de botón tras el agarre. Un lanzado puede golpear a otro enemigo. | [TV Tropes, *Grapple Move*](https://tvtropes.org/pmwiki/pmwiki.php/Main/GrappleMove) (resumen de búsqueda) |
-| *Orion's Harpoon*: ○ contra un enemigo en el aire; engancha con una hoja y lo estrella contra el suelo. Es movimiento de nivel 1. | [StrategyWiki, armas](https://strategywiki.org/wiki/God_of_War/Weapons) (resumen de búsqueda) |
-| Al debilitar a un enemigo aparece un círculo sobre su cabeza; ○ inicia un remate contextual con botones o movimientos del stick. Los botones salen en el centro de la pantalla. | [GameFAQs, guía de Aklite](https://gamefaqs.gamespot.com/ps2/919864-god-of-war/faqs/37266) y [wiki de Fandom, *Quick Time Events*](https://godofwar.fandom.com/wiki/Quick_Time_Events) (resúmenes de búsqueda) |
-| Recompensas del remate: normalmente orbes rojos o azules; un minotauro da orbes verdes y una gorgona, mágicos. | [Fandom](https://godofwar.fandom.com/wiki/Quick_Time_Events) y [GameSpot](https://gamespot.com/articles/god-of-war-collection-walkthrough/1100-6240524/) (resúmenes de búsqueda) |
+| ○ agarra. Con el enemigo sujeto hay **tres combinaciones**: *Grab and Toss* (○, □), *Grab and Rip* (○, △) y *Grab and Pummel* (○ repetido, "GBS"). | Supercheats (orbes); [FAQ de GameRevolution](https://www.gamerevolution.com/?p=30372) |
+| *Toss*: lanza al enemigo contra otro cercano **marcado con una luz azul**; da **los menos orbes** y puede cortar el combo. | Supercheats (orbes) |
+| *Rip*: desgarra al enemigo en dos; pulsar ○ varias veces antes de △ alarga la secuencia; da **orbes medios** y permite seguir el combo contra los cercanos. | Supercheats (orbes) |
+| *Pummel*: se machaca ○ hasta que el enemigo muere; es **la más rápida y la que más orbes da**. Qué golpea Kratos (puños o hoja) **las fuentes lo cuentan distinto**: "pega tres puñetazos" (Fandom, resumen de búsqueda) contra "lo apuñala cuatro veces" (otra guía de GameFAQs). | Supercheats (orbes); Fandom y GameFAQs (resúmenes) |
+| Muchos enemigos se agarran sin más, y el legionario no-muerto es uno de ellos; los grandes o blindados solo se agarran cuando aparece un círculo sobre su cabeza (el blindado) o tras romperles la defensa. | Supercheats (orbes y por secciones) |
+| Se puede agarrar en suelo, trepando, en cuerdas y **en el aire** ("los agarres aéreos dan muertes interesantes"); no se describe ninguna maniobra concreta. | Supercheats (por secciones) |
+| Una arpía agarrada y despojada de las alas muere al instante, **sin orbes**. Es el único caso documentado de 0 orbes con un desgarro. | Supercheats (por secciones) |
+| *Orion's Harpoon*: ○ tras lanzar al enemigo al aire; lo estrella contra el suelo y se repite pulsando ○ para seguir estrellándolo. Es movimiento de nivel 1. | Supercheats (ambas); [StrategyWiki](https://strategywiki.org/wiki/God_of_War/Weapons) (resumen) |
+| El remate contextual depende del enemigo: minotauro, machacar ○ (siempre da orbes verdes); cíclope de maza, botones en pantalla; Medusa, direcciones del stick; gorgona, quitarle la cabeza (orbes mágicos); Hidra, botones y ○ repetido. Un jefe o enemigo grande muestra un círculo sobre la cabeza al debilitarse. | Supercheats (por secciones); [GameSpot](https://gamespot.com/articles/god-of-war-collection-walkthrough/1100-6240524/) (resumen) |
 
-**No se pudo confirmar en ninguna fuente web:** que el quiebre con △ mate siempre y dé 0 orbes rojos; que ○ repetido apuñale (*Pummel*); el nombre y la cadencia de cada lanzamiento; un agarre aéreo cuerpo a cuerpo (*Air Slam* / *Power Bomb*); y que el remate sea siempre una secuencia de varios botones. Lo que el video muestra (fotogramas 75 a 96) sí cubre *Lunge*, *Break Free*, los tres agarres y *Orion's Harpoon*, pero es una sola fuente y no se puede reabrir desde esta sesión.
+**Lo que cambia respecto a lo que escribimos antes (paso 115):**
+- **El quiebre con △ da orbes medios, no 0.** El "0 orbes" solo está documentado para la arpía. El 0 canónico del paso 115 era un error.
+- **El quiebre es un desgarro que mata** (se describe como partir al enemigo en dos): lo de 35 de daño fijo no tiene respaldo. Falta decidir si el código pasa a muerte directa.
+- **El orden de orbes** es *Pummel* (más) > *Rip* (medio) > *Toss* (menos), y *Pummel* se alarga con ○ repetido.
+- **El *Toss* apunta solo** al enemigo cercano, y no es un lanzamiento recto.
+- **Un remate contextual sobre el legionario común no está documentado:** el circulito aparece en los grandes y blindados; el legionario se agarra directamente. Nuestro remate con círculo sobre el legionario debilitado es **decisión de la usuaria**, no del juego.
 
-**Cómo se organiza nuestro trabajo.** Los "eslabones" son **nuestra** lista de trabajo (paso 115), no un sistema del juego; varios son resultados (*Whiff*, *Hold*, *Break Free*) y no movimientos. Los números (alcances, ticks, daños) viven en `CONFIG.grab` y en `tests/grab.test.ts`; aquí no se copian para que no se desfasen. El avance y los defectos abiertos están en `docs/estado.md` §3 (BL-37 a BL-44).
+**Sigue sin confirmarse:** qué golpea Kratos en el *Pummel* (puños u hoja); el *Air Slam* con montarse a la espalda y caer en picada (*Power Bomb*): solo consta que el agarre aéreo existe; los tiempos de cualquier movimiento; y la cadencia exacta de cada lanzamiento. Esos huecos quedan como criterio del equipo.
+
+**Cómo se organiza nuestro trabajo.** Los "eslabones" son **nuestra** lista de trabajo (paso 115), no un sistema del juego. Los números (alcances, ticks, daños) viven en `CONFIG.grab` y en `tests/grab.test.ts`; aquí no se copian para que no se desfasen. El avance y los defectos abiertos están en `docs/estado.md` §3 (BL-37 a BL-44).
 
 | # | Eslabón | Qué hace | Respaldo |
 | --- | --- | --- | --- |
 | 1 | *Whiff* | ○ sin enemigo al alcance: zarpazo al aire y recuperación vulnerable, sin i-frames. | Sin respaldo; criterio de la usuaria. |
 | 2 | *Lunge* y enganche | Con un enemigo al alcance, Kratos avanza, lo sujeta por el cuello y queda con i-frames. | Video; TV Tropes (invulnerable). |
 | 3 | *Hold* y *Break Free* | Presa con ventana de elección (□, △, ○). Sin pulsar nada, el enemigo se suelta y empuja a Kratos. | Video. |
-| 4 | *Pummel* | ○ repetido: estocadas con la espada, hasta un tope, y azote final. | Video (*Grab 1*); sin segunda fuente. |
+| 4 | *Pummel* | ○ repetido hasta un tope y azote final. Da los orbes más altos de las tres. | Supercheats (existe y rinde más); el arma que golpea, sin confirmar. |
 | 5 | *Deck Slam* | ○ sobre la presa: azote contra la cubierta, derribo si sobrevive. | Video; sin segunda fuente. |
-| 6 | *Throw* | □ en la presa: lo arroja como proyectil que daña y derriba a otros. | FAQ de GameRevolution, TV Tropes, video (*Grab 2*). |
-| 7 | *Rip in Half* | △ en la presa: quiebre brutal. **Hoy hace daño fijo (`breakDamage`, 35), no muerte garantizada.** | Video (*Grab 3*). La muerte garantizada y los 0 orbes quedan **sin respaldo** hasta comprobarlos. |
-| 8 | *Orion's Harpoon* | ○ contra un enemigo en el aire: cadena, azote contra el suelo y rebote. | Manual de PS2, StrategyWiki, video. |
-| 9 | *Air Slam* | Agarre aéreo cuerpo a cuerpo. | **Sin respaldo.** No se hace hasta que la usuaria lo decida (BL-44). |
-| 10 | Remate contextual | Enemigo débil con ○ sobre la cabeza; hoy basta una orden (△) y falla con contragolpe. | Fuentes web; la secuencia de varios botones no se probó. |
+| 6 | *Toss* | □ en la presa: lo arroja como proyectil hacia otro enemigo cercano; da los menos orbes. | Supercheats, GameRevolution, TV Tropes, video. |
+| 7 | *Rip in Half* | △ en la presa: desgarro que mata; orbes medios. **Hoy el código hace 35 de daño y puede no matar** (BL-39). | Supercheats, video (*Grab 3*). |
+| 8 | *Orion's Harpoon* | ○ contra un enemigo en el aire: cadena, azote y repetible con ○. | Manual de PS2, Supercheats, StrategyWiki, video. |
+| 9 | *Air Slam* | Agarre aéreo cuerpo a cuerpo. | El agarre aéreo existe; la maniobra concreta, **sin respaldo** (BL-44). |
+| 10 | Remate contextual | Hoy: legionario débil con ○ sobre la cabeza y una orden (△). | Existe para enemigos grandes (minotauro, cíclope, Medusa, Hidra); sobre el legionario común, **decisión de la usuaria**. |
 
 ## 7. Legionario no-muerto: ficha de diseño (BL-21)
 

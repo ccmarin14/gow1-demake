@@ -123,7 +123,7 @@ grab: {
   breakFreePlayerVx: 150,
   /** Forward impulse applied to the victim while breaking free (px/s). */
   breakFreeEnemyVx: 90,
-  /** Direct damage dealt per Chaos Blade stab in Grab 1 (Pummel). */
+  /** Direct damage dealt per strike in Grab 1 (Pummel); sources disagree on punch vs blade stab. */
   pummelDamage: 10,
   /** Duration in ticks of each pummel strike (~230 ms at 60 Hz). */
   pummelTicks: 14,
