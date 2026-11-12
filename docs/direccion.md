@@ -101,9 +101,10 @@ En *God of War 1* (PS2), el botón Círculo (`○`) no es una acción atómica n
 
 1. **Eslabón 1: Intento fallido en el vacío (*Whiff*)**
    - **Disparo:** Pulsar ○ en tierra sin ningún enemigo dentro del alcance frontal (`reachPx: 64`, `verticalReachPx: 20`).
-   - **Cinemática:** Kratos ejecuta un zarpazo al frente con el brazo izquierdo estirado, avanzando físicamente con inercia (`lungeSpeedPx: 90`, desplazamiento de ~14 px en los primeros 4 ticks).
-   - **Vulnerabilidad:** Dura 15 ticks (`whiffTicks`). Durante los ticks 5 a 15 Kratos se frena y queda en recuperación estática, completamente expuesto a ataques enemigos (sin *i-frames*).
-   - **Visual:** Transiciona de `kratos-grab-lunge` a recuperación `kratos-sq1-e` o reposo.
+   - **Cinemática:** Kratos ejecuta un zarpazo al frente con el brazo izquierdo estirado, avanzando físicamente con inercia (`lungeSpeedPx: 95`, desplazamiento de ~19 px en los primeros 12 ticks, `whiffLungeTicks`).
+   - **Vulnerabilidad:** Dura 32 ticks (~533 ms a 60 Hz, `whiffTicks`). Durante los ticks 13 a 32 Kratos frena en seco (`vx = 0`) y queda en recuperación estática, completamente expuesto a ataques enemigos (sin *i-frames*).
+   - **Audio:** Zumbido de aire por el brazo abalanzándose (`playGrabWhoosh()`), disparado por flanco de transición de estado en la escena.
+   - **Visual y anatomía:** Muestra `kratos-grab-lunge` durante la embestida (ticks 0..12) y retrae el brazo a su guardia neutral de combate (`kratos-idle-00`, ticks 13..32). *Regla anatómica crítica:* Queda prohibido reutilizar poses de espada (`sq1-a/d/e`), ya que gesticulan tajos y recogida de cadenas invisibles en un agarre a mano limpia con espadas a la espalda; para suavizar el retorno del brazo extendido hacia el cuerpo, se requiere un cuadro intermedio dibujado a mano (`grab-whiff-recover.txt`).
 
 2. **Eslabón 2: Embestida de aproximación y enganche (*Lunge & Grab*)**
    - **Disparo:** Pulsar ○ con un enemigo frontal a distancia `<= reachPx`.
