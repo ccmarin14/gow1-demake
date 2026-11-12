@@ -111,10 +111,10 @@ grab: {
   verticalReachPx: 20,
   /** Fixed horizontal separation between Kratos and the victim during hold (px). */
   holdDistancePx: 22,
-  /** Total recovery ticks when grab whiffs with no target in reach (~300 ms at 60 Hz). */
-  whiffTicks: 18,
-  /** Ticks spent physically stepping forward during whiff before braking (~130 ms). */
-  whiffLungeTicks: 8,
+  /** Total recovery ticks when grab whiffs with no target in reach (~530 ms at 60 Hz). */
+  whiffTicks: 32,
+  /** Ticks spent physically stepping forward during whiff before braking (~200 ms). */
+  whiffLungeTicks: 12,
   /** Ticks spent holding the victim while waiting for player decision □ / △ / ○ (~2.0 s at 60 Hz). */
   holdTicks: 120,
   /** Direct damage dealt per bare-handed knee/punch strike in Grab 1. */

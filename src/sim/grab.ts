@@ -154,7 +154,7 @@ export function stepGrab(
   // 1. Fase de Whiff (intento en el vacío con embestida hacia adelante y freno)
   if (player.grabPhase === 'whiff') {
     player.grabTicks += 1;
-    const lungeTicks = cfg.whiffLungeTicks ?? 8;
+    const lungeTicks = cfg.whiffLungeTicks ?? 12;
     if (player.grabTicks <= lungeTicks) {
       player.vx = player.facing * cfg.lungeSpeedPx;
     } else {

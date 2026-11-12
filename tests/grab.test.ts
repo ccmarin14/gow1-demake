@@ -31,6 +31,9 @@ function getEnemy(world: World, id = 'legionnaire-deck-1'): EntityState {
 
 describe('combat grab with Circle / L key (BL-06, D-42)', () => {
   it('whiffs when no enemy is within reach: lunges forward with physical advance and recovery', () => {
+    assert.equal(CONFIG.player.grab.whiffTicks, 32, 'canonical whiff lasts ~0.53s (32 ticks)');
+    assert.equal(CONFIG.player.grab.whiffLungeTicks, 12, 'lunge step covers first 12 ticks');
+
     const world = createWorld();
     const p = getPlayer(world);
     const startX = p.x;

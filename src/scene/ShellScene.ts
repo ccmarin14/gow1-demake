@@ -66,6 +66,7 @@ export class ShellScene extends Phaser.Scene {
   private prevOpenChestsCount = 0;
   private prevFlowState = 'playing';
   private prevStrikeId: string | null = null;
+  private prevGrabPhase = 'none';
 
   constructor(
     private readonly simulation: Simulation,
@@ -346,6 +347,22 @@ export class ShellScene extends Phaser.Scene {
         if (player.parryActive && !this.prevParryActive) {
           this.soundManager.playParry();
         }
+
+        // Sonidos de agarre: Whiff (E1) y Enganche (E2)
+        if (player.grabPhase !== this.prevGrabPhase) {
+          if (player.grabPhase === 'whiff') {
+            this.soundManager.playGrabWhoosh();
+          } else if (player.grabPhase === 'hold' || player.grabPhase === 'finisher_qte') {
+            this.soundManager.playGrabWhoosh();
+          }
+        }
+        if (
+          (player.grabPhase === 'hold' || player.grabPhase === 'finisher_qte') &&
+          player.grabTicks === (CONFIG.player.grab.lungeTicks ?? 2)
+        ) {
+          this.soundManager.playGrabClamp();
+        }
+        this.prevGrabPhase = player.grabPhase;
       }
 
       // Hydra roar sound
@@ -385,17 +402,6 @@ export class ShellScene extends Phaser.Scene {
           this.vfxLayer.emitParryFlash(player.x + player.facing * 18, player.y - 18);
         }
         this.prevParryActive = Boolean(player.parryActive);
-
-        // Feedback sonoro de inicio de agarre (E1 Whiff y E2 Enganche)
-        if (player.grabPhase === 'whiff' && player.grabTicks === 0) {
-          this.soundManager?.playGrabWhoosh();
-        } else if (player.grabPhase === 'hold' || player.grabPhase === 'finisher_qte') {
-          if (player.grabTicks === 0) {
-            this.soundManager?.playGrabWhoosh();
-          } else if (player.grabTicks === (CONFIG.player.grab.lungeTicks ?? 2)) {
-            this.soundManager?.playGrabClamp();
-          }
-        }
 
         // Feedback visceral de impacto en los agarres clásicos de GoW 1 (○ Pummel, △ Break, □ Throw, ○ Slam)
         if (player.grabPhase === 'pummel' && player.grabTicks === 4) {
