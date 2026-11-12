@@ -93,6 +93,7 @@ export function startGrab(player: EntityState, targets: readonly EntityState[]):
 
     closestTarget.aiState = 'grabbed';
     closestTarget.aiTicks = 0;
+    closestTarget.grabBreakFreeTicks = 0;
     closestTarget.vx = 0;
     closestTarget.vy = 0;
     closestTarget.attackHits = [];
@@ -344,9 +345,15 @@ export function stepGrab(
       player.grabPhase = 'recovery';
       player.grabTicks = 0;
       player.grabTargetId = null;
-      target.aiState = 'approach';
+      player.vx = -player.facing * cfg.breakFreePlayerVx;
+      target.aiState = 'guard';
       target.aiTicks = 0;
-      target.vx = player.facing * 35;
+      target.grabBreakFreeTicks = cfg.breakFreeTicks;
+      target.attackCooldownTicks = Math.max(
+        target.attackCooldownTicks,
+        CONFIG.enemy.legionnaire.holdTicksMin,
+      );
+      target.vx = player.facing * cfg.breakFreeEnemyVx;
       target.vy = 0;
       return result;
     } else {
@@ -558,6 +565,8 @@ export function stepGrab(
 
   // 6. Fase de Recuperación (Recovery)
   if (player.grabPhase === 'recovery') {
+    // The break-free impulse lasts for the release tick only.
+    player.vx = 0;
     player.grabTicks += 1;
     if (player.grabTicks >= cfg.recoveryTicks) {
       player.grabPhase = 'none';

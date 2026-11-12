@@ -274,6 +274,12 @@ export function stepLegionnaire(
 
   // Estado de guardia: espera a media distancia y avanza solo cuando le toca
   if (enemy.aiState === 'guard') {
+    if ((enemy.grabBreakFreeTicks ?? 0) > 0) {
+      enemy.grabBreakFreeTicks = (enemy.grabBreakFreeTicks ?? 0) - 1;
+      enemy.aiTicks += 1;
+      return;
+    }
+
     enemy.facing = dirToPlayer;
     if (dist > CONFIG.enemy.legionnaire.standoffRange + CONFIG.enemy.legionnaire.standoffSlack) {
       enemy.aiState = 'approach';

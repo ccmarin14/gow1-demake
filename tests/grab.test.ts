@@ -126,7 +126,7 @@ describe('combat grab with Circle / L key (BL-06, D-42)', () => {
     assert.equal(e.x, p.x + CONFIG.player.grab.holdDistancePx);
   });
 
-  it('releases victim back to approach if holdTicks (120 ticks = 2s) expires without player pressing □, △, or ○', () => {
+  it('releases victim to guard if holdTicks (120 ticks = 2s) expires without player pressing □, △, or ○', () => {
     const world = createWorld();
     const p = getPlayer(world);
     const e = getEnemy(world);
@@ -140,6 +140,8 @@ describe('combat grab with Circle / L key (BL-06, D-42)', () => {
     // Conectar agarre en tick 1
     world.step(['grab']);
     assert.equal(p.grabPhase, 'hold');
+    const playerXBeforeBreakFree = p.x;
+    const enemyXBeforeBreakFree = e.x;
 
     // Esperar toda la fase hold (holdTicks = 120) sin pulsar □, △ ni ○
     stepTicks(world, [], CONFIG.player.grab.holdTicks);
@@ -147,6 +149,9 @@ describe('combat grab with Circle / L key (BL-06, D-42)', () => {
     assert.equal(p.grabPhase, 'recovery', 'transitions to recovery when hold expires without choice');
     assert.equal(e.hp, 60, 'no slam damage dealt when hold expires');
     assert.equal(e.aiState, 'guard', 'victim breaks free and raises guard at close range');
+    assert.ok(p.x < playerXBeforeBreakFree, 'victim pushes Kratos backward when breaking free');
+    assert.ok(e.x > enemyXBeforeBreakFree, 'victim separates from Kratos during break free');
+    assert.ok(e.attackCooldownTicks > 0, 'victim gets a guard recovery beat');
 
     // Esperar recovery (recoveryTicks = 8)
     stepTicks(world, [], CONFIG.player.grab.recoveryTicks);

@@ -184,6 +184,8 @@ export interface EntityState {
   grabTargetId: string | null;
   grabPummelCount?: number;
   grabAdvancePx?: number;
+  /** Remaining ticks of the enemy's break-free push after a grab expires. */
+  grabBreakFreeTicks?: number;
   qteAction: GameAction | null;
   qteTicksLeft: number;
   qteMaxTicks: number;

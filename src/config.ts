@@ -117,6 +117,12 @@ grab: {
   whiffLungeTicks: 12,
   /** Ticks spent holding the victim while waiting for player decision □ / △ / ○ (~2.0 s at 60 Hz). */
   holdTicks: 120,
+  /** Ticks the victim spends forcing Kratos away before resuming guard. */
+  breakFreeTicks: 4,
+  /** Backward impulse applied to Kratos when the victim breaks free (px/s). */
+  breakFreePlayerVx: 150,
+  /** Forward impulse applied to the victim while breaking free (px/s). */
+  breakFreeEnemyVx: 90,
   /** Direct damage dealt per bare-handed knee/punch strike in Grab 1. */
   pummelDamage: 10,
   /** Duration in ticks of each pummel strike (~230 ms at 60 Hz). */

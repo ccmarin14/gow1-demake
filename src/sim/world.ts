@@ -810,6 +810,7 @@ export class World {
           }
         }
         const nowGrabbing = isGrabbing(player);
+        const grabBreakFreeRelease = player.grabPhase === 'recovery' && player.grabTicks === 0;
 
         if (rolling && (lightAttackEdge || heavyAttackPress)) {
           this.rollAttackBuffer = {
@@ -1004,7 +1005,13 @@ export class World {
         }
 
         // Lock horizontal control/facing during rolls, guard, magic, hitstun, and chest opening
-        if (nowGuarding || nowCastingMagic || (nowGrabbing && player.grabPhase !== 'whiff') || isOpeningChest || nowStriking) {
+        if (
+          nowGuarding ||
+          nowCastingMagic ||
+          (nowGrabbing && player.grabPhase !== 'whiff' && !grabBreakFreeRelease) ||
+          isOpeningChest ||
+          nowStriking
+        ) {
           player.vx = 0;
         }
         if (this.mapData && this.arenaManager && !this.arenaTriggered && !this.arenaManager.isActive()) {
@@ -1014,7 +1021,14 @@ export class World {
             this.arenaManager.activate();
           }
         }
-        const horizontalLocked = nowRolling || nowGuarding || inHitstun || nowCastingMagic || nowGrabbing || isOpeningChest || nowStriking;
+        const horizontalLocked =
+          nowRolling ||
+          nowGuarding ||
+          inHitstun ||
+          nowCastingMagic ||
+          (nowGrabbing && !grabBreakFreeRelease) ||
+          isOpeningChest ||
+          nowStriking;
         const marginX = CONFIG.player.bounds.marginX;
         const playerMinX = (this.arenaManager && this.arenaManager.isActive())
           ? this.arenaManager.getMinX() + marginX
