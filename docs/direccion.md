@@ -132,7 +132,9 @@ Criterio: se implementa lo que respaldan el manual oficial, el cartel del juego 
 - ***Orion's Harpoon*, fuente oficial de GameSpot:** "toca ○ para lanzar al enemigo y vuelve a tocar ○ para estrellarlo"; las otras guías lo ponen tras *Ascension*. Un solo azote por toque. El rebote y la repetición salen de la guía de Supercheats (sección de fallos no verificados); se mantienen como criterio del equipo apoyado en esa fuente.
 - **Una advertencia de la wiki:** la ficha del legionario de Fandom mezcla juegos y atribuye el puñetazo al cuello a *God of War III*, no al de 2005. Lo contradice la guía por secciones de Supercheats (GoW 1: "○ repetido: los golpea, luego los derriba…") y el video, así que se mantiene.
 
-**Sigue sin confirmarse en ninguna fuente:** la puñalada y el balanceo del *Toss* (□) con otros enemigos (solo la guía por secciones lo menciona, sin detalle), el giro de apuntado de medio segundo, los tiempos de cada movimiento y que el remate con círculo exista para el legionario común. Quedan como criterio del equipo.
+- **Toss (□), visto en el video** (`docs/tmp/grab-ref/grab3_throw.png`, fotogramas ampliados): Kratos sujeta al soldado de lado, le hunde una espada (parece la del propio soldado, que cae al suelo) y luego lo **voltea y lo lanza a un costado con un arco de sangre**. Coincide con la guía ("espada por el estómago y balancearlo"). Nuestro □ solo lo lanza: falta la puñalada previa (BL-38).
+
+**Sigue sin confirmarse en ninguna fuente:** el giro de apuntado de medio segundo, los tiempos de cada movimiento y que el remate con círculo exista para el legionario común. Quedan como criterio del equipo.
 
 **Cómo se organiza nuestro trabajo.** Los "eslabones" son **nuestra** lista de trabajo (paso 115), no un sistema del juego. Los números (alcances, ticks, daños) viven en `CONFIG.grab` y en `tests/grab.test.ts`; aquí no se copian para que no se desfasen. El avance y los defectos abiertos están en `docs/estado.md` §3 (BL-37 a BL-44).
 
