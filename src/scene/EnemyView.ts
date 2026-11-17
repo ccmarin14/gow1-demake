@@ -50,13 +50,13 @@ export class EnemyView {
         drawY = player.y - lift + (isPunchHit ? (t % 2 === 0 ? 1 : -1) : 0);
         textureKey = isPunchHit ? 'legionnaire-held-01' : 'legionnaire-held-00';
       } else if (player.grabPhase === 'throw') {
-        // Toss con □: sujeto de lado mientras la espada entra (hasta el tick de la puñalada se queda erguido,
-        // después se dobla) y proyectado en vuelo desde el tick de suelta
+        // Toss con □: sujeto de lado mientras la espada entra (hasta el tick de la puñalada cuelga como en el agarre,
+        // después se dobla por la cintura) y proyectado en vuelo desde el tick de suelta
         const toss = CONFIG.player.grab.toss;
         if (t < toss.releaseTick) {
           drawX = player.x + f * 12;
           drawY = player.y - 12;
-          textureKey = t < toss.stabTick ? 'legionnaire-hitstun-00' : 'legionnaire-juggle-01';
+          textureKey = t < toss.stabTick ? 'legionnaire-held-00' : 'legionnaire-held-01';
         } else {
           drawX = enemy.x;
           drawY = enemy.y;
