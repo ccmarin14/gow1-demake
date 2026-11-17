@@ -42,18 +42,12 @@ export class EnemyView {
       const f = player.facing;
       if (player.grabPhase === 'hold' || player.grabPhase === 'finisher_qte' || player.grabPhase === 'pummel') {
         const isPunchHit = player.grabPhase === 'pummel' && t >= 4 && t <= 8;
-        // Sujeto del cuello a +16 px frente a Kratos; retrocede a +19 px y se sacude con cada puñetazo
-        const lift = t < 3 ? t : Math.floor(t / 12) % 2 === 0 ? 2 : 3;
+        // Sujeto del cuello y alzado: los pies cuelgan en el aire (GoW 1 lo levanta del suelo) con las rodillas
+        // dobladas (`juggle-00`); con cada puñetazo se dobla por la cintura (`juggle-01`) y retrocede 3 px.
+        const lift = t < 3 ? 2 + t * 2 : 8 + (Math.floor(t / 12) % 2 === 0 ? 0 : 1);
         drawX = player.x + f * (isPunchHit ? 19 : 16);
         drawY = player.y - lift + (isPunchHit ? (t % 2 === 0 ? 1 : -1) : 0);
-        textureKey =
-          player.grabPhase === 'pummel'
-            ? isPunchHit
-              ? 'legionnaire-hitstun-01'
-              : 'legionnaire-hitstun-00'
-            : t < 3 || Math.floor(t / 12) % 2 === 0
-              ? 'legionnaire-hitstun-00'
-              : 'legionnaire-juggle-00';
+        textureKey = isPunchHit ? 'legionnaire-juggle-01' : 'legionnaire-juggle-00';
       } else if (player.grabPhase === 'throw') {
         // Toss con □: sujeto de lado mientras la espada entra (hasta el tick de la puñalada se queda erguido,
         // después se dobla) y proyectado en vuelo desde el tick de suelta
@@ -83,11 +77,12 @@ export class EnemyView {
           textureKey = 'legionnaire-death-02';
         }
       } else if (player.grabPhase === 'floorhold' || player.grabPhase === 'stab') {
-        // Tendido bajo Kratos tras el azote (Grab 1); se sacude al entrar la hoja (ticks 4..8 de la puñalada)
+        // Tendido bajo Kratos tras el azote (Grab 1); sigue tendido y da un respingo (sube 2 px y se sacude) al
+        // entrar la hoja (ticks 4..8 de la puñalada); antes cambiaba a `death-01`, que lo mostraba sentándose
         const jolt = player.grabPhase === 'stab' && t >= 4 && t <= 8;
-        drawX = player.x + f * 20;
-        drawY = player.y;
-        textureKey = jolt ? 'legionnaire-death-01' : 'legionnaire-death-02';
+        drawX = player.x + f * 20 + (jolt ? (t % 2 === 0 ? 1 : -1) : 0);
+        drawY = player.y - (jolt ? 2 : 0);
+        textureKey = 'legionnaire-death-02';
       } else if (player.grabPhase === 'slam' || player.grabPhase === 'finisher_slam') {
         // Azote con ○: levantado frente al hombro (ticks 0..9, grab-slam-a) y estrellado contra las tablas (ticks 10+, grab-slam-b)
         if (t < 10) {
