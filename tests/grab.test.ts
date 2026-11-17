@@ -580,3 +580,71 @@ describe('grab orb tiers (Pummel > Rip > Toss)', () => {
     assert.equal(p.redOrbs - before, orbs.pummelPerHit, 'no second payment');
   });
 });
+
+/** Details of Grab 1 the review found unpinned (see docs/direccion.md 6.1). */
+describe('grab chain details', () => {
+  function chainToFloor(hp: number): { world: World; p: EntityState; victim: EntityState } {
+    const world = createWorld();
+    const p = getPlayer(world);
+    const victim = getEnemy(world);
+    p.x = 300;
+    p.facing = 1;
+    victim.x = 328;
+    victim.y = p.y;
+    victim.hp = hp;
+    victim.maxHp = Math.max(victim.maxHp, hp);
+    world.step(['grab']);
+    world.step([]);
+    for (let i = 0; i < CONFIG.player.grab.chain.punches; i += 1) {
+      world.step(['grab']);
+      stepTicks(world, [], CONFIG.player.grab.chain.punchTicks);
+    }
+    world.step(['grab']);
+    stepTicks(world, [], CONFIG.player.grab.slamTicks);
+    assert.equal(p.grabPhase, 'floorhold');
+    return { world, p, victim };
+  }
+
+  it('the last stab kills whatever the victim HP, and the kill is counted', () => {
+    const { world, p, victim } = chainToFloor(1000);
+    const kills = world.snapshot().stats?.totalKills ?? 0;
+    const stabs = CONFIG.player.grab.chain.stabs;
+    for (let i = 0; i < stabs; i += 1) {
+      world.step(['grab']);
+      stepTicks(world, [], CONFIG.player.grab.chain.stabTicks);
+    }
+    assert.equal(victim.isDead, true, 'the fourth stab ends even a very healthy victim');
+    assert.equal(victim.heldLying, false, 'a dead victim is no longer held');
+    assert.ok((world.snapshot().stats?.totalKills ?? 0) > kills, 'the kill counts');
+    assert.notEqual(p.grabPhase, 'stab');
+  });
+
+  it('a victim lying on the floor stays 20 px in front of Kratos while he stabs', () => {
+    const { world, p, victim } = chainToFloor(1000);
+    world.step(['grab']);
+    stepTicks(world, [], 5);
+    assert.equal(victim.x, p.x + p.facing * 20);
+    assert.equal(victim.y, p.y);
+    assert.equal(victim.heldLying, true);
+  });
+
+  it('team choice: after a punch Kratos is back holding the victim up, so □ still throws and △ still breaks', () => {
+    for (const [action, phase] of [['light-attack', 'throw'], ['heavy-attack', 'break']] as const) {
+      const world = createWorld();
+      const p = getPlayer(world);
+      const victim = getEnemy(world);
+      p.x = 300;
+      p.facing = 1;
+      victim.x = 328;
+      victim.y = p.y;
+      victim.hp = 60;
+      world.step(['grab']);
+      world.step([]);
+      world.step(['grab']);
+      stepTicks(world, [], CONFIG.player.grab.chain.punchTicks);
+      assert.equal(p.grabPhase, 'hold');
+      world.step([action]);
+      assert.equal(p.grabPhase, phase, `${action} after a punch starts the ${phase}`);
+    }
+  });
+});

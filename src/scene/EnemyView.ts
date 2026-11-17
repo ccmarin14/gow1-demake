@@ -41,14 +41,14 @@ export class EnemyView {
       const t = player.grabTicks;
       const f = player.facing;
       if (player.grabPhase === 'hold' || player.grabPhase === 'finisher_qte' || player.grabPhase === 'pummel') {
-        const isStab = player.grabPhase === 'pummel' && t >= 4 && t <= 8;
+        const isPunchHit = player.grabPhase === 'pummel' && t >= 4 && t <= 8;
         // Sujeto del cuello a +16 px frente a Kratos; retrocede a +19 px y se sacude con cada puñetazo
         const lift = t < 3 ? t : Math.floor(t / 12) % 2 === 0 ? 2 : 3;
-        drawX = player.x + f * (isStab ? 19 : 16);
-        drawY = player.y - lift + (isStab ? (t % 2 === 0 ? 1 : -1) : 0);
+        drawX = player.x + f * (isPunchHit ? 19 : 16);
+        drawY = player.y - lift + (isPunchHit ? (t % 2 === 0 ? 1 : -1) : 0);
         textureKey =
           player.grabPhase === 'pummel'
-            ? isStab
+            ? isPunchHit
               ? 'legionnaire-hitstun-01'
               : 'legionnaire-hitstun-00'
             : t < 3 || Math.floor(t / 12) % 2 === 0

@@ -114,7 +114,7 @@ Criterio: se implementa lo que respaldan el manual oficial, el cartel del juego 
 **Lo que cambia respecto a lo que escribimos antes (paso 115):**
 - **El quiebre con △ da orbes medios, no 0.** El "0 orbes" solo está documentado para la arpía. El 0 canónico del paso 115 era un error.
 - **El quiebre es un desgarro que mata y da orbes medios.** Decisión del usuario (2026-11-12): se sigue la guía. El código **ya mata siempre** (`overkillDamage`, probado en `tests/grab.test.ts`); los niveles de orbes ya están (paso 123).
-- **El orden de orbes** es *Pummel* (más) > *Rip* (medio) > *Toss* (menos), y *Pummel* se alarga con ○ repetido. **Implementado (paso 123, `CONFIG.player.grab.orbs`):** cada golpe de la cadena ○ paga 3 (incluido el azote final), el *Rip* 5 y el *Toss* 2, todo directo a Kratos además del botín normal de la muerte. Las cifras son criterio del equipo: la guía solo da el orden.
+- **El orden de orbes** es *Pummel* (más) > *Rip* (medio) > *Toss* (menos), y *Pummel* se alarga con ○ repetido. **Implementado (paso 123, `CONFIG.player.grab.orbs`):** cada golpe de la cadena ○ (puñetazos, azote y puñaladas), el *Rip* y el *Toss* pagan lo que fija `CONFIG.player.grab.orbs` (sin copiar las cifras aquí), todo directo a Kratos además del botín normal de la muerte. Las cifras son criterio del equipo: la guía solo da el orden.
 - **El *Toss* apunta solo** al enemigo cercano, y no es un lanzamiento recto.
 - **Un remate contextual sobre el legionario común no está documentado:** el circulito aparece en los grandes y blindados; el legionario se agarra directamente. Nuestro remate con círculo sobre el legionario debilitado es **decisión del usuario**, no del juego.
 
@@ -126,10 +126,10 @@ Criterio: se implementa lo que respaldan el manual oficial, el cartel del juego 
 | --- | --- | --- | --- |
 | 1 | *Whiff* | ○ sin enemigo al alcance: zarpazo al aire, retracción del brazo (`grab-whiff-recover`) y recuperación vulnerable, sin i-frames. | Sin respaldo; criterio del usuario. |
 | 2 | *Lunge* y enganche | Con un enemigo al alcance, Kratos avanza, lo sujeta por el cuello y queda con i-frames. | Video; TV Tropes (invulnerable). |
-| 3 | *Hold* y *Break Free* | Presa con ventana de elección (□, △, ○). Sin pulsar nada, el enemigo se suelta y empuja a Kratos. | Video. |
+| 3 | *Hold* y *Break Free* | Presa con ventana de elección (□, △, ○). Sin pulsar nada, el enemigo se suelta y empuja a Kratos. Tras un puñetazo se puede cambiar a □ o △ (criterio del equipo: ninguna fuente dice si se puede); desde el azote al suelo solo sigue ○. | Video. |
 | 4 | *Pummel* | ○ repetido: Kratos lo sujeta en alto con una mano y le da **3 puñetazos**; luego lo tira al suelo (azote) y le da **4 puñaladas** con la espada; la última mata. **Hecho (pasos 124 y 125).** Da los orbes más altos de las tres. | Supercheats (existe y rinde más); la secuencia de 3 puñetazos y 4 puñaladas es **testimonio del usuario (2026-11-12)**, que concilia a las dos guías contradictorias. |
-| 5 | *Deck Slam* | ○ sobre la presa: azote contra la cubierta, derribo si sobrevive. | Video; sin segunda fuente. |
-| 6 | *Toss* | □ en la presa: lo arroja como proyectil hacia otro enemigo cercano; da los menos orbes. | Supercheats, GameRevolution, TV Tropes, video. |
+| 5 | *Deck Slam* | Cuarto toque de la cadena ○: Kratos lo estrella contra la cubierta (daño en `CONFIG.player.grab.damage`) y la víctima queda tendida para las puñaladas; sin más toques, se levanta por el derribo. Ya no es una opción aparte. | Video; sin segunda fuente. |
+| 6 | *Toss* | □ en la presa: lo arroja de frente como proyectil que daña y derriba a los que encuentra; da los menos orbes. **En el juego apunta solo a otro enemigo cercano (luz azul): aquí no está implementado**, va recto. | Supercheats, GameRevolution, TV Tropes, video. |
 | 7 | *Rip in Half* | △ en la presa: desgarro que mata; orbes medios. Mata siempre y paga orbes medios (paso 123). | Supercheats, video (*Grab 3*). |
 | 8 | *Orion's Harpoon* | ○ contra un enemigo en el aire: cadena, azote y repetible con ○. | Manual de PS2, Supercheats, StrategyWiki, video. |
 | 9 | *Air Slam* | Agarre aéreo cuerpo a cuerpo. | El agarre aéreo existe; la maniobra concreta, **sin respaldo** (BL-44). |

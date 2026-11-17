@@ -127,7 +127,8 @@ grab: {
    * Grab 1 (Circle tapped repeatedly), as the user remembers it from GoW 1: Kratos holds the
    * victim up with one hand and punches him 3 times, throws him to the floor (the deck slam,
    * `damage` below), then stabs him 4 times with the blade; the last stab always kills.
-   * One tap per blow. The damage split is the team's choice: 3x5 + 25 + 4x5 = 60 = one legionnaire.
+   * One tap per blow. The damage split is the team's choice (3x5 + 25 + 4x5 = 60, one legionnaire), but
+   * the last stab kills whatever the victim's HP, so the chain always ends the grab.
    */
   chain: {
     punches: 3,

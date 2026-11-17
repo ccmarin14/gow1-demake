@@ -352,7 +352,8 @@ export class ShellScene extends Phaser.Scene {
         if (player.grabPhase !== this.prevGrabPhase) {
           if (player.grabPhase === 'whiff') {
             this.soundManager.playGrabWhoosh();
-          } else if (player.grabPhase === 'hold' || player.grabPhase === 'finisher_qte') {
+          } else if ((player.grabPhase === 'hold' && this.prevGrabPhase === 'none') || player.grabPhase === 'finisher_qte') {
+            // Solo el enganche suena: volver a la sujeción entre puñetazos no repite el zumbido
             this.soundManager.playGrabWhoosh();
           }
         }
