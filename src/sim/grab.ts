@@ -1,6 +1,6 @@
 import { CONFIG } from '../config';
 import { applyDamageToPlayer, damageEnemy } from './damage';
-import { PLAYER_ID, type EntityState, type GameAction } from './types';
+import type { EntityState, GameAction } from './types';
 
 export interface GrabStepResult {
   hit: boolean;
@@ -154,36 +154,6 @@ export function startGrab(player: EntityState, targets: readonly EntityState[]):
  * - 'slam': impacto contra la cubierta; inflige daño, pasa a 'death' o 'knockdown'.
  * - 'recovery': retorno al reposo y devolución de control a Kratos.
  */
-/**
- * Toss auto-aim ("blue light"): the closest other live enemy within `toss.aimRangePx`, ahead of Kratos
- * first and behind him only if nobody is ahead. The speed makes the victim reach it in `aimFlightTicks`.
- */
-function pickTossAim(
-  player: EntityState,
-  victim: EntityState,
-  targets: readonly EntityState[],
-): { dir: -1 | 1; speed: number } | null {
-  const toss = CONFIG.player.grab.toss;
-  let best: { dir: -1 | 1; dist: number } | null = null;
-  for (const other of targets) {
-    if (other.id === victim.id || other.id === PLAYER_ID || other.isDead || other.aiState === 'death' || other.kind === 'hydra') {
-      continue;
-    }
-    const dx = other.x - player.x;
-    const dist = Math.abs(dx);
-    if (dist > toss.aimRangePx || dist < 1) continue;
-    const dir: -1 | 1 = dx > 0 ? 1 : -1;
-    const ahead = dir === player.facing;
-    const bestAhead = best !== null && best.dir === player.facing;
-    if (best === null || (ahead && !bestAhead) || (ahead === bestAhead && dist < best.dist)) {
-      best = { dir, dist };
-    }
-  }
-  if (!best) return null;
-  const speed = (best.dist / toss.aimFlightTicks) * 60;
-  return { dir: best.dir, speed: Math.min(toss.aimMaxVx, Math.max(toss.aimMinVx, speed)) };
-}
-
 export function stepGrab(
   player: EntityState,
   targets: readonly EntityState[],
@@ -355,8 +325,9 @@ export function stepGrab(
       player.grabAdvancePx = 0;
     }
 
-    // The guide's half-second aim window: holding the other direction turns Kratos (and the victim) around.
-    if (heldDirection !== 0 && heldDirection !== player.facing && player.grabTicks <= cfg.aimWindowTicks) {
+    // Kratos can be turned to either side before choosing (the throw goes left or right): holding the
+    // other direction turns him, and the victim with him.
+    if (heldDirection !== 0 && heldDirection !== player.facing) {
       player.facing = heldDirection;
     }
 
@@ -597,13 +568,7 @@ export function stepGrab(
             target.aiState = 'juggle';
             target.aiTicks = 0;
             target.grounded = false;
-            const aim = pickTossAim(player, target, targets);
-            if (aim) {
-              player.facing = aim.dir;
-              target.vx = aim.dir * aim.speed;
-            } else {
-              target.vx = player.facing * cfg.throwVx;
-            }
+            target.vx = player.facing * cfg.throwVx;
             target.vy = cfg.throwVy;
             target.attackHits = [];
           }
