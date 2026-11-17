@@ -154,7 +154,22 @@ grab: {
     stabTick: 5,
     stabDamage: 8,
     releaseTick: 12,
+    /**
+     * Auto-aim (the guide's "blue light" on a nearby enemy): the victim is thrown at the closest other
+     * enemy within this distance (px), ahead of Kratos first, behind him if nobody is ahead.
+     */
+    aimRangePx: 220,
+    /** Seconds-equivalent in ticks the aimed throw takes to reach its mark; sets the speed. */
+    aimFlightTicks: 24,
+    /** Speed limits (px/s) of an aimed throw; the floor keeps the collateral hit (>= 180) alive. */
+    aimMinVx: 200,
+    aimMaxVx: 360,
   },
+  /**
+   * The guide's "half second" after a grab in which Kratos can be turned to aim the throw: holding the
+   * opposite direction during this many hold ticks flips him (and the victim) to that side.
+   */
+  aimWindowTicks: 30,
   /** Direct damage dealt to the victim when thrown as a projectile (□ / J). */
   throwDamage: 15,
   /** Collateral damage dealt to other enemies hit by a thrown victim. */

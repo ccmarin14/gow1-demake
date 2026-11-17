@@ -766,7 +766,7 @@ export class World {
             if (jumpEdge) followUpEdges.push('jump');
             if (dodgeEdge) followUpEdges.push('dodge');
           }
-          stepGrab(player, this.targets, followUpEdges);
+          stepGrab(player, this.targets, followUpEdges, undefined, heldDirection(this.input));
           if (player.grabPhase === 'pummel' && player.grabTicks === 4) {
             this.strikeHitNotice = {
               x: player.x + player.facing * 16,

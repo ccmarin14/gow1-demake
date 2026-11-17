@@ -263,7 +263,10 @@ describe('combat grab with Circle / L key (BL-06, D-42)', () => {
       'the sword goes in first, then the throw damage lands on release',
     );
     assert.equal(victim.aiState, 'juggle');
-    assert.equal(victim.vx, CONFIG.player.grab.throwVx);
+    // The bystander is 90 px ahead (inside the aim range), so the throw is aimed at him.
+    const t = CONFIG.player.grab.toss;
+    const expected = Math.min(t.aimMaxVx, Math.max(t.aimMinVx, (Math.abs(bystander.x - p.x) / t.aimFlightTicks) * 60));
+    assert.ok(Math.abs(victim.vx - expected) <= 15, `aimed speed ${victim.vx} is about ${expected}`);
 
     // 4. Avanzar ticks mientras el cuerpo lanzado impacta al segundo enemigo
     stepTicks(world, [], 18);
@@ -719,5 +722,85 @@ describe('Toss (□): the sword goes in, then he is thrown aside (GoW 1 video an
     assert.equal(victim.isDead, true);
     stepTicks(world, [], CONFIG.player.grab.toss.releaseTick);
     assert.equal(victim.aiState, 'death', 'no flight after dying on the blade');
+  });
+});
+
+describe('Toss auto-aim and the half-second turn window (GoW 1 guide: blue light, aim after the grab)', () => {
+  function setup(bystanderX: number | null): { world: World; p: EntityState; victim: EntityState } {
+    const world = new World();
+    world.loadScenario('magic');
+    const p = getPlayer(world);
+    const victim = getEnemy(world, 'legionnaire-1');
+    const bystander = getEnemy(world, 'archer-1');
+    p.x = 100;
+    p.facing = 1;
+    victim.x = 128;
+    victim.y = p.y;
+    victim.hp = 60;
+    bystander.y = p.y;
+    bystander.x = bystanderX ?? 400;
+    bystander.aiState = 'idle';
+    world.step(['grab']);
+    assert.equal(p.grabPhase, 'hold');
+    return { world, p, victim };
+  }
+
+  function toss(world: World): void {
+    world.step(['light-attack']);
+    stepTicks(world, [], CONFIG.player.grab.toss.releaseTick);
+  }
+
+  it('with nobody near, the throw goes straight ahead at the plain throw speed', () => {
+    const { world, p, victim } = setup(null);
+    toss(world);
+    assert.equal(victim.vx, p.facing * CONFIG.player.grab.throwVx);
+  });
+
+  it('an enemy within range ahead sets the speed so he is reached in the aim flight time', () => {
+    const { world, p, victim } = setup(100 + 150);
+    const bystander = getEnemy(world, 'archer-1');
+    toss(world);
+    const t = CONFIG.player.grab.toss;
+    const expected = Math.min(t.aimMaxVx, Math.max(t.aimMinVx, (Math.abs(bystander.x - p.x) / t.aimFlightTicks) * 60));
+    assert.notEqual(expected, CONFIG.player.grab.throwVx, 'the aimed speed differs from the plain throw');
+    assert.ok(Math.abs(victim.vx - expected) <= 15, `aimed speed ${victim.vx} is about ${expected}`);
+  });
+
+  it('an enemy outside the aim range does not mark the throw', () => {
+    const { world, victim } = setup(100 + CONFIG.player.grab.toss.aimRangePx + 30);
+    toss(world);
+    assert.equal(victim.vx, CONFIG.player.grab.throwVx);
+  });
+
+  it('nobody ahead but someone behind: Kratos turns and throws the victim at him', () => {
+    const { world, p, victim } = setup(100 - 60);
+    toss(world);
+    assert.equal(p.facing, -1);
+    assert.ok(victim.vx < 0, 'victim flies backwards');
+  });
+
+  it('holding the other direction inside the aim window turns Kratos and the victim to that side', () => {
+    const { world, p, victim } = setup(null);
+    world.step(['move-left']);
+    assert.equal(p.facing, -1);
+    assert.equal(p.grabPhase, 'hold');
+    world.step([]);
+    assert.equal(victim.x, p.x - CONFIG.player.grab.holdDistancePx, 'the victim is carried to the new side');
+  });
+
+  it('after the window closes, holding a direction no longer turns him', () => {
+    const { world, p } = setup(null);
+    stepTicks(world, [], CONFIG.player.grab.aimWindowTicks + 1);
+    assert.equal(p.grabPhase, 'hold');
+    world.step(['move-left']);
+    assert.equal(p.facing, 1);
+  });
+
+  it('Toss after turning: the victim is thrown to the side Kratos was turned to', () => {
+    const { world, p, victim } = setup(null);
+    world.step(['move-left']);
+    toss(world);
+    assert.equal(p.facing, -1);
+    assert.equal(victim.vx, -CONFIG.player.grab.throwVx);
   });
 });
