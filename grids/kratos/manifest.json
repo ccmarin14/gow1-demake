@@ -512,6 +512,48 @@
       "state": "grab",
       "grounded": true,
       "png": "kratos-grab-slam-b"
+    },
+    {
+      "file": "grab-punch-a.txt",
+      "state": "grab",
+      "grounded": true,
+      "png": "kratos-grab-punch-a"
+    },
+    {
+      "file": "grab-punch-b.txt",
+      "state": "grab",
+      "grounded": true,
+      "png": "kratos-grab-punch-b"
+    },
+    {
+      "file": "grab-stab-a.txt",
+      "state": "grab",
+      "grounded": true,
+      "png": "kratos-grab-stab-a"
+    },
+    {
+      "file": "grab-stab-b.txt",
+      "state": "grab",
+      "grounded": true,
+      "png": "kratos-grab-stab-b"
+    },
+    {
+      "file": "grab-whiff-recover.txt",
+      "state": "grab",
+      "grounded": true,
+      "png": "kratos-grab-whiff-recover"
+    },
+    {
+      "file": "guard-a.txt",
+      "state": "guard",
+      "grounded": true,
+      "png": "kratos-guard-a"
+    },
+    {
+      "file": "guard-b.txt",
+      "state": "guard",
+      "grounded": true,
+      "png": "kratos-guard-b"
     }
   ]
 }

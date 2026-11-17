@@ -17,10 +17,10 @@
 | `light-attack` | `J` (□ en pantalla táctil) | Cuadrado (□) | Combo de 6 □ en el suelo: cada `J` en el final del golpe anterior encadena el siguiente, y mantener la dirección contraria da vuelta a Kratos (D-37). En □6 no hace nada. |
 | `dodge` | `Shift` | Stick derecho | Evasión terrestre con ventana de invulnerabilidad. |
 | `heavy-attack` | `I` (△ en pantalla táctil) | Triángulo (△) | △ en tres niveles por tiempo; en el aire, el golpe vertical (D-37). |
-| `grab` | `K` / `L` (○ en pantalla táctil) | Círculo (○) | Agarre terrestre (con elección `□` lanzar, `△` quebrar o `○` azotar), *Orion's Harpoon* con cadena contra enemigos en el aire (`juggle`) y remates contextuales QTE (D-42, BL-06, BL-07). |
+| `grab` | `K` / `L` (○ en pantalla táctil) | Círculo (○) | Agarre terrestre (con elección `□` lanzar, `△` quebrar o `○` repetido: 3 puñetazos, azote al suelo y 4 puñaladas), *Orion's Harpoon* con cadena contra enemigos en el aire (`juggle`) y remates contextuales QTE (D-42, BL-06, BL-07). |
 | `magic` | `U` | L2 | Magia activa (*Ira de Poseidón*). |
 | `context-action` | `E` | R2 | Interacción con cofres y entorno. |
-| `guard` | `Q` | L1 | Guardia y desvío (*parry*) en los primeros ticks. |
+| `guard` | `Q` | L1 | Bloqueo con las dos espadas cruzadas; tocarlo justo antes del golpe lo desvía (*parry*). Ver §6.2. |
 | `pause` | `Escape` | Start | Pausa. |
 
 Tras 2 a 4 □, △ lanza *Plume of Prometheus*; tras 5 □, *Spirit of Hercules* (§6). △ (`I`, o el botón △ táctil) tiene tres niveles por tiempo: tocar es el golpe pesado, mantener hasta el final de la carga lanza a los enemigos **verticalmente hacia arriba** sin que Kratos salte y seguir sosteniendo lo hace saltar tras ellos (*Ascension*). En el aire, `J` encadena tres golpes que mantienen suspendido al enemigo, `I` el golpe vertical y `K`/`L` (○) lanza *Orion's Harpoon* para enganchar al enemigo elevado y estamparlo contra el suelo; un salto corta un golpe aéreo con el doble salto. En el suelo, `K`/`L` (○) sujeta a un enemigo sano permitiendo elegir entre arrojarlo como proyectil (`J`/□), quebrarlo (`I`/△) o azotarlo (`K`/`L`/○), o inicia el remate QTE si está debilitado (`hp <= 20`).
@@ -124,16 +124,36 @@ Criterio: se implementa lo que respaldan el manual oficial, el cartel del juego 
 
 | # | Eslabón | Qué hace | Respaldo |
 | --- | --- | --- | --- |
-| 1 | *Whiff* | ○ sin enemigo al alcance: zarpazo al aire y recuperación vulnerable, sin i-frames. | Sin respaldo; criterio de la usuaria. |
+| 1 | *Whiff* | ○ sin enemigo al alcance: zarpazo al aire, retracción del brazo (`grab-whiff-recover`) y recuperación vulnerable, sin i-frames. | Sin respaldo; criterio de la usuaria. |
 | 2 | *Lunge* y enganche | Con un enemigo al alcance, Kratos avanza, lo sujeta por el cuello y queda con i-frames. | Video; TV Tropes (invulnerable). |
 | 3 | *Hold* y *Break Free* | Presa con ventana de elección (□, △, ○). Sin pulsar nada, el enemigo se suelta y empuja a Kratos. | Video. |
-| 4 | *Pummel* | ○ repetido: Kratos lo sujeta en alto con una mano y le da **3 puñetazos**; luego lo tira al suelo y le da **4 puñaladas** con la espada. Da los orbes más altos de las tres. | Supercheats (existe y rinde más); la secuencia de 3 puñetazos y 4 puñaladas es **testimonio de la usuaria (2026-11-12)**, que concilia a las dos guías contradictorias. |
+| 4 | *Pummel* | ○ repetido: Kratos lo sujeta en alto con una mano y le da **3 puñetazos**; luego lo tira al suelo (azote) y le da **4 puñaladas** con la espada; la última mata. **Hecho (pasos 124 y 125).** Da los orbes más altos de las tres. | Supercheats (existe y rinde más); la secuencia de 3 puñetazos y 4 puñaladas es **testimonio de la usuaria (2026-11-12)**, que concilia a las dos guías contradictorias. |
 | 5 | *Deck Slam* | ○ sobre la presa: azote contra la cubierta, derribo si sobrevive. | Video; sin segunda fuente. |
 | 6 | *Toss* | □ en la presa: lo arroja como proyectil hacia otro enemigo cercano; da los menos orbes. | Supercheats, GameRevolution, TV Tropes, video. |
 | 7 | *Rip in Half* | △ en la presa: desgarro que mata; orbes medios. Mata siempre y paga orbes medios (paso 123). | Supercheats, video (*Grab 3*). |
 | 8 | *Orion's Harpoon* | ○ contra un enemigo en el aire: cadena, azote y repetible con ○. | Manual de PS2, Supercheats, StrategyWiki, video. |
 | 9 | *Air Slam* | Agarre aéreo cuerpo a cuerpo. | El agarre aéreo existe; la maniobra concreta, **sin respaldo** (BL-44). |
 | 10 | Remate contextual | Hoy: legionario débil con ○ sobre la cabeza y una orden (△). | Existe para enemigos grandes (minotauro, cíclope, Medusa, Hidra); sobre el legionario común, **decisión de la usuaria**. |
+
+### 6.2 Bloqueo (L1)
+
+**Qué dicen las fuentes del GoW 1 de PS2** ([guía por secciones de Supercheats](https://www.supercheats.com/playstation2/walkthroughs/godofwar-walkthrough33.txt), la misma que sirvió para ○):
+- L1 bloquea. "Púlsalo justo antes del ataque de un enemigo para desviarlo (*parry*)": en nivel 1 es el movimiento *Hades Reverse*, un toque de L1 antes de que el golpe conecte.
+- El contraataque tras el desvío (*Hades Revenge*) es de nivel 3: fuera de este juego.
+- El bloqueo no es absoluto: los minotauros "pueden golpearte aunque bloquees, a veces", y el ataque principal de la Hidra se esquiva rodando, no bloqueando.
+- Los enemigos también bloquean: los minotauros se guardan de muchos golpes y los soldados no-muertos llevan escudo (se rompen con *Plume of Prometheus*). **Nuestro legionario no lleva escudo (D-51), así que no bloquea.**
+- Rodar es con el stick derecho. No se describe un ataque que atraviese siempre el bloqueo ni una marca visual para él.
+
+**Cómo está en el juego (paso 125):**
+
+| Regla | Valor | Respaldo |
+| --- | --- | --- |
+| Bloquear con `Q` en suelo | Guardia estable; las dos espadas se dibujan cruzadas al frente (`guard-a` al subir, `guard-b` sostenida) | Fuente + D-50 |
+| Desvío | Los primeros `parryWindowTicks` (6) de la guardia desvían sin daño y aturden al atacante | Fuente (*Hades Reverse*) |
+| Bloqueo sostenido | Reduce el daño un 85 % (`guardMitigationRatio`) y empuja un poco; no lo anula | Criterio nuestro: la fuente no da el porcentaje; sí dice que no es absoluto |
+| Golpe que rompe la guardia | El tajo pesado del legionario (ESE-04) atraviesa el bloqueo; solo se desvía o se rueda | Inspirado en el minotauro que golpea aunque se bloquee |
+
+No se añadió nada que el juego no tenga: no hay bloqueo en el aire, ni contraataque tras el desvío, ni enemigos con guardia propia.
 
 ## 7. Legionario no-muerto: ficha de diseño (BL-21)
 

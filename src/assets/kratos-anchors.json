@@ -1930,5 +1930,166 @@
       38.8,
       32.3
     ]
+  },
+  "kratos-grab-punch-a": {
+    "back": [
+      31.3,
+      27.3
+    ],
+    "spineRad": 1.754,
+    "hand": [
+      26.0,
+      24.8
+    ],
+    "farHand": [
+      45.0,
+      20.2
+    ],
+    "shoulder": [
+      29.8,
+      24.6
+    ],
+    "farShoulder": [
+      34.2,
+      24.5
+    ]
+  },
+  "kratos-grab-punch-b": {
+    "back": [
+      31.7,
+      27.4
+    ],
+    "spineRad": 1.803,
+    "hand": [
+      43.5,
+      23.7
+    ],
+    "farHand": [
+      44.0,
+      20.3
+    ],
+    "shoulder": [
+      31.8,
+      25.1
+    ],
+    "farShoulder": [
+      33.0,
+      24.2
+    ]
+  },
+  "kratos-grab-stab-a": {
+    "back": [
+      33.0,
+      32.0
+    ],
+    "spineRad": 1.994,
+    "hand": [
+      39.6,
+      20.1
+    ],
+    "farHand": [
+      47.7,
+      36.6
+    ],
+    "shoulder": [
+      31.6,
+      29.4
+    ],
+    "farShoulder": [
+      37.6,
+      30.0
+    ]
+  },
+  "kratos-grab-stab-b": {
+    "back": [
+      33.0,
+      32.0
+    ],
+    "spineRad": 1.994,
+    "hand": [
+      40.5,
+      38.2
+    ],
+    "farHand": [
+      47.7,
+      36.6
+    ],
+    "shoulder": [
+      31.6,
+      29.4
+    ],
+    "farShoulder": [
+      37.6,
+      30.0
+    ]
+  },
+  "kratos-grab-whiff-recover": {
+    "back": [
+      32.1,
+      26.6
+    ],
+    "spineRad": 1.864,
+    "hand": [
+      34.0,
+      34.2
+    ],
+    "farHand": [
+      43.1,
+      26.9
+    ],
+    "shoulder": [
+      30.2,
+      23.8
+    ],
+    "farShoulder": [
+      36.3,
+      24.2
+    ]
+  },
+  "kratos-guard-a": {
+    "back": [
+      30.6,
+      26.2
+    ],
+    "spineRad": 1.65,
+    "hand": [
+      36.4,
+      31.6
+    ],
+    "farHand": [
+      39.8,
+      33.0
+    ],
+    "shoulder": [
+      27.8,
+      23.3
+    ],
+    "farShoulder": [
+      34.0,
+      23.5
+    ]
+  },
+  "kratos-guard-b": {
+    "back": [
+      30.0,
+      26.3
+    ],
+    "spineRad": 1.583,
+    "hand": [
+      38.6,
+      23.7
+    ],
+    "farHand": [
+      44.5,
+      25.8
+    ],
+    "shoulder": [
+      26.9,
+      23.4
+    ],
+    "farShoulder": [
+      33.1,
+      23.5
+    ]
   }
 }

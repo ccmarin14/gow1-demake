@@ -74,7 +74,15 @@ export const GRAB_KEYS: readonly string[] = [
   'kratos-grab-break-b',
   'kratos-grab-slam-a',
   'kratos-grab-slam-b',
+  'kratos-grab-punch-a',
+  'kratos-grab-punch-b',
+  'kratos-grab-stab-a',
+  'kratos-grab-stab-b',
+  'kratos-grab-whiff-recover',
 ];
+
+/** Body poses of the block (L1): raising and held with the blades crossed in front. */
+export const GUARD_KEYS: readonly string[] = ['kratos-guard-a', 'kratos-guard-b'];
 
 /** Additional grid-derived frames, one PNG each, drawn in full. */
 export const PLAYER_FRAME_KEYS: readonly string[] = [
@@ -86,6 +94,7 @@ export const PLAYER_FRAME_KEYS: readonly string[] = [
   ...ROLL_KEYS,
   ...STRIKE_KEYS,
   ...GRAB_KEYS,
+  ...GUARD_KEYS,
 ];
 
 /** All 27 approved legionnaire frames (64x56, ground anchor at 55). */

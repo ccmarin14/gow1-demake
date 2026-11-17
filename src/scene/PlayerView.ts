@@ -174,7 +174,9 @@ export class PlayerView {
     }
     if (simPlayer.guardPhase !== 'none' && !rolling) {
       this.stopLoop();
-      player.setTexture(PLAYER_KEY, 0);
+      // Bloqueo (L1): sube la guardia, luego las dos espadas cruzadas al frente (D-50)
+      const guardKey = simPlayer.guardPhase === 'active' ? 'kratos-guard-b' : 'kratos-guard-a';
+      player.setTexture(this.scene.textures.exists(guardKey) ? guardKey : PLAYER_KEY, 0);
       player.setFlipX(facing === -1);
       player.setRotation(0);
       player.setAlpha(1);
@@ -225,19 +227,26 @@ export class PlayerView {
       case 'whiff': {
         // Ticks 0..12: zarpazo frontal a máxima extensión con zumbido de aire (grab-lunge)
         if (t <= (CONFIG.player.grab.whiffLungeTicks ?? 12)) return 'kratos-grab-lunge';
-        // Ticks 13..32: frena en seco y retrae el brazo a su guardia neutral de combate (idle-00)
-        return 'kratos-idle-00';
+        // Ticks 13..20: frena y retrae el brazo a manos limpias (cuadro de recuperación); luego guardia neutral
+        return t <= 20 ? 'kratos-grab-whiff-recover' : 'kratos-idle-00';
       }
       case 'hold':
       case 'finisher_qte': {
         return t < (CONFIG.player.grab.lungeTicks ?? 2) ? 'kratos-grab-lunge' : 'kratos-grab-hold';
       }
       case 'pummel': {
-        // En Grab 1 (TAP ○ REPEATEDLY):
-        // ticks 0..3: recogida hacia atrás con espada armada (grab-hold)
-        // ticks 4..8: estocada frontal profunda clavando la Espada del Caos en el torso (grab-lunge)
-        // ticks 9..13: recuperación a posición de sujeción (grab-hold)
-        return t >= 4 && t <= 8 ? 'kratos-grab-lunge' : 'kratos-grab-hold';
+        // Grab 1 (○ repetido), puñetazo con la otra mano mientras sujeta en alto:
+        // ticks 0..3: puño atrás; 4..8: puño al frente; 9..13: vuelve a la sujeción
+        if (t < 4) return 'kratos-grab-punch-a';
+        return t <= 8 ? 'kratos-grab-punch-b' : 'kratos-grab-hold';
+      }
+      case 'floorhold': {
+        // Agachado sobre la víctima tendida, hoja en alto, esperando el siguiente toque
+        return 'kratos-grab-stab-a';
+      }
+      case 'stab': {
+        // Ticks 0..3: hoja en alto; 4..8: puñalada clavada; 9..13: la saca
+        return t >= 4 && t <= 8 ? 'kratos-grab-stab-b' : 'kratos-grab-stab-a';
       }
       case 'throw': {
         return t < 6 ? 'kratos-grab-throw-a' : 'kratos-grab-throw-b';

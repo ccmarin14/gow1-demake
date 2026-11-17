@@ -122,20 +122,29 @@ export class WeaponLayer {
       alive &&
       !striking &&
       player !== null &&
-      (player.grabPhase === 'hold' || player.grabPhase === 'pummel' || player.grabPhase === 'finisher_qte') &&
+      (player.grabPhase === 'floorhold' || player.grabPhase === 'stab' || player.grabPhase === 'finisher_qte') &&
       this.directions.keys.length > 0;
+    const guarding =
+      alive && !striking && player !== null && player.guardPhase !== 'none' && this.directions.keys.length > 0;
 
-    this.updateBackBlades(alive && !striking ? player : null, frameKey, isGrabStab);
+    this.updateBackBlades(alive && !striking ? player : null, frameKey, isGrabStab, guarding);
     if (striking && player && strike) {
       this.drawStrike(player, strike);
     } else if (isGrabStab && player) {
-      this.drawGrabStab(player);
+      this.drawGrabStab(player, frameKey);
+    } else if (guarding && player) {
+      this.drawGuard(player, frameKey);
     } else {
       this.hideStrike();
     }
   }
 
-  private updateBackBlades(player: Readonly<EntityState> | null, frameKey: string, isGrabStab = false): void {
+  private updateBackBlades(
+    player: Readonly<EntityState> | null,
+    frameKey: string,
+    isGrabStab = false,
+    guarding = false,
+  ): void {
     const anchors = FRAME_ANCHORS[frameKey];
     const slots = CONFIG.presentation.backBlades;
     for (let i = 0; i < this.backBlades.length; i += 1) {
@@ -144,8 +153,8 @@ export class WeaponLayer {
         image.setVisible(false);
         continue;
       }
-      // Durante hold y pummel, la espada derecha (slot 0) está desenfundada en la mano de Kratos
-      if (isGrabStab && i === 0) {
+      // Con la espada en la mano (puñaladas, remate) o en guardia (las dos), salen de la espalda
+      if (guarding || (isGrabStab && i === 0)) {
         image.setVisible(false);
         continue;
       }
@@ -163,8 +172,11 @@ export class WeaponLayer {
     }
   }
 
-  /** Dibuja la Espada del Caos en mano derecha para estocadas en agarre (Grab 1 - TAP ○ REPEATEDLY). */
-  private drawGrabStab(player: Readonly<EntityState>): void {
+  /**
+   * Espada del Caos en la mano derecha, en agarre invertido y apuntando hacia abajo, para las
+   * puñaladas de Grab 1 (cuadros `grab-stab-a/b`) y la espera del remate contextual.
+   */
+  private drawGrabStab(player: Readonly<EntityState>, frameKey: string): void {
     if (!this.nearBlade) return;
     this.farBlade?.setVisible(false);
     for (const layer of this.pixelLayers()) {
@@ -173,38 +185,39 @@ export class WeaponLayer {
     }
 
     const facing = player.facing === -1 ? -1 : 1;
-    const t = player.grabTicks;
-    let bladeX = player.x + facing * 8;
-    let bladeY = player.y - 18;
-    let deg = 0;
+    const anchors = FRAME_ANCHORS[frameKey];
+    const handLocal = anchors ? toSprite(anchors.hand) : { dx: 8, dy: -18 };
+    const half = CONFIG.presentation.strikeArt.bladeSize.w / 2;
+    // El centro de la hoja queda media hoja por debajo del puño (agarre invertido).
+    const x = player.x + facing * handLocal.dx;
+    const y = player.y + handLocal.dy + half;
+    this.nearBlade.setDepth(DEPTH_BLADE);
+    this.placeBlade(this.nearBlade, [x, y], 90, facing);
+  }
 
-    if (player.grabPhase === 'hold' || player.grabPhase === 'finisher_qte') {
-      // Espada desenfundada lista al costado del cuerpo
-      bladeX = player.x + facing * 8;
-      bladeY = player.y - 18;
-      deg = -10;
-    } else if (player.grabPhase === 'pummel') {
-      // Estocada con la Espada del Caos:
-      // ticks 0..3: recogida hacia atrás para impulso
-      // ticks 4..8: estocada profunda que penetra el torso del soldado
-      // ticks 9..13: retroceso hacia la posición de sujeción
-      if (t < 4) {
-        bladeX = player.x + facing * 2;
-        bladeY = player.y - 18;
-        deg = 0;
-      } else if (t <= 8) {
-        bladeX = player.x + facing * 20;
-        bladeY = player.y - 18;
-        deg = 0;
-      } else {
-        bladeX = player.x + facing * 8;
-        bladeY = player.y - 18;
-        deg = 0;
-      }
+  /** Las dos Espadas del Caos cruzadas al frente mientras Kratos bloquea (L1, D-50). */
+  private drawGuard(player: Readonly<EntityState>, frameKey: string): void {
+    if (!this.nearBlade || !this.farBlade) return;
+    for (const layer of this.pixelLayers()) {
+      layer.clear();
+      layer.flush();
     }
 
-    this.nearBlade.setDepth(DEPTH_BLADE);
-    this.placeBlade(this.nearBlade, [bladeX, bladeY], deg, facing);
+    const facing = player.facing === -1 ? -1 : 1;
+    const anchors = FRAME_ANCHORS[frameKey];
+    const half = CONFIG.presentation.strikeArt.bladeSize.w / 2;
+    const raised = player.guardPhase === 'active';
+    const place = (image: Phaser.GameObjects.Image, hand: readonly number[] | undefined, deg: number, depth: number): void => {
+      const local = hand ? toSprite(hand) : { dx: 12, dy: -26 };
+      const rad = (deg * Math.PI) / 180;
+      const x = player.x + facing * (local.dx + Math.cos(rad) * half);
+      const y = player.y + local.dy + Math.sin(rad) * half;
+      image.setDepth(depth);
+      this.placeBlade(image, [x, y], deg, facing);
+    };
+    // Cruzadas: la de la mano cercana sube hacia delante y la de la lejana baja hacia delante.
+    place(this.nearBlade, anchors?.hand, raised ? -50 : -20, DEPTH_BLADE);
+    place(this.farBlade, anchors?.farHand, raised ? 50 : 20, DEPTH_BLADE - 0.001);
   }
 
   private drawStrike(player: Readonly<EntityState>, strike: Readonly<StrikeSnapshot>): void {
