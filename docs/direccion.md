@@ -46,7 +46,7 @@ Revisión del 2026-10-29 contra el primer *God of War*, hecha sobre código, con
 | --- | --- | --- | --- |
 | **ESE-01** | **Resuelto** (paso 103): remates contextuales en el legionario debilitado. Detalle y pendientes en `estado.md`. | Con prueba en `tests/grab.test.ts`. | No. |
 | **ESE-02** | **Resuelto** (pasos 102 y 105): agarre con ○ y *Orion's Harpoon*. Lo que falta de arte y matices está en `estado.md` §3 (BL-37 a BL-44). | Con pruebas en `tests/grab.test.ts`. | Parcial. |
-| **ESE-03** | **Impacto.** Hecho en parte (D-39): los golpes pesados paran el mundo más, empujan al blanco y sacuden la cámara, con chispas. Falta ajustar la sensación con la lista de la usuaria (BL-04). | *Hitstop*, temblor y empuje proporcionales al peso del golpe, valores en `CONFIG` y medidos en el harness. | No. |
+| **ESE-03** | **Impacto.** Hecho en parte (D-39): los golpes pesados paran el mundo más, empujan al blanco y sacuden la cámara, con chispas. Falta ajustar la sensación con la lista del usuario (BL-04). | *Hitstop*, temblor y empuje proporcionales al peso del golpe, valores en `CONFIG` y medidos en el harness. | No. |
 | **ESE-04** | **Enemigos de un solo truco.** El legionario solo tiene un tajo con anticipación. | Al menos un segundo comportamiento que dé sentido a la guardia o a la magia (por ejemplo, un ataque que solo se puede parar). | No. |
 | **ESE-05** | **Sin historia.** El título pasa directo al nivel. | Introducción mínima de texto, sujeta a la regla D-30: nunca puede estorbar las pruebas. | No. |
 | **ESE-06** | **Un solo hechizo y pocos enemigos.** El primer juego tiene cuatro hechizos y más variedad. | Diferido hasta que exista el arte base. | Sí. |
@@ -61,7 +61,7 @@ Revisión del 2026-10-29 contra el primer *God of War*, hecha sobre código, con
 | Pieza | Qué es | Estado |
 | --- | --- | --- |
 | **Lienzo solo-cuerpo** | 64×56, pies en la fila 55. El 97×59 heredado reservaba espacio para armas y cadenas que ya no van en el sprite. La física no depende del lienzo (D-29). | Aplicado |
-| **Tres pasadas** | Silueta (2 colores, la usuaria la aprueba), sombreado y contorno con detalle. Cada pasada es el cuadro completo dibujado a mano. | Regla vigente |
+| **Tres pasadas** | Silueta (2 colores, el usuario la aprueba), sombreado y contorno con detalle. Cada pasada es el cuadro completo dibujado a mano. | Regla vigente |
 | **Vista previa con reglas** | `scripts/preview_grid.py`: ampliación con coordenadas y comparación lado a lado. Permite decir "codo en x=14, y=30" en vez de contar caracteres. | Existe |
 | **Arranque desde referencia** | `scripts/quantize_reference.py`: recorta una región de una imagen existente y la convierte a `palette/kratos.json` por color más cercano (no por luminancia), como referencia ASCII para leer y calcar a mano. Escribe fuera de `grids/` (se niega a escribir dentro). Sus letras son por color, no por material; los roles se deciden al dibujar. | Existe |
 | **Bucle visual** | El agente rasteriza, mira la vista previa ampliada, compara con la lista de comprobación y corrige, con un máximo de rondas. Requiere un modelo que vea imágenes. | Regla vigente |
@@ -77,20 +77,20 @@ Revisión del 2026-10-29 contra el primer *God of War*, hecha sobre código, con
 
 ## 6. Moveset de nivel 1 de GoW 1: fuentes y decisiones
 
-Criterio: se implementa lo que respaldan el manual oficial, el cartel del juego o los cuadros del video; lo que no tiene respaldo y la usuaria pide igual se hace y se anota como decisión suya. Los videos y capturas se usan solo como estudio (D-04).
+Criterio: se implementa lo que respaldan el manual oficial, el cartel del juego o los cuadros del video; lo que no tiene respaldo y el usuario pide igual se hace y se anota como decisión suya. Los videos y capturas se usan solo como estudio (D-04).
 
 **Fuentes:** manual oficial de PS2 en español (SCES-53133, archive.org `god-of-war-manueal-espan-ol-a-color`: controles de suelo y aire, sin lista de combos); video de la colección remasterizada con el nombre y los botones de cada golpe (YouTube `0X9RiODtCB4`, "Kratos Moveset Showcase"); guía de GameFAQs (A_I_e_x) y controles de Neoseeker (vía web.archive.org); wiki de Fandom *Blades of Chaos*. GameSpot, StrategyWiki y GameFAQs directos dan 403.
 
 | Tema | Decisión | Respaldo |
 | --- | --- | --- |
 | Cadena de □ | 6 golpes; *Plume of Prometheus* tras □□△ | Cartel "Light Attack" del video (6 □) |
-| △ | Tres niveles por tiempo: golpe (tajo doble secuencial, dos impactos de 10), lanzador (el enemigo sube **verticalmente** sin empuje horizontal, Kratos se queda en tierra) y *Ascension* (Kratos salta tras él) | Manual: "△ mantener: lanzar al enemigo y seguirlo"; GameFAQs: "Kratos salta con él"; Neoseeker: "lanzar, luego saltar". **Los tiempos y el tajo doble son de la usuaria** (pasos 68 a 71; sin fuente). |
-| *Plume of Prometheus* | Tras 2, 3 o 4 □ + △. 1 □ + △ es el △ normal; 6 □ no encadena | *Plume* es de nivel 1 (StrategyWiki, *Chains of Olympus*: □□△). **La regla de 2 a 4 □ es de la usuaria** (pasos 74 y 76). |
-| *Spirit of Hercules* | 5 □ + △: la cinemática de *Plume* más lenta, con salto corto hacia adelante, ralentización entre el ápice y el suelo, 64 de daño en total (dos impactos de 32) y fuego residual | **Sin respaldo.** En *Chains of Olympus* es △△△ de nivel 3; en el GoW 1 original no se confirmó. Decisión de la usuaria (pasos 75 a 78, D-41). |
+| △ | Tres niveles por tiempo: golpe (tajo doble secuencial, dos impactos de 10), lanzador (el enemigo sube **verticalmente** sin empuje horizontal, Kratos se queda en tierra) y *Ascension* (Kratos salta tras él) | Manual: "△ mantener: lanzar al enemigo y seguirlo"; GameFAQs: "Kratos salta con él"; Neoseeker: "lanzar, luego saltar". **Los tiempos y el tajo doble son del usuario** (pasos 68 a 71; sin fuente). |
+| *Plume of Prometheus* | Tras 2, 3 o 4 □ + △. 1 □ + △ es el △ normal; 6 □ no encadena | *Plume* es de nivel 1 (StrategyWiki, *Chains of Olympus*: □□△). **La regla de 2 a 4 □ es del usuario** (pasos 74 y 76). |
+| *Spirit of Hercules* | 5 □ + △: la cinemática de *Plume* más lenta, con salto corto hacia adelante, ralentización entre el ápice y el suelo, 64 de daño en total (dos impactos de 32) y fuego residual | **Sin respaldo.** En *Chains of Olympus* es △△△ de nivel 3; en el GoW 1 original no se confirmó. Decisión del usuario (pasos 75 a 78, D-41). |
 | △ dentro de la cadena de □ | Arranca el △ normal desde la ventana de cualquier □ | Regla general de los combos; sin variantes propias en las fuentes |
 | □ aéreo | 3 golpes distintos con la caída frenada que mantienen suspendido al enemigo en `juggle` sin alejarlo | Cartel AIR □□□ y manual ("ataque horizontal") |
 | △ aéreo | Lazo vertical y caída con impacto, igual tras cualquier □ aéreo | Cartel AIR △, manual ("ataque vertical") y video |
-| Remate de □ (□6) | Empieza atrás, anillo de atrás hacia adelante y látigo doble al frente | **Decisión de la usuaria**: el análisis del video no fue concluyente |
+| Remate de □ (□6) | Empieza atrás, anillo de atrás hacia adelante y látigo doble al frente | **Decisión del usuario**: el análisis del video no fue concluyente |
 | Ataque al salir de una rodada | Solo con búfer, sin golpes especiales | Sin respaldo; la evasión ofensiva es de nivel 4 |
 | Remate aéreo fuerte (□□□△), dos niveles de lanzador en suelo | No existen (*Spirit of Hercules* es un remate de suelo, ver arriba) | Sin respaldo en ninguna fuente |
 | Agarre con ○, opciones de presa y *Orion's Harpoon* | ○ = `K` / `L` en teclado y botón `○` táctil (D-42, BL-06, BL-07). Sistema de 10 eslabones secuenciales desglosados en el apartado siguiente (§6.1). | Manual oficial de PS2 (pág. 10 y 14: controles de presa y arpón); video *Kratos Moveset Showcase* (`0X9RiODtCB4`, fotogramas 75 a 96: *Lunge*, *Break Free*, *Grab 1* tap ○, *Grab 2* □ throw, *Grab 3* △ rip, *Orion's Harpoon*); contraste web del 2026-11-12 en §6.1 (el desgarro con △ da orbes medios; el 0 solo consta para la arpía). |
@@ -104,7 +104,7 @@ Criterio: se implementa lo que respaldan el manual oficial, el cartel del juego 
 | ○ agarra. Con el enemigo sujeto hay **tres combinaciones**: *Grab and Toss* (○, □), *Grab and Rip* (○, △) y *Grab and Pummel* (○ repetido, "GBS"). | Supercheats (orbes); [FAQ de GameRevolution](https://www.gamerevolution.com/?p=30372) |
 | *Toss*: lanza al enemigo contra otro cercano **marcado con una luz azul**; da **los menos orbes** y puede cortar el combo. | Supercheats (orbes) |
 | *Rip*: desgarra al enemigo en dos; pulsar ○ varias veces antes de △ alarga la secuencia; da **orbes medios** y permite seguir el combo contra los cercanos. | Supercheats (orbes) |
-| *Pummel*: se machaca ○ hasta que el enemigo muere; es **la más rápida y la que más orbes da**. Las fuentes se contradicen sobre qué golpea Kratos ("tres puñetazos", Fandom; "cuatro puñaladas", GameFAQs, ambos resúmenes de búsqueda); la usuaria los concilia: **3 puñetazos sujetándolo en alto y, tras tirarlo al suelo, 4 puñaladas**. | Supercheats (orbes); Fandom y GameFAQs (resúmenes) |
+| *Pummel*: se machaca ○ hasta que el enemigo muere; es **la más rápida y la que más orbes da**. Las fuentes se contradicen sobre qué golpea Kratos ("tres puñetazos", Fandom; "cuatro puñaladas", GameFAQs, ambos resúmenes de búsqueda); el usuario los concilia: **3 puñetazos sujetándolo en alto y, tras tirarlo al suelo, 4 puñaladas**. | Supercheats (orbes); Fandom y GameFAQs (resúmenes) |
 | Muchos enemigos se agarran sin más, y el legionario no-muerto es uno de ellos; los grandes o blindados solo se agarran cuando aparece un círculo sobre su cabeza (el blindado) o tras romperles la defensa. | Supercheats (orbes y por secciones) |
 | Se puede agarrar en suelo, trepando, en cuerdas y **en el aire** ("los agarres aéreos dan muertes interesantes"); no se describe ninguna maniobra concreta. | Supercheats (por secciones) |
 | Una arpía agarrada y despojada de las alas muere al instante, **sin orbes**. Es el único caso documentado de 0 orbes con un desgarro. | Supercheats (por secciones) |
@@ -113,27 +113,27 @@ Criterio: se implementa lo que respaldan el manual oficial, el cartel del juego 
 
 **Lo que cambia respecto a lo que escribimos antes (paso 115):**
 - **El quiebre con △ da orbes medios, no 0.** El "0 orbes" solo está documentado para la arpía. El 0 canónico del paso 115 era un error.
-- **El quiebre es un desgarro que mata y da orbes medios.** Decisión de la usuaria (2026-11-12): se sigue la guía. El código **ya mata siempre** (`overkillDamage`, probado en `tests/grab.test.ts`); los niveles de orbes ya están (paso 123).
+- **El quiebre es un desgarro que mata y da orbes medios.** Decisión del usuario (2026-11-12): se sigue la guía. El código **ya mata siempre** (`overkillDamage`, probado en `tests/grab.test.ts`); los niveles de orbes ya están (paso 123).
 - **El orden de orbes** es *Pummel* (más) > *Rip* (medio) > *Toss* (menos), y *Pummel* se alarga con ○ repetido. **Implementado (paso 123, `CONFIG.player.grab.orbs`):** cada golpe de la cadena ○ paga 3 (incluido el azote final), el *Rip* 5 y el *Toss* 2, todo directo a Kratos además del botín normal de la muerte. Las cifras son criterio del equipo: la guía solo da el orden.
 - **El *Toss* apunta solo** al enemigo cercano, y no es un lanzamiento recto.
-- **Un remate contextual sobre el legionario común no está documentado:** el circulito aparece en los grandes y blindados; el legionario se agarra directamente. Nuestro remate con círculo sobre el legionario debilitado es **decisión de la usuaria**, no del juego.
+- **Un remate contextual sobre el legionario común no está documentado:** el circulito aparece en los grandes y blindados; el legionario se agarra directamente. Nuestro remate con círculo sobre el legionario debilitado es **decisión del usuario**, no del juego.
 
-**Sigue sin confirmarse:** el *Air Slam* con montarse a la espalda y caer en picada (*Power Bomb*): solo consta que el agarre aéreo existe; los tiempos de cualquier movimiento; y la cadencia exacta de cada lanzamiento. Se miró el video de gameplay que sugirió la usuaria (`f5Gq_zox7bI`, desde 5:12): el tramo de combate (hacia 7:00 a 8:20) muestra a Kratos sujetando a un enemigo en alto con los dos brazos y un orbe verde al soltarlo, pero la cámara está lejos y el video es de baja resolución, así que **no muestra un agarre aéreo ni una caída en picada**. Esos huecos quedan como criterio del equipo.
+**Sigue sin confirmarse:** el *Air Slam* con montarse a la espalda y caer en picada (*Power Bomb*): solo consta que el agarre aéreo existe; los tiempos de cualquier movimiento; y la cadencia exacta de cada lanzamiento. Se miró el video de gameplay que sugirió el usuario (`f5Gq_zox7bI`, desde 5:12): el tramo de combate (hacia 7:00 a 8:20) muestra a Kratos sujetando a un enemigo en alto con los dos brazos y un orbe verde al soltarlo, pero la cámara está lejos y el video es de baja resolución, así que **no muestra un agarre aéreo ni una caída en picada**. Esos huecos quedan como criterio del equipo.
 
 **Cómo se organiza nuestro trabajo.** Los "eslabones" son **nuestra** lista de trabajo (paso 115), no un sistema del juego. Los números (alcances, ticks, daños) viven en `CONFIG.grab` y en `tests/grab.test.ts`; aquí no se copian para que no se desfasen. El avance y los defectos abiertos están en `docs/estado.md` §3 (BL-37 a BL-44).
 
 | # | Eslabón | Qué hace | Respaldo |
 | --- | --- | --- | --- |
-| 1 | *Whiff* | ○ sin enemigo al alcance: zarpazo al aire, retracción del brazo (`grab-whiff-recover`) y recuperación vulnerable, sin i-frames. | Sin respaldo; criterio de la usuaria. |
+| 1 | *Whiff* | ○ sin enemigo al alcance: zarpazo al aire, retracción del brazo (`grab-whiff-recover`) y recuperación vulnerable, sin i-frames. | Sin respaldo; criterio del usuario. |
 | 2 | *Lunge* y enganche | Con un enemigo al alcance, Kratos avanza, lo sujeta por el cuello y queda con i-frames. | Video; TV Tropes (invulnerable). |
 | 3 | *Hold* y *Break Free* | Presa con ventana de elección (□, △, ○). Sin pulsar nada, el enemigo se suelta y empuja a Kratos. | Video. |
-| 4 | *Pummel* | ○ repetido: Kratos lo sujeta en alto con una mano y le da **3 puñetazos**; luego lo tira al suelo (azote) y le da **4 puñaladas** con la espada; la última mata. **Hecho (pasos 124 y 125).** Da los orbes más altos de las tres. | Supercheats (existe y rinde más); la secuencia de 3 puñetazos y 4 puñaladas es **testimonio de la usuaria (2026-11-12)**, que concilia a las dos guías contradictorias. |
+| 4 | *Pummel* | ○ repetido: Kratos lo sujeta en alto con una mano y le da **3 puñetazos**; luego lo tira al suelo (azote) y le da **4 puñaladas** con la espada; la última mata. **Hecho (pasos 124 y 125).** Da los orbes más altos de las tres. | Supercheats (existe y rinde más); la secuencia de 3 puñetazos y 4 puñaladas es **testimonio del usuario (2026-11-12)**, que concilia a las dos guías contradictorias. |
 | 5 | *Deck Slam* | ○ sobre la presa: azote contra la cubierta, derribo si sobrevive. | Video; sin segunda fuente. |
 | 6 | *Toss* | □ en la presa: lo arroja como proyectil hacia otro enemigo cercano; da los menos orbes. | Supercheats, GameRevolution, TV Tropes, video. |
 | 7 | *Rip in Half* | △ en la presa: desgarro que mata; orbes medios. Mata siempre y paga orbes medios (paso 123). | Supercheats, video (*Grab 3*). |
 | 8 | *Orion's Harpoon* | ○ contra un enemigo en el aire: cadena, azote y repetible con ○. | Manual de PS2, Supercheats, StrategyWiki, video. |
 | 9 | *Air Slam* | Agarre aéreo cuerpo a cuerpo. | El agarre aéreo existe; la maniobra concreta, **sin respaldo** (BL-44). |
-| 10 | Remate contextual | Hoy: legionario débil con ○ sobre la cabeza y una orden (△). | Existe para enemigos grandes (minotauro, cíclope, Medusa, Hidra); sobre el legionario común, **decisión de la usuaria**. |
+| 10 | Remate contextual | Hoy: legionario débil con ○ sobre la cabeza y una orden (△). | Existe para enemigos grandes (minotauro, cíclope, Medusa, Hidra); sobre el legionario común, **decisión del usuario**. |
 
 ### 6.2 Bloqueo (L1)
 
@@ -159,12 +159,12 @@ No se añadió nada que el juego no tenga: no hay bloqueo en el aire, ni contraa
 
 **Qué consta en fuentes:** es el soldado común de GoW 1; un concepto descartado era "un esqueleto con espada y escudo" y el legionario maldito es más blindado y de espadas más grandes (God of War Wiki, vía búsqueda; la página del legionario devuelve 402). No se pudo confirmar su casco, escudo ni sus ataques exactos.
 
-**Diseño vigente (D-51, observado en el combate original de la cubierta del barco y aprobado por la usuaria):**
+**Diseño vigente (D-51, observado en el combate original de la cubierta del barco y aprobado por el usuario):**
 
 | Elemento | Diseño |
 | --- | --- |
 | Silueta | Bruto encorvado de torso grueso, piernas abiertas y rodillas flexionadas; se lee distinto de Kratos en una mancha de 2 colores. |
-| Cabeza | Casco de bronce con cresta roja hacia atrás; la cara no tiene facciones (la usuaria lo aceptó). |
+| Cabeza | Casco de bronce con cresta roja hacia atrás; la cara no tiene facciones (el usuario lo aceptó). |
 | Cuerpo | Piel gris cálida y oscura, torso costroso, paño oscuro en la cintura. **Sin escudo** (en el concepto inventado primero lo tenía y la referencia lo desmintió). |
 | Arma | Espada larga de hoja curva color cobre, con filo claro, canal oscuro en el centro y guarda; se sostiene baja y mide lo mismo en pantalla en todas las poses. |
 | Paleta | Propia (`palette/legionnaire.json`), 11 colores; el bronce y la cresta son el único acento cálido. |
@@ -173,7 +173,7 @@ No se añadió nada que el juego no tenga: no hay bloqueo en el aire, ni contraa
 
 ### Ritmo y conducta del legionario (diseño de combate 2D)
 
-Pedido de la usuaria: en un *hack and slash* no deben caminar siempre hacia Kratos ni correr siempre; tienen que dar espacio, vigilar y turnarse.
+Pedido del usuario: en un *hack and slash* no deben caminar siempre hacia Kratos ni correr siempre; tienen que dar espacio, vigilar y turnarse.
 
 | Fase | Qué hace | Cuadros que usa |
 | --- | --- | --- |
@@ -187,24 +187,24 @@ Pedido de la usuaria: en un *hack and slash* no deben caminar siempre hacia Krat
 
 ## 8. Nivel 1: Mar Egeo (D-44, D-45)
 
-Recorrido decidido, fiel al del primer *God of War*. **Respaldo:** *Original* (fuentes al final de la sección), *Usuaria* o *Agente* (propuesta pendiente de aprobación). Las ideas que siguen abiertas están en `docs/ideas.md`.
+Recorrido decidido, fiel al del primer *God of War*. **Respaldo:** *Original* (fuentes al final de la sección), *Usuario* o *Agente* (propuesta pendiente de aprobación). Las ideas que siguen abiertas están en `docs/ideas.md`.
 
 ### Recorrido
 
 | # | Tramo | Qué pasa | Respaldo |
 | --- | --- | --- | --- |
-| 1 | Proa del primer barco | La jugabilidad empieza en la proa con no-muertos cortando el paso. Una segunda tanda rompe una reja del piso cerrada con cadenas y otros trepan por los costados. Punto de guardado (un haz de luz). La reja se abre machacando ○ (en el original, R2) y antes de bajar hay un cofre rojo. La puerta del camarote del capitán se ve, pero está cerrada. | Original [1] [4] [18] [19]; ○ en vez de R2: Usuaria |
-| 2 | Interior: primer encuentro con la Hidra | Kratos recorre el interior del barco y a la mitad una cabeza irrumpe; solo se ven el cuello y la cabeza, que emerge desde abajo por el lateral derecho. Se golpea en la cara; cuando agita las orejas y se echa atrás, se bloquea. Al debilitarse aparece ○ sobre su cabeza ("Pulsa ○ para iniciar el minijuego cuando lo veas sobre la cabeza de un enemigo") y el remate pide más botones en pantalla (por ejemplo △). Pilas de escombros cierran el pasillo y se rompen a golpes. El contador de golpes se ve desde este combate. | Original [1] [2] [20]; puesta en escena: Usuaria |
-| 2b | Vigas sobre la bodega inundada | Inmediatamente después de la Hidra: palos de equilibrio sobre agua baja. Ver "Vigas del vertical slice" en §10. | Original [20]; diseño 2D: Usuaria |
+| 1 | Proa del primer barco | La jugabilidad empieza en la proa con no-muertos cortando el paso. Una segunda tanda rompe una reja del piso cerrada con cadenas y otros trepan por los costados. Punto de guardado (un haz de luz). La reja se abre machacando ○ (en el original, R2) y antes de bajar hay un cofre rojo. La puerta del camarote del capitán se ve, pero está cerrada. | Original [1] [4] [18] [19]; ○ en vez de R2: Usuario |
+| 2 | Interior: primer encuentro con la Hidra | Kratos recorre el interior del barco y a la mitad una cabeza irrumpe; solo se ven el cuello y la cabeza, que emerge desde abajo por el lateral derecho. Se golpea en la cara; cuando agita las orejas y se echa atrás, se bloquea. Al debilitarse aparece ○ sobre su cabeza ("Pulsa ○ para iniciar el minijuego cuando lo veas sobre la cabeza de un enemigo") y el remate pide más botones en pantalla (por ejemplo △). Pilas de escombros cierran el pasillo y se rompen a golpes. El contador de golpes se ve desde este combate. | Original [1] [2] [20]; puesta en escena: Usuario |
+| 2b | Vigas sobre la bodega inundada | Inmediatamente después de la Hidra: palos de equilibrio sobre agua baja. Ver "Vigas del vertical slice" en §10. | Original [20]; diseño 2D: Usuario |
 | 2c | El prisionero | Un tramo corto con un marinero encerrado en una celda. El texto sale abajo, en un recuadro de pergamino, y se avanza con ✕: "¡Sé quién eres, espartano! ¡Sé lo que has hecho! ¡Preferiría morir antes que ser salvado por ti!". Después, una reja (R2), un cofre de orbes rojos y la puerta a cubierta. | Original [20] |
 | 3 | Cubierta: el caos y el segundo encuentro | Bajo la lluvia, marineros que huyen, no-muertos y arpías (el "caos" del vertical slice, §10). En el medio de la cubierta, otra cabeza sale del piso. La cabeza golpea a la izquierda, a la derecha y hacia la cámara (se esquiva rodando), y muerde sin que se pueda bloquear (se escapa machacando el agarre). Marineros que huyen (inofensivos, pueden soltar salud) y arpías en picada (se bloquean al oír su chillido). Cofre de orbes tras unas puertas que se levantan. | Original [1]. *Agente, pendiente:* en 2D el golpe "hacia la cámara" cae sobre la posición de Kratos con una sombra de aviso. |
-| 4 | Agua | El agujero que deja la Hidra lleva a un tramo inundado que se cruza a pie: más lento, salto corto y sin doble salto, demasiado largo (o con techo bajo) para saltarlo de orilla a orilla. Se sale trepando una red. | Original [1] [4]; vadeo: Usuaria |
+| 4 | Agua | El agujero que deja la Hidra lleva a un tramo inundado que se cruza a pie: más lento, salto corto y sin doble salto, demasiado largo (o con techo bajo) para saltarlo de orilla a orilla. Se sale trepando una red. | Original [1] [4]; vadeo: Usuario |
 | 5 | Redes y vigas | Enemigos y vigas estrechas con una bifurcación: un lado lleva a un cofre de orbes rojos y hay que volver al centro para seguir. | Original [1] |
 | 6 | Segundo barco | Cinemática de llegada. No-muertos con arco disparan desde el otro extremo; cajas grandes como cobertura (una patada cargada las desliza) y una caja chica que se empuja contra la pared para subir hasta ellos. Soldados espartanos moribundos en una cubierta inferior. | Original [1] [4] |
 | 7 | Mástil | Escalera y red con enemigos que también trepan; el combate es limitado al trepar, conviene saltarlos. En la cima, una viga lleva a un cofre. | Original [1] |
-| 8 | Cuerda al tercer barco | Kratos se desliza de lo alto del mástil al barco siguiente, siempre de un punto alto a uno más bajo. Sin enemigos. | Original [1] [4]; sin enemigos: Usuaria |
+| 8 | Cuerda al tercer barco | Kratos se desliza de lo alto del mástil al barco siguiente, siempre de un punto alto a uno más bajo. Sin enemigos. | Original [1] [4]; sin enemigos: Usuario |
 | 9 | Tercer barco | Tres paredes tapiadas: la del centro es el camino, una lateral guarda un Ojo de Gorgona y la otra un cofre de orbes. Tras un pasillo angosto, el salón de Poseidón: una plataforma con un símbolo azul brillante en el piso, entre dos estatuas; al pisarla, Poseidón le da a Kratos la *Ira de Poseidón* y enseguida aparecen enemigos para estrenarla. Cofres de salud y magia y una red larga hasta la cubierta del jefe. | Original [1] [4] [7] [8] |
-| 10 | Jefe: la Hidra | Ver "Combate final". | Original; disposición: Usuaria |
+| 10 | Jefe: la Hidra | Ver "Combate final". | Original; disposición: Usuario |
 | 11 | El capitán y la salida | Kratos se mete en la garganta de la Hidra, le arranca la llave del cuello al capitán y lo vuelve a tirar dentro. Junto al punto de guardado del otro lado de la arena hay dos cofres (el segundo Ojo de Gorgona). Una cuerda baja a una cubierta anterior, una caja chica sube a la plataforma superior y la llave abre el camarote ("Pulsa R2 para abrir la puerta con la llave del capitán"), lo que cierra el nivel. Poseidón nombra Atenas como el siguiente destino y al final aparece Atenea. | Original [1] [11] [12] [20] |
 
 ### Combate final contra la Hidra (D-45)
@@ -217,14 +217,14 @@ Recorrido decidido, fiel al del primer *God of War*. **Respaldo:** *Original* (f
 
 ### Enemigos, recolectables y guardado
 
-- **Enemigos (Usuaria):** arpías, no-muertos con espada (legionario, §7), no-muertos con arco y la Hidra. No hay gorgonas, sirenas ni minotauros. Los marineros y los soldados moribundos no atacan.
+- **Enemigos (Usuario):** arpías, no-muertos con espada (legionario, §7), no-muertos con arco y la Hidra. No hay gorgonas, sirenas ni minotauros. Los marineros y los soldados moribundos no atacan.
 - **Recolectables:** 2 Ojos de Gorgona (tramos 9 y 11) y ninguna Pluma de Fénix [7]; cofres de orbes rojos, de salud y de magia en los tramos que los nombran.
 - **Puntos de guardado confirmados:** 3, en los tramos 1, 9 y 11 [4] [13].
 - **Poder nuevo:** la *Ira de Poseidón* (tramo 9). El Tridente no es de este nivel: se obtiene en el Desafío de Poseidón, en el Templo de Pandora [7].
 
 ### Por comprobar en el juego
 
-Puntos que las fuentes no aclaran o en los que se contradicen. La usuaria los revisa en el juego o en gameplays y se anota acá el resultado.
+Puntos que las fuentes no aclaran o en los que se contradicen. El usuario los revisa en el juego o en gameplays y se anota acá el resultado.
 
 | # | Qué comprobar | Por qué queda abierto |
 | --- | --- | --- |
@@ -235,7 +235,7 @@ Puntos que las fuentes no aclaran o en los que se contradicen. La usuaria los re
 | P-05 | Qué hay dentro del camarote del capitán y qué dice Atenea al cerrar el nivel (tramo 11). | El video muestra que se abre con R2 y que aparece Atenea, pero no se leyó el diálogo [20]. |
 | P-08 | Cómo se ve la *Ira de Poseidón* del original (D-50). | Las fuentes la describen como una descarga de energía alrededor de Kratos que daña en un radio; el video [20] no la muestra usada. |
 | P-09 | Nombre y orden de las pestañas del menú de pausa del original (§11). | Las guías solo dicen que Start abre las mejoras y que R1 o la cruceta cambian de pantalla [21]. |
-| P-06 | Qué golpes tiene Kratos colgado de una cuerda horizontal y trepando una red. | La usuaria lo deja para después (D-44). |
+| P-06 | Qué golpes tiene Kratos colgado de una cuerda horizontal y trepando una red. | El usuario lo deja para después (D-44). |
 | P-07 | En *Hollow Knight*, si mirar arriba o abajo exige estar quieto (§9). | La wiki no lo dice. |
 
 ### Fuentes
@@ -259,7 +259,7 @@ Puntos que las fuentes no aclaran o en los que se contradicen. La usuaria los re
 17. Tutoriales que imitan la cámara de *Hollow Knight* (vía buscador): Sasquatch B Studios, https://www.patreon.com/sasquatchbgames/posts/unity-tutorial-79656408 · Terresquall, https://blog.terresquall.com/2023/04/creating-a-metroidvania-like-hollow-knight-part-1/
 18. GameSpot, *God of War Walkthrough* (inicio en la proa; segunda tanda por una trampilla con cadenas): https://www.gamespot.com/articles/god-of-war-walkthrough/1100-6121675/
 19. *gow-ash*, The Aegean Sea (reja que se abre machacando R2): http://gow-ash.blogspot.com/2010/03/aegean-sea.html
-20. Video de la partida del Egeo (colección remasterizada, en español), visto por la usuaria y el agente; cuadros extraídos en `docs/tmp/egeo-video/`: https://youtu.be/f5Gq_zox7bI (minuto 5:10: vigas después de la Hidra; 6:20: el prisionero)
+20. Video de la partida del Egeo (colección remasterizada, en español), visto por el usuario y el agente; cuadros extraídos en `docs/tmp/egeo-video/`: https://youtu.be/f5Gq_zox7bI (minuto 5:10: vigas después de la Hidra; 6:20: el prisionero)
 21. GameFAQs, guías del original (Start abre la pantalla de mejoras; se mejora manteniendo X con orbes suficientes): https://gamefaqs.gamespot.com/ps2/919864-god-of-war/faqs/37813 · https://gamefaqs.gamespot.com/ps2/919864-god-of-war/answers/245404-collecting-orbs-and-how-to-use-weapons
 
 ## 9. Cámara (D-46)
@@ -309,7 +309,7 @@ El vertical slice muestra la calidad final en un tramo corto del Egeo. No es el 
 
 ### Vigas del vertical slice
 
-Diseño de la usuaria; en el original las vigas están justo después de la primera Hidra [20], pero en 3D son cortas. En 2D no hay profundidad, así que el circuito es más largo y se arma con alturas:
+Diseño del usuario; en el original las vigas están justo después de la primera Hidra [20], pero en 3D son cortas. En 2D no hay profundidad, así que el circuito es más largo y se arma con alturas:
 
 - **Recorrido:** saltos altos para alcanzar las vigas que siguen, saltos a vigas más bajas y, cerca del final, unos saltos que piden un doble salto preciso.
 - **Maderos que ceden:** algunos tablones ceden al poco de pisarlos; otros se caen apenas Kratos los toca y lo dejan colgando del borde, y se sube machacando saltar. Se distinguen un poco de los firmes, pero no tanto: el jugador debería caer al menos una vez.
@@ -360,4 +360,4 @@ Todos los elementos del entorno usan una paleta dedicada (`palette/environment.j
 ### Flujo de trabajo y aprobación
 
 1. **Separación simulación / arte:** las pruebas de cámara (BL-23), agua baja (BL-25) y vigas (BL-34) verifican primero la física sobre la geometría de `src/sim/`; `EnvironmentLayer` viste cada elemento sin alterar cajas de colisión.
-2. **Aprobación visual por tramo:** igual que con los personajes (`AGENTS.md` §3), cada fondo y lote de piezas modulares se previsualiza ampliado en `docs/tmp/entorno/` junto a los fotogramas de referencia del video (`docs/tmp/egeo-video/`), y solo se da por cerrado tras la aprobación de la usuaria.
+2. **Aprobación visual por tramo:** igual que con los personajes (`AGENTS.md` §3), cada fondo y lote de piezas modulares se previsualiza ampliado en `docs/tmp/entorno/` junto a los fotogramas de referencia del video (`docs/tmp/egeo-video/`), y solo se da por cerrado tras la aprobación del usuario.

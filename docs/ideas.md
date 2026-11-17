@@ -2,27 +2,27 @@
 
 Ideas, notas y referencias de diseño para etapas futuras del desarrollo.
 
-> **Regla para agentes:** este archivo reúne conceptos de diseño y referencias que no están activos. Ningún agente las toma como historias de backlog ni como requisitos vigentes, y nada de lo listado acá se implementa sin la instrucción explícita de la usuaria. Cuando la usuaria decide una idea, pasa a `docs/decisiones.md` y `docs/direccion.md`, se crea su historia en `docs/estado.md` §3 y se borra de acá.
+> **Regla para agentes:** este archivo reúne conceptos de diseño y referencias que no están activos. Ningún agente las toma como historias de backlog ni como requisitos vigentes, y nada de lo listado acá se implementa sin la instrucción explícita del usuario. Cuando el usuario decide una idea, pasa a `docs/decisiones.md` y `docs/direccion.md`, se crea su historia en `docs/estado.md` §3 y se borra de acá.
 
 **Ya decidido (fuera de este archivo):** el recorrido del Mar Egeo, sus enemigos, el agua vadeable, las cuerdas y la Hidra (D-44, D-45, `direccion.md` §8), la cámara de seguimiento (D-46, `direccion.md` §9), el vertical slice con sus vigas y el cómic (D-47, D-50, §10) y el HUD, el contador de golpes y los menús (D-48 a D-50, §11).
 
 **Cómo leer cada idea:**
 
 - **Alcance:** *Nivel 1* es el Mar Egeo; *General* aplica a todos los niveles.
-- **Respaldo:** *Original* (está en el *God of War* de 2005, con su fuente al final), *Usuaria* (idea de la usuaria) o *Agente* (propuesta de un agente).
+- **Respaldo:** *Original* (está en el *God of War* de 2005, con su fuente al final), *Usuario* (idea del usuario) o *Agente* (propuesta de un agente).
 
 ---
 
 ## General (todos los niveles)
 
 ### G-02 · Calibración de la altura del salto
-- **Respaldo:** observación de la Usuaria. Medición: Agente.
+- **Respaldo:** observación de la Usuario. Medición: Agente.
 - **Medición (`src/config.ts`, `PLAYER.vertical`):** con `jumpSpeed` de 380 y `gravity` de 1000, el salto simple sube unos 72 px y el doble salto suma otros 72 aproximadamente, unos 144 px en total. Es más de la mitad de los 270 px de alto de la pantalla, y unas 2,6 veces el lienzo de Kratos (56 px).
 - **Meta:** bajar la altura del salto para que haya espacio de pisos y techos transitables en pantalla.
-- **Pendiente:** el salto está fijado por D-32 y cubierto por pruebas. Si la Usuaria lo decide, pasa a decisión e historia.
+- **Pendiente:** el salto está fijado por D-32 y cubierto por pruebas. Si la Usuario lo decide, pasa a decisión e historia.
 
 ### G-03 · Cuerdas: balanceo y penalización por caída
-- **Respaldo:** Original [2] (balanceo). Caídas: Usuaria.
+- **Respaldo:** Original [2] (balanceo). Caídas: Usuario.
 - **Decidido aparte (D-44):** deslizamiento sin enemigos y travesía horizontal colgado con enemigos (BL-24).
 - **Balanceo:** el original incluye balancearse en cuerdas para cruzar abismos [2].
 - **Penalización por caída:**
@@ -30,7 +30,7 @@ Ideas, notas y referencias de diseño para etapas futuras del desarrollo.
   - **Letal:** sobre abismos o zonas mortales, soltarse o caer es la muerte directa.
 
 ### G-04 · Equilibrio y vigas estrechas (adaptación 2D)
-- **Respaldo:** Original [1] [2] (vigas). Variantes: Usuaria.
+- **Respaldo:** Original [1] [2] (vigas). Variantes: Usuario.
 - **Principio:** en 2D el equilibrio no funciona con inclinación pasiva. Se traduce en desafíos de ritmo, reflejos y lectura del entorno.
 - **Variantes según el contexto** (se usan por separado, nunca todas juntas):
   - **Arqueros al extremo:** proyectiles a distancia que obligan a saltar o esquivar al ritmo de los disparos mientras se avanza.
@@ -39,7 +39,7 @@ Ideas, notas y referencias de diseño para etapas futuras del desarrollo.
   - **Ráfagas de viento:** el viento tumba a Kratos y lo deja colgado del borde de la viga. Hay que machacar un botón para subir antes de caer.
 
 ### G-05 · Escalada en superficies verticales
-- **Respaldo:** Original [1] [2]. Adaptación 2D: Usuaria.
+- **Respaldo:** Original [1] [2]. Adaptación 2D: Usuario.
 - **Superficies:** redes de soga, escaleras, mallas, muros de piedra rugosa y acantilados. Kratos se adhiere y se mueve en las cuatro direcciones del plano.
 - **En el original:** mientras se trepa, el combate es limitado y se puede saltar hacia los costados y hacia arriba [1]. Los enemigos también trepan. Los golpes disponibles trepando quedan para después (P-06 en `direccion.md` §8).
 - **Ventaja en 2D:** traslada de forma directa la mecánica original (saltos entre paredes, bajada rápida, esquivar obstáculos verticales) sin ejes de cámara complejos.
@@ -63,7 +63,7 @@ Ideas, notas y referencias de diseño para etapas futuras del desarrollo.
 - **Uso:** sirve de guía para planear los niveles siguientes. No es un compromiso de alcance.
 
 ### G-09 · Dosificación de enemigos, arenas de bloqueo y combate 2D
-- **Respaldo:** observación y propuesta de la Usuaria. Referencias técnicas: *Dead Cells*, *Hollow Knight*, *Blasphemous*.
+- **Respaldo:** observación y propuesta de la Usuario. Referencias técnicas: *Dead Cells*, *Hollow Knight*, *Blasphemous*.
 - **El problema del combate 2D lateral:**
   - En 3D (GoW PS2), los enemigos rodean a Kratos en $360^\circ$ y la cámara gira.
   - En 2D lateral solo existen dos direcciones de entrada: izquierda y derecha. Apilar muchos enemigos en el suelo genera superposición de sprites (*sprite stacking*), tapa las animaciones de aviso (*windup*) y convierte la pelea en un cuello de botella ilegible o en un tiro al blanco.
