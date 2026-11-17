@@ -91,6 +91,7 @@
     "grab-stab-b": { "action": "Idle_Loop", "frame": 0, "pose": "grab-stab-b.json", "ground": true },
     "grab-whiff-recover": { "action": "Idle_Loop", "frame": 0, "pose": "grab-whiff-recover.json", "ground": true },
     "guard-a": { "action": "Idle_Loop", "frame": 0, "pose": "guard-a.json", "ground": true },
-    "guard-b": { "action": "Idle_Loop", "frame": 0, "pose": "guard-b.json", "ground": true }
+    "guard-b": { "action": "Idle_Loop", "frame": 0, "pose": "guard-b.json", "ground": true },
+    "grab-toss-stab": { "action": "Idle_Loop", "frame": 0, "pose": "grab-toss-stab.json", "ground": true }
   }
 }

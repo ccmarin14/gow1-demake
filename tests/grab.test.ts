@@ -252,12 +252,16 @@ describe('combat grab with Circle / L key (BL-06, D-42)', () => {
     // 2. Pulsar □ ('light-attack') durante la sujeción para iniciar el lanzamiento
     world.step(['light-attack']);
     assert.equal(p.grabPhase, 'throw');
-    assert.equal(victim.hp, 60, 'victim held during throw windup (ticks 0..5)');
-    assert.equal(victim.y, p.y - 12, 'victim held horizontally across chest off floor (ticks 0..5)');
+    assert.equal(victim.hp, 60, 'no damage before the sword goes in');
+    assert.equal(victim.y, p.y - 12, 'victim held at his side, off the floor, while he is run through');
 
     // 3. Avanzar hasta el tick 6 (grab-throw-b): Kratos lo suelta e impulsa al frente
-    stepTicks(world, [], 6);
-    assert.equal(victim.hp, 60 - CONFIG.player.grab.throwDamage, 'throw damage dealt on release at tick 6');
+    stepTicks(world, [], CONFIG.player.grab.toss.releaseTick);
+    assert.equal(
+      victim.hp,
+      60 - CONFIG.player.grab.toss.stabDamage - CONFIG.player.grab.throwDamage,
+      'the sword goes in first, then the throw damage lands on release',
+    );
     assert.equal(victim.aiState, 'juggle');
     assert.equal(victim.vx, CONFIG.player.grab.throwVx);
 
@@ -461,7 +465,7 @@ describe('combat grab with Circle / L key (BL-06, D-42)', () => {
 
     // Kratos salta y pulsa ○ ('grab') en el aire sin enemigos en el aire
     world.step(['jump']);
-    stepTicks(world, [], 6);
+    stepTicks(world, [], CONFIG.player.grab.toss.releaseTick);
     assert.equal(p.grounded, false);
 
     world.step(['grab']);
@@ -573,7 +577,7 @@ describe('grab orb tiers (Pummel > Rip > Toss)', () => {
     const { world, p, victim } = setUp();
     const before = p.redOrbs;
     world.step(['light-attack']);
-    stepTicks(world, [], 6);
+    stepTicks(world, [], CONFIG.player.grab.toss.releaseTick);
     assert.equal(victim.isDead, false, 'the throw alone does not kill a full-health legionnaire');
     assert.equal(p.redOrbs - before, orbs.toss);
   });
@@ -679,5 +683,41 @@ describe('grab chain details', () => {
       world.step([action]);
       assert.equal(p.grabPhase, phase, `${action} after a punch starts the ${phase}`);
     }
+  });
+});
+
+describe('Toss (□): the sword goes in, then he is thrown aside (GoW 1 video and guide)', () => {
+  function held(hp = 60): { world: World; p: EntityState; victim: EntityState } {
+    const world = createWorld();
+    const p = getPlayer(world);
+    const victim = getEnemy(world);
+    p.x = 300;
+    p.facing = 1;
+    victim.x = 328;
+    victim.y = p.y;
+    victim.hp = hp;
+    world.step(['grab']);
+    world.step(['light-attack']);
+    assert.equal(p.grabPhase, 'throw');
+    return { world, p, victim };
+  }
+
+  it('the stab lands on its own tick, before the release', () => {
+    const { world, victim } = held();
+    const t = CONFIG.player.grab.toss;
+    assert.ok(t.stabTick < t.releaseTick);
+    stepTicks(world, [], t.stabTick - 1);
+    assert.equal(victim.hp, 60, 'nothing yet');
+    stepTicks(world, [], 1);
+    assert.equal(victim.hp, 60 - t.stabDamage, 'the stab lands');
+    assert.equal(victim.aiState, 'grabbed', 'still held after the stab');
+  });
+
+  it('a victim the stab kills is not thrown: it just dies', () => {
+    const { world, victim } = held(CONFIG.player.grab.toss.stabDamage);
+    stepTicks(world, [], CONFIG.player.grab.toss.stabTick);
+    assert.equal(victim.isDead, true);
+    stepTicks(world, [], CONFIG.player.grab.toss.releaseTick);
+    assert.equal(victim.aiState, 'death', 'no flight after dying on the blade');
   });
 });

@@ -79,6 +79,7 @@ export const GRAB_KEYS: readonly string[] = [
   'kratos-grab-stab-a',
   'kratos-grab-stab-b',
   'kratos-grab-whiff-recover',
+  'kratos-grab-toss-stab',
 ];
 
 /** Body poses of the block (L1): raising and held with the blades crossed in front. */

@@ -55,11 +55,13 @@ export class EnemyView {
               ? 'legionnaire-hitstun-00'
               : 'legionnaire-juggle-00';
       } else if (player.grabPhase === 'throw') {
-        // Lanzamiento con □: alzado horizontalmente cruzando el pecho (ticks 0..5, grab-throw-a) y proyectado en vuelo (ticks 6+)
-        if (t < 6) {
+        // Toss con □: sujeto de lado mientras la espada entra (hasta el tick de la puñalada se queda erguido,
+        // después se dobla) y proyectado en vuelo desde el tick de suelta
+        const toss = CONFIG.player.grab.toss;
+        if (t < toss.releaseTick) {
           drawX = player.x + f * 12;
           drawY = player.y - 12;
-          textureKey = 'legionnaire-juggle-01';
+          textureKey = t < toss.stabTick ? 'legionnaire-hitstun-00' : 'legionnaire-juggle-01';
         } else {
           drawX = enemy.x;
           drawY = enemy.y;

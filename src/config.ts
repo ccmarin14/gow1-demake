@@ -146,6 +146,15 @@ grab: {
   recoveryTicks: 8,
   /** Direct damage dealt to the victim on ground slam (○ / K / L). */
   damage: 25,
+  /**
+   * Toss (Circle then Square), as seen in the GoW 1 showcase video and the Supercheats guide: Kratos holds
+   * the soldier at his side, runs a sword through him (`stabTick`) and then heaves him aside (`releaseTick`).
+   */
+  toss: {
+    stabTick: 5,
+    stabDamage: 8,
+    releaseTick: 12,
+  },
   /** Direct damage dealt to the victim when thrown as a projectile (□ / J). */
   throwDamage: 15,
   /** Collateral damage dealt to other enemies hit by a thrown victim. */

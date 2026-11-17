@@ -781,7 +781,7 @@ export class World {
               power: CONFIG.player.grab.chain.stabDamage,
               kind: 'light',
             };
-          } else if (player.grabPhase === 'throw' && player.grabTicks === 6) {
+          } else if (player.grabPhase === 'throw' && player.grabTicks === CONFIG.player.grab.toss.releaseTick) {
             this.strikeHitNotice = {
               x: player.x + player.facing * 20,
               y: player.y - 24,

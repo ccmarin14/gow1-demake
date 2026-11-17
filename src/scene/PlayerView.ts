@@ -249,7 +249,11 @@ export class PlayerView {
         return t >= 4 && t <= 8 ? 'kratos-grab-stab-b' : 'kratos-grab-stab-a';
       }
       case 'throw': {
-        return t < 6 ? 'kratos-grab-throw-a' : 'kratos-grab-throw-b';
+        // Toss (□): sujeta de lado, hunde la espada (ticks 3..8), alza y lanza a un costado
+        const toss = CONFIG.player.grab.toss;
+        if (t < 3) return 'kratos-grab-hold';
+        if (t < toss.stabTick + 4) return 'kratos-grab-toss-stab';
+        return t < toss.releaseTick ? 'kratos-grab-throw-a' : 'kratos-grab-throw-b';
       }
       case 'break': {
         return t < 11 ? 'kratos-grab-break-a' : 'kratos-grab-break-b';

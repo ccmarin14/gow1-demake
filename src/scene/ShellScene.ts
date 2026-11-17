@@ -422,7 +422,12 @@ export class ShellScene extends Phaser.Scene {
           this.vfxLayer.emitDust(player.x + player.facing * 18, player.y);
           this.soundManager?.playBoneBreak();
           this.soundManager?.playStrikeHit('heavy');
-        } else if (player.grabPhase === 'throw' && player.grabTicks === 6) {
+        } else if (player.grabPhase === 'throw' && player.grabTicks === CONFIG.player.grab.toss.stabTick) {
+          // Espada hundida en el soldado sujeto de lado (Toss)
+          this.cameras.main.shake(50, 0.007);
+          this.vfxLayer.emitBloodSpurt(player.x + player.facing * 14, player.y - 14, player.facing, 18);
+          this.soundManager?.playStab();
+        } else if (player.grabPhase === 'throw' && player.grabTicks === CONFIG.player.grab.toss.releaseTick) {
           // Impulso y despegue del proyectil humano (Grab 3 - □ Throw)
           this.cameras.main.shake(50, 0.006);
           this.vfxLayer.emitDust(player.x, player.y);

@@ -122,7 +122,10 @@ export class WeaponLayer {
       alive &&
       !striking &&
       player !== null &&
-      (player.grabPhase === 'floorhold' || player.grabPhase === 'stab' || player.grabPhase === 'finisher_qte') &&
+      (player.grabPhase === 'floorhold' ||
+        player.grabPhase === 'stab' ||
+        player.grabPhase === 'finisher_qte' ||
+        (player.grabPhase === 'throw' && player.grabTicks >= 3 && player.grabTicks < CONFIG.player.grab.toss.releaseTick)) &&
       this.directions.keys.length > 0;
     const guarding =
       alive && !striking && player !== null && player.guardPhase !== 'none' && this.directions.keys.length > 0;
@@ -188,11 +191,13 @@ export class WeaponLayer {
     const anchors = FRAME_ANCHORS[frameKey];
     const handLocal = anchors ? toSprite(anchors.hand) : { dx: 8, dy: -18 };
     const half = CONFIG.presentation.strikeArt.bladeSize.w / 2;
-    // El centro de la hoja queda media hoja por debajo del puño (agarre invertido).
-    const x = player.x + facing * handLocal.dx;
-    const y = player.y + handLocal.dy + half;
+    // Puñaladas al suelo: la hoja apunta hacia abajo (agarre invertido). En el Toss se hunde de frente y algo hacia abajo.
+    const deg = player.grabPhase === 'throw' ? 25 : 90;
+    const rad = (deg * Math.PI) / 180;
+    const x = player.x + facing * (handLocal.dx + Math.cos(rad) * half);
+    const y = player.y + handLocal.dy + Math.sin(rad) * half;
     this.nearBlade.setDepth(DEPTH_BLADE);
-    this.placeBlade(this.nearBlade, [x, y], 90, facing);
+    this.placeBlade(this.nearBlade, [x, y], deg, facing);
   }
 
   /** Las dos Espadas del Caos cruzadas al frente mientras Kratos bloquea (L1, D-50). */

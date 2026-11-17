@@ -513,18 +513,32 @@ export function stepGrab(
 
     const target = targets.find((e) => e.id === player.grabTargetId);
 
-    // 5.a Lanzamiento como proyectil (Throw con □):
-    // Ticks 0..5 (grab-throw-a): Kratos carga al enemigo horizontalmente a dos manos cruzando el pecho.
-    // Tick 6 (grab-throw-b): Kratos lo impulsa al frente; se aplica el daño, la velocidad de vuelo y pasa a 'juggle'.
+    // 5.a Lanzamiento (Toss con □), como en el video y la guía de GoW 1:
+    // Kratos sujeta al soldado de lado, le hunde una espada (tick `stabTick`) y lo lanza a un costado
+    // (tick `releaseTick`: daño, velocidad de vuelo y paso a 'juggle'). Si la puñalada lo mata, no hay lanzamiento.
     if (player.grabPhase === 'throw') {
-      const releaseTick = 6;
-      if (target) {
+      const { stabTick, stabDamage, releaseTick } = cfg.toss;
+      if (target && !target.isDead) {
         if (player.grabTicks < releaseTick) {
           target.x = player.x + player.facing * 12;
           target.y = player.y - 12;
           target.vx = 0;
           target.vy = 0;
           target.aiState = 'grabbed';
+          if (player.grabTicks === stabTick) {
+            const stabbed = damageEnemy(target, stabDamage, 14);
+            result.hit = true;
+            result.targetId = target.id;
+            result.damageDealt = stabDamage;
+            result.killed = stabbed;
+            if (stabbed) {
+              killVictim(target, onKill);
+              target.grounded = true;
+              target.y = player.y;
+            } else {
+              target.aiState = 'grabbed';
+            }
+          }
         } else if (player.grabTicks === releaseTick) {
           const knockdownTicks = CONFIG.enemy.legionnaire.knockdownTicks;
           const killed = damageEnemy(target, cfg.throwDamage, knockdownTicks);
