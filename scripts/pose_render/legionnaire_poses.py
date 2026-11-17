@@ -17,7 +17,7 @@ STAND = {"thigh_r": -16, "calf_r": 22, "thigh_l": 14, "calf_l": 22}
 ROLL = {"sword": {"rotation": [35, 90, 0]}}  # blade flat to the camera while raised
 
 
-def pose(rot, right, left=None, twist=0, roll=False):
+def pose(rot, right, left=None, twist=0, roll=False, sword=None):
     rotations = {bone: [[1, 0, 0], deg] for bone, deg in HUNCH.items()}
     for bone, deg in rot.items():
         rotations[bone] = [[1, 0, 0], rotations.get(bone, [0, 0])[1] + deg]
@@ -29,6 +29,8 @@ def pose(rot, right, left=None, twist=0, roll=False):
     data = {"rotations": rotations, "ik": ik}
     if roll:
         data["groups"] = ROLL
+    if sword:
+        data["groups"] = {"sword": {"rotation": sword}}
     return data
 
 
@@ -57,6 +59,10 @@ POSES = {
     "r0": pose(legs(-34, 34, 28, 8, 8), hold(-0.3, -0.45, 0.8), FAR(0.2, 1.0)),
     "r1": pose(legs(-26, 26, 22, 12, 6), hold(-0.3, -0.35, 0.78), FAR(-0.2, 0.95)),
     "r2": pose(STAND, hold(-0.3, -0.25, 0.8), FAR(-0.2, 0.95)),
+    # Held by the throat (Kratos' Grab 1): hanging, the sword hand limp with the blade down, the free hand
+    # clawing at the wrist; the second pose folds at the waist when a punch lands.
+    "heldA": pose({**legs(6, 10, 12, 18, -8), "neck_01": -8, "Head": -8}, hold(-0.3, -0.05, 0.5), FAR(-0.55, 1.55), sword=[35, 0, 0]),
+    "heldB": pose(legs(-8, 16, 4, 12, 24), hold(-0.3, 0.15, 0.55), FAR(-0.4, 1.2), sword=[35, 0, 0]),
 }
 
 

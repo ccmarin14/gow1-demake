@@ -107,6 +107,8 @@ export const LEGIONNAIRE_FRAME_KEYS: readonly string[] = [
   ...Array.from({ length: 3 }, (_, i) => `legionnaire-recover-0${i}`),
   'legionnaire-hitstun-00',
   'legionnaire-hitstun-01',
+  'legionnaire-held-00',
+  'legionnaire-held-01',
   'legionnaire-juggle-00',
   'legionnaire-juggle-01',
   'legionnaire-death-00',

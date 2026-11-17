@@ -42,12 +42,13 @@ export class EnemyView {
       const f = player.facing;
       if (player.grabPhase === 'hold' || player.grabPhase === 'finisher_qte' || player.grabPhase === 'pummel') {
         const isPunchHit = player.grabPhase === 'pummel' && t >= 4 && t <= 8;
-        // Sujeto del cuello y alzado: los pies cuelgan en el aire (GoW 1 lo levanta del suelo) con las rodillas
-        // dobladas (`juggle-00`); con cada puñetazo se dobla por la cintura (`juggle-01`) y retrocede 3 px.
+        // Sujeto del cuello y alzado: GoW 1 lo levanta del suelo y los pies cuelgan. `held-00` lo muestra colgado
+        // (la espada cuelga, la mano libre le araña la muñeca); con cada puñetazo se dobla por la cintura
+        // (`held-01`) y retrocede 3 px.
         const lift = t < 3 ? 2 + t * 2 : 8 + (Math.floor(t / 12) % 2 === 0 ? 0 : 1);
         drawX = player.x + f * (isPunchHit ? 19 : 16);
         drawY = player.y - lift + (isPunchHit ? (t % 2 === 0 ? 1 : -1) : 0);
-        textureKey = isPunchHit ? 'legionnaire-juggle-01' : 'legionnaire-juggle-00';
+        textureKey = isPunchHit ? 'legionnaire-held-01' : 'legionnaire-held-00';
       } else if (player.grabPhase === 'throw') {
         // Toss con □: sujeto de lado mientras la espada entra (hasta el tick de la puñalada se queda erguido,
         // después se dobla) y proyectado en vuelo desde el tick de suelta
