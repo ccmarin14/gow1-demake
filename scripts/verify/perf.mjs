@@ -1,4 +1,4 @@
-// Frame-time harness: node scripts/verify/perf.mjs <cdpPort> <url> <cpuRate> <seconds> <combo|idle> (env PROFILE=1 prints the top functions)
+// Frame-time harness: node scripts/verify/perf.mjs <cdpPort> <url> <cpuRate> <seconds> <combo|idle|grab> (env PROFILE=1 prints the top functions)
 const [port, url, rate, secs, mode] = [process.argv[2], process.argv[3], Number(process.argv[4] ?? 1), Number(process.argv[5] ?? 6), process.argv[6] ?? 'combo'];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 let target;
@@ -27,6 +27,11 @@ if (process.env.PROFILE) { await send('Profiler.enable'); await send('Profiler.s
 const end = Date.now() + secs * 1000;
 let n = 0;
 while (Date.now() < end) {
+  if (mode === 'grab') {
+    // Circle grab, then taps of Circle (punches, floor, stabs), then a Square toss or a Triangle rip, repeated.
+    const seq = [['l', 'KeyL', 76], ['l', 'KeyL', 76], ['l', 'KeyL', 76], ['l', 'KeyL', 76], ['l', 'KeyL', 76], ['l', 'KeyL', 76], ['l', 'KeyL', 76], ['l', 'KeyL', 76], ['l', 'KeyL', 76], ['l', 'KeyL', 76], ['l', 'KeyL', 76], ['j', 'KeyJ', 74], ['l', 'KeyL', 76], ['i', 'KeyI', 73]];
+    const [k, c, v] = seq[n % seq.length]; await key(k, c, v); n += 1;
+  }
   if (mode === 'combo') { await key(n % 5 === 4 ? 'i' : 'j', n % 5 === 4 ? 'KeyI' : 'KeyJ', n % 5 === 4 ? 73 : 74); n += 1; }
   await sleep(120);
 }
