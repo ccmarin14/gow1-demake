@@ -42,7 +42,7 @@ export class EnemyView {
       const f = player.facing;
       if (player.grabPhase === 'hold' || player.grabPhase === 'finisher_qte' || player.grabPhase === 'pummel') {
         const isStab = player.grabPhase === 'pummel' && t >= 4 && t <= 8;
-        // Sujeto del cuello a +16 px frente a Kratos; retrocede a +19 px y se sacude al penetrar la hoja en el pecho
+        // Sujeto del cuello a +16 px frente a Kratos; retrocede a +19 px y se sacude con cada puñetazo
         const lift = t < 3 ? t : Math.floor(t / 12) % 2 === 0 ? 2 : 3;
         drawX = player.x + f * (isStab ? 19 : 16);
         drawY = player.y - lift + (isStab ? (t % 2 === 0 ? 1 : -1) : 0);
@@ -80,6 +80,12 @@ export class EnemyView {
           drawY = player.y;
           textureKey = 'legionnaire-death-02';
         }
+      } else if (player.grabPhase === 'floorhold' || player.grabPhase === 'stab') {
+        // Tendido bajo Kratos tras el azote (Grab 1); se sacude al entrar la hoja (ticks 4..8 de la puñalada)
+        const jolt = player.grabPhase === 'stab' && t >= 4 && t <= 8;
+        drawX = player.x + f * 20;
+        drawY = player.y;
+        textureKey = jolt ? 'legionnaire-death-01' : 'legionnaire-death-02';
       } else if (player.grabPhase === 'slam' || player.grabPhase === 'finisher_slam') {
         // Azote con ○: levantado frente al hombro (ticks 0..9, grab-slam-a) y estrellado contra las tablas (ticks 10+, grab-slam-b)
         if (t < 10) {

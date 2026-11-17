@@ -9,6 +9,27 @@ export interface GrabStepResult {
   killed: boolean;
 }
 
+/** Kratos stands over the fallen victim, who lies on the floor in front of him. */
+function keepLying(player: EntityState, target: EntityState): void {
+  target.x = player.x + player.facing * 20;
+  target.y = player.y;
+  target.vx = 0;
+  target.vy = 0;
+  target.grounded = true;
+  target.aiState = 'grabbed';
+  target.heldLying = true;
+}
+
+function killVictim(target: EntityState, onKill?: (target: EntityState) => void): void {
+  target.aiState = 'death';
+  target.aiTicks = 0;
+  target.isDead = true;
+  target.heldLying = false;
+  if (onKill) {
+    onKill(target);
+  }
+}
+
 export function isGrabbing(player: EntityState): boolean {
   return player.grabPhase !== 'none';
 }
@@ -312,7 +333,8 @@ export function stepGrab(
     // A partir del primer tick posterior al enganche (grabTicks >= 1), el jugador puede elegir:
     // - □ ('light-attack'): lanzar al enemigo como proyectil humano que derriba a otros en su camino (lanzamiento en tick 6).
     // - △ ('heavy-attack'): partir / quebrar brutalmente al enemigo (ejecución letal instantánea en tick 11).
-    // - ○ ('grab') o fin de holdTicks: Grab 1 (golpiza a mano limpia 'pummel' con ○ repetido, o azote final 'slam').
+    // - ○ ('grab'): Grab 1, la cadena de ○ repetido (3 puñetazos, azote al suelo, 4 puñaladas; ver `CONFIG.player.grab.chain`).
+    // - fin de holdTicks sin elegir: el enemigo se zafa.
     const canChooseOption = player.grabTicks >= 1;
     const chooseThrow = canChooseOption && inputActions.includes('light-attack');
     const chooseBreak = canChooseOption && !chooseThrow && inputActions.includes('heavy-attack');
@@ -328,17 +350,11 @@ export function stepGrab(
       player.grabPhase = 'break';
       player.grabTicks = 0;
     } else if (chooseCircle) {
-      const pummelsSoFar = (player.grabPummelCount ?? 0) + 1;
-      player.grabPummelCount = pummelsSoFar;
-      if (pummelsSoFar >= cfg.maxPummels || target.hp <= cfg.damage) {
-        // En el 3er toque de ○ o si la vida del enemigo ya es crítica (<= 25), ejecuta el azote final contra cubierta
-        player.grabPhase = 'slam';
-        player.grabTicks = 0;
-      } else {
-        // Grab 1: golpe/rodillazo a mano limpia que daña y suma impactos
-        player.grabPhase = 'pummel';
-        player.grabTicks = 0;
-      }
+      // Grab 1: one tap per blow. Taps 1..3 punch, the next throws him to the floor, then he is stabbed.
+      const taps = player.grabPummelCount ?? 0;
+      player.grabPummelCount = taps + 1;
+      player.grabPhase = taps < cfg.chain.punches ? 'pummel' : 'slam';
+      player.grabTicks = 0;
     } else if (player.grabTicks >= cfg.holdTicks) {
       // Si expira el tiempo de sujeción (holdTicks) sin que el jugador elija □, △ o ○,
       // el enemigo se zafa de la presa y vuelve a 'approach' sin recibir azote automático.
@@ -361,7 +377,7 @@ export function stepGrab(
     }
   }
 
-  // 4.b Fase de Apuñalamiento con la Espada del Caos (Grab 1 - TAP ○ REPEATEDLY)
+  // 4.b Puñetazos de Grab 1 (○ repetido): Kratos sujeta en alto con una mano y golpea con la otra.
   if (player.grabPhase === 'pummel') {
     if (player.invulTicks < 2) {
       player.invulTicks = 2;
@@ -381,33 +397,109 @@ export function stepGrab(
     target.vy = 0;
     target.aiState = 'grabbed';
 
-    // Penetración de la Espada del Caos en el torso en tick 4
+    // El puño impacta en el tick 4
     if (player.grabTicks === 4) {
-      const killed = damageEnemy(target, cfg.pummelDamage, 14);
+      const killed = damageEnemy(target, cfg.chain.punchDamage, 14);
       result.hit = true;
       result.targetId = target.id;
-      result.damageDealt = cfg.pummelDamage;
+      result.damageDealt = cfg.chain.punchDamage;
       result.killed = killed;
       player.redOrbs = (player.redOrbs ?? 0) + cfg.orbs.pummelPerHit;
-
       if (killed) {
-        target.aiState = 'death';
-        target.aiTicks = 0;
-        target.isDead = true;
-        if (onKill) {
-          onKill(target);
-        }
+        killVictim(target, onKill);
+      } else {
+        target.aiState = 'grabbed';
       }
     }
 
     player.grabTicks += 1;
-    if (player.grabTicks >= cfg.pummelTicks) {
+    if (player.grabTicks >= cfg.chain.punchTicks) {
       if (target.isDead) {
-        player.grabPhase = 'slam';
-        player.grabTicks = 10;
+        player.grabPhase = 'recovery';
       } else {
         player.grabPhase = 'hold';
-        player.grabTicks = 1;
+      }
+      player.grabTicks = target.isDead ? 0 : 1;
+    }
+    return result;
+  }
+
+  // 4.c Víctima en el suelo tras el azote: Kratos espera el siguiente toque de ○ para apuñalarla.
+  if (player.grabPhase === 'floorhold') {
+    if (player.invulTicks < 2) {
+      player.invulTicks = 2;
+    }
+
+    const target = targets.find((e) => e.id === player.grabTargetId);
+    if (!target || target.isDead) {
+      player.grabPhase = 'none';
+      player.grabTicks = 0;
+      player.grabTargetId = null;
+      return result;
+    }
+
+    keepLying(player, target);
+
+    if (inputActions.includes('grab')) {
+      player.grabPummelCount = (player.grabPummelCount ?? 0) + 1;
+      player.grabPhase = 'stab';
+      player.grabTicks = 0;
+    } else {
+      player.grabTicks += 1;
+      if (player.grabTicks >= cfg.chain.floorHoldTicks) {
+        // Nadie siguió: se levanta por el derribo y la reincorporación que el motor ya tiene.
+        target.heldLying = false;
+        target.aiState = 'knockdown';
+        target.aiTicks = 0;
+        target.grounded = true;
+        player.grabPhase = 'recovery';
+        player.grabTicks = 0;
+        player.grabTargetId = null;
+      }
+      return result;
+    }
+  }
+
+  // 4.d Puñaladas con la Espada del Caos sobre la víctima caída; la última siempre mata.
+  if (player.grabPhase === 'stab') {
+    if (player.invulTicks < 2) {
+      player.invulTicks = 2;
+    }
+
+    const target = targets.find((e) => e.id === player.grabTargetId);
+    if (!target || target.isDead) {
+      player.grabPhase = 'none';
+      player.grabTicks = 0;
+      player.grabTargetId = null;
+      return result;
+    }
+
+    keepLying(player, target);
+
+    if (player.grabTicks === 4) {
+      const lastStab = (player.grabPummelCount ?? 0) >= cfg.chain.punches + 1 + cfg.chain.stabs;
+      const damage = lastStab ? Math.max(cfg.chain.stabDamage, target.hp) : cfg.chain.stabDamage;
+      const killed = damageEnemy(target, damage, 14);
+      result.hit = true;
+      result.targetId = target.id;
+      result.damageDealt = damage;
+      result.killed = killed;
+      player.redOrbs = (player.redOrbs ?? 0) + cfg.orbs.pummelPerHit;
+      if (killed) {
+        killVictim(target, onKill);
+      } else {
+        keepLying(player, target);
+      }
+    }
+
+    player.grabTicks += 1;
+    if (player.grabTicks >= cfg.chain.stabTicks) {
+      if (target.isDead) {
+        player.grabPhase = 'recovery';
+        player.grabTicks = 0;
+      } else {
+        player.grabPhase = 'floorhold';
+        player.grabTicks = 0;
       }
     }
     return result;
@@ -544,11 +636,12 @@ export function stepGrab(
               onKill(target);
             }
           } else {
-            target.aiState = 'knockdown';
-            target.aiTicks = 0;
+            // La víctima queda tendida bajo Kratos (Grab 1): el siguiente toque de ○ la apuñala.
+            target.aiState = 'grabbed';
+            target.heldLying = true;
             target.grounded = true;
-            target.vx = player.facing * cfg.slamVx;
-            target.vy = cfg.slamVy;
+            target.vx = 0;
+            target.vy = 0;
           }
         }
       }
@@ -556,6 +649,11 @@ export function stepGrab(
 
     player.grabTicks += 1;
     if (player.grabTicks >= cfg.slamTicks) {
+      if (player.grabPhase === 'slam' && target && !target.isDead && target.heldLying) {
+        player.grabPhase = 'floorhold';
+        player.grabTicks = 0;
+        return result;
+      }
       player.grabPhase = 'recovery';
       player.grabTicks = 0;
       player.grabTargetId = null;

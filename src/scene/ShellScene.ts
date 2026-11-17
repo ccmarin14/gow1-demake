@@ -405,9 +405,14 @@ export class ShellScene extends Phaser.Scene {
 
         // Feedback visceral de impacto en los agarres clásicos de GoW 1 (○ Pummel, △ Break, □ Throw, ○ Slam)
         if (player.grabPhase === 'pummel' && player.grabTicks === 4) {
-          // Estocada con Espada del Caos en el torso (Grab 1 - TAP ○ REPEATEDLY)
+          // Puñetazo con la víctima sujeta en alto (Grab 1 - TAP ○ REPEATEDLY)
+          this.cameras.main.shake(50, 0.006);
+          this.vfxLayer.emitBloodSpurt(player.x + player.facing * 18, player.y - 20, player.facing, 8);
+          this.soundManager?.playStrikeHit('light');
+        } else if (player.grabPhase === 'stab' && player.grabTicks === 4) {
+          // Puñalada con la Espada del Caos sobre la víctima caída (Grab 1)
           this.cameras.main.shake(60, 0.008);
-          this.vfxLayer.emitBloodSpurt(player.x + player.facing * 18, player.y - 18, player.facing, 22);
+          this.vfxLayer.emitBloodSpurt(player.x + player.facing * 20, player.y - 6, player.facing, 22);
           this.soundManager?.playStab();
         } else if (player.grabPhase === 'break' && player.grabTicks === 11) {
           // Quiebre brutal sobre la cabeza/cubierta (Grab 2 - △ Break)

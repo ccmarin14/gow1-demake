@@ -179,13 +179,16 @@ export interface EntityState {
   maxMp: number;
   magicPhase: 'none' | 'startup' | 'active' | 'recovery';
   magicTicks: number;
-  grabPhase: 'none' | 'whiff' | 'hold' | 'pummel' | 'slam' | 'throw' | 'break' | 'recovery' | 'finisher_qte' | 'finisher_slam';
+  grabPhase: 'none' | 'whiff' | 'hold' | 'pummel' | 'floorhold' | 'stab' | 'slam' | 'throw' | 'break' | 'recovery' | 'finisher_qte' | 'finisher_slam';
   grabTicks: number;
   grabTargetId: string | null;
+  /** Taps of the Circle chain so far: 1..3 punches, 4 the throw to the floor, 5..8 the stabs. */
   grabPummelCount?: number;
   grabAdvancePx?: number;
   /** Remaining ticks of the enemy's break-free push after a grab expires. */
   grabBreakFreeTicks?: number;
+  /** The victim of a Circle grab lies on the floor under Kratos (after the throw to the floor). */
+  heldLying?: boolean;
   qteAction: GameAction | null;
   qteTicksLeft: number;
   qteMaxTicks: number;

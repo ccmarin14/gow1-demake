@@ -159,7 +159,7 @@ describe('combat grab with Circle / L key (BL-06, D-42)', () => {
     assert.equal(p.grabTargetId, null);
   });
 
-  it('grabs low-HP legionnaire into normal hold (not QTE) and kills on chosen slam (○)', () => {
+  it('grabs low-HP legionnaire into normal hold (not QTE) and a Circle punch can kill it', () => {
     const world = createWorld();
     const p = getPlayer(world);
     const e = getEnemy(world);
@@ -168,25 +168,24 @@ describe('combat grab with Circle / L key (BL-06, D-42)', () => {
     p.facing = 1;
     e.x = 330;
     e.y = p.y;
-    e.hp = 15; // Incluso con vida baja (<= 20), el legionario básico entra a hold normal
+    e.hp = CONFIG.player.grab.chain.punchDamage; // one punch from death
 
     const initialKills = world.snapshot().stats?.totalKills ?? 0;
 
     world.step(['grab']);
     assert.equal(p.grabPhase, 'hold', 'low-HP basic legionnaire enters hold so player can choose □, △, or ○');
     world.step([]);
-    world.step(['grab']); // Segunda pulsación de ○ ejecuta el azote (slam)
-    assert.equal(p.grabPhase, 'slam');
-    assert.equal(e.hp, 15, 'no damage dealt during slam windup (ticks 0..9)');
+    world.step(['grab']);
+    assert.equal(p.grabPhase, 'pummel');
+    assert.equal(e.hp, CONFIG.player.grab.chain.punchDamage, 'no damage before the punch lands');
 
-    // Avanza hasta el impacto en tick 10 (grab-slam-b contra las tablas)
-    stepTicks(world, [], 10);
-    assert.equal(e.hp, 0, 'victim killed on deck impact at tick 10');
+    stepTicks(world, [], 4);
+    assert.equal(e.hp, 0, 'victim killed by the first punch');
     assert.equal(e.isDead, true);
     assert.equal(e.aiState, 'death');
+    stepTicks(world, [], CONFIG.player.grab.chain.punchTicks);
+    assert.equal(p.grabPhase === 'recovery' || p.grabPhase === 'none', true, 'the chain ends on the kill');
 
-    // Avanza para recoger orbes
-    stepTicks(world, [], 5);
     const stats = world.snapshot().stats;
     assert.ok(stats && stats.totalKills > initialKills, 'kill recorded');
   });
@@ -299,10 +298,11 @@ describe('combat grab with Circle / L key (BL-06, D-42)', () => {
     assert.equal(victim.y, p.y, 'victim corpse stays firmly on deck floor after grab finishes');
   });
 
-  it('ground grab option ○ (grab): delivers consecutive Blade of Chaos stabs (Grab 1 - TAP ○ REPEATEDLY) and finishes with deck slam', () => {
+  it('ground grab option ○ (grab): Grab 1 is 3 punches held aloft, a throw to the floor, then 4 stabs (user, GoW 1)', () => {
     const world = createWorld();
     const p = getPlayer(world);
     const victim = getEnemy(world);
+    const chain = CONFIG.player.grab.chain;
 
     p.x = 300;
     p.facing = 1;
@@ -312,36 +312,75 @@ describe('combat grab with Circle / L key (BL-06, D-42)', () => {
 
     world.step(['grab']);
     assert.equal(p.grabPhase, 'hold');
-
-    // 1. Primer toque de ○ ('grab'): inicia la primera estocada con la Espada del Caos (stab 1)
     world.step([]);
+
+    // 1. Three punches, one per tap, with the victim held up by one hand.
+    let expectedHp = 60;
+    for (let i = 0; i < chain.punches; i += 1) {
+      world.step(['grab']);
+      assert.equal(p.grabPhase, 'pummel', `tap ${i + 1} is a punch`);
+      assert.equal(victim.hp, expectedHp, 'no damage before the punch lands');
+      stepTicks(world, [], 4);
+      expectedHp -= chain.punchDamage;
+      assert.equal(victim.hp, expectedHp, `punch ${i + 1} lands at tick 4`);
+      stepTicks(world, [], chain.punchTicks - 4);
+      assert.equal(p.grabPhase, 'hold', 'back to holding him up so the next tap can follow');
+    }
+
+    // 2. The next tap throws him to the floor (the deck slam).
     world.step(['grab']);
-    assert.equal(p.grabPhase, 'pummel');
-    assert.equal(victim.hp, 60, 'no damage before blade stab impact');
-
-    // Avanzar hasta el impacto de la estocada en tick 4
-    stepTicks(world, [], 4);
-    assert.equal(victim.hp, 60 - CONFIG.player.grab.pummelDamage, 'stab 1 deals 10 damage when blade plunges into torso');
-
-    // Completar la estocada (pummelTicks = 14) -> vuelve a 'hold'
-    stepTicks(world, [], CONFIG.player.grab.pummelTicks - 4);
-    assert.equal(p.grabPhase, 'hold', 'returns to hold after stab 1 so player can choose next action');
-
-    // 2. Segundo toque de ○ ('grab'): segunda estocada (stab 2)
-    world.step(['grab']);
-    assert.equal(p.grabPhase, 'pummel');
-    stepTicks(world, [], 4);
-    assert.equal(victim.hp, 60 - CONFIG.player.grab.pummelDamage * 2, 'stab 2 deals another 10 damage');
-    stepTicks(world, [], CONFIG.player.grab.pummelTicks - 4);
-    assert.equal(p.grabPhase, 'hold');
-
-    // 3. Tercer toque de ○ ('grab'): habiendo alcanzado maxPummels (3), Kratos remata con el azote (slam)
-    world.step(['grab']);
-    assert.equal(p.grabPhase, 'slam', 'third Circle tap transitions into final deck slam');
+    assert.equal(p.grabPhase, 'slam');
     stepTicks(world, [], 10);
-    assert.equal(victim.hp, 60 - CONFIG.player.grab.pummelDamage * 2 - CONFIG.player.grab.damage, 'final deck slam deals 25 damage');
-    assert.equal(victim.aiState, 'knockdown');
-    assert.equal(victim.y, p.y, 'victim on floor after slam');
+    expectedHp -= CONFIG.player.grab.damage;
+    assert.equal(victim.hp, expectedHp, 'the throw to the floor deals its damage at tick 10');
+    assert.equal(victim.isDead, false);
+    stepTicks(world, [], CONFIG.player.grab.slamTicks - 10);
+    assert.equal(p.grabPhase, 'floorhold', 'he lies on the floor and Kratos waits for the next tap');
+    assert.equal(victim.heldLying, true);
+    assert.equal(victim.y, p.y, 'victim on the floor, not floating');
+
+    // 3. Four stabs with the blade; the last one always kills.
+    for (let i = 0; i < chain.stabs; i += 1) {
+      world.step(['grab']);
+      assert.equal(p.grabPhase, 'stab', `tap ${i + 1} on the floor is a stab`);
+      const before = victim.hp;
+      stepTicks(world, [], 4);
+      if (i < chain.stabs - 1) {
+        assert.equal(victim.hp, before - chain.stabDamage, `stab ${i + 1} deals its damage`);
+        assert.equal(victim.isDead, false);
+        stepTicks(world, [], chain.stabTicks - 4);
+        assert.equal(p.grabPhase, 'floorhold');
+      } else {
+        assert.equal(victim.hp, 0, 'the fourth stab kills');
+        assert.equal(victim.isDead, true);
+        assert.equal(victim.aiState, 'death');
+      }
+    }
+  });
+
+  it('if nobody taps after the throw to the floor, the victim gets up and Kratos recovers', () => {
+    const world = createWorld();
+    const p = getPlayer(world);
+    const victim = getEnemy(world);
+    p.x = 300;
+    p.facing = 1;
+    victim.x = 328;
+    victim.y = p.y;
+    victim.hp = 100;
+    world.step(['grab']);
+    world.step([]);
+    for (let i = 0; i < CONFIG.player.grab.chain.punches; i += 1) {
+      world.step(['grab']);
+      stepTicks(world, [], CONFIG.player.grab.chain.punchTicks);
+    }
+    world.step(['grab']);
+    stepTicks(world, [], CONFIG.player.grab.slamTicks);
+    assert.equal(p.grabPhase, 'floorhold');
+    stepTicks(world, [], CONFIG.player.grab.chain.floorHoldTicks + 1);
+    assert.notEqual(p.grabPhase, 'floorhold');
+    assert.equal(victim.isDead, false);
+    assert.equal(victim.heldLying, false);
+    assert.equal(victim.aiState, 'knockdown', 'he rises through the knockdown and get-up the engine already has');
   });
 
   it('launcher (held △) lifts enemy straight up vertically (vx = 0) and ○ chains Orion\'s Harpoon to slam it down', () => {
@@ -482,8 +521,9 @@ describe('grab orb tiers (Pummel > Rip > Toss)', () => {
   }
 
   it('the amounts keep the guide order: a full Circle chain > Rip > Toss', () => {
-    const chain = orbs.pummelPerHit * 3;
-    assert.ok(chain > orbs.rip, 'mashing Circle pays more than a Rip');
+    const c = CONFIG.player.grab.chain;
+    const chainHits = c.punches + 1 + c.stabs;
+    assert.ok(orbs.pummelPerHit * chainHits > orbs.rip, 'mashing Circle all the way pays more than a Rip');
     assert.ok(orbs.rip > orbs.toss, 'a Rip pays more than a Toss');
     assert.ok(orbs.toss > 0, 'a Toss still pays something');
   });
@@ -505,32 +545,38 @@ describe('grab orb tiers (Pummel > Rip > Toss)', () => {
     assert.equal(p.redOrbs - before, orbs.toss);
   });
 
-  it('every Pummel hit pays, even when it does not kill: two stabs and the final slam', () => {
-    const { world, p, victim } = setUp();
+  it('every Circle chain hit pays, even when it does not kill: punches, the throw to the floor and the stabs', () => {
+    const { world, p, victim } = setUp(100);
+    const c = CONFIG.player.grab.chain;
     const before = p.redOrbs;
     world.step([]);
+    let hits = 0;
+    for (let i = 0; i < c.punches; i += 1) {
+      world.step(['grab']);
+      stepTicks(world, [], c.punchTicks);
+      hits += 1;
+      assert.equal(p.redOrbs - before, orbs.pummelPerHit * hits, `punch ${i + 1} pays`);
+    }
     world.step(['grab']);
-    stepTicks(world, [], 4);
-    assert.equal(p.redOrbs - before, orbs.pummelPerHit, 'first stab pays');
-    stepTicks(world, [], CONFIG.player.grab.pummelTicks - 4);
-    world.step(['grab']);
-    stepTicks(world, [], 4);
-    assert.equal(p.redOrbs - before, orbs.pummelPerHit * 2, 'second stab pays');
-    stepTicks(world, [], CONFIG.player.grab.pummelTicks - 4);
-    world.step(['grab']);
-    stepTicks(world, [], 10);
+    stepTicks(world, [], CONFIG.player.grab.slamTicks);
+    hits += 1;
+    assert.equal(p.redOrbs - before, orbs.pummelPerHit * hits, 'the throw to the floor pays too');
     assert.equal(victim.isDead, false);
-    assert.equal(p.redOrbs - before, orbs.pummelPerHit * 3, 'the slam closing the chain pays too');
+    world.step(['grab']);
+    stepTicks(world, [], c.stabTicks);
+    hits += 1;
+    assert.equal(p.redOrbs - before, orbs.pummelPerHit * hits, 'a stab pays');
   });
 
-  it('a slam that kills a weak victim pays once, not twice (kill bonus and chain payment are the same)', () => {
-    const { world, p, victim } = setUp(CONFIG.player.grab.damage);
+  it('a punch that kills pays once and the chain ends', () => {
+    const { world, p, victim } = setUp(CONFIG.player.grab.chain.punchDamage);
     const before = p.redOrbs;
     world.step([]);
     world.step(['grab']);
-    assert.equal(p.grabPhase, 'slam', 'a victim at or below the slam damage goes straight to the slam');
-    stepTicks(world, [], 10);
+    stepTicks(world, [], 4);
     assert.equal(victim.isDead, true);
     assert.equal(p.redOrbs - before, orbs.pummelPerHit);
+    stepTicks(world, [], 2);
+    assert.equal(p.redOrbs - before, orbs.pummelPerHit, 'no second payment');
   });
 });

@@ -123,12 +123,22 @@ grab: {
   breakFreePlayerVx: 150,
   /** Forward impulse applied to the victim while breaking free (px/s). */
   breakFreeEnemyVx: 90,
-  /** Direct damage dealt per strike in Grab 1 (Pummel). Target design: 3 punches held aloft, then thrown down and 4 blade stabs (user, 2026-11-12); not implemented yet. */
-  pummelDamage: 10,
-  /** Duration in ticks of each pummel strike (~230 ms at 60 Hz). */
-  pummelTicks: 14,
-  /** Maximum number of pummel strikes before transitioning to ground slam. */
-  maxPummels: 3,
+  /**
+   * Grab 1 (Circle tapped repeatedly), as the user remembers it from GoW 1: Kratos holds the
+   * victim up with one hand and punches him 3 times, throws him to the floor (the deck slam,
+   * `damage` below), then stabs him 4 times with the blade; the last stab always kills.
+   * One tap per blow. The damage split is the team's choice: 3x5 + 25 + 4x5 = 60 = one legionnaire.
+   */
+  chain: {
+    punches: 3,
+    punchDamage: 5,
+    punchTicks: 14,
+    stabs: 4,
+    stabDamage: 5,
+    stabTicks: 14,
+    /** Ticks Kratos waits over the fallen victim for the next tap before he gets up. */
+    floorHoldTicks: 60,
+  },
   /** Ticks spent executing a grab follow-up (throw / break / slam, ~430 ms at 60 Hz). */
   slamTicks: 26,
   /** Ticks recovering from the slam animation (~130 ms). */
@@ -145,10 +155,6 @@ grab: {
   throwVy: -160,
   /** Direct damage dealt to the victim on brutal snap/break (△ / I). */
   breakDamage: 35,
-  /** Horizontal knockback impulse on victim on slam (px/s). */
-  slamVx: 40,
-  /** Slight rebound bounce on victim on slam (px/s). */
-  slamVy: -60,
   /** Total invulnerability window granted to Kratos during grab hold & execution. */
   invulTicks: 125,
   /**
@@ -158,8 +164,8 @@ grab: {
    * normal drop when the victim dies.
    */
   orbs: {
-    /** Per hit of the Circle chain: each punch/stab and the closing deck slam. */
-    pummelPerHit: 3,
+    /** Per hit of the Circle chain: each punch, the throw to the floor and each stab. */
+    pummelPerHit: 2,
     /** Paid once when Triangle rips the victim in half. */
     rip: 5,
     /** Paid once when Square throws the victim. */

@@ -771,7 +771,14 @@ export class World {
             this.strikeHitNotice = {
               x: player.x + player.facing * 16,
               y: player.y - 18,
-              power: CONFIG.player.grab.pummelDamage,
+              power: CONFIG.player.grab.chain.punchDamage,
+              kind: 'light',
+            };
+          } else if (player.grabPhase === 'stab' && player.grabTicks === 4) {
+            this.strikeHitNotice = {
+              x: player.x + player.facing * 20,
+              y: player.y - 6,
+              power: CONFIG.player.grab.chain.stabDamage,
               kind: 'light',
             };
           } else if (player.grabPhase === 'throw' && player.grabTicks === 6) {
