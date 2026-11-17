@@ -151,6 +151,20 @@ grab: {
   slamVy: -60,
   /** Total invulnerability window granted to Kratos during grab hold & execution. */
   invulTicks: 125,
+  /**
+   * Red orbs paid by each Circle grab ending. GoW 1 ranks them Pummel (most) > Rip
+   * (medium) > Toss (least) and pays orbs on every Pummel punch; the amounts are the
+   * team's choice (docs/direccion.md 6.1). Orbs go straight to Kratos, on top of the
+   * normal drop when the victim dies.
+   */
+  orbs: {
+    /** Per hit of the Circle chain: each punch/stab and the closing deck slam. */
+    pummelPerHit: 3,
+    /** Paid once when Triangle rips the victim in half. */
+    rip: 5,
+    /** Paid once when Square throws the victim. */
+    toss: 2,
+  },
 },
 damage: {
   maxHp: 100,

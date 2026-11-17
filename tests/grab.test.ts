@@ -457,3 +457,80 @@ describe('combat grab with Circle / L key (BL-06, D-42)', () => {
     assert.equal(victim.hp, 60 - 10 - 10 - 15, 'deals launcher (10) + harpoon (10) + deck slam (15) damage');
   });
 });
+
+/**
+ * Orbs from the three Circle grab endings (GoW 1 PS2): the guide ranks them
+ * Pummel (most) > Rip (medium) > Toss (least), and each Pummel punch pays orbs
+ * ("each punch gives Red Orbs"). The exact amounts are the team's choice
+ * (`CONFIG.player.grab.orbs`, docs/direccion.md section 6.1).
+ */
+describe('grab orb tiers (Pummel > Rip > Toss)', () => {
+  const orbs = CONFIG.player.grab.orbs;
+
+  function setUp(hp = 60): { world: World; p: EntityState; victim: EntityState } {
+    const world = createWorld();
+    const p = getPlayer(world);
+    const victim = getEnemy(world);
+    p.x = 300;
+    p.facing = 1;
+    victim.x = 328;
+    victim.y = p.y;
+    victim.hp = hp;
+    world.step(['grab']);
+    assert.equal(p.grabPhase, 'hold');
+    return { world, p, victim };
+  }
+
+  it('the amounts keep the guide order: a full Circle chain > Rip > Toss', () => {
+    const chain = orbs.pummelPerHit * 3;
+    assert.ok(chain > orbs.rip, 'mashing Circle pays more than a Rip');
+    assert.ok(orbs.rip > orbs.toss, 'a Rip pays more than a Toss');
+    assert.ok(orbs.toss > 0, 'a Toss still pays something');
+  });
+
+  it('Rip (○ then △) pays the Rip amount on the kill', () => {
+    const { world, p } = setUp();
+    const before = p.redOrbs;
+    world.step(['heavy-attack']);
+    stepTicks(world, [], 11);
+    assert.equal(p.redOrbs - before, orbs.rip);
+  });
+
+  it('Toss (○ then □) pays the Toss amount when the victim survives the throw', () => {
+    const { world, p, victim } = setUp();
+    const before = p.redOrbs;
+    world.step(['light-attack']);
+    stepTicks(world, [], 6);
+    assert.equal(victim.isDead, false, 'the throw alone does not kill a full-health legionnaire');
+    assert.equal(p.redOrbs - before, orbs.toss);
+  });
+
+  it('every Pummel hit pays, even when it does not kill: two stabs and the final slam', () => {
+    const { world, p, victim } = setUp();
+    const before = p.redOrbs;
+    world.step([]);
+    world.step(['grab']);
+    stepTicks(world, [], 4);
+    assert.equal(p.redOrbs - before, orbs.pummelPerHit, 'first stab pays');
+    stepTicks(world, [], CONFIG.player.grab.pummelTicks - 4);
+    world.step(['grab']);
+    stepTicks(world, [], 4);
+    assert.equal(p.redOrbs - before, orbs.pummelPerHit * 2, 'second stab pays');
+    stepTicks(world, [], CONFIG.player.grab.pummelTicks - 4);
+    world.step(['grab']);
+    stepTicks(world, [], 10);
+    assert.equal(victim.isDead, false);
+    assert.equal(p.redOrbs - before, orbs.pummelPerHit * 3, 'the slam closing the chain pays too');
+  });
+
+  it('a slam that kills a weak victim pays once, not twice (kill bonus and chain payment are the same)', () => {
+    const { world, p, victim } = setUp(CONFIG.player.grab.damage);
+    const before = p.redOrbs;
+    world.step([]);
+    world.step(['grab']);
+    assert.equal(p.grabPhase, 'slam', 'a victim at or below the slam damage goes straight to the slam');
+    stepTicks(world, [], 10);
+    assert.equal(victim.isDead, true);
+    assert.equal(p.redOrbs - before, orbs.pummelPerHit);
+  });
+});

@@ -113,8 +113,8 @@ Criterio: se implementa lo que respaldan el manual oficial, el cartel del juego 
 
 **Lo que cambia respecto a lo que escribimos antes (paso 115):**
 - **El quiebre con △ da orbes medios, no 0.** El "0 orbes" solo está documentado para la arpía. El 0 canónico del paso 115 era un error.
-- **El quiebre es un desgarro que mata y da orbes medios.** Decisión de la usuaria (2026-11-12): se sigue la guía. El código **ya mata siempre** (`overkillDamage`, probado en `tests/grab.test.ts`); lo que falta son los niveles de orbes (ver el orden de abajo).
-- **El orden de orbes** es *Pummel* (más) > *Rip* (medio) > *Toss* (menos), y *Pummel* se alarga con ○ repetido. **El código hoy da lo mismo (`finisherBonusRedOrbs`, 5) en los cuatro finales**: los niveles no están implementados.
+- **El quiebre es un desgarro que mata y da orbes medios.** Decisión de la usuaria (2026-11-12): se sigue la guía. El código **ya mata siempre** (`overkillDamage`, probado en `tests/grab.test.ts`); los niveles de orbes ya están (paso 123).
+- **El orden de orbes** es *Pummel* (más) > *Rip* (medio) > *Toss* (menos), y *Pummel* se alarga con ○ repetido. **Implementado (paso 123, `CONFIG.player.grab.orbs`):** cada golpe de la cadena ○ paga 3 (incluido el azote final), el *Rip* 5 y el *Toss* 2, todo directo a Kratos además del botín normal de la muerte. Las cifras son criterio del equipo: la guía solo da el orden.
 - **El *Toss* apunta solo** al enemigo cercano, y no es un lanzamiento recto.
 - **Un remate contextual sobre el legionario común no está documentado:** el circulito aparece en los grandes y blindados; el legionario se agarra directamente. Nuestro remate con círculo sobre el legionario debilitado es **decisión de la usuaria**, no del juego.
 
@@ -130,7 +130,7 @@ Criterio: se implementa lo que respaldan el manual oficial, el cartel del juego 
 | 4 | *Pummel* | ○ repetido: Kratos lo sujeta en alto con una mano y le da **3 puñetazos**; luego lo tira al suelo y le da **4 puñaladas** con la espada. Da los orbes más altos de las tres. | Supercheats (existe y rinde más); la secuencia de 3 puñetazos y 4 puñaladas es **testimonio de la usuaria (2026-11-12)**, que concilia a las dos guías contradictorias. |
 | 5 | *Deck Slam* | ○ sobre la presa: azote contra la cubierta, derribo si sobrevive. | Video; sin segunda fuente. |
 | 6 | *Toss* | □ en la presa: lo arroja como proyectil hacia otro enemigo cercano; da los menos orbes. | Supercheats, GameRevolution, TV Tropes, video. |
-| 7 | *Rip in Half* | △ en la presa: desgarro que mata; orbes medios. Hoy ya mata siempre; falta que dé orbes medios (BL-39). | Supercheats, video (*Grab 3*). |
+| 7 | *Rip in Half* | △ en la presa: desgarro que mata; orbes medios. Mata siempre y paga orbes medios (paso 123). | Supercheats, video (*Grab 3*). |
 | 8 | *Orion's Harpoon* | ○ contra un enemigo en el aire: cadena, azote y repetible con ○. | Manual de PS2, Supercheats, StrategyWiki, video. |
 | 9 | *Air Slam* | Agarre aéreo cuerpo a cuerpo. | El agarre aéreo existe; la maniobra concreta, **sin respaldo** (BL-44). |
 | 10 | Remate contextual | Hoy: legionario débil con ○ sobre la cabeza y una orden (△). | Existe para enemigos grandes (minotauro, cíclope, Medusa, Hidra); sobre el legionario común, **decisión de la usuaria**. |

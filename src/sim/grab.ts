@@ -388,9 +388,9 @@ export function stepGrab(
       result.targetId = target.id;
       result.damageDealt = cfg.pummelDamage;
       result.killed = killed;
+      player.redOrbs = (player.redOrbs ?? 0) + cfg.orbs.pummelPerHit;
 
       if (killed) {
-        player.redOrbs = (player.redOrbs ?? 0) + CONFIG.enemy.legionnaire.finisherBonusRedOrbs;
         target.aiState = 'death';
         target.aiTicks = 0;
         target.isDead = true;
@@ -440,9 +440,9 @@ export function stepGrab(
           result.targetId = target.id;
           result.damageDealt = cfg.throwDamage;
           result.killed = killed;
+          player.redOrbs = (player.redOrbs ?? 0) + cfg.orbs.toss;
 
           if (killed) {
-            player.redOrbs = (player.redOrbs ?? 0) + CONFIG.enemy.legionnaire.finisherBonusRedOrbs;
             target.aiState = 'death';
             target.aiTicks = 0;
             target.isDead = true;
@@ -479,7 +479,7 @@ export function stepGrab(
           // Ejecución brutal como en GoW 1 PS2: quiebra al soldado y lo asienta en la cubierta
           const overkillDamage = Math.max(target.hp + 20, cfg.breakDamage);
           damageEnemy(target, overkillDamage, 60);
-          player.redOrbs = (player.redOrbs ?? 0) + CONFIG.enemy.legionnaire.finisherBonusRedOrbs;
+          player.redOrbs = (player.redOrbs ?? 0) + cfg.orbs.rip;
           target.hp = 0;
           target.aiState = 'death';
           target.aiTicks = 0;
@@ -528,12 +528,12 @@ export function stepGrab(
           result.targetId = target.id;
           result.damageDealt = cfg.damage;
           result.killed = killed;
+          player.redOrbs = (player.redOrbs ?? 0) + cfg.orbs.pummelPerHit;
 
           target.x = player.x + player.facing * 18;
           target.y = player.y;
 
           if (killed) {
-            player.redOrbs = (player.redOrbs ?? 0) + CONFIG.enemy.legionnaire.finisherBonusRedOrbs;
             target.aiState = 'death';
             target.aiTicks = 0;
             target.isDead = true;
