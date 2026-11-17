@@ -156,6 +156,11 @@ grab: {
   throwVy: -160,
   /** Direct damage dealt to the victim on brutal snap/break (△ / I). */
   breakDamage: 35,
+  /**
+   * Upward speed (px/s) of the bounce after Orion's Harpoon slams an enemy onto the deck (the guide's
+   * "Death Bounce"): high enough to leave the ground for the window in which Circle slams him again.
+   */
+  harpoonBounceVy: 200,
   /** Total invulnerability window granted to Kratos during grab hold & execution. */
   invulTicks: 125,
   /**

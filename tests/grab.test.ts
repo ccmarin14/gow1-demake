@@ -407,10 +407,43 @@ describe('combat grab with Circle / L key (BL-06, D-42)', () => {
     stepTicks(world, [], 4);
     assert.equal(world.snapshot().strike?.id, 'harpoon', 'Circle chains into Orion\'s Harpoon');
 
-    // Avanzar hasta que el arpón conecte y el enemigo caiga derribado a la cubierta
-    stepTicks(world, [], 25);
-    assert.equal(victim.grounded, true, 'harpooned enemy slammed back onto deck');
-    assert.equal(victim.aiState, 'knockdown', 'harpooned enemy ends in knockdown');
+    // Avanzar hasta que el arpón conecte: el azote lo hace rebotar (Death Bounce) y, sin otro ○, cae y queda derribado
+    let bounced = false;
+    for (let i = 0; i < 90 && victim.aiState !== 'knockdown'; i += 1) {
+      world.step([]);
+      if (victim.aiState === 'juggle' && victim.vy < 0 && !victim.grounded && victim.hp < 60 - 10) bounced = true;
+    }
+    assert.ok(bounced, 'the slam bounces the enemy back up (Death Bounce)');
+    assert.equal(victim.aiState, 'knockdown', 'left alone, the bounced enemy falls and ends in knockdown');
+    assert.equal(victim.grounded, true, 'harpooned enemy ends on the deck');
+  });
+
+  it('Death Bounce: pressing Circle again on the bounce slams him a second time', () => {
+    const world = createWorld();
+    const p = getPlayer(world);
+    const victim = getEnemy(world);
+    p.x = 300;
+    p.facing = 1;
+    victim.x = 338;
+    victim.y = p.y;
+    victim.hp = 300;
+    victim.maxHp = 300;
+    victim.aiState = 'idle';
+
+    stepTicks(world, ['heavy-attack'], 28);
+    world.step([]);
+    world.step(['grab']);
+    let slams = 0;
+    let wasBouncing = false;
+    for (let i = 0; i < 200 && slams < 2 && victim.aiState !== 'knockdown'; i += 1) {
+      const bouncing = victim.aiState === 'juggle' && victim.vy < 0 && !victim.grounded && victim.hp < 290;
+      // Press Circle once the first slam has bounced him and a harpoon is not already flying
+      const press = bouncing && !world.snapshot().strike && !wasBouncing;
+      if (bouncing) wasBouncing = true;
+      world.step(press ? ['grab'] : []);
+      if (world.snapshot().strike?.id === 'harpoon' && wasBouncing) slams = 2;
+    }
+    assert.equal(slams, 2, 'a second harpoon starts from the bounce');
   });
 
   it('does NOT trigger Orion\'s Harpoon in the air when no enemy is airborne', () => {

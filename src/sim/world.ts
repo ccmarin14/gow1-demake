@@ -1301,6 +1301,14 @@ export class World {
                         target.aiState = 'death';
                         target.aiTicks = 0;
                         target.isDead = true;
+                      } else {
+                        // Death Bounce (GoW 1 guide): the slammed enemy bounces back up, so Circle
+                        // can grab and slam him again; left alone he falls and goes down as usual.
+                        target.aiState = 'juggle';
+                        target.aiTicks = 0;
+                        target.grounded = false;
+                        target.vy = -CONFIG.player.grab.harpoonBounceVy;
+                        target.vx = 0;
                       }
                       this.strikeImpactNotice = {
                         x: target.x,
