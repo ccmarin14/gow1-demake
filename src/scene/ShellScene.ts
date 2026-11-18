@@ -14,7 +14,9 @@ import { HudLayer } from '../ui/HudLayer';
 import { GameFlowOverlay } from '../ui/GameFlowOverlay';
 import { PlayerView } from './PlayerView';
 import { EnemyView } from './EnemyView';
-import { grabImpactPoint } from './grabPose';
+import { drawChain } from '../entities/strikeArt';
+import { grabImpactPoint, kratosAnchorWorld, ripHalvesOrigin } from './grabPose';
+import { RipHalves } from './RipHalves';
 import { VfxLayer } from './VfxLayer';
 import { SoundManager } from '../audio/SoundManager';
 import { STRIKES } from '../sim/strike';
@@ -59,6 +61,10 @@ export class ShellScene extends Phaser.Scene {
   hudLayer!: HudLayer;
   flowOverlay!: GameFlowOverlay;
   vfxLayer!: VfxLayer;
+  /** The chain that tethers the thrown soldier to Kratos for a moment after the Toss. */
+  private tossChain!: Phaser.GameObjects.Graphics;
+  /** The two halves of a soldier torn in two by the Rip. */
+  private ripHalves!: RipHalves;
   soundManager!: SoundManager;
   private prevParryActive = false;
   private prevMagicPhase = 'none';
@@ -115,6 +121,8 @@ export class ShellScene extends Phaser.Scene {
     this.hudLayer = new HudLayer(this);
     this.flowOverlay = new GameFlowOverlay(this);
     this.vfxLayer = new VfxLayer(this);
+    this.tossChain = this.add.graphics().setDepth(1.1);
+    this.ripHalves = new RipHalves(this);
     this.soundManager = new SoundManager();
 
     this.input.keyboard?.on('keydown-M', () => {
@@ -411,7 +419,7 @@ export class ShellScene extends Phaser.Scene {
         // Feedback visceral de impacto en los agarres clásicos de GoW 1 (○ Pummel, △ Break, □ Throw, ○ Slam)
         const grabVictim = player.grabTargetId ? this.simulation.world.peekEntity(player.grabTargetId) : undefined;
         const impactAt = (
-          kind: 'punch' | 'toss-stab' | 'floor-stab',
+          kind: 'punch' | 'toss-stab' | 'floor-stab' | 'slam',
           fallbackDx: number,
           fallbackDy: number,
         ): readonly [number, number] =>
@@ -430,16 +438,22 @@ export class ShellScene extends Phaser.Scene {
           this.cameras.main.shake(50, 0.006);
           { const [ix, iy] = impactAt('punch', 18, -20); this.vfxLayer.emitBloodSpurt(ix, iy, player.facing, 8); }
           this.soundManager?.playStrikeHit('light');
-        } else if (crosses(['stab'], 4)) {
+        } else if (crosses(['stab'], CONFIG.player.grab.chain.stabImpactTick)) {
           // Puñalada con la Espada del Caos sobre la víctima caída (Grab 1)
           this.cameras.main.shake(60, 0.008);
           { const [ix, iy] = impactAt('floor-stab', 20, -6); this.vfxLayer.emitBloodSpurt(ix, iy, player.facing, 22); }
           this.soundManager?.playStab();
-        } else if (crosses(['break'], 11)) {
-          // Quiebre brutal sobre la cabeza/cubierta (Grab 2 - △ Break)
+        } else if (crosses(['break'], CONFIG.player.grab.ripTick)) {
+          // Quiebre brutal (Grab 2 - △ Rip): lo parte en dos; las mitades salen despedidas y la sangre sale en abanico
           this.cameras.main.shake(150, 0.016);
-          this.vfxLayer.emitBloodBurst(player.x + player.facing * 18, player.y - 8, 36);
-          this.vfxLayer.emitDust(player.x + player.facing * 18, player.y);
+          const origin = grabVictim ? ripHalvesOrigin(player, grabVictim) : null;
+          const mx = origin ? origin.x : player.x + player.facing * 18;
+          const my = origin ? origin.y - 22 : player.y - 22;
+          if (origin) this.ripHalves.spawn(origin, player.facing, player.y);
+          this.vfxLayer.emitBloodBurst(mx, my, 70);
+          this.vfxLayer.emitBloodSpurt(mx, my, player.facing, 28);
+          this.vfxLayer.emitBloodSpurt(mx, my, player.facing === 1 ? -1 : 1, 28);
+          this.vfxLayer.emitDust(player.x + player.facing * 8, player.y);
           this.soundManager?.playBoneBreak();
           this.soundManager?.playStrikeHit('heavy');
         } else if (crosses(['throw'], CONFIG.player.grab.toss.stabTick) && player.grabTicks < CONFIG.player.grab.toss.releaseTick) {
@@ -452,11 +466,12 @@ export class ShellScene extends Phaser.Scene {
           this.cameras.main.shake(50, 0.006);
           this.vfxLayer.emitDust(player.x, player.y);
           this.soundManager?.playThrowRelease();
-        } else if (crosses(['slam', 'finisher_slam'], 10)) {
+        } else if (crosses(['slam', 'finisher_slam'], CONFIG.player.grab.slamImpactTick)) {
           // Azote brutal contra las tablas de cubierta (○ Slam)
           this.cameras.main.shake(120, 0.014);
-          this.vfxLayer.emitBloodBurst(player.x + player.facing * 18, player.y - 6, 24);
-          this.vfxLayer.emitDust(player.x + player.facing * 18, player.y);
+          const [sx, sy] = impactAt('slam', 18, -6);
+          this.vfxLayer.emitBloodBurst(sx, sy - 2, 24);
+          this.vfxLayer.emitDust(sx, player.y);
           this.soundManager?.playSlamImpact();
           this.soundManager?.playStrikeHit('heavy');
         }
@@ -464,6 +479,16 @@ export class ShellScene extends Phaser.Scene {
         this.prevFxTicks = player.grabTicks;
       }
 
+      this.tossChain.clear();
+      if (player && player.grabPhase === 'throw') {
+        const toss = CONFIG.player.grab.toss;
+        if (player.grabTicks >= toss.releaseTick && player.grabTicks < toss.releaseTick + toss.chainTicks) {
+          const thrown = player.grabTargetId ? this.simulation.world.peekEntity(player.grabTargetId) : undefined;
+          const hand = kratosAnchorWorld(player, 'kratos-grab-throw-b', 'farHand');
+          if (thrown && hand) drawChain(this.tossChain, [hand[0], hand[1]], [thrown.x, thrown.y - 16], 4, CONFIG.presentation.strikeArt.chainColors);
+        }
+      }
+      if (flowState !== 'paused') this.ripHalves.update(delta / 1000);
       this.vfxLayer.update(delta / 1000, flowState === 'paused');
     }
 

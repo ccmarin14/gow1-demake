@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { BLADE_KEY, strikeFrameKey } from '../assets/manifest';
 import ANCHORS from '../assets/kratos-anchors.json';
-import { grabBladePoint } from '../scene/grabPose';
+import { grabBladeAngle, grabBladePoint } from '../scene/grabPose';
 import { CONFIG } from '../config';
 import {
   STRIKES,
@@ -126,7 +126,7 @@ export class WeaponLayer {
       (player.grabPhase === 'floorhold' ||
         player.grabPhase === 'stab' ||
         player.grabPhase === 'finisher_qte' ||
-        (player.grabPhase === 'throw' && player.grabTicks >= 3 && player.grabTicks < CONFIG.player.grab.toss.releaseTick)) &&
+        (player.grabPhase === 'throw' && player.grabTicks >= CONFIG.player.grab.toss.raiseFrom && player.grabTicks < CONFIG.player.grab.toss.releaseTick)) &&
       this.directions.keys.length > 0;
     const guarding =
       alive && !striking && player !== null && player.guardPhase !== 'none' && this.directions.keys.length > 0;
@@ -190,7 +190,7 @@ export class WeaponLayer {
 
     const facing = player.facing === -1 ? -1 : 1;
     // Puñaladas al suelo: la hoja apunta hacia abajo (agarre invertido). En el Toss se hunde de frente y algo hacia abajo.
-    const deg = player.grabPhase === 'throw' ? 25 : 90;
+    const deg = grabBladeAngle(player);
     const middle = grabBladePoint(player, frameKey, deg, 0.5);
     this.nearBlade.setDepth(DEPTH_BLADE);
     this.placeBlade(this.nearBlade, middle, deg, facing);

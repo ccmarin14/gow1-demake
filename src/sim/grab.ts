@@ -491,7 +491,7 @@ export function stepGrab(
       keepLying(player, target);
     }
 
-    if (player.grabTicks === 4) {
+    if (player.grabTicks === cfg.chain.stabImpactTick) {
       const lastStab = (player.grabPummelCount ?? 0) >= cfg.chain.punches + 1 + cfg.chain.stabs;
       const damage = lastStab ? Math.max(cfg.chain.stabDamage, target.hp) : cfg.chain.stabDamage;
       const killed = damageEnemy(target, damage, 14);
@@ -588,7 +588,7 @@ export function stepGrab(
     // Ticks 0..10 (grab-break-a): Kratos alza al soldado sobre la cabeza con ambas manos.
     // Tick 11 (grab-break-b): Kratos lo estrella y quiebra contra las tablas; en GoW 1 (PS2) esto es una ejecución letal instantánea.
     if (player.grabPhase === 'break') {
-      const snapTick = 11;
+      const snapTick = cfg.ripTick;
       if (target) {
         if (player.grabTicks < snapTick) {
           target.x = player.x + player.facing * 6;
@@ -605,6 +605,7 @@ export function stepGrab(
           target.aiState = 'death';
           target.aiTicks = 0;
           target.isDead = true;
+          target.ripped = true;
           target.grounded = true;
           target.x = player.x + player.facing * 18;
           target.y = player.y;
@@ -634,7 +635,7 @@ export function stepGrab(
     // Ticks 0..9 (grab-slam-a): Kratos alza al enemigo frente al hombro.
     // Tick 10 (grab-slam-b): impacto violento contra las tablas; aplica daño de 25 y derribo/muerte.
     if (player.grabPhase === 'slam') {
-      const slamImpactTick = 10;
+      const slamImpactTick = cfg.slamImpactTick;
       if (target) {
         if (player.grabTicks < slamImpactTick) {
           target.x = player.x + player.facing * 14;
@@ -677,7 +678,8 @@ export function stepGrab(
     }
 
     player.grabTicks += 1;
-    if (player.grabTicks >= cfg.slamTicks) {
+    const executionTicks = player.grabPhase === 'slam' ? cfg.slamTicks : player.grabPhase === 'throw' ? cfg.throwTicks : cfg.breakTicks;
+    if (player.grabTicks >= executionTicks) {
       if (player.grabPhase === 'slam' && target && !target.isDead && target.heldLying) {
         player.grabPhase = 'floorhold';
         player.grabTicks = 0;

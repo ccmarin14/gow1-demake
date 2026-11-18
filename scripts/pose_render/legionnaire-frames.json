@@ -1,6 +1,44 @@
 {
   "frames": {
-    "held-00": { "action": "Idle_Loop", "frame": 0, "pose": "leg-heldA.json" },
-    "held-01": { "action": "Idle_Loop", "frame": 0, "pose": "leg-heldB.json" }
+    "held-00": {
+      "action": "Idle_Loop",
+      "frame": 0,
+      "pose": "leg-heldA.json"
+    },
+    "held-01": {
+      "action": "Idle_Loop",
+      "frame": 0,
+      "pose": "leg-heldB.json"
+    },
+    "flip-00": {
+      "action": "Idle_Loop",
+      "frame": 0,
+      "pose": "leg-flipA.json"
+    },
+    "flip-01": {
+      "action": "Idle_Loop",
+      "frame": 0,
+      "pose": "leg-flipB.json"
+    },
+    "tumble-00": {
+      "action": "Idle_Loop",
+      "frame": 0,
+      "pose": "leg-tumbleA.json"
+    },
+    "tumble-01": {
+      "action": "Idle_Loop",
+      "frame": 0,
+      "pose": "leg-tumbleB.json"
+    },
+    "tumble-02": {
+      "action": "Idle_Loop",
+      "frame": 0,
+      "pose": "leg-tumbleC.json"
+    },
+    "tumble-03": {
+      "action": "Idle_Loop",
+      "frame": 0,
+      "pose": "leg-tumbleD.json"
+    }
   }
 }

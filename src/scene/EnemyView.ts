@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { CONFIG } from '../config';
 import type { EntityState } from '../sim/types';
-import { victimPose } from './grabPose';
+import { tumbleFrame, victimPose } from './grabPose';
 import { getLegionnaireFrameKey } from './legionnaireFrames';
 
 /**
@@ -48,11 +48,10 @@ export class EnemyView {
     }
     this.sprite.setDepth(victim ? victim.depth : 1);
 
-    // Inercia e inclinación del cuerpo lanzado como proyectil humano en vuelo rápido
-    let rotation = 0;
-    if (enemy.aiState === 'juggle' && Math.abs(enemy.vx) >= 160) {
-      rotation = enemy.facing === 1 ? -0.45 : 0.45;
-      textureKey = 'legionnaire-juggle-01';
+    // Thrown by the Toss he tumbles in flight: four frames, a quarter turn each (pixel art is never rotated)
+    if (!isGrabVictim && enemy.aiState === 'juggle' && Math.abs(enemy.vx) >= 160) {
+      textureKey = tumbleFrame(enemy);
+      flipX = enemy.vx < 0;
     }
 
     if (this.sprite.texture.key !== textureKey) {
@@ -63,12 +62,14 @@ export class EnemyView {
     const shakeX = !isGrabVictim && enemy.hitstunTicks > 0 && enemy.hitstunTicks % 2 === 1 ? 1 : 0;
     this.sprite.setPosition(drawX + shakeX, drawY);
     this.sprite.setFlipX(flipX);
-    this.sprite.setRotation(rotation);
+    this.sprite.setRotation(0);
+    // Torn in two by the Rip: the two halves are drawn by RipHalves, the body is not
+    this.sprite.setVisible(!enemy.ripped);
 
     // Sombra de contacto terrestre (se atenúa cuando está alzado en el aire o muere)
     this.shadow.setPosition(drawX, enemy.y - 1);
     this.shadow.setVisible(
-      CONFIG.presentation.playerShadow.enabled && (enemy.grounded || isGrabVictim) && enemy.aiState !== 'death',
+      CONFIG.presentation.playerShadow.enabled && (enemy.grounded || isGrabVictim) && enemy.aiState !== 'death' && !enemy.ripped,
     );
   }
 

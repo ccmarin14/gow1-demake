@@ -140,14 +140,25 @@ grab: {
     punchTicks: 14,
     stabs: 4,
     stabDamage: 5,
-    stabTicks: 14,
+    /** The stab lasts this many ticks (audit: faster than before, so mashing is possible) and the blade goes in at `stabImpactTick`. */
+    stabTicks: 10,
+    stabImpactTick: 3,
     /** Ticks Kratos takes to get up from his knee after the last stab (or after nobody follows the chain). */
     getUpTicks: 12,
     /** Ticks Kratos waits over the fallen victim for the next tap before he gets up. */
     floorHoldTicks: 60,
   },
-  /** Ticks spent executing a grab follow-up (throw / break / slam, ~430 ms at 60 Hz). */
-  slamTicks: 26,
+  /**
+   * The deck slam (audit: it was a 10-tick teleport): Kratos lifts the soldier over his head (ticks 0 to 18), swings
+   * (19 to 23) and smashes him at `slamImpactTick`; the whole slam lasts `slamTicks` (~670 ms), the original takes ~1 s.
+   */
+  slamTicks: 40,
+  slamImpactTick: 24,
+  /** Ticks of the Toss and of the Rip (the follow-ups that share the generic end of a grab execution). */
+  throwTicks: 62,
+  breakTicks: 60,
+  /** The Rip: he is lifted overhead (ticks 4 to 16), pulled to Kratos' chest and stretched between his hands, and torn at `ripTick`. */
+  ripTick: 36,
   /** Ticks recovering from the slam animation (~130 ms). */
   recoveryTicks: 8,
   /** Direct damage dealt to the victim on ground slam (○ / K / L). */
@@ -157,9 +168,14 @@ grab: {
    * the soldier at his side, runs a sword through him (`stabTick`) and then heaves him aside (`releaseTick`).
    */
   toss: {
-    stabTick: 5,
+    /** The soldier is held at the side until `raiseFrom`; Kratos raises the blade until `stabTick`, then goes in. */
+    raiseFrom: 8,
+    stabTick: 22,
     stabDamage: 8,
-    releaseTick: 12,
+    /** He is swung (the wind-up) and let go on the chain at `releaseTick` (~0.7 s after the grab; the original takes ~1.5 s). */
+    releaseTick: 44,
+    /** Ticks the chain tethers the flying soldier to Kratos after the release. */
+    chainTicks: 18,
   },
   /** Direct damage dealt to the victim when thrown as a projectile (□ / J). */
   throwDamage: 15,

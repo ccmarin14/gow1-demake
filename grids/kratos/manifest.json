@@ -514,6 +514,12 @@
       "png": "kratos-grab-slam-b"
     },
     {
+      "file": "grab-slam-c.txt",
+      "state": "grab",
+      "grounded": true,
+      "png": "kratos-grab-slam-c"
+    },
+    {
       "file": "grab-punch-a.txt",
       "state": "grab",
       "grounded": true,
@@ -560,6 +566,12 @@
       "state": "guard",
       "grounded": true,
       "png": "kratos-guard-b"
+    },
+    {
+      "file": "grab-toss-raise.txt",
+      "state": "grab",
+      "grounded": true,
+      "png": "kratos-grab-toss-raise"
     },
     {
       "file": "grab-toss-stab.txt",

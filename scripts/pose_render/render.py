@@ -47,6 +47,7 @@ args = sys.argv[sys.argv.index("--") + 1:]
 config_path, action_name, out_dir, frame_list = args[:4]
 with open(config_path, encoding="utf-8") as handle:
     cfg = json.load(handle)
+pose: dict = {}
 pose_offsets: dict = {}
 pose_ik: dict = {}
 if len(args) > 4:
@@ -222,6 +223,13 @@ camera_obj = bpy.data.objects.new("cam", camera)
 scene.collection.objects.link(camera_obj)
 scene.camera = camera_obj
 camera_obj.rotation_euler = (math.radians(90), 0, math.radians(-90) + yaw)
+# A pose may roll the camera about its viewing axis (`"camera_roll_deg"`): the picture comes out turned, so a
+# standing body reads as lying or diving (a soldier thrown overhead in the circle grab) with the rig untouched.
+roll = pose.get("camera_roll_deg", 0)
+if roll:
+    from mathutils import Matrix
+
+    camera_obj.rotation_euler = (camera_obj.rotation_euler.to_matrix() @ Matrix.Rotation(math.radians(roll), 3, "Z")).to_euler()
 camera_obj.location = (-10 * math.cos(yaw), -10 * math.sin(yaw), (frame["h"] / 2 - 1) / px_per_m)
 
 engines = [e.identifier for e in bpy.types.RenderSettings.bl_rna.properties["engine"].enum_items]

@@ -17,7 +17,7 @@ STAND = {"thigh_r": -16, "calf_r": 22, "thigh_l": 14, "calf_l": 22}
 ROLL = {"sword": {"rotation": [35, 90, 0]}}  # blade flat to the camera while raised
 
 
-def pose(rot, right, left=None, twist=0, roll=False, sword=None):
+def pose(rot, right, left=None, twist=0, roll=False, sword=None, camera_roll=0):
     rotations = {bone: [[1, 0, 0], deg] for bone, deg in HUNCH.items()}
     for bone, deg in rot.items():
         rotations[bone] = [[1, 0, 0], rotations.get(bone, [0, 0])[1] + deg]
@@ -31,6 +31,8 @@ def pose(rot, right, left=None, twist=0, roll=False, sword=None):
         data["groups"] = ROLL
     if sword:
         data["groups"] = {"sword": {"rotation": sword}}
+    if camera_roll:
+        data["camera_roll_deg"] = camera_roll  # the picture is rolled: the soldier reads as lying or diving
     return data
 
 
@@ -62,6 +64,15 @@ POSES = {
     # Held by the throat (Kratos' Grab 1): hanging, the sword hand limp with the blade down, the free hand
     # clawing at the wrist; the second pose folds at the waist when a punch lands.
     "heldA": pose({**legs(6, 10, 12, 18, -8), "neck_01": -8, "Head": -8}, hold(-0.3, -0.05, 0.5), FAR(-0.55, 1.55), sword=[35, 0, 0]),
+    # Thrown overhead (the circle grab's deck slam): lying across Kratos' hands, then diving head first. Both
+    # are the held soldier with the camera rolled; the head ends on the side the mirrored sprite sends forward.
+    "flipA": pose({**legs(6, 10, 12, 18, -8), "neck_01": -8, "Head": -8}, hold(-0.3, -0.05, 0.5), FAR(-0.55, 1.55), sword=[35, 0, 0], camera_roll=-90),
+    "flipB": pose({**legs(6, 10, 12, 18, -8), "neck_01": -8, "Head": -8}, hold(-0.3, -0.05, 0.5), FAR(-0.55, 1.55), sword=[35, 0, 0], camera_roll=-135),
+    # Thrown by the chain (the Toss): the held soldier tumbling, a quarter turn per frame
+    "tumbleA": pose(legs(-8, 16, 4, 12, 24), hold(-0.3, 0.15, 0.55), FAR(-0.4, 1.2), sword=[35, 0, 0], camera_roll=-60),
+    "tumbleB": pose(legs(-8, 16, 4, 12, 24), hold(-0.3, 0.15, 0.55), FAR(-0.4, 1.2), sword=[35, 0, 0], camera_roll=-150),
+    "tumbleC": pose(legs(-8, 16, 4, 12, 24), hold(-0.3, 0.15, 0.55), FAR(-0.4, 1.2), sword=[35, 0, 0], camera_roll=-240),
+    "tumbleD": pose(legs(-8, 16, 4, 12, 24), hold(-0.3, 0.15, 0.55), FAR(-0.4, 1.2), sword=[35, 0, 0], camera_roll=-330),
     "heldB": pose(legs(-8, 16, 4, 12, 24), hold(-0.3, 0.15, 0.55), FAR(-0.4, 1.2), sword=[35, 0, 0]),
 }
 

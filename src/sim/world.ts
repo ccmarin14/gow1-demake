@@ -776,7 +776,7 @@ export class World {
               power: CONFIG.player.grab.chain.punchDamage,
               kind: 'light',
             };
-          } else if (player.grabPhase === 'stab' && player.grabTicks === 4) {
+          } else if (player.grabPhase === 'stab' && player.grabTicks === CONFIG.player.grab.chain.stabImpactTick) {
             this.hitstopTicks = grabHitstop.stab;
             this.strikeHitNotice = {
               x: player.x + player.facing * 20,
@@ -794,7 +794,7 @@ export class World {
               power: CONFIG.player.grab.throwDamage,
               kind: 'heavy',
             };
-          } else if (player.grabPhase === 'break' && player.grabTicks === 11) {
+          } else if (player.grabPhase === 'break' && player.grabTicks === CONFIG.player.grab.ripTick) {
             this.hitstopTicks = grabHitstop.rip;
             this.strikeImpactNotice = {
               x: player.x + player.facing * 18,
@@ -808,7 +808,7 @@ export class World {
               power: CONFIG.player.grab.breakDamage,
               kind: 'heavy',
             };
-          } else if ((player.grabPhase === 'slam' || player.grabPhase === 'finisher_slam') && player.grabTicks === 10) {
+          } else if ((player.grabPhase === 'slam' || player.grabPhase === 'finisher_slam') && player.grabTicks === CONFIG.player.grab.slamImpactTick) {
             this.hitstopTicks = grabHitstop.slam;
             this.strikeImpactNotice = {
               x: player.x + player.facing * 18,

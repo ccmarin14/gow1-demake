@@ -74,6 +74,7 @@ export const GRAB_KEYS: readonly string[] = [
   'kratos-grab-break-b',
   'kratos-grab-slam-a',
   'kratos-grab-slam-b',
+  'kratos-grab-slam-c',
   'kratos-grab-punch-a',
   'kratos-grab-punch-b',
   'kratos-grab-stab-a',
@@ -81,6 +82,7 @@ export const GRAB_KEYS: readonly string[] = [
   'kratos-grab-stab-up',
   'kratos-grab-whiff-recover',
   'kratos-grab-toss-stab',
+  'kratos-grab-toss-raise',
 ];
 
 /** Body poses of the block (L1): raising and held with the blades crossed in front. */
@@ -110,6 +112,12 @@ export const LEGIONNAIRE_FRAME_KEYS: readonly string[] = [
   'legionnaire-hitstun-01',
   'legionnaire-held-00',
   'legionnaire-held-01',
+  'legionnaire-flip-00',
+  'legionnaire-flip-01',
+  'legionnaire-tumble-00',
+  'legionnaire-tumble-01',
+  'legionnaire-tumble-02',
+  'legionnaire-tumble-03',
   'legionnaire-juggle-00',
   'legionnaire-juggle-01',
   'legionnaire-death-00',

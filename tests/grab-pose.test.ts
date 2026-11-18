@@ -5,6 +5,7 @@ import { withoutGrabHitstop } from './helpers/grab-hitstop';
 import { CONFIG } from '../src/config';
 import {
   HELD_FRAMES,
+  grabBladeAngle,
   grabBladePoint,
   kratosAnchorWorld,
   kratosGrabFrameKey,
@@ -144,10 +145,11 @@ describe('circle grab: the drawings in contact (BL-45)', () => {
 
   it('C4: the blade lands on the lying body at the tick of every stab', () => {
     const body = bodyBox('death-02.txt');
-    const hits = chain.filter((k) => k.phase === 'stab' && k.t >= 4 && k.t <= 8);
-    assert.ok(hits.length >= 3 * 5 + 1, 'four stabs (the last one ends the grab as soon as it kills)');
+    const impact = CONFIG.player.grab.chain.stabImpactTick;
+    const hits = chain.filter((k) => k.phase === 'stab' && k.t >= impact && k.t <= impact + 3);
+    assert.ok(hits.length >= 3 * 4 + 1, 'four stabs, four ticks of blade in each');
     for (const k of hits) {
-      const tip = grabBladePoint(k.player, k.frameKey!, 90, 1);
+      const tip = grabBladePoint(k.player, k.frameKey!, grabBladeAngle(k.player), 1);
       const f = k.pose!.flipX ? -1 : 1;
       const [a, b] = [k.pose!.x + f * (body.x0 - 32), k.pose!.x + f * (body.x1 + 1 - 32)];
       const [left, right] = [Math.min(a, b), Math.max(a, b)];
@@ -215,5 +217,142 @@ describe('circle grab: continuity from one tick to the next (audit)', () => {
     const killedAt = chain.findIndex((k) => k.victim.isDead);
     const recovery = chain.filter((k, i) => i >= killedAt && k.phase === 'recovery');
     assert.equal(recovery.length, CONFIG.player.grab.chain.getUpTicks);
+  });
+});
+
+describe('circle grab: the deck slam is a movement, not a jump (audit B3)', () => {
+  const chain = record(circleChain(1 + 3 + 1), 140);
+  const slam = chain.filter((k) => k.phase === 'slam');
+  const impact = CONFIG.player.grab.slamImpactTick;
+
+  it('Kratos grips, lifts him overhead, swings and smashes him, in that order', () => {
+    const order: string[] = [];
+    for (const k of slam) if (k.frameKey && order[order.length - 1] !== k.frameKey) order.push(k.frameKey);
+    assert.deepEqual(order, ['kratos-grab-hold', 'kratos-grab-slam-a', 'kratos-grab-slam-c', 'kratos-grab-slam-b']);
+    assert.ok(slam.length >= CONFIG.player.grab.slamTicks - 1, 'about 0.7 s, not 0.17 s');
+  });
+
+  it('the soldier lies across both hands (pelvis at the middle between them) while he is carried overhead', () => {
+    const carried = slam.filter((k) => k.t >= 9 && k.t < impact);
+    assert.ok(carried.length >= 10);
+    for (const k of carried) {
+      const near = kratosAnchorWorld(k.player, k.frameKey!, 'hand')!;
+      const far = kratosAnchorWorld(k.player, k.frameKey!, 'farHand')!;
+      const pelvis = victimAnchorWorld(k.pose!, 'pelvis')!;
+      const gap = Math.hypot(pelvis[0] - (near[0] + far[0]) / 2, pelvis[1] - (near[1] + far[1]) / 2);
+      assert.ok(gap <= 3, `slam ${k.t} (${k.frameKey}): pelvis ${gap.toFixed(1)} px from his hands`);
+      if (k.t < impact - 5) assert.ok(k.player.y - k.pose!.y >= 10, `slam ${k.t}: he is clearly above the floor`);
+    }
+  });
+
+  it('the soldier never jumps more than 24 px between two ticks and only uses frames of a body in the air or lying', () => {
+    const allowed = ['legionnaire-held-00', 'legionnaire-flip-00', 'legionnaire-flip-01', 'legionnaire-death-01', 'legionnaire-death-02'];
+    for (let i = 1; i < slam.length; i += 1) {
+      const [a, b] = [slam[i - 1].pose!, slam[i].pose!];
+      assert.ok(allowed.includes(b.textureKey), `slam ${slam[i].t}: ${b.textureKey}`);
+      const jump = Math.hypot(b.x - a.x, b.y - a.y);
+      assert.ok(jump <= 24, `slam ${slam[i].t}: the soldier moved ${jump.toFixed(1)} px in one tick`);
+    }
+  });
+});
+
+describe('circle grab: the Toss takes its time (audit B7)', () => {
+  const toss = CONFIG.player.grab.toss;
+  const run = record(TOSS, 130);
+  const phase = run.filter((k) => k.phase === 'throw');
+
+  it('Kratos holds him, raises the blade, goes in, winds up and lets go, in that order and about 0.7 s', () => {
+    const order: string[] = [];
+    for (const k of phase) if (k.frameKey && order[order.length - 1] !== k.frameKey) order.push(k.frameKey);
+    assert.deepEqual(order, ['kratos-grab-hold', 'kratos-grab-toss-raise', 'kratos-grab-toss-stab', 'kratos-grab-throw-a', 'kratos-grab-throw-b']);
+    assert.ok(phase.length >= toss.releaseTick, 'the throw runs at least until the release');
+    assert.ok(toss.releaseTick >= 40 && toss.stabTick >= 18, 'it used to be 12 and 5 ticks');
+  });
+
+  it('the neck stays in his hand until he is let go and he never jumps more than 24 px between two ticks', () => {
+    const held = phase.filter((k) => k.t < toss.releaseTick);
+    for (let i = 1; i < held.length; i += 1) {
+      const [a, b] = [held[i - 1].pose!, held[i].pose!];
+      const jump = Math.hypot(b.x - a.x, b.y - a.y);
+      assert.ok(jump <= 24, `toss ${held[i].t}: the soldier moved ${jump.toFixed(1)} px in one tick`);
+    }
+    for (let i = 4; i < held.length; i += 1) {
+      const k = held[i];
+      // right after Kratos changes pose the soldier is still catching up with his hand (on purpose, 4 ticks)
+      if (held.slice(i - 3, i).some((h) => h.frameKey !== k.frameKey)) continue;
+      const hand = kratosAnchorWorld(k.player, k.frameKey!, 'farHand')!;
+      const neck = victimAnchorWorld(k.pose!, 'neck')!;
+      if (k.pose!.y < k.player.y) assert.ok(Math.hypot(hand[0] - neck[0], hand[1] - neck[1]) <= 12.5, `toss ${k.t}: neck away from the hand`);
+    }
+  });
+
+  it('once let go he tumbles through four frames instead of sliding as one cut-out', () => {
+    const flying = run.filter((k) => k.phase === 'throw' && k.t >= toss.releaseTick + 1);
+    const frames = new Set(flying.map((k) => k.pose!.textureKey));
+    assert.ok(frames.size >= 3, `${[...frames].join(',')}`);
+    for (const f of frames) assert.ok(f.startsWith('legionnaire-tumble-'), f);
+  });
+});
+
+describe('circle grab: the Rip tears him in two (audit B1)', () => {
+  const grab = CONFIG.player.grab;
+  const RIP = (tick: number): GameAction[] => (tick === 0 ? ['grab'] : tick === 3 ? ['heavy-attack'] : []);
+  const run = record(RIP, 120);
+  const rip = run.filter((k) => k.phase === 'break');
+
+  it('Kratos lifts him overhead, pulls him to his chest and stretches him between his hands, then tears him', () => {
+    const order: string[] = [];
+    for (const k of rip) if (k.frameKey && order[order.length - 1] !== k.frameKey) order.push(k.frameKey);
+    assert.deepEqual(order, ['kratos-grab-hold', 'kratos-grab-break-a', 'kratos-grab-slam-c', 'kratos-grab-break-b']);
+    assert.ok(rip.length >= grab.breakTicks - 1, 'about a second, it was 0.4 s');
+  });
+
+  it('he lies across both hands (pelvis at the middle between them) until the tear, and never jumps more than 24 px', () => {
+    const carried = rip.filter((k) => k.t >= 9 && k.t < grab.ripTick);
+    assert.ok(carried.length >= 20);
+    for (const k of carried) {
+      const near = kratosAnchorWorld(k.player, k.frameKey!, 'hand')!;
+      const far = kratosAnchorWorld(k.player, k.frameKey!, 'farHand')!;
+      const pelvis = victimAnchorWorld(k.pose!, 'pelvis')!;
+      const gap = Math.hypot(pelvis[0] - (near[0] + far[0]) / 2, pelvis[1] - (near[1] + far[1]) / 2);
+      assert.ok(gap <= 3.5, `rip ${k.t} (${k.frameKey}): pelvis ${gap.toFixed(1)} px from his hands`);
+    }
+    for (let i = 1; i < carried.length; i += 1) {
+      const jump = Math.hypot(carried[i].pose!.x - carried[i - 1].pose!.x, carried[i].pose!.y - carried[i - 1].pose!.y);
+      assert.ok(jump <= 24, `rip ${carried[i].t}: moved ${jump.toFixed(1)} px`);
+    }
+  });
+
+  it('at the tear the body is gone (two halves are drawn instead) and the victim is dead and ripped', () => {
+    const torn = rip.find((k) => k.t > grab.ripTick)!;
+    assert.equal(torn.victim.ripped, true);
+    assert.equal(torn.victim.isDead, true);
+    assert.equal(torn.pose, null, 'no body sprite from the tear on');
+  });
+});
+
+describe('circle grab: the soldier struggles while nobody chooses (audit B6)', () => {
+  const grab = CONFIG.player.grab;
+  const run = record((tick) => (tick === 0 ? ['grab'] : []), grab.holdTicks + 20);
+  const hold = run.filter((k) => k.phase === 'hold');
+
+  it('after a while he alternates between bent and straight instead of hanging still for two seconds', () => {
+    const late = hold.filter((k) => k.t >= 30);
+    const frames = new Set(late.map((k) => k.pose!.textureKey));
+    assert.equal(frames.size, 2, [...frames].join(','));
+    let changes = 0;
+    for (let i = 1; i < late.length; i += 1) if (late[i].pose!.textureKey !== late[i - 1].pose!.textureKey) changes += 1;
+    assert.ok(changes >= 10, `${changes} changes of posture in the last ${late.length} ticks`);
+    const early = hold.filter((k) => k.t >= 3 && k.t < 30);
+    assert.equal(new Set(early.map((k) => k.pose!.textureKey)).size, 1, 'calm at first');
+  });
+
+  it('and his neck stays in the hand the whole time (within the grip and the shake)', () => {
+    for (const k of hold.filter((h) => h.frameKey !== LUNGE && h.t >= 3)) {
+      const hand = kratosAnchorWorld(k.player, k.frameKey!, 'farHand')!;
+      const neck = victimAnchorWorld(k.pose!, 'neck')!;
+      const gap = Math.hypot(hand[0] - neck[0], hand[1] - neck[1]);
+      assert.ok(Math.abs(gap - 4) <= 1.5, `hold ${k.t}: neck ${gap.toFixed(1)} px from the hand`);
+    }
   });
 });

@@ -58,17 +58,17 @@ describe('circle grab: hitstop on every blow (audit)', () => {
   });
 
   it('a floor stab freezes the world', () => {
-    assert.equal(frozenTicksAt('stab', 4, chain(6)), hitstop.stab);
+    assert.equal(frozenTicksAt('stab', CONFIG.player.grab.chain.stabImpactTick, chain(6)), hitstop.stab);
   });
 
   it('the slam freezes it longer than a punch', () => {
-    assert.equal(frozenTicksAt('slam', 10, chain(5)), hitstop.slam);
+    assert.equal(frozenTicksAt('slam', CONFIG.player.grab.slamImpactTick, chain(5)), hitstop.slam);
     assert.ok(hitstop.slam > hitstop.punch);
   });
 
   it('the Rip and both moments of the Toss freeze it', () => {
     const afterGrab = (action: GameAction) => (tick: number): GameAction[] => (tick === 3 ? [action] : []);
-    assert.equal(frozenTicksAt('break', 11, (t, p) => (t === 0 ? ['grab'] : afterGrab('heavy-attack')(t))), hitstop.rip);
+    assert.equal(frozenTicksAt('break', CONFIG.player.grab.ripTick, (t, p) => (t === 0 ? ['grab'] : afterGrab('heavy-attack')(t))), hitstop.rip);
     assert.equal(frozenTicksAt('throw', CONFIG.player.grab.toss.stabTick, (t) => (t === 0 ? ['grab'] : afterGrab('light-attack')(t))), hitstop.toss);
     assert.equal(frozenTicksAt('throw', CONFIG.player.grab.toss.releaseTick, (t) => (t === 0 ? ['grab'] : afterGrab('light-attack')(t))), hitstop.toss);
   });

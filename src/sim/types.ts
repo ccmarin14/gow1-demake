@@ -189,6 +189,8 @@ export interface EntityState {
   grabBreakFreeTicks?: number;
   /** The victim of a Circle grab lies on the floor under Kratos (after the throw to the floor). */
   heldLying?: boolean;
+  /** Torn in two by the Rip (○ then △): the presentation draws the two halves instead of the body. */
+  ripped?: boolean;
   qteAction: GameAction | null;
   qteTicksLeft: number;
   qteMaxTicks: number;

@@ -154,6 +154,42 @@
       "png": "legionnaire-held-01"
     },
     {
+      "file": "flip-00.txt",
+      "state": "flip",
+      "grounded": false,
+      "png": "legionnaire-flip-00"
+    },
+    {
+      "file": "flip-01.txt",
+      "state": "flip",
+      "grounded": false,
+      "png": "legionnaire-flip-01"
+    },
+    {
+      "file": "tumble-00.txt",
+      "state": "tumble",
+      "grounded": false,
+      "png": "legionnaire-tumble-00"
+    },
+    {
+      "file": "tumble-01.txt",
+      "state": "tumble",
+      "grounded": false,
+      "png": "legionnaire-tumble-01"
+    },
+    {
+      "file": "tumble-02.txt",
+      "state": "tumble",
+      "grounded": false,
+      "png": "legionnaire-tumble-02"
+    },
+    {
+      "file": "tumble-03.txt",
+      "state": "tumble",
+      "grounded": false,
+      "png": "legionnaire-tumble-03"
+    },
+    {
       "file": "juggle-00.txt",
       "state": "juggle",
       "grounded": false,

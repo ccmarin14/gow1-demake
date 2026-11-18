@@ -286,7 +286,7 @@ describe('combat grab with Circle / L key (BL-06, D-42)', () => {
     assert.equal(bystander.aiState, 'knockdown', 'bystander is knocked down by thrown victim');
   });
 
-  it('ground grab option △ (heavy-attack): brutally snaps victim overhead for instant lethal execution at tick 11', () => {
+  it('ground grab option △ (heavy-attack): tears the victim in two for a lethal execution at the Rip tick', () => {
     const world = createWorld();
     const p = getPlayer(world);
     const victim = getEnemy(world);
@@ -305,15 +305,16 @@ describe('combat grab with Circle / L key (BL-06, D-42)', () => {
     assert.equal(p.grabPhase, 'break');
     assert.equal(victim.hp, 60, 'victim held overhead during break windup (ticks 0..10)');
 
-    // Avanzar hasta el tick 11 (grab-break-b): Kratos lo quiebra sobre su cabeza y lo asienta en cubierta (ejecución letal de GoW 1)
-    stepTicks(world, [], 11);
-    assert.equal(victim.hp, 0, 'victim instantly killed when snapped overhead at tick 11');
+    // Avanzar hasta el tick del desgarro (grab-break-b): Kratos lo parte en dos (ejecución letal de GoW 1)
+    stepTicks(world, [], CONFIG.player.grab.ripTick);
+    assert.equal(victim.hp, 0, 'victim instantly killed when torn in two');
     assert.equal(victim.isDead, true);
+    assert.equal(victim.ripped, true, 'the presentation draws two halves instead of the body');
     assert.equal(victim.aiState, 'death');
     assert.equal(victim.y, p.y, 'victim corpse rests on deck floor altitude, not floating in air');
 
     // Tras completar la presa y volver a neutro, el cadáver permanece en el suelo
-    stepTicks(world, [], CONFIG.player.grab.slamTicks - 11 + 5);
+    stepTicks(world, [], CONFIG.player.grab.breakTicks - CONFIG.player.grab.ripTick + 5);
     assert.equal(victim.y, p.y, 'victim corpse stays firmly on deck floor after grab finishes');
   });
 
@@ -349,11 +350,11 @@ describe('combat grab with Circle / L key (BL-06, D-42)', () => {
     // 2. The next tap throws him to the floor (the deck slam).
     world.step(['grab']);
     assert.equal(p.grabPhase, 'slam');
-    stepTicks(world, [], 10);
+    stepTicks(world, [], CONFIG.player.grab.slamImpactTick);
     expectedHp -= CONFIG.player.grab.damage;
-    assert.equal(victim.hp, expectedHp, 'the throw to the floor deals its damage at tick 10');
+    assert.equal(victim.hp, expectedHp, 'the throw to the floor deals its damage at the impact tick');
     assert.equal(victim.isDead, false);
-    stepTicks(world, [], CONFIG.player.grab.slamTicks - 10);
+    stepTicks(world, [], CONFIG.player.grab.slamTicks - CONFIG.player.grab.slamImpactTick);
     assert.equal(p.grabPhase, 'floorhold', 'he lies on the floor and Kratos waits for the next tap');
     assert.equal(victim.heldLying, true);
     assert.equal(victim.y, p.y, 'victim on the floor, not floating');
@@ -480,7 +481,7 @@ describe('combat grab with Circle / L key (BL-06, D-42)', () => {
 
     // Kratos salta y pulsa ○ ('grab') en el aire sin enemigos en el aire
     world.step(['jump']);
-    stepTicks(world, [], CONFIG.player.grab.toss.releaseTick);
+    stepTicks(world, [], 12);
     assert.equal(p.grounded, false);
 
     world.step(['grab']);
@@ -584,7 +585,7 @@ describe('grab orb tiers (Pummel > Rip > Toss)', () => {
     const { world, p } = setUp();
     const before = p.redOrbs;
     world.step(['heavy-attack']);
-    stepTicks(world, [], 11);
+    stepTicks(world, [], CONFIG.player.grab.ripTick);
     assert.equal(p.redOrbs - before, orbs.rip);
   });
 
