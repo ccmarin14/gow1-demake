@@ -482,10 +482,26 @@ export class ShellScene extends Phaser.Scene {
       this.tossChain.clear();
       if (player && player.grabPhase === 'throw') {
         const toss = CONFIG.player.grab.toss;
-        if (player.grabTicks >= toss.releaseTick && player.grabTicks < toss.releaseTick + toss.chainTicks) {
+        const since = player.grabTicks - toss.releaseTick;
+        if (since >= 0 && since < toss.chainTicks) {
+          // Both chains lash out of Kratos' hands to the soldier and hold him taut while he flies; the last ticks they reel back
           const thrown = player.grabTargetId ? this.simulation.world.peekEntity(player.grabTargetId) : undefined;
-          const hand = kratosAnchorWorld(player, 'kratos-grab-throw-b', 'farHand');
-          if (thrown && hand) drawChain(this.tossChain, [hand[0], hand[1]], [thrown.x, thrown.y - 16], 4, CONFIG.presentation.strikeArt.chainColors);
+          const reel = Math.min(1, Math.max(0, (since - (toss.chainTicks - 8)) / 8));
+          const hands = (['hand', 'farHand'] as const).map((name) => kratosAnchorWorld(player, 'kratos-grab-throw-b', name));
+          if (thrown && hands[0] && hands[1]) {
+            const hooks: Array<[number, number]> = [
+              [thrown.x, thrown.y - 20],
+              [thrown.x, thrown.y - 10],
+            ];
+            const colors = [0xd0ccd6, 0x6c6674];
+            hooks.forEach((hook, i) => {
+              const hand = hands[i]!;
+              const end: [number, number] = [hook[0] + (hand[0] - hook[0]) * reel, hook[1] + (hand[1] - hook[1]) * reel];
+              // two pixels thick so the chains read at 1x; slack only while they reel back
+              drawChain(this.tossChain, [hand[0], hand[1]], end, reel * 6, colors);
+              drawChain(this.tossChain, [hand[0], hand[1] + 1], [end[0], end[1] + 1], reel * 6, colors);
+            });
+          }
         }
       }
       if (flowState !== 'paused') this.ripHalves.update(delta / 1000);

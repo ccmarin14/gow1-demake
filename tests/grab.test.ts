@@ -808,3 +808,46 @@ describe('Turning to either side before the throw (user: the throw only goes lef
     assert.equal(victim.vx, CONFIG.player.grab.throwVx);
   });
 });
+
+describe('Toss (□): the whip throws him a fixed distance and he hits the undead in the way (user, step 144)', () => {
+  function toss(bystanderAt: number | null): { x0: number; landed: number; bystanderHit: boolean } {
+    const world = new World();
+    world.loadScenario('magic');
+    const p = getPlayer(world);
+    const victim = getEnemy(world, 'legionnaire-1');
+    const bystander = getEnemy(world, 'archer-1');
+    p.x = 200;
+    p.facing = 1;
+    victim.x = 228;
+    victim.y = p.y;
+    victim.hp = 60;
+    bystander.x = bystanderAt ?? 900;
+    bystander.y = p.y;
+    bystander.hp = 40;
+    bystander.aiState = 'idle';
+    world.step(['grab']);
+    world.step(['light-attack']);
+    let x0 = -1;
+    let landed = -1;
+    let hit = false;
+    for (let i = 0; i < 160; i += 1) {
+      world.step([]);
+      if (x0 < 0 && victim.aiState === 'juggle') x0 = victim.x;
+      // where he stops flying (afterwards he gets up and walks back)
+      if (x0 >= 0 && landed < 0 && victim.aiState !== 'juggle') landed = victim.x;
+      if (bystander.hp < 40) hit = true;
+    }
+    return { x0, landed, bystanderHit: hit };
+  }
+
+  it('he is shot ahead about 150 px (from where Kratos lets go) and stops there', () => {
+    const { x0, landed } = toss(null);
+    const distance = landed - x0;
+    assert.ok(distance >= 130 && distance <= 175, `he flew ${distance.toFixed(0)} px`);
+  });
+
+  it('an undead standing in that range is bowled over, one standing far beyond it is not', () => {
+    assert.equal(toss(330).bystanderHit, true, 'in the way');
+    assert.equal(toss(520).bystanderHit, false, 'out of reach');
+  });
+});

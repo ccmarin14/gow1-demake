@@ -87,7 +87,7 @@ export function kratosGrabFrameKey(player: Readonly<EntityState>): string | null
       if (t < grab.toss.raiseFrom) return 'kratos-grab-hold';
       if (t < grab.toss.stabTick) return 'kratos-grab-toss-raise';
       if (t < grab.toss.stabTick + 8) return 'kratos-grab-toss-stab';
-      return t < grab.toss.releaseTick - 3 ? 'kratos-grab-throw-a' : 'kratos-grab-throw-b';
+      return t < grab.toss.releaseTick - grab.toss.snapTicks ? 'kratos-grab-throw-a' : 'kratos-grab-throw-b';
     case 'break':
       // Grips him, lifts him overhead (a), pulls him down to his chest (slam-c), stretches him between his hands (b)
       if (t < 4) return 'kratos-grab-hold';

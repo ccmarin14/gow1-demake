@@ -263,12 +263,17 @@ describe('circle grab: the Toss takes its time (audit B7)', () => {
   const run = record(TOSS, 130);
   const phase = run.filter((k) => k.phase === 'throw');
 
-  it('Kratos holds him, raises the blade, goes in, winds up and lets go, in that order and about 0.7 s', () => {
+  it('Kratos holds him, raises the blade, goes in, pulls him back slowly and whips him forward, in that order', () => {
     const order: string[] = [];
     for (const k of phase) if (k.frameKey && order[order.length - 1] !== k.frameKey) order.push(k.frameKey);
     assert.deepEqual(order, ['kratos-grab-hold', 'kratos-grab-toss-raise', 'kratos-grab-toss-stab', 'kratos-grab-throw-a', 'kratos-grab-throw-b']);
     assert.ok(phase.length >= toss.releaseTick, 'the throw runs at least until the release');
-    assert.ok(toss.releaseTick >= 40 && toss.stabTick >= 18, 'it used to be 12 and 5 ticks');
+    assert.ok(toss.releaseTick >= 30 && toss.stabTick >= 12, 'it used to be 12 and 5 ticks');
+    // a whip: the pull back is slow (the wind-up) and the snap forward is fast
+    const windUp = phase.filter((k) => k.frameKey === 'kratos-grab-throw-a').length;
+    const snap = phase.filter((k) => k.frameKey === 'kratos-grab-throw-b' && k.t < toss.releaseTick).length;
+    assert.ok(windUp >= 3 * snap, `wind-up ${windUp} ticks, snap ${snap}: the throw is the fast part`);
+    assert.equal(snap, toss.snapTicks);
   });
 
   it('the neck stays in his hand until he is let go and he never jumps more than 24 px between two ticks', () => {

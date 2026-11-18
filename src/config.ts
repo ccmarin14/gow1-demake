@@ -161,7 +161,7 @@ grab: {
   slamTicks: 40,
   slamImpactTick: 24,
   /** Ticks of the Toss and of the Rip (the follow-ups that share the generic end of a grab execution). */
-  throwTicks: 62,
+  throwTicks: 66,
   breakTicks: 60,
   /** The Rip: he is lifted overhead (ticks 4 to 16), pulled to Kratos' chest and stretched between his hands, and torn at `ripTick`. */
   ripTick: 36,
@@ -174,23 +174,28 @@ grab: {
    * the soldier at his side, runs a sword through him (`stabTick`) and then heaves him aside (`releaseTick`).
    */
   toss: {
-    /** The soldier is held at the side until `raiseFrom`; Kratos raises the blade until `stabTick`, then goes in. */
-    raiseFrom: 8,
-    stabTick: 22,
+    /**
+     * A whip (the user: "una velocidad de látigo"): he is held in front, the blade goes up and in, Kratos pulls him
+     * BACK slowly (the wind-up) and snaps him forward in `snapTicks`, so the throw is the fast part of the movement.
+     */
+    raiseFrom: 6,
+    stabTick: 14,
     stabDamage: 8,
-    /** He is swung (the wind-up) and let go on the chain at `releaseTick` (~0.7 s after the grab; the original takes ~1.5 s). */
-    releaseTick: 44,
-    /** Ticks the chain tethers the flying soldier to Kratos after the release. */
-    chainTicks: 18,
+    /** He is let go on the chains at `releaseTick`; the last `snapTicks` before it Kratos' arms whip forward. */
+    releaseTick: 38,
+    snapTicks: 4,
+    /** Ticks the two chains stay on the flying soldier (and then reel back). */
+    chainTicks: 26,
   },
+
   /** Direct damage dealt to the victim when thrown as a projectile (□ / J). */
   throwDamage: 15,
   /** Collateral damage dealt to other enemies hit by a thrown victim. */
   collateralDamage: 20,
-  /** Horizontal projectile speed of a thrown victim (px/s). */
-  throwVx: 280,
+  /** Horizontal projectile speed of a thrown victim (px/s): he lands ~150 px away (~22 ticks of flight), the range where the other undead stand. */
+  throwVx: 480,
   /** Slight upward arc impulse of a thrown victim (px/s). */
-  throwVy: -160,
+  throwVy: -125,
   /** Direct damage dealt to the victim on brutal snap/break (△ / I). */
   breakDamage: 35,
   /**
