@@ -355,14 +355,14 @@ describe('combat grab with Circle / L key (BL-06, D-42)', () => {
     assert.equal(victim.hp, expectedHp, 'the throw to the floor deals its damage at the impact tick');
     assert.equal(victim.isDead, false);
     stepTicks(world, [], CONFIG.player.grab.slamTicks - CONFIG.player.grab.slamImpactTick);
-    assert.equal(p.grabPhase, 'floorhold', 'he lies on the floor and Kratos waits for the next tap');
+    assert.equal(p.grabPhase, 'floorhold', 'he lies on the floor and Kratos raises the blade');
     assert.equal(victim.heldLying, true);
     assert.equal(victim.y, p.y, 'victim on the floor, not floating');
 
-    // 3. Four stabs with the blade; the last one always kills.
+    // 3. Four stabs with the blade, ON HIS OWN (no taps: the user does not want to press ○ again and again); the last one always kills.
     for (let i = 0; i < chain.stabs; i += 1) {
-      world.step(['grab']);
-      assert.equal(p.grabPhase, 'stab', `tap ${i + 1} on the floor is a stab`);
+      for (let wait = 0; wait < 40 && p.grabPhase === 'floorhold'; wait += 1) world.step([]);
+      assert.equal(p.grabPhase, 'stab', `stab ${i + 1} starts by itself after the blade is raised`);
       const before = victim.hp;
       stepTicks(world, [], 4);
       if (i < chain.stabs - 1) {
@@ -378,7 +378,7 @@ describe('combat grab with Circle / L key (BL-06, D-42)', () => {
     }
   });
 
-  it('if nobody taps after the throw to the floor, the victim gets up and Kratos recovers', () => {
+  it('after the throw to the floor Kratos stabs on his own, four times, without a single tap, and the last stab kills', () => {
     const world = createWorld();
     const p = getPlayer(world);
     const victim = getEnemy(world);
@@ -393,14 +393,19 @@ describe('combat grab with Circle / L key (BL-06, D-42)', () => {
       world.step(['grab']);
       stepTicks(world, [], CONFIG.player.grab.chain.punchTicks);
     }
-    world.step(['grab']);
+    world.step(['grab']); // the last tap of the whole chain: the throw to the floor
     stepTicks(world, [], CONFIG.player.grab.slamTicks);
     assert.equal(p.grabPhase, 'floorhold');
-    stepTicks(world, [], CONFIG.player.grab.chain.floorHoldTicks + 1);
-    assert.notEqual(p.grabPhase, 'floorhold');
-    assert.equal(victim.isDead, false);
-    assert.equal(victim.heldLying, false);
-    assert.equal(victim.aiState, 'knockdown', 'he rises through the knockdown and get-up the engine already has');
+    const hitsAt: number[] = [];
+    let hp = victim.hp;
+    for (let i = 0; i < 400 && !victim.isDead; i += 1) {
+      world.step([]);
+      if (victim.hp < hp) hitsAt.push(i);
+      hp = victim.hp;
+    }
+    assert.equal(hitsAt.length, CONFIG.player.grab.chain.stabs, 'four stabs landed with no input at all');
+    assert.equal(victim.isDead, true, 'the last one kills a victim with 100 HP');
+    assert.ok(hitsAt[1] - hitsAt[0] <= CONFIG.player.grab.chain.autoStabDelayTicks + CONFIG.player.grab.chain.stabTicks + 4, 'one stab after the other, no long pauses');
   });
 
   it('launcher (held △) lifts enemy straight up vertically (vx = 0) and ○ chains Orion\'s Harpoon to slam it down', () => {
@@ -658,17 +663,22 @@ describe('grab chain details', () => {
     return { world, p, victim };
   }
 
+  it('a ○ tap while he raises the blade only brings the stab forward', () => {
+    const { world, p } = chainToFloor(1000);
+    world.step([]);
+    world.step([]);
+    world.step(['grab']);
+    assert.equal(p.grabPhase, 'stab', 'the tap made him go in sooner than the automatic delay');
+  });
+
   it('the last stab kills whatever the victim HP, and the kill is counted', () => {
     const { world, p, victim } = chainToFloor(1000);
     const kills = world.snapshot().stats?.totalKills ?? 0;
-    const stabs = CONFIG.player.grab.chain.stabs;
-    for (let i = 0; i < stabs; i += 1) {
-      world.step(['grab']);
-      stepTicks(world, [], CONFIG.player.grab.chain.stabTicks);
-    }
+    for (let i = 0; i < 400 && !victim.isDead; i += 1) world.step([]);
     assert.equal(victim.isDead, true, 'the fourth stab ends even a very healthy victim');
     assert.equal(victim.heldLying, false, 'a dead victim is no longer held');
     assert.ok((world.snapshot().stats?.totalKills ?? 0) > kills, 'the kill counts');
+    stepTicks(world, [], CONFIG.player.grab.chain.stabTicks); // the killing stab finishes its animation
     assert.notEqual(p.grabPhase, 'stab');
   });
 

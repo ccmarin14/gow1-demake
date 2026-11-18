@@ -467,7 +467,7 @@ export function stepGrab(
     return result;
   }
 
-  // 4.c Víctima en el suelo tras el azote: Kratos espera el siguiente toque de ○ para apuñalarla.
+  // 4.c Víctima en el suelo tras el azote: Kratos levanta la hoja y la apuñala solo (cuatro veces); un toque de ○ solo adelanta la puñalada.
   if (player.grabPhase === 'floorhold') {
     if (player.invulTicks < 2) {
       player.invulTicks = 2;
@@ -483,22 +483,13 @@ export function stepGrab(
 
     keepLying(player, target);
 
-    if (inputActions.includes('grab')) {
+    // He stabs on his own once the blade is up; a tap (after the first ticks) only makes him go in sooner
+    if ((inputActions.includes('grab') && player.grabTicks >= 2) || player.grabTicks >= cfg.chain.autoStabDelayTicks) {
       player.grabPummelCount = (player.grabPummelCount ?? 0) + 1;
       player.grabPhase = 'stab';
       player.grabTicks = 0;
     } else {
       player.grabTicks += 1;
-      if (player.grabTicks >= cfg.chain.floorHoldTicks) {
-        // Nadie siguió: se levanta por el derribo y la reincorporación que el motor ya tiene.
-        target.heldLying = false;
-        target.aiState = 'knockdown';
-        target.aiTicks = 0;
-        target.grounded = true;
-        player.grabPhase = 'recovery';
-        player.grabTicks = 0;
-        player.grabTargetId = null;
-      }
       return result;
     }
   }

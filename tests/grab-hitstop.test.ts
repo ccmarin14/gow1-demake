@@ -58,7 +58,7 @@ describe('circle grab: hitstop on every blow (audit)', () => {
   });
 
   it('a floor stab freezes the world', () => {
-    assert.equal(frozenTicksAt('stab', CONFIG.player.grab.chain.stabImpactTick, chain(6)), hitstop.stab);
+    assert.equal(frozenTicksAt('stab', CONFIG.player.grab.chain.stabImpactTick, chain(5)), hitstop.stab);
   });
 
   it('the slam freezes it longer than a punch', () => {

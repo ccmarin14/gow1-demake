@@ -95,7 +95,7 @@ const LUNGE = 'kratos-grab-lunge';
 const lifted = (k: Tick): boolean => k.frameKey !== LUNGE && ((k.player.grabPummelCount ?? 0) > 0 || (k.player.grabLiftTicks ?? 0) >= 3);
 
 describe('circle grab: the drawings in contact (BL-45)', () => {
-  const chain = record(circleChain(1 + 3 + 1 + 4), 330);
+  const chain = record(circleChain(1 + 3 + 1), 330);
   const held = chain.filter((k) => (k.phase === 'hold' || k.phase === 'pummel') && !k.victim.isDead);
 
   it('the sequence really goes through hold, pummel, slam, floorhold and stab', () => {
@@ -175,7 +175,7 @@ describe('circle grab: the drawings in contact (BL-45)', () => {
 // What the audit of the real game found (docs/tmp/auditoria-circulo): the instant checks above could not see a
 // pose that flashes back, a teleport of 26 px or a body that gets up as it dies. These look at consecutive ticks.
 describe('circle grab: continuity from one tick to the next (audit)', () => {
-  const chain = record(circleChain(1 + 3 + 1 + 4), 330);
+  const chain = record(circleChain(1 + 3 + 1), 330);
 
   it('Kratos never moves more than 6 px in one tick, even for the longest lunge (it was 26 px at once)', () => {
     const far = record(circleChain(1), 40, 360); // 60 px away: the longest lunge there is

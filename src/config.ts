@@ -147,8 +147,12 @@ grab: {
     stabImpactTick: 3,
     /** Ticks Kratos takes to get up from his knee after the last stab (or after nobody follows the chain). */
     getUpTicks: 12,
-    /** Ticks Kratos waits over the fallen victim for the next tap before he gets up. */
-    floorHoldTicks: 60,
+    /**
+     * After the deck slam Kratos stabs the fallen victim on his own (the user: "no debo presionar círculo muchas
+     * veces"): he raises the blade for this many ticks and goes in, four times. A ○ tap after the first ticks of
+     * the wait only makes him go in sooner.
+     */
+    autoStabDelayTicks: 8,
   },
   /**
    * The deck slam (audit: it was a 10-tick teleport): Kratos lifts the soldier over his head (ticks 0 to 18), swings
