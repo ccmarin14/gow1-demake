@@ -53,6 +53,8 @@ const LIFT_TICKS = 3;
 const PUNCH_FALL_TICKS = 6;
 /** Ticks the soldier takes to wrench himself out of the hold (Break Free). */
 const BREAK_FREE_TICKS = 4;
+/** The whiff ends in a neutral guard only for its last ticks. */
+const WHIFF_IDLE_TICKS = 4;
 
 /** Texture key of Kratos' frame for a grab phase, or null when Kratos is not in a grab. */
 export function kratosGrabFrameKey(player: Readonly<EntityState>): string | null {
@@ -60,9 +62,10 @@ export function kratosGrabFrameKey(player: Readonly<EntityState>): string | null
   const grab = CONFIG.player.grab;
   switch (player.grabPhase) {
     case 'whiff':
-      // Ticks 0..12: lunge at full reach; 13..20: brakes and pulls the arm back; then a neutral guard
+      // Ticks 0..12: lunge at full reach; then he brakes and pulls the arm back slowly until the last ticks (game
+      // feel: he used to stand in a neutral guard for the last 11 ticks of the whiff, locked and doing nothing)
       if (t <= (grab.whiffLungeTicks ?? 12)) return 'kratos-grab-lunge';
-      return t <= 20 ? 'kratos-grab-whiff-recover' : 'kratos-idle-00';
+      return t < grab.whiffTicks - WHIFF_IDLE_TICKS ? 'kratos-grab-whiff-recover' : 'kratos-idle-00';
     case 'hold':
     case 'finisher_qte':
       // The lunge only shows on the first grab while Kratos closes the distance: coming back to the hold after a
@@ -89,10 +92,12 @@ export function kratosGrabFrameKey(player: Readonly<EntityState>): string | null
       if (t < grab.toss.stabTick + 8) return 'kratos-grab-toss-stab';
       return t < grab.toss.releaseTick - grab.toss.snapTicks ? 'kratos-grab-throw-a' : 'kratos-grab-throw-b';
     case 'break':
-      // Grips him, lifts him overhead (a), pulls him down to his chest (slam-c), stretches him between his hands (b)
+      // Grips him, lifts him overhead (a), pulls him down to his chest (slam-c), stretches him between his hands (b);
+      // after the tear he stays low with his hands apart (follow-through) and rises (slam-c) before the recovery
       if (t < 4) return 'kratos-grab-hold';
       if (t < 16) return 'kratos-grab-break-a';
-      return t < grab.ripTick - 6 ? 'kratos-grab-slam-c' : 'kratos-grab-break-b';
+      if (t < grab.ripTick - grab.ripStretchTicks) return 'kratos-grab-slam-c';
+      return t < grab.breakTicks - grab.ripRiseTicks ? 'kratos-grab-break-b' : 'kratos-grab-slam-c';
     case 'slam':
     case 'finisher_slam':
       // Grips (hold), lifts him overhead (a), swings (c), smashes him (b)
@@ -249,9 +254,8 @@ export function victimPose(player: Readonly<EntityState>, enemy: Readonly<Entity
       // (the halves are drawn by RipHalves, the body is hidden by `ripped`)
       if (t >= grab.ripTick) return null;
       const carried = carriedAcrossHands(player, enemy, flipX, 'legionnaire-flip-00');
-      // stretched: he trembles between the hands in the last ticks before the tear
-      if (t >= grab.ripTick - 6) return { ...carried, x: carried.x + (t % 2 === 0 ? 1 : -1) };
-      return carried;
+      const tremble = ripTremble(t);
+      return { ...carried, x: carried.x + tremble[0], y: carried.y + tremble[1] };
     }
     case 'floorhold':
     case 'stab': {
@@ -339,6 +343,28 @@ export function grabImpactPoint(
   if (!neck || !pelvis) return null;
   const at = kind === 'punch' ? 0.4 : 0.9;
   return [neck[0] + (pelvis[0] - neck[0]) * at, neck[1] + (pelvis[1] - neck[1]) * at];
+}
+
+/**
+ * The tension of the Rip (game feel: the original builds it for ~34 ticks before the tear): held at the chest the
+ * soldier jerks every 4 ticks, stretched every 2 and in the last 4 ticks every tick, also up and down. Px offset.
+ */
+export function ripTremble(t: number): Point {
+  const { ripTick, ripStretchTicks } = CONFIG.player.grab;
+  if (t < 16 || t >= ripTick) return [0, 0];
+  const stretched = t >= ripTick - ripStretchTicks;
+  const last = t >= ripTick - 4;
+  const period = last ? 1 : stretched ? 2 : 4;
+  const side = Math.floor(t / period) % 2 === 0 ? 1 : -1;
+  return [side, last ? -side : 0];
+}
+
+/** True from the tick the Rip tears the soldier: his body is not drawn any more (the two halves are). */
+export function victimTorn(player: Readonly<EntityState> | null | undefined, enemy: Readonly<EntityState>): boolean {
+  if (enemy.ripped) return true;
+  // The tear tick is frozen by the hitstop before the simulation marks him `ripped`: he must already be hidden
+  // (the body used to be drawn standing above Kratos' head for the 6 frozen frames)
+  return Boolean(player && player.grabTargetId === enemy.id && player.grabPhase === 'break' && player.grabTicks >= CONFIG.player.grab.ripTick);
 }
 
 /** Frame of the thrown soldier tumbling: a quarter turn every 5 ticks. */

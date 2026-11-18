@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { CONFIG } from '../config';
 import type { EntityState } from '../sim/types';
-import { tumbleFrame, victimPose } from './grabPose';
+import { tumbleFrame, victimPose, victimTorn } from './grabPose';
 import { getLegionnaireFrameKey } from './legionnaireFrames';
 
 /**
@@ -64,12 +64,13 @@ export class EnemyView {
     this.sprite.setFlipX(flipX);
     this.sprite.setRotation(0);
     // Torn in two by the Rip: the two halves are drawn by RipHalves, the body is not
-    this.sprite.setVisible(!enemy.ripped);
+    const torn = victimTorn(player, enemy);
+    this.sprite.setVisible(!torn);
 
     // Sombra de contacto terrestre (se atenúa cuando está alzado en el aire o muere)
     this.shadow.setPosition(drawX, enemy.y - 1);
     this.shadow.setVisible(
-      CONFIG.presentation.playerShadow.enabled && (enemy.grounded || isGrabVictim) && enemy.aiState !== 'death' && !enemy.ripped,
+      CONFIG.presentation.playerShadow.enabled && (enemy.grounded || isGrabVictim) && enemy.aiState !== 'death' && !torn,
     );
   }
 

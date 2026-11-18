@@ -15,7 +15,7 @@ import { GameFlowOverlay } from '../ui/GameFlowOverlay';
 import { PlayerView } from './PlayerView';
 import { EnemyView } from './EnemyView';
 import { drawChain } from '../entities/strikeArt';
-import { grabImpactPoint, kratosAnchorWorld, ripHalvesOrigin } from './grabPose';
+import { grabImpactPoint, kratosAnchorWorld, kratosGrabFrameKey, ripHalvesOrigin } from './grabPose';
 import { RipHalves } from './RipHalves';
 import { VfxLayer } from './VfxLayer';
 import { SoundManager } from '../audio/SoundManager';
@@ -77,6 +77,7 @@ export class ShellScene extends Phaser.Scene {
   /** Last grab phase and tick the impact effects saw: they fire on the tick that CROSSES the impact tick, once. */
   private prevFxPhase = 'none';
   private prevFxTicks = 0;
+  private prevFxFrame: string | null = null;
 
   constructor(
     private readonly simulation: Simulation,
@@ -122,7 +123,11 @@ export class ShellScene extends Phaser.Scene {
     this.flowOverlay = new GameFlowOverlay(this);
     this.vfxLayer = new VfxLayer(this);
     this.tossChain = this.add.graphics().setDepth(1.1);
-    this.ripHalves = new RipHalves(this, (x, y) => this.vfxLayer.emitBloodBurst(x, y - 6, 14));
+    this.ripHalves = new RipHalves(
+      this,
+      (x, y) => this.vfxLayer.emitBloodBurst(x, y - 6, 14),
+      (x, y) => this.vfxLayer.emitBloodBurst(x, y, 2),
+    );
     this.soundManager = new SoundManager();
 
     this.input.keyboard?.on('keydown-M', () => {
@@ -369,12 +374,6 @@ export class ShellScene extends Phaser.Scene {
             this.soundManager.playGrabWhoosh();
           }
         }
-        if (
-          (player.grabPhase === 'hold' || player.grabPhase === 'finisher_qte') &&
-          player.grabTicks === (CONFIG.player.grab.lungeTicks ?? 2)
-        ) {
-          this.soundManager.playGrabClamp();
-        }
         this.prevGrabPhase = player.grabPhase;
       }
 
@@ -433,48 +432,89 @@ export class ShellScene extends Phaser.Scene {
         const freshTick = player.grabPhase !== this.prevFxPhase || player.grabTicks < this.prevFxTicks;
         const crosses = (phases: readonly string[], tick: number): boolean =>
           phases.includes(player.grabPhase) && player.grabTicks >= tick && (freshTick || this.prevFxTicks < tick);
-        if (crosses(['pummel'], 4)) {
+        // One impact grammar for every circle blow (CONFIG.player.grab.shake / hitstop): the shake is forced so a
+        // weaker one still running never swallows it, and it fires on the tick of the contact with its sound.
+        const grab = CONFIG.player.grab;
+        const shake = (kind: keyof typeof grab.shake): void => {
+          const { ms, px } = grab.shake[kind];
+          this.cameras.main.shake(ms, px / CONFIG.internal.width, true);
+        };
+        const lastStab = (player.grabPummelCount ?? 0) >= grab.chain.punches + 1 + grab.chain.stabs;
+        const ripTension = grab.ripTick - grab.ripStretchTicks;
+        if (
+          (player.grabPhase === 'hold' || player.grabPhase === 'finisher_qte') &&
+          (player.grabPummelCount ?? 0) === 0 &&
+          kratosGrabFrameKey(player) === 'kratos-grab-hold' &&
+          this.prevFxFrame === 'kratos-grab-lunge'
+        ) {
+          // The latch: the hand closes on the neck when Kratos arrives (it used to sound on tick 2, mid-lunge)
+          shake('latch');
+          this.soundManager?.playGrabClamp();
+        } else if (crosses(['pummel'], 4)) {
           // Puñetazo con la víctima sujeta en alto (Grab 1 - TAP ○ REPEATEDLY)
-          this.cameras.main.shake(50, 0.006);
+          shake('punch');
           { const [ix, iy] = impactAt('punch', 18, -20); this.vfxLayer.emitBloodSpurt(ix, iy, player.facing, 8); }
           this.soundManager?.playStrikeHit('light');
-        } else if (crosses(['stab'], CONFIG.player.grab.chain.stabImpactTick)) {
-          // Puñalada con la Espada del Caos sobre la víctima caída (Grab 1)
-          this.cameras.main.shake(60, 0.008);
-          { const [ix, iy] = impactAt('floor-stab', 20, -6); this.vfxLayer.emitBloodSpurt(ix, iy, player.facing, 22); }
+        } else if (crosses(['stab'], grab.chain.stabImpactTick)) {
+          // Puñalada con la Espada del Caos sobre la víctima caída (Grab 1); la última, la que mata, pesa más
+          shake(lastStab ? 'lastStab' : 'stab');
+          const [ix, iy] = impactAt('floor-stab', 20, -6);
+          this.vfxLayer.emitBloodSpurt(ix, iy, player.facing, lastStab ? 34 : 22);
+          if (lastStab) this.vfxLayer.emitBloodBurst(ix, iy - 2, 16);
           this.soundManager?.playStab();
-        } else if (crosses(['break'], CONFIG.player.grab.ripTick)) {
+          if (lastStab) this.soundManager?.playStrikeHit('heavy');
+        } else if (crosses(['break'], ripTension)) {
+          // The Rip's stretch: a low rumble that grows into the tear
+          this.cameras.main.shake((grab.ripStretchTicks * 1000) / 60, 1 / CONFIG.internal.width, true);
+        } else if (crosses(['break'], grab.ripTick)) {
           // Quiebre brutal (Grab 2 - △ Rip): lo parte en dos; las mitades salen despedidas y la sangre sale en abanico
-          this.cameras.main.shake(150, 0.016);
+          shake('rip');
           const origin = grabVictim ? ripHalvesOrigin(player, grabVictim) : null;
           const mx = origin ? origin.x : player.x + player.facing * 18;
           const my = origin ? origin.y - 22 : player.y - 22;
-          if (origin) this.ripHalves.spawn(origin, player.facing, player.y);
+          // the halves stay frozen (white) with the world for the hitstop, then fly
+          if (origin) this.ripHalves.spawn(origin, player.facing, player.y, grab.hitstop.rip / 60);
+          this.vfxLayer.emitParryFlash(mx, my);
           this.vfxLayer.emitBloodBurst(mx, my, 70);
           this.vfxLayer.emitBloodSpurt(mx, my, player.facing, 28);
           this.vfxLayer.emitBloodSpurt(mx, my, player.facing === 1 ? -1 : 1, 28);
           this.vfxLayer.emitDust(player.x + player.facing * 8, player.y);
           this.soundManager?.playBoneBreak();
           this.soundManager?.playStrikeHit('heavy');
-        } else if (crosses(['throw'], CONFIG.player.grab.toss.stabTick) && player.grabTicks < CONFIG.player.grab.toss.releaseTick) {
+        } else if (crosses(['throw'], grab.toss.stabTick) && player.grabTicks < grab.toss.releaseTick) {
           // Espada hundida en el soldado sujeto de lado (Toss)
-          this.cameras.main.shake(50, 0.007);
+          shake('toss');
           { const [ix, iy] = impactAt('toss-stab', 14, -14); this.vfxLayer.emitBloodSpurt(ix, iy, player.facing, 18); }
           this.soundManager?.playStab();
-        } else if (crosses(['throw'], CONFIG.player.grab.toss.releaseTick)) {
-          // Impulso y despegue del proyectil humano (Grab 3 - □ Throw)
-          this.cameras.main.shake(50, 0.006);
+        } else if (crosses(['throw'], grab.toss.releaseTick)) {
+          // Impulso y despegue del proyectil humano (Grab 3 - □ Throw): el chasquido del látigo
+          shake('toss');
           this.vfxLayer.emitDust(player.x, player.y);
+          this.vfxLayer.emitCombatSparks(player.x + player.facing * 20, player.y - 24, 10, true);
           this.soundManager?.playThrowRelease();
-        } else if (crosses(['slam', 'finisher_slam'], CONFIG.player.grab.slamImpactTick)) {
-          // Azote brutal contra las tablas de cubierta (○ Slam)
-          this.cameras.main.shake(120, 0.014);
+          this.soundManager?.playStrikeHit('heavy');
+        } else if (crosses(['slam', 'finisher_slam'], grab.slamImpactTick)) {
+          // Azote brutal contra las tablas de cubierta (○ Slam): el golpe más pesado de la escala
+          shake('slam');
           const [sx, sy] = impactAt('slam', 18, -6);
+          this.vfxLayer.emitParryFlash(sx, sy - 4);
           this.vfxLayer.emitBloodBurst(sx, sy - 2, 24);
           this.vfxLayer.emitDust(sx, player.y);
+          this.vfxLayer.emitDust(sx + player.facing * 14, player.y);
+          this.vfxLayer.emitCombatSparks(sx, player.y - 2, 12, true);
           this.soundManager?.playSlamImpact();
           this.soundManager?.playStrikeHit('heavy');
         }
+        // The Rip's stretch also drips blood from the waist every 3 ticks (the original bleeds before the tear)
+        if (player.grabPhase === 'break' && player.grabTicks >= ripTension && player.grabTicks < grab.ripTick) {
+          for (let tick = ripTension; tick < grab.ripTick; tick += 3) {
+            if (crosses(['break'], tick) && player.grabTicks < tick + 1) {
+              const at = grabVictim ? ripHalvesOrigin(player, grabVictim) : null;
+              if (at) this.vfxLayer.emitBloodBurst(at.x, at.y - 22, 3);
+            }
+          }
+        }
+        this.prevFxFrame = kratosGrabFrameKey(player);
         this.prevFxPhase = player.grabPhase;
         this.prevFxTicks = player.grabTicks;
       }

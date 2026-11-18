@@ -9,6 +9,7 @@ import {
   grabBladePoint,
   kratosAnchorWorld,
   kratosGrabFrameKey,
+  ripTremble,
   victimAnchorWorld,
   victimPose,
 } from '../src/scene/grabPose';
@@ -307,11 +308,32 @@ describe('circle grab: the Rip tears him in two (audit B1)', () => {
   const run = record(RIP, 120);
   const rip = run.filter((k) => k.phase === 'break');
 
-  it('Kratos lifts him overhead, pulls him to his chest and stretches him between his hands, then tears him', () => {
+  it('Kratos lifts him overhead, pulls him to his chest and stretches him between his hands, tears him, stays low and rises', () => {
     const order: string[] = [];
     for (const k of rip) if (k.frameKey && order[order.length - 1] !== k.frameKey) order.push(k.frameKey);
-    assert.deepEqual(order, ['kratos-grab-hold', 'kratos-grab-break-a', 'kratos-grab-slam-c', 'kratos-grab-break-b']);
+    assert.deepEqual(order, ['kratos-grab-hold', 'kratos-grab-break-a', 'kratos-grab-slam-c', 'kratos-grab-break-b', 'kratos-grab-slam-c']);
     assert.ok(rip.length >= grab.breakTicks - 1, 'about a second, it was 0.4 s');
+  });
+
+  it('game feel: the stretch builds tension for ripStretchTicks and the pose holds after the tear (follow-through)', () => {
+    const stretch = rip.filter((k) => k.frameKey === 'kratos-grab-break-b' && k.t < grab.ripTick);
+    assert.equal(stretch.length, grab.ripStretchTicks);
+    const after = rip.filter((k) => k.frameKey === 'kratos-grab-break-b' && k.t >= grab.ripTick);
+    assert.equal(after.length, grab.breakTicks - grab.ripTick - grab.ripRiseTicks);
+    assert.ok(after.length >= 10, 'he stays still with his hands apart, not straight into the recovery');
+  });
+
+  it('game feel: the soldier trembles more and more until the tear (every 4 ticks at the chest, every 2 stretched, every tick at the end)', () => {
+    const changes = (from: number, to: number): number => {
+      let n = 0;
+      for (let t = from + 1; t < to; t += 1) if (ripTremble(t)[0] !== ripTremble(t - 1)[0]) n += 1;
+      return n / (to - from - 1);
+    };
+    const chest = changes(16, grab.ripTick - grab.ripStretchTicks);
+    const stretched = changes(grab.ripTick - grab.ripStretchTicks, grab.ripTick - 4);
+    const last = changes(grab.ripTick - 4, grab.ripTick);
+    assert.ok(chest > 0 && stretched > chest && last > stretched, `${chest} ${stretched} ${last}`);
+    assert.deepEqual(ripTremble(10), [0, 0], 'still while lifted overhead');
   });
 
   it('he lies across both hands (pelvis at the middle between them) until the tear, and never jumps more than 24 px', () => {
@@ -395,5 +417,44 @@ describe('circle grab: a punch that kills, and the release of the hold (audit N1
       assert.ok(Math.hypot(k.pose.x - previous.x, k.pose.y - previous.y) <= 12, `recovery ${k.t}: jump of ${Math.hypot(k.pose.x - previous.x, k.pose.y - previous.y).toFixed(1)} px`);
       previous = k.pose;
     }
+  });
+});
+
+describe('circle grab: rhythm of the stabs and of the whiff (game feel)', () => {
+  const grab = CONFIG.player.grab;
+
+  it('the stabs come on their own; the killing (fourth) one is held up longer before it goes in', () => {
+    // four taps reach the slam: from there nobody presses anything
+    const run = record(circleChain(1 + grab.chain.punches + 1), 400);
+    const waits: number[] = [];
+    let wait = 0;
+    for (const k of run) {
+      if (k.phase === 'floorhold') wait += 1;
+      else if (k.phase === 'stab' && wait > 0) {
+        waits.push(wait);
+        wait = 0;
+      }
+    }
+    assert.equal(waits.length, grab.chain.stabs);
+    assert.deepEqual(waits.slice(0, -1), Array(grab.chain.stabs - 1).fill(grab.chain.autoStabDelayTicks + 1));
+    assert.equal(waits[waits.length - 1], grab.chain.lastStabDelayTicks + 1);
+    assert.ok(grab.chain.lastStabDelayTicks > grab.chain.autoStabDelayTicks);
+  });
+
+  it('the whiff pulls the arm back until its last ticks instead of standing in guard while locked', () => {
+    const world = new World();
+    world.loadScenario('level1');
+    const p = world.peekEntity(PLAYER_ID) as EntityState;
+    p.x = 40;
+    world.step(['grab']);
+    const frames: string[] = [];
+    while (p.grabPhase === 'whiff') {
+      frames.push(kratosGrabFrameKey(p)!);
+      world.step([]);
+    }
+    const idle = frames.filter((f) => f === 'kratos-idle-00').length;
+    assert.ok(frames.length >= grab.whiffTicks - 1, `${frames.length}`);
+    assert.ok(idle <= 4, `${idle} ticks standing in guard inside the whiff`);
+    assert.ok(frames.includes('kratos-grab-whiff-recover'));
   });
 });

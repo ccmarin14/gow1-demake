@@ -4,6 +4,7 @@ import { CONFIG } from '../src/config';
 import { PLAYER_ID } from '../src/sim/types';
 import type { EntityState, GameAction } from '../src/sim/types';
 import { World } from '../src/sim/world';
+import { victimPose, victimTorn } from '../src/scene/grabPose';
 
 // The blows of the circle grab freeze the world a few ticks, like the squares and triangles do (audit: they had none).
 
@@ -20,21 +21,27 @@ function setup(): { world: World; p: EntityState; victim: EntityState } {
   return { world, p, victim };
 }
 
-/** Steps the world stays on the clock `phase:impactTick` (the grab clock does not move while it is frozen), minus the first. */
-function frozenTicksAt(phase: string, impactTick: number, plan: (tick: number, p: EntityState) => GameAction[]): number {
+/** Each time the clock reaches `phase:impactTick`, the steps it stays there (the grab clock does not move while frozen), minus the first. */
+function frozenRunsAt(phase: string, impactTick: number, plan: (tick: number, p: EntityState) => GameAction[]): number[] {
   const { world, p } = setup();
   const target = `${phase}:${impactTick}`;
   let previous = '';
-  let run = 0;
-  let best = 0;
+  const runs: number[] = [];
   for (let i = 0; i < 400; i += 1) {
     world.step(plan(i, p));
     const key = `${p.grabPhase}:${p.grabTicks}`;
-    run = key === target ? (key === previous ? run + 1 : 1) : 0;
-    best = Math.max(best, run);
+    if (key === target) {
+      if (key === previous) runs[runs.length - 1] += 1;
+      else runs.push(0);
+    }
     previous = key;
   }
-  return best - 1;
+  return runs;
+}
+
+/** The longest freeze on the clock `phase:impactTick`. */
+function frozenTicksAt(phase: string, impactTick: number, plan: (tick: number, p: EntityState) => GameAction[]): number {
+  return Math.max(-1, ...frozenRunsAt(phase, impactTick, plan));
 }
 
 const chain = (taps: number, extra?: (tick: number, p: EntityState) => GameAction[]) => {
@@ -57,8 +64,9 @@ describe('circle grab: hitstop on every blow (audit)', () => {
     assert.ok(hitstop.punch >= 2);
   });
 
-  it('a floor stab freezes the world', () => {
-    assert.equal(frozenTicksAt('stab', CONFIG.player.grab.chain.stabImpactTick, chain(5)), hitstop.stab);
+  it('a floor stab freezes the world, and the killing (fourth) stab longer', () => {
+    const runs = frozenRunsAt('stab', CONFIG.player.grab.chain.stabImpactTick, chain(5));
+    assert.deepEqual(runs, [hitstop.stab, hitstop.stab, hitstop.stab, hitstop.lastStab]);
   });
 
   it('the slam freezes it longer than a punch', () => {
@@ -115,5 +123,37 @@ describe('circle grab: a follow-up pressed while a punch lands is not lost (audi
       last = p.grabPhase;
     }
     assert.equal(blows, 2, 'the first punch and the one that was buffered');
+  });
+});
+
+describe('circle grab: one impact grammar for every blow (game feel)', () => {
+  const { hitstop, shake } = CONFIG.player.grab;
+
+  it('freeze and shake grow on the same scale: punch < stab < Toss < Rip < slam, the killing stab between the stab and the Rip', () => {
+    const order = ['punch', 'stab', 'toss', 'rip', 'slam'] as const;
+    for (let i = 1; i < order.length; i += 1) {
+      assert.ok(hitstop[order[i]] > hitstop[order[i - 1]], `hitstop ${order[i - 1]} ${hitstop[order[i - 1]]} < ${order[i]} ${hitstop[order[i]]}`);
+      assert.ok(shake[order[i]].px > shake[order[i - 1]].px, `shake ${order[i - 1]} < ${order[i]}`);
+      assert.ok(shake[order[i]].ms > shake[order[i - 1]].ms, `shake time ${order[i - 1]} < ${order[i]}`);
+    }
+    assert.ok(hitstop.lastStab > hitstop.stab && hitstop.lastStab < hitstop.rip);
+    assert.ok(shake.lastStab.px > shake.stab.px && shake.lastStab.px < shake.rip.px);
+    assert.ok(shake.latch.px < shake.punch.px);
+  });
+
+  it('while the tear is frozen the torn body is already hidden (it used to be drawn standing over Kratos for 6 frames)', () => {
+    const { world, p, victim } = setup();
+    let frozenSeen = 0;
+    for (let i = 0; i < 120; i += 1) {
+      world.step(i === 0 ? ['grab'] : i === 3 ? ['heavy-attack'] : []);
+      if (p.grabPhase === 'break' && p.grabTicks === CONFIG.player.grab.ripTick) {
+        frozenSeen += 1;
+        assert.equal(victimTorn(p, victim), true, `frozen step ${frozenSeen}`);
+        assert.equal(victimPose(p, victim), null);
+      }
+      if (p.grabPhase === 'break' && p.grabTicks < CONFIG.player.grab.ripTick) assert.equal(victimTorn(p, victim), false);
+    }
+    assert.ok(frozenSeen > hitstop.rip, 'the tear tick is held by the hitstop');
+    assert.equal(victim.ripped, true);
   });
 });

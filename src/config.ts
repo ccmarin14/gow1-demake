@@ -153,18 +153,33 @@ grab: {
      * the wait only makes him go in sooner.
      */
     autoStabDelayTicks: 8,
+    /**
+     * The fourth (killing) stab is the accent of the chain: Kratos holds the blade up longer before he drives it in
+     * (game feel: ta-ta-ta-TAAA; the original video winds up its stabs unevenly, 12 to 26 ticks). A tap still
+     * makes him go in sooner.
+     */
+    lastStabDelayTicks: 16,
   },
   /**
-   * The deck slam (audit: it was a 10-tick teleport): Kratos lifts the soldier over his head (ticks 0 to 18), swings
-   * (19 to 23) and smashes him at `slamImpactTick`; the whole slam lasts `slamTicks` (~670 ms), the original takes ~1 s.
+   * The deck slam (audit: it was a 10-tick teleport): Kratos lifts the soldier over his head (ticks 4 to 9), holds him
+   * there, dives (the last 5 ticks) and smashes him at `slamImpactTick`; the whole slam lasts `slamTicks`. Game feel:
+   * the original goes from the lift to the impact in ~16 ticks, so the wind-up was cut from 24 to 22 ticks and the
+   * frozen impact grew (`hitstop.slam`): slow, slow, FAST, still.
    */
-  slamTicks: 40,
-  slamImpactTick: 24,
+  slamTicks: 38,
+  slamImpactTick: 22,
   /** Ticks of the Toss and of the Rip (the follow-ups that share the generic end of a grab execution). */
   throwTicks: 66,
-  breakTicks: 60,
-  /** The Rip: he is lifted overhead (ticks 4 to 16), pulled to Kratos' chest and stretched between his hands, and torn at `ripTick`. */
-  ripTick: 36,
+  breakTicks: 64,
+  /**
+   * The Rip: he is lifted overhead (ticks 4 to 16), pulled to Kratos' chest and stretched between his hands for the
+   * last `ripStretchTicks` before `ripTick`, where he is torn. Game feel (original: ~34 ticks of growing tension, then
+   * the tear in ~6): the stretch went from 6 to 10 ticks and the tear from 36 to 40.
+   */
+  ripTick: 40,
+  ripStretchTicks: 10,
+  /** Follow-through: Kratos stays low with his hands apart after the tear and rises in the last `ripRiseTicks`. */
+  ripRiseTicks: 8,
   /** Ticks recovering from the slam animation (~130 ms). */
   recoveryTicks: 8,
   /** Direct damage dealt to the victim on ground slam (○ / K / L). */
@@ -204,10 +219,21 @@ grab: {
    */
   harpoonBounceVy: 200,
   /**
-   * Ticks the world freezes when a blow of the circle grab lands (the squares and triangles already do): it gives the
-   * hit weight. Audit of the real game: the circle blows had none.
+   * The impact grammar of the circle blows (game feel): every blow freezes the world (`hitstop`, ticks) and shakes the
+   * camera (`shake`: ms and px of a 480 px screen) on the tick of the contact, on one scale shared by all of them,
+   * punch < stab < Toss < Rip < slam (the killing stab is the accent of the pummel, between the Toss and the Rip).
+   * `latch` is the grab connecting with the neck.
    */
-  hitstop: { punch: 3, stab: 3, toss: 3, slam: 6, rip: 5 },
+  hitstop: { punch: 2, stab: 3, lastStab: 5, toss: 4, rip: 7, slam: 8 },
+  shake: {
+    latch: { ms: 40, px: 1 },
+    punch: { ms: 60, px: 1.5 },
+    stab: { ms: 70, px: 2 },
+    lastStab: { ms: 110, px: 3.5 },
+    toss: { ms: 90, px: 3 },
+    rip: { ms: 160, px: 5 },
+    slam: { ms: 180, px: 6 },
+  },
   /** Total invulnerability window granted to Kratos during grab hold & execution. */
   invulTicks: 125,
   /**

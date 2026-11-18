@@ -775,61 +775,23 @@ export class World {
             if (dodgeEdge) followUpEdges.push('dodge');
           }
           stepGrab(player, this.targets, followUpEdges, undefined, heldDirection(this.input));
+          // Only the freeze is simulation: the shake, blood, sparks and sound of each circle blow are fired once by the
+          // scene on the tick of the contact, from the same scale (`CONFIG.player.grab.shake`). These blows used to
+          // also raise the strike notices, so the punch and the slam sounded twice and the first, weaker shake won.
           const grabHitstop = CONFIG.player.grab.hitstop;
           if (player.grabPhase === 'pummel' && player.grabTicks === 4) {
             this.hitstopTicks = grabHitstop.punch;
-            this.strikeHitNotice = {
-              x: player.x + player.facing * 16,
-              y: player.y - 18,
-              power: CONFIG.player.grab.chain.punchDamage,
-              kind: 'light',
-            };
           } else if (player.grabPhase === 'stab' && player.grabTicks === CONFIG.player.grab.chain.stabImpactTick) {
-            this.hitstopTicks = grabHitstop.stab;
-            this.strikeHitNotice = {
-              x: player.x + player.facing * 20,
-              y: player.y - 6,
-              power: CONFIG.player.grab.chain.stabDamage,
-              kind: 'light',
-            };
+            const { punches, stabs } = CONFIG.player.grab.chain;
+            this.hitstopTicks = (player.grabPummelCount ?? 0) >= punches + 1 + stabs ? grabHitstop.lastStab : grabHitstop.stab;
           } else if (player.grabPhase === 'throw' && player.grabTicks === CONFIG.player.grab.toss.stabTick) {
             this.hitstopTicks = grabHitstop.toss;
           } else if (player.grabPhase === 'throw' && player.grabTicks === CONFIG.player.grab.toss.releaseTick) {
             this.hitstopTicks = grabHitstop.toss;
-            this.strikeHitNotice = {
-              x: player.x + player.facing * 20,
-              y: player.y - 24,
-              power: CONFIG.player.grab.throwDamage,
-              kind: 'heavy',
-            };
           } else if (player.grabPhase === 'break' && player.grabTicks === CONFIG.player.grab.ripTick) {
             this.hitstopTicks = grabHitstop.rip;
-            this.strikeImpactNotice = {
-              x: player.x + player.facing * 18,
-              y: player.y,
-              dust: [player.x + player.facing * 8, player.x + player.facing * 28],
-              shake: { px: 5, ticks: 8 },
-            };
-            this.strikeHitNotice = {
-              x: player.x + player.facing * 18,
-              y: player.y - 12,
-              power: CONFIG.player.grab.breakDamage,
-              kind: 'heavy',
-            };
           } else if ((player.grabPhase === 'slam' || player.grabPhase === 'finisher_slam') && player.grabTicks === CONFIG.player.grab.slamImpactTick) {
             this.hitstopTicks = grabHitstop.slam;
-            this.strikeImpactNotice = {
-              x: player.x + player.facing * 18,
-              y: player.y,
-              dust: [player.x + player.facing * 10, player.x + player.facing * 26],
-              shake: { px: 4, ticks: 7 },
-            };
-            this.strikeHitNotice = {
-              x: player.x + player.facing * 18,
-              y: player.y - 8,
-              power: CONFIG.player.grab.damage,
-              kind: 'heavy',
-            };
           }
         }
         const nowGrabbing = isGrabbing(player);
@@ -1252,12 +1214,15 @@ export class World {
                   CONFIG.player.grab.collateralDamage,
                   CONFIG.enemy.legionnaire.knockdownTicks,
                 );
+                // a soldier thrown by the Toss knocks another one down: a Toss blow of the circle grammar
+                const tossShake = CONFIG.player.grab.shake.toss;
+                this.hitstopTicks = Math.max(this.hitstopTicks, CONFIG.player.grab.hitstop.toss);
                 this.strikeHitNotice = { x: other.x, y: other.y - 14, power: 20, kind: 'heavy' };
                 this.strikeImpactNotice = {
                   x: other.x,
                   y: other.y,
                   dust: [other.x - 8, other.x + 8],
-                  shake: { px: 4, ticks: 6 },
+                  shake: { px: tossShake.px, ticks: Math.round((tossShake.ms * 60) / 1000) },
                 };
                 if (killed) {
                   other.aiState = 'death';
@@ -1326,11 +1291,14 @@ export class World {
                         target.vy = -CONFIG.player.grab.harpoonBounceVy;
                         target.vx = 0;
                       }
+                      // the Harpoon's deck slam is a slam of the circle grammar: same freeze and shake as the grab's slam
+                      const slamShake = CONFIG.player.grab.shake.slam;
+                      this.hitstopTicks = Math.max(this.hitstopTicks, CONFIG.player.grab.hitstop.slam);
                       this.strikeImpactNotice = {
                         x: target.x,
                         y: target.y,
                         dust: [target.x - 10, target.x + 10],
-                        shake: { px: 4, ticks: 7 },
+                        shake: { px: slamShake.px, ticks: Math.round((slamShake.ms * 60) / 1000) },
                       };
                       this.strikeHitNotice = { x: target.x, y: target.y - 10, power: 25, kind: 'heavy' };
                     } else if (wasThrownFlight) {

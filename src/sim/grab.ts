@@ -484,7 +484,10 @@ export function stepGrab(
     keepLying(player, target);
 
     // He stabs on his own once the blade is up; a tap (after the first ticks) only makes him go in sooner
-    if ((inputActions.includes('grab') && player.grabTicks >= 2) || player.grabTicks >= cfg.chain.autoStabDelayTicks) {
+    // the killing stab is held up longer (the accent of the chain)
+    const nextIsLast = (player.grabPummelCount ?? 0) + 1 >= cfg.chain.punches + 1 + cfg.chain.stabs;
+    const delay = nextIsLast ? cfg.chain.lastStabDelayTicks : cfg.chain.autoStabDelayTicks;
+    if ((inputActions.includes('grab') && player.grabTicks >= 2) || player.grabTicks >= delay) {
       player.grabPummelCount = (player.grabPummelCount ?? 0) + 1;
       player.grabPhase = 'stab';
       player.grabTicks = 0;

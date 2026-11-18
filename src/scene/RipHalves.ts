@@ -11,6 +11,16 @@ const SPLIT_COL = 37;
 const GRAVITY = 900;
 const FADE_AFTER_S = 1.4;
 const FADE_FOR_S = 0.5;
+/** Seconds between two drops of blood a flying half leaves behind. */
+const TRAIL_EVERY_S = 0.05;
+/**
+ * Launch speeds (px/s) of the halves. Game feel: the original throws them off screen; at 95/-120 they dropped
+ * at Kratos' feet. The head half goes ahead and up, the legs half behind.
+ */
+export const RIP_HALF_LAUNCH = {
+  head: { vx: 150, vy: -175 },
+  legs: { vx: -110, vy: -135 },
+} as const;
 
 interface Piece {
   sprite: Phaser.GameObjects.Image;
@@ -19,11 +29,20 @@ interface Piece {
   age: number;
   landed: boolean;
   floor: number;
+  /** Seconds the half stays where he was torn (the hitstop of the tear), drawn white: the impact frame. */
+  hold: number;
+  trail: number;
+  /** Texture in colour, shown when the white impact frame ends. */
+  colourKey: string;
 }
 
-/** Bakes one half of the horizontal soldier into its own texture (mirrored if needed); pixel-exact, no crop quirks. */
-function halfTexture(scene: Phaser.Scene, upper: boolean, mirrored: boolean): string | null {
-  const name = `rip-half-${upper ? 'head' : 'legs'}-${mirrored ? 'm' : 'n'}`;
+/**
+ * Bakes one half of the horizontal soldier into its own texture (mirrored if needed); pixel-exact, no crop quirks.
+ * `white` bakes its silhouette in white: the impact frame of the tear (the game draws with the Canvas renderer,
+ * where `setTint` does nothing).
+ */
+function halfTexture(scene: Phaser.Scene, upper: boolean, mirrored: boolean, white = false): string | null {
+  const name = `rip-half-${upper ? 'head' : 'legs'}-${mirrored ? 'm' : 'n'}${white ? '-w' : ''}`;
   if (scene.textures.exists(name)) return name;
   if (!scene.textures.exists(SOURCE_KEY)) return null;
   const source = scene.textures.get(SOURCE_KEY).getSourceImage() as CanvasImageSource;
@@ -55,6 +74,14 @@ function halfTexture(scene: Phaser.Scene, upper: boolean, mirrored: boolean): st
       image.data[at + 2] = bright ? 38 : 27;
     }
   }
+  if (white) {
+    for (let at = 0; at < image.data.length; at += 4) {
+      if (image.data[at + 3] === 0) continue;
+      image.data[at] = 255;
+      image.data[at + 1] = 255;
+      image.data[at + 2] = 255;
+    }
+  }
   ctx.putImageData(image, 0, 0);
   canvas.refresh();
   return name;
@@ -67,31 +94,45 @@ export class RipHalves {
     private readonly scene: Phaser.Scene,
     /** Called with the place where each half hits the deck (the blood splash). */
     private readonly onLand: (x: number, y: number) => void = () => {},
+    /** Called while a half flies, every `TRAIL_EVERY_S`, with the torn edge (a trail of blood). */
+    private readonly onTrail: (x: number, y: number) => void = () => {},
   ) {}
 
   /**
    * Tears the soldier lying across Kratos' hands: `origin` is where his sprite was drawn, `facing` the way Kratos
    * looks. The head half is thrown ahead and up, the legs half behind.
    */
-  spawn(origin: VictimPose, facing: -1 | 1, floorY: number): void {
+  spawn(origin: VictimPose, facing: -1 | 1, floorY: number, holdSeconds = 0): void {
     const parts: Array<{ upper: boolean; vx: number; vy: number }> = [
-      { upper: true, vx: facing * 95, vy: -120 },
-      { upper: false, vx: -facing * 70, vy: -90 },
+      { upper: true, vx: facing * RIP_HALF_LAUNCH.head.vx, vy: RIP_HALF_LAUNCH.head.vy },
+      { upper: false, vx: facing * RIP_HALF_LAUNCH.legs.vx, vy: RIP_HALF_LAUNCH.legs.vy },
     ];
     for (const part of parts) {
       const key = halfTexture(this.scene, part.upper, origin.flipX);
       if (!key) continue;
       // The sprites are drawn mirrored where the soldier faced Kratos: the head half keeps the side it was on
-      const sprite = this.scene.add.image(origin.x, Math.min(origin.y, floorY), key).setOrigin(0.5, 1).setDepth(1.05);
-      this.pieces.push({ sprite, vx: part.vx, vy: part.vy, age: 0, landed: false, floor: floorY });
+      const whiteKey = holdSeconds > 0 ? halfTexture(this.scene, part.upper, origin.flipX, true) : null;
+      const sprite = this.scene.add.image(origin.x, Math.min(origin.y, floorY), whiteKey ?? key).setOrigin(0.5, 1).setDepth(1.05);
+      this.pieces.push({ sprite, vx: part.vx, vy: part.vy, age: 0, landed: false, floor: floorY, hold: holdSeconds, trail: 0, colourKey: key });
     }
   }
 
   update(dtSeconds: number): void {
     for (let i = this.pieces.length - 1; i >= 0; i -= 1) {
       const piece = this.pieces[i];
+      if (piece.hold > 0) {
+        // frozen with the world on the tear (white until its last frames, then in colour), then launched
+        piece.hold -= dtSeconds;
+        if (piece.hold < 0.05 && piece.sprite.texture.key !== piece.colourKey) piece.sprite.setTexture(piece.colourKey);
+        continue;
+      }
       piece.age += dtSeconds;
       if (!piece.landed) {
+        piece.trail += dtSeconds;
+        if (piece.trail >= TRAIL_EVERY_S) {
+          piece.trail = 0;
+          this.onTrail(piece.sprite.x, piece.sprite.y - 10);
+        }
         piece.vy += GRAVITY * dtSeconds;
         piece.sprite.x += piece.vx * dtSeconds;
         piece.sprite.y += piece.vy * dtSeconds;
