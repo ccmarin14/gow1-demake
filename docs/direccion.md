@@ -38,21 +38,19 @@ Tras 2 a 4 □, △ lanza *Plume of Prometheus*; tras 5 □, *Spirit of Hercules
 
 ## 4. Esencia de *God of War*: brechas y plan
 
-Revisión del 2026-10-29 contra el primer *God of War*, hecha sobre código, configuración y capturas (sin prueba de sensación a mano). Cada brecha es un trabajo pequeño e independiente; el estado vivo y el reparto están en el backlog de `docs/estado.md` §3. El estado vivo de cada una está en `docs/estado.md`.
+Revisión inicial (2026-10-29) contra el primer *God of War*, puesta al día el 2026-11-17. Cada brecha es un trabajo independiente; el reparto y el estado vivo están en el backlog de `docs/estado.md` §3.
 
-**Qué ya cumple:** guardia con parry y rodada con invulnerabilidad, *Ira de Poseidón*, orbes, cofres con Ojos de Gorgona y Plumas de Fénix, checkpoints y el tramo de la nave con la Hidra.
+**Ya cumple:** guardia con *parry* y rodada con invulnerabilidad, *Ira de Poseidón*, orbes, cofres con Ojos de Gorgona y Plumas de Fénix, checkpoints, el tramo de la nave con la Hidra, el moveset de nivel 1 completo (□, △ y el agarre con ○, §6) y un sonido en capas con tormenta de fondo (§13).
 
-| ID | Brecha | Criterio de aceptación | Depende del arte |
+| ID | Brecha | Estado | Depende del arte |
 | --- | --- | --- | --- |
-| **ESE-01** | **Resuelto** (paso 103): remates contextuales en el legionario debilitado. Detalle y pendientes en `estado.md`. | Con prueba en `tests/grab.test.ts`. | No. |
-| **ESE-02** | **Resuelto** (pasos 102 y 105): agarre con ○ y *Orion's Harpoon*. Lo que falta de arte y matices está en `estado.md` §3 (BL-37 a BL-44). | Con pruebas en `tests/grab.test.ts`. | Parcial. |
-| **ESE-03** | **Impacto.** Hecho en parte (D-39): los golpes pesados paran el mundo más, empujan al blanco y sacuden la cámara, con chispas. Falta ajustar la sensación con la lista del usuario (BL-04). | *Hitstop*, temblor y empuje proporcionales al peso del golpe, valores en `CONFIG` y medidos en el harness. | No. |
-| **ESE-04** | **Enemigos de un solo truco.** El legionario solo tiene un tajo con anticipación. | Al menos un segundo comportamiento que dé sentido a la guardia o a la magia (por ejemplo, un ataque que solo se puede parar). | No. |
-| **ESE-05** | **Sin historia.** El título pasa directo al nivel. | Introducción mínima de texto, sujeta a la regla D-30: nunca puede estorbar las pruebas. | No. |
-| **ESE-06** | **Un solo hechizo y pocos enemigos.** El primer juego tiene cuatro hechizos y más variedad. | Diferido hasta que exista el arte base. | Sí. |
-| **ESE-07** | **El arte aún no transmite a Kratos** (pose única, enemigos provisionales, audio sintético). | Se resuelve con el trabajo ASCII ya planificado (borradores D-34 y su terminación). | Sí. |
-
-**Orden recomendado:** ESE-03 (barato y de mayor efecto en la sensación), ESE-01 con ESE-02, ESE-04, ESE-05; ESE-06 y ESE-07 después. Los cuatro primeros avanzan mientras se redibuja a Kratos.
+| **ESE-01** | Remates contextuales en enemigos debilitados. | Implementado y probado, pero **inalcanzable con el legionario común** (decisión C-O1 en `estado.md`). | No. |
+| **ESE-02** | Agarre con ○ y *Orion's Harpoon*. | **Resuelto**: especificación en §6.1, dos auditorías independientes de la presentación y pruebas de contacto, continuidad e hitstop. Falta la revisión visual del usuario. | Parcial: los cuadros son borradores 3D. |
+| **ESE-03** | Impacto (hitstop, empuje, sacudida, chispas, sangre, sonido). | **Hecho para □, △ y ○**: escala de impacto única (§6.1) con valores en `CONFIG` y una sola sacudida por golpe; falta ajustar con lo que el usuario sienta al jugar (BL-04 cerrada). | No. |
+| **ESE-04** | Enemigos de un solo truco: el legionario solo tiene un tajo con anticipación. | Abierta: al menos un segundo comportamiento que dé sentido a la guardia o a la magia (por ejemplo, un ataque que solo se puede parar). | No. |
+| **ESE-05** | Sin historia: el título pasa directo al nivel. | Abierta: el cómic de apertura (BL-33, D-50), sujeto a la regla D-30 (nunca estorba las pruebas). | No. |
+| **ESE-06** | Un solo hechizo y pocos enemigos; el original tiene cuatro hechizos. | Diferida hasta que exista el arte base (BL-12). | Sí. |
+| **ESE-07** | El arte aún no transmite a Kratos (borradores 3D sin la terminación a mano). | Abierta: terminación a mano de la cabeza (F4 en `estado.md`) y los enemigos con arte (BL-08, BL-21, BL-22, BL-26). El audio ya no es una brecha (D-55). | Sí. |
 
 ## 5. Método de dibujo para agentes
 
