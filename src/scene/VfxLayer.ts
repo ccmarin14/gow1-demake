@@ -189,6 +189,29 @@ export class VfxLayer {
     }
   }
 
+  /**
+   * Blood thrown straight up from a blade driven down into a body (the floor stabs): a narrow column that leans a
+   * little towards `facing`, so each stab reads as a hit even when the blade itself only moves a few pixels.
+   */
+  emitBloodGeyser(worldX: number, worldY: number, facing: -1 | 1, count: number = 16): void {
+    const bloodColors = [0x7f1d1d, 0x991b1b, 0xdc2626, 0xef4444];
+    for (let i = 0; i < count; i += 1) {
+      const angle = -Math.PI / 2 + facing * 0.25 + (this.rnd() - 0.5) * 0.9;
+      const speed = 90 + this.rnd() * 130;
+      const maxLife = 12 + Math.floor(this.rnd() * 10);
+      this.bloodParticles.push({
+        x: worldX + (this.rnd() - 0.5) * 3,
+        y: worldY + (this.rnd() - 0.5) * 2,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        color: bloodColors[Math.floor(this.rnd() * bloodColors.length)],
+        life: maxLife,
+        maxLife,
+        size: this.rnd() > 0.5 ? 2 : 1,
+      });
+    }
+  }
+
   /** Massive radial blood burst on bone break or lethal execution (Grab 2 break / slam). */
   emitBloodBurst(worldX: number, worldY: number, count: number = 32): void {
     const bloodColors = [0x4a0404, 0x7f1d1d, 0x991b1b, 0xdc2626, 0xef4444];

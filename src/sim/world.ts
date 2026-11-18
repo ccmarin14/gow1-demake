@@ -17,7 +17,7 @@ import { isGuarding, startGuard, stepGuard } from './guard';
 import { stepLegionnaire } from './legionnaire';
 import { stepHydra } from './hydra';
 import { isCastingMagic, stepMagic } from './magic';
-import { bufferGrabInput, isGrabbing, startGrab, stepGrab } from './grab';
+import { bufferGrabInput, isGrabbing, isLastStab, startGrab, stepGrab } from './grab';
 import { damageEnemy } from './damage';
 import { STRIKES, branchStrike, chainStrike, stepGroundFires, strikeChainTicks, strikeGravityAt, queueChain, startStrike, stepStrike, strikeCancellable, strikeLength, strikePhaseAt, type HeldDirection, type StrikeImpactNotice, type StrikeState } from './strike';
 import { buildLevel1Map, computeCameraScrollX, getSegmentAtX, type LevelMapData } from './map';
@@ -782,8 +782,7 @@ export class World {
           if (player.grabPhase === 'pummel' && player.grabTicks === 4) {
             this.hitstopTicks = grabHitstop.punch;
           } else if (player.grabPhase === 'stab' && player.grabTicks === CONFIG.player.grab.chain.stabImpactTick) {
-            const { punches, stabs } = CONFIG.player.grab.chain;
-            this.hitstopTicks = (player.grabPummelCount ?? 0) >= punches + 1 + stabs ? grabHitstop.lastStab : grabHitstop.stab;
+            this.hitstopTicks = isLastStab(player) ? grabHitstop.lastStab : grabHitstop.stab;
           } else if (player.grabPhase === 'throw' && player.grabTicks === CONFIG.player.grab.toss.stabTick) {
             this.hitstopTicks = grabHitstop.toss;
           } else if (player.grabPhase === 'throw' && player.grabTicks === CONFIG.player.grab.toss.releaseTick) {

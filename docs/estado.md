@@ -2,7 +2,7 @@
 
 Documento único del estado medido de `gow-8b`: qué funciona, qué falta revisar o decidir y qué sigue. Se actualiza en el mismo commit de cada paso. La cronología completa y lo ya resuelto viven en [`docs/archivo/`](archivo/README.md); el historial de git conserva todo lo demás.
 
-**Sincronizado el 2026-11-17 · 367 pruebas · rama `tarea/ataques-circulo`.**
+**Sincronizado el 2026-11-17 · 407 pruebas · rama `tarea/ataques-circulo`.**
 
 ## 1. Qué funciona hoy
 
@@ -140,3 +140,4 @@ La cronología completa (pasos 0 a 146) está en [`docs/archivo/registro-pasos.m
 - **Paso 144:** *Toss* con ritmo de látigo, dos cadenas y alcance fijo (tu petición).
 - **Paso 145:** escala única de impacto y una sola sacudida de cámara por golpe (subagente Opus de esfuerzo medio): antes cada golpe de ○ sacudía dos veces y la débil tapaba la fuerte.
 - **Paso 146:** audio rehecho en capas, con tormenta de fondo y sonidos nuevos (D-55); banco de medidas `pnpm audio:check`.
+- **Paso 148:** *Toss* con látigo inconfundible (el soldado queda arrastrado 25 px o más detrás de Kratos, el chasquido es un arco blanco de 3 ticks por encima del hombro con destello, y una sola cadena tensa de 1 px de separación) y las 4 puñaladas **en ráfaga** (de 21 a unos 12 ticks entre impactos, acelerando y con la cuarta sostenida), con sangre, chispa y sacudida por golpe (tu petición; subagente Opus). 407 pruebas.

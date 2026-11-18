@@ -10,6 +10,9 @@ import {
   kratosAnchorWorld,
   kratosGrabFrameKey,
   ripTremble,
+  TOSS_DRAG_TICKS,
+  tossChainLines,
+  tossNeckWorld,
   victimAnchorWorld,
   victimPose,
 } from '../src/scene/grabPose';
@@ -149,8 +152,9 @@ describe('circle grab: the drawings in contact (BL-45)', () => {
   it('C4: the blade lands on the lying body at the tick of every stab', () => {
     const body = bodyBox('death-02.txt');
     const impact = CONFIG.player.grab.chain.stabImpactTick;
-    const hits = chain.filter((k) => k.phase === 'stab' && k.t >= impact && k.t <= impact + 3);
-    assert.ok(hits.length >= 3 * 4 + 1, 'four stabs, four ticks of blade in each');
+    // while the blade is in (stab-b): from the impact until it is ripped out, longer in the killing stab
+    const hits = chain.filter((k) => k.phase === 'stab' && k.t >= impact && k.frameKey === 'kratos-grab-stab-b');
+    assert.ok(hits.length >= 4 * 2, 'four stabs, the blade in at least two ticks each');
     for (const k of hits) {
       const tip = grabBladePoint(k.player, k.frameKey!, grabBladeAngle(k.player), 1);
       const f = k.pose!.flipX ? -1 : 1;
@@ -202,7 +206,8 @@ describe('circle grab: continuity from one tick to the next (audit)', () => {
   it('the stab that kills still lasts the whole stab and the body stays lying, never standing up', () => {
     const lastStab = chain.filter((k) => k.phase === 'stab' && k.player.grabPummelCount === 3 + 1 + 4);
     // the tap that starts the stab already runs its first tick, so 13 of the 14 are seen (it was 5 when it killed)
-    assert.equal(lastStab.length, CONFIG.player.grab.chain.stabTicks - 1, 'the killing stab runs the whole stab');
+    const { stabTicks, lastStabHoldTicks } = CONFIG.player.grab.chain;
+    assert.equal(lastStab.length, stabTicks + lastStabHoldTicks - 1, 'the killing stab runs the whole stab, and longer');
     const killedAt = chain.findIndex((k) => k.victim.isDead);
     assert.ok(killedAt >= 0);
     for (const k of chain.slice(killedAt)) {
@@ -284,14 +289,46 @@ describe('circle grab: the Toss takes its time (audit B7)', () => {
       const jump = Math.hypot(b.x - a.x, b.y - a.y);
       assert.ok(jump <= 24, `toss ${held[i].t}: the soldier moved ${jump.toFixed(1)} px in one tick`);
     }
+    const windFrom = toss.stabTick + 8;
     for (let i = 4; i < held.length; i += 1) {
       const k = held[i];
-      // right after Kratos changes pose the soldier is still catching up with his hand (on purpose, 4 ticks)
+      // right after Kratos changes pose the soldier is still catching up with his hand (on purpose, 4 ticks), and
+      // while he is dragged behind Kratos' back (TOSS_DRAG_TICKS) or whipped over (snapTicks) he is in transit
       if (held.slice(i - 3, i).some((h) => h.frameKey !== k.frameKey)) continue;
-      const hand = kratosAnchorWorld(k.player, k.frameKey!, 'farHand')!;
+      if (k.t >= windFrom && k.t < windFrom + TOSS_DRAG_TICKS - 1) continue;
+      // in the wind-up the near hand drags him behind the back; before it the far hand holds him at the side
+      const hand = kratosAnchorWorld(k.player, k.frameKey!, k.t >= windFrom ? 'hand' : 'farHand')!;
       const neck = victimAnchorWorld(k.pose!, 'neck')!;
       if (k.pose!.y < k.player.y) assert.ok(Math.hypot(hand[0] - neck[0], hand[1] - neck[1]) <= 12.5, `toss ${k.t}: neck away from the hand`);
     }
+  });
+
+  it('the whip reads (user: "no lo llevaba hacia atrás"): dragged far behind Kratos, then the fastest movement of the grab, let go ahead of him', () => {
+    const neckX = (k: Tick): number => victimAnchorWorld(k.pose!, 'neck')![0] - k.player.x;
+    const snapFrom = toss.releaseTick - toss.snapTicks;
+    const lastWindUp = phase.find((k) => k.t === snapFrom - 1)!;
+    // behind his back and out of his silhouette (his body spans about 10 px to each side of his feet)
+    assert.ok(neckX(lastWindUp) <= -25, `at the end of the wind-up the neck is ${neckX(lastWindUp).toFixed(1)} px from Kratos`);
+    assert.ok(lastWindUp.pose!.depth < 0, 'behind Kratos once he is out of the silhouette');
+    // speeds (px per tick of the neck): the wind-up is slow, the snap at least three times faster
+    const held = phase.filter((k) => k.t < toss.releaseTick);
+    const speed = (i: number): number => {
+      const [a, b] = [victimAnchorWorld(held[i - 1].pose!, 'neck')!, victimAnchorWorld(held[i].pose!, 'neck')!];
+      return Math.hypot(b[0] - a[0], b[1] - a[1]);
+    };
+    const windUp: number[] = [];
+    const snap: number[] = [];
+    for (let i = 1; i < held.length; i += 1) {
+      if (held[i].t > toss.stabTick + 8 && held[i].t < snapFrom) windUp.push(speed(i));
+      if (held[i].t >= snapFrom) snap.push(speed(i));
+    }
+    assert.equal(snap.length, toss.snapTicks);
+    const slowest = Math.min(...snap);
+    const windUpAverage = windUp.reduce((a, b) => a + b, 0) / windUp.length;
+    assert.ok(slowest >= 3 * windUpAverage, `snap ${slowest.toFixed(1)} px/tick vs wind-up ${windUpAverage.toFixed(1)}`);
+    // let go ahead of Kratos, not on top of him: the first flying tick starts there
+    const flying = run.find((k) => k.phase === 'throw' && k.t === toss.releaseTick + 1)!;
+    assert.ok((flying.victim.x - flying.player.x) * flying.player.facing >= toss.releaseAheadPx, 'let go ahead of Kratos');
   });
 
   it('once let go he tumbles through four frames instead of sliding as one cut-out', () => {
@@ -299,6 +336,29 @@ describe('circle grab: the Toss takes its time (audit B7)', () => {
     const frames = new Set(flying.map((k) => k.pose!.textureKey));
     assert.ok(frames.size >= 3, `${[...frames].join(',')}`);
     for (const f of frames) assert.ok(f.startsWith('legionnaire-tumble-'), f);
+  });
+});
+
+describe('circle grab: the two Toss chains are one whip (user: "se ven las dos cadenas como separadas")', () => {
+  const toss = CONFIG.player.grab.toss;
+  it('they leave the hands side by side and meet on one hook (0 to 3 px apart at both ends, not a V)', () => {
+    const run = record(TOSS, 130).filter((k) => k.phase === 'throw' && k.t >= toss.releaseTick - toss.snapTicks && k.t < toss.releaseTick + 8);
+    assert.ok(run.length >= toss.snapTicks + 8);
+    for (const k of run) {
+      // the hook the scene uses: the soldier's neck while he is whipped over, his body once he flies
+      const hook: readonly [number, number] = k.t < toss.releaseTick ? tossNeckWorld(k.player, k.t) : [k.victim.x, k.victim.y - 20];
+      const lines = tossChainLines(k.player, k.frameKey!, hook);
+      assert.equal(lines.length, 2);
+      const [[a0, a1], [b0, b1]] = lines;
+      const across = (p: readonly [number, number], q: readonly [number, number], dir: readonly [number, number]): number => {
+        // distance between two points measured across the chain (perpendicular to its direction)
+        const len = Math.hypot(dir[0], dir[1]) || 1;
+        return Math.abs(((q[0] - p[0]) * -dir[1] + (q[1] - p[1]) * dir[0]) / len);
+      };
+      const dir: [number, number] = [a1[0] - a0[0], a1[1] - a0[1]];
+      assert.ok(Math.hypot(b1[0] - a1[0], b1[1] - a1[1]) <= 3, `${k.t}: the hooks are apart`);
+      assert.ok(across(a0, b0, dir) <= 3, `${k.t}: at the hands they are ${across(a0, b0, dir).toFixed(1)} px apart`);
+    }
   });
 });
 
@@ -435,10 +495,32 @@ describe('circle grab: rhythm of the stabs and of the whiff (game feel)', () => 
         wait = 0;
       }
     }
+    const delays = grab.chain.stabDelayTicks;
     assert.equal(waits.length, grab.chain.stabs);
-    assert.deepEqual(waits.slice(0, -1), Array(grab.chain.stabs - 1).fill(grab.chain.autoStabDelayTicks + 1));
-    assert.equal(waits[waits.length - 1], grab.chain.lastStabDelayTicks + 1);
-    assert.ok(grab.chain.lastStabDelayTicks > grab.chain.autoStabDelayTicks);
+    assert.deepEqual(waits, delays.map((d) => d + 1));
+    assert.ok(delays[delays.length - 1] > delays[delays.length - 2], 'the killing stab is held up longer than the one before');
+  });
+
+  it('between stabs the blade is ripped out and raised at once, and goes higher before the killing stab (no rest with the blade up)', () => {
+    const run = record(circleChain(1 + grab.chain.punches + 1), 400);
+    // floorhold runs between two stabs: the blade is up (stab-up) only for the last ticks of each wait
+    const waits: Tick[][] = [];
+    run.forEach((k, i) => {
+      if (k.phase !== 'floorhold') return;
+      if (i === 0 || run[i - 1].phase !== 'floorhold') waits.push([]);
+      waits[waits.length - 1].push(k);
+    });
+    assert.equal(waits.length, grab.chain.stabs);
+    for (const wait of waits.slice(1, -1)) {
+      const out = wait.filter((k) => k.frameKey === 'kratos-grab-stab-a').length;
+      assert.ok(out <= 1, `the blade comes out in ${out} ticks`);
+      assert.ok(wait.length <= 4, `he waits ${wait.length} ticks between two stabs`);
+    }
+    const highest = (wait: Tick[]): number => Math.min(...wait.map((k) => grabBladeAngle(k.player)));
+    assert.ok(highest(waits[waits.length - 1]) < highest(waits[1]) - 10, 'the killing stab is raised higher');
+    // the killing stab keeps the blade in longer than the others
+    const inBody = (n: number): number => run.filter((k) => k.phase === 'stab' && k.player.grabPummelCount === grab.chain.punches + 1 + n && k.frameKey === 'kratos-grab-stab-b').length;
+    assert.ok(inBody(grab.chain.stabs) >= inBody(1) + grab.chain.lastStabHoldTicks, `in ${inBody(grab.chain.stabs)} vs ${inBody(1)} ticks`);
   });
 
   it('the whiff pulls the arm back until its last ticks instead of standing in guard while locked', () => {

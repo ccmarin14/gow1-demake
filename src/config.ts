@@ -142,23 +142,25 @@ grab: {
     punchTicks: 14,
     stabs: 4,
     stabDamage: 5,
-    /** The stab lasts this many ticks (audit: faster than before, so mashing is possible) and the blade goes in at `stabImpactTick`. */
-    stabTicks: 10,
-    stabImpactTick: 3,
+    /**
+     * A furious burst (the user: "con rabia, con fuerza, chan, chan, chan"; it was 21 ticks per stab and read as a
+     * chore): the blade goes down in one tick and goes in at `stabImpactTick`, stays in for `stabImpactTick + 1`
+     * and is ripped out while it rises again, all in `stabTicks`. No rest with the blade up between stabs.
+     */
+    stabTicks: 6,
+    stabImpactTick: 2,
     /** Ticks Kratos takes to get up from his knee after the last stab (or after nobody follows the chain). */
     getUpTicks: 12,
     /**
      * After the deck slam Kratos stabs the fallen victim on his own (the user: "no debo presionar círculo muchas
-     * veces"): he raises the blade for this many ticks and goes in, four times. A ○ tap after the first ticks of
-     * the wait only makes him go in sooner.
+     * veces"): before each of the four stabs he raises the blade for this many ticks. The burst speeds up (the
+     * first one a bit slower, then faster) and the fourth (killing) one is the accent: the blade is held overhead
+     * a beat longer (ta, ta-ta, TAAA). With the stab and its hitstop that is 12, 11 and 14 ticks between impacts
+     * (it was 21, 21 and 29). A ○ tap after the first ticks of the wait only makes him go in sooner.
      */
-    autoStabDelayTicks: 8,
-    /**
-     * The fourth (killing) stab is the accent of the chain: Kratos holds the blade up longer before he drives it in
-     * (game feel: ta-ta-ta-TAAA; the original video winds up its stabs unevenly, 12 to 26 ticks). A tap still
-     * makes him go in sooner.
-     */
-    lastStabDelayTicks: 16,
+    stabDelayTicks: [6, 3, 2, 5],
+    /** The killing stab stays in this many ticks longer (Kratos leans on it, the blood keeps coming) before he gets up. */
+    lastStabHoldTicks: 6,
   },
   /**
    * The deck slam (audit: it was a 10-tick teleport): Kratos lifts the soldier over his head (ticks 4 to 9), holds him
@@ -196,9 +198,14 @@ grab: {
     raiseFrom: 6,
     stabTick: 14,
     stabDamage: 8,
-    /** He is let go on the chains at `releaseTick`; the last `snapTicks` before it Kratos' arms whip forward. */
+    /**
+     * He is let go on the chains at `releaseTick`; the last `snapTicks` before it Kratos' arms whip forward and the
+     * soldier flies over in an arc from behind his back to `releaseAheadPx` ahead of him (it was 12 px: he was let go
+     * on top of Kratos and froze there for the hitstop). The wind-up before it is 13 ticks: slow, slow, FAST, still.
+     */
     releaseTick: 38,
-    snapTicks: 4,
+    snapTicks: 3,
+    releaseAheadPx: 26,
     /** Ticks the two chains stay on the flying soldier (and then reel back). */
     chainTicks: 26,
   },

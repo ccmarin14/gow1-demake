@@ -126,6 +126,44 @@ describe('circle grab: a follow-up pressed while a punch lands is not lost (audi
   });
 });
 
+describe('circle grab: the floor stabs are a furious burst (user: "chan, chan, chan", game feel)', () => {
+  const { hitstop } = CONFIG.player.grab;
+  const { stabDelayTicks, stabTicks, lastStabHoldTicks } = CONFIG.player.grab.chain;
+  /** World steps (hitstop included) between the four stab impacts, with no input after the slam. */
+  function impactGaps(): number[] {
+    const { world, victim } = setup();
+    victim.hp = 1000;
+    const plan = chain(5);
+    const p = world.peekEntity(PLAYER_ID) as EntityState;
+    const at: number[] = [];
+    let hp = victim.hp;
+    for (let i = 0; i < 600 && !victim.isDead; i += 1) {
+      world.step(plan(i, p));
+      if (p.grabPhase === 'stab' && victim.hp < hp) at.push(i);
+      hp = victim.hp;
+    }
+    return at.slice(1).map((t, i) => t - at[i]);
+  }
+
+  it('the stabs land 10 to 13 ticks apart (they were 21), the burst speeds up and the killing one comes a beat later', () => {
+    const gaps = impactGaps();
+    assert.deepEqual(gaps, [
+      stabDelayTicks[1] + stabTicks + hitstop.stab,
+      stabDelayTicks[2] + stabTicks + hitstop.stab,
+      stabDelayTicks[3] + stabTicks + hitstop.lastStab,
+    ]);
+    for (const gap of gaps.slice(0, 2)) assert.ok(gap >= 10 && gap <= 13, `${gap} ticks between two stabs`);
+    assert.ok(gaps[1] <= gaps[0], 'the second gap is not slower than the first');
+    assert.ok(gaps[2] > gaps[1], 'the killing stab is the accent');
+    assert.ok(stabDelayTicks[0] > stabDelayTicks[1], 'the first stab after the slam is a bit slower');
+  });
+
+  it('the killing stab keeps the blade in longer before Kratos gets up', () => {
+    assert.ok(lastStabHoldTicks >= 4);
+    assert.ok(hitstop.lastStab > hitstop.stab);
+  });
+});
+
 describe('circle grab: one impact grammar for every blow (game feel)', () => {
   const { hitstop, shake } = CONFIG.player.grab;
 

@@ -15,10 +15,15 @@ import { GameFlowOverlay } from '../ui/GameFlowOverlay';
 import { PlayerView } from './PlayerView';
 import { EnemyView } from './EnemyView';
 import { drawChain } from '../entities/strikeArt';
-import { grabImpactPoint, kratosAnchorWorld, kratosGrabFrameKey, ripHalvesOrigin } from './grabPose';
+import { grabImpactPoint, kratosGrabFrameKey, ripHalvesOrigin, tossChainLines, tossNeckWorld, tossWhipPath } from './grabPose';
+
+/** The Toss whip: the smear fades over this many ticks after the release; the chains stay taut this many while he flies. */
+const TOSS_SMEAR_FADE_TICKS = 4;
+const TOSS_TAUT_TICKS = 14;
 import { RipHalves } from './RipHalves';
 import { VfxLayer } from './VfxLayer';
 import { SoundManager } from '../audio/SoundManager';
+import { isLastStab } from '../sim/grab';
 import { STRIKES } from '../sim/strike';
 import type { FrameMetrics } from '../metrics';
 import type { Simulation } from '../sim/engine';
@@ -439,7 +444,7 @@ export class ShellScene extends Phaser.Scene {
           const { ms, px } = grab.shake[kind];
           this.cameras.main.shake(ms, px / CONFIG.internal.width, true);
         };
-        const lastStab = (player.grabPummelCount ?? 0) >= grab.chain.punches + 1 + grab.chain.stabs;
+        const lastStab = isLastStab(player);
         const ripTension = grab.ripTick - grab.ripStretchTicks;
         if (
           (player.grabPhase === 'hold' || player.grabPhase === 'finisher_qte') &&
@@ -458,9 +463,15 @@ export class ShellScene extends Phaser.Scene {
         } else if (crosses(['stab'], grab.chain.stabImpactTick)) {
           // Puñalada con la Espada del Caos sobre la víctima caída (Grab 1); la última, la que mata, pesa más
           shake(lastStab ? 'lastStab' : 'stab');
+          // a burst of fury: every stab spits a column of blood and a spark where the blade goes in
           const [ix, iy] = impactAt('floor-stab', 20, -6);
-          this.vfxLayer.emitBloodSpurt(ix, iy, player.facing, lastStab ? 34 : 22);
-          if (lastStab) this.vfxLayer.emitBloodBurst(ix, iy - 2, 16);
+          this.vfxLayer.emitBloodGeyser(ix, iy - 2, player.facing, lastStab ? 26 : 14);
+          this.vfxLayer.emitBloodSpurt(ix, iy, player.facing, lastStab ? 34 : 12);
+          this.vfxLayer.emitCombatSparks(ix, iy - 3, lastStab ? 8 : 4, true);
+          if (lastStab) {
+            this.vfxLayer.emitBloodBurst(ix, iy - 2, 16);
+            this.vfxLayer.emitParryFlash(ix, iy - 4);
+          }
           this.soundManager?.playStab();
           if (lastStab) this.soundManager?.playStrikeHit('heavy');
         } else if (crosses(['break'], ripTension)) {
@@ -486,11 +497,17 @@ export class ShellScene extends Phaser.Scene {
           shake('toss');
           { const [ix, iy] = impactAt('toss-stab', 14, -14); this.vfxLayer.emitBloodSpurt(ix, iy, player.facing, 18); }
           this.soundManager?.playStab();
+        } else if (crosses(['throw'], grab.toss.releaseTick - grab.toss.snapTicks) && player.grabTicks < grab.toss.releaseTick) {
+          // the whip starts: the air cut by the soldier swung over Kratos' shoulder
+          this.soundManager?.playGrabWhoosh();
         } else if (crosses(['throw'], grab.toss.releaseTick)) {
-          // Impulso y despegue del proyectil humano (Grab 3 - □ Throw): el chasquido del látigo
+          // Impulso y despegue del proyectil humano (Grab 3 - □ Throw): el chasquido del látigo, donde lo suelta
           shake('toss');
-          this.vfxLayer.emitDust(player.x, player.y);
-          this.vfxLayer.emitCombatSparks(player.x + player.facing * 20, player.y - 24, 10, true);
+          const [nx, ny] = tossNeckWorld(player, grab.toss.releaseTick - 1);
+          this.vfxLayer.emitParryFlash(nx, ny);
+          this.vfxLayer.emitCombatSparks(nx, ny, 12, true);
+          this.vfxLayer.emitDust(player.x - player.facing * 6, player.y);
+          this.vfxLayer.emitDust(player.x + player.facing * 10, player.y);
           this.soundManager?.playThrowRelease();
           this.soundManager?.playStrikeHit('heavy');
         } else if (crosses(['slam', 'finisher_slam'], grab.slamImpactTick)) {
@@ -520,30 +537,7 @@ export class ShellScene extends Phaser.Scene {
       }
 
       this.tossChain.clear();
-      if (player && player.grabPhase === 'throw') {
-        const toss = CONFIG.player.grab.toss;
-        const since = player.grabTicks - toss.releaseTick;
-        if (since >= 0 && since < toss.chainTicks) {
-          // Both chains lash out of Kratos' hands to the soldier and hold him taut while he flies; the last ticks they reel back
-          const thrown = player.grabTargetId ? this.simulation.world.peekEntity(player.grabTargetId) : undefined;
-          const reel = Math.min(1, Math.max(0, (since - (toss.chainTicks - 8)) / 8));
-          const hands = (['hand', 'farHand'] as const).map((name) => kratosAnchorWorld(player, 'kratos-grab-throw-b', name));
-          if (thrown && hands[0] && hands[1]) {
-            const hooks: Array<[number, number]> = [
-              [thrown.x, thrown.y - 20],
-              [thrown.x, thrown.y - 10],
-            ];
-            const colors = [0xd0ccd6, 0x6c6674];
-            hooks.forEach((hook, i) => {
-              const hand = hands[i]!;
-              const end: [number, number] = [hook[0] + (hand[0] - hook[0]) * reel, hook[1] + (hand[1] - hook[1]) * reel];
-              // two pixels thick so the chains read at 1x; slack only while they reel back
-              drawChain(this.tossChain, [hand[0], hand[1]], end, reel * 6, colors);
-              drawChain(this.tossChain, [hand[0], hand[1] + 1], [end[0], end[1] + 1], reel * 6, colors);
-            });
-          }
-        }
-      }
+      if (player && player.grabPhase === 'throw') this.drawTossWhip(player);
       if (flowState !== 'paused') this.ripHalves.update(delta / 1000);
       this.vfxLayer.update(delta / 1000, flowState === 'paused');
     }
@@ -604,6 +598,46 @@ export class ShellScene extends Phaser.Scene {
         this.lastDebugText = nextText;
         this.debugText.setText(nextText);
       }
+    }
+  }
+
+  /**
+   * The Toss whip (game feel, user: "que se note más el latigazo"): while Kratos snaps the soldier over and for a
+   * few ticks after he lets go, a pale smear follows the arc the soldier's neck swept; the two chains run together
+   * out of Kratos' hands to one hook on the soldier, white and taut at the snap, taut while he flies, slack when
+   * he lands and they reel back.
+   */
+  private drawTossWhip(player: Readonly<EntityState>): void {
+    const toss = CONFIG.player.grab.toss;
+    const t = player.grabTicks;
+    const snapFrom = toss.releaseTick - toss.snapTicks;
+    const since = t - toss.releaseTick;
+    if (t < snapFrom || since >= toss.chainTicks) return;
+    const g = this.tossChain;
+    // the smear: dense along the arc, its tail fading, gone 4 ticks after the release
+    const fade = since < 0 ? 1 : 1 - since / TOSS_SMEAR_FADE_TICKS;
+    if (fade > 0) {
+      const path = tossWhipPath(player, t, 40);
+      path.forEach(([x, y], i) => {
+        const k = i / Math.max(1, path.length - 1);
+        g.fillStyle(0xf4eee0, fade * (0.15 + 0.55 * k));
+        g.fillRect(Math.round(x) - 2, Math.round(y) - 2, 5, 5);
+        g.fillStyle(0xffffff, fade * k);
+        g.fillRect(Math.round(x), Math.round(y), 1, 1);
+      });
+    }
+    // the chains: from both hands (4 px apart, along the chain) to one hook, side by side 1 px apart
+    const thrown = player.grabTargetId ? this.simulation.world.peekEntity(player.grabTargetId) : undefined;
+    if (!thrown) return;
+    const hook: readonly [number, number] = since < 0 ? tossNeckWorld(player, t) : [thrown.x, thrown.y - 20];
+    const reel = Math.min(1, Math.max(0, (since - (toss.chainTicks - 8)) / 8));
+    const slack = since < TOSS_TAUT_TICKS ? 0 : Math.min(4, (since - TOSS_TAUT_TICKS) / 2);
+    const sag = Math.max(slack, reel * 6);
+    const colors = since <= 1 ? [0xffffff, 0xd0ccd6] : [0xd0ccd6, 0x6c6674];
+    for (const [start, end] of tossChainLines(player, kratosGrabFrameKey(player) ?? 'kratos-grab-throw-b', hook, reel)) {
+      // each chain two pixels thick so it reads at 1x; the second lies right under the first
+      drawChain(g, start, end, sag, colors);
+      drawChain(g, [start[0], start[1] + 1], [end[0], end[1] + 1], sag, colors);
     }
   }
 

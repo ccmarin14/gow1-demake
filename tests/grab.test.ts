@@ -405,7 +405,8 @@ describe('combat grab with Circle / L key (BL-06, D-42)', () => {
     }
     assert.equal(hitsAt.length, CONFIG.player.grab.chain.stabs, 'four stabs landed with no input at all');
     assert.equal(victim.isDead, true, 'the last one kills a victim with 100 HP');
-    assert.ok(hitsAt[1] - hitsAt[0] <= CONFIG.player.grab.chain.autoStabDelayTicks + CONFIG.player.grab.chain.stabTicks + 4, 'one stab after the other, no long pauses');
+    const { stabDelayTicks, stabTicks } = CONFIG.player.grab.chain;
+    assert.equal(hitsAt[1] - hitsAt[0], stabDelayTicks[1] + stabTicks, 'one stab after the other, no long pauses');
   });
 
   it('launcher (held △) lifts enemy straight up vertically (vx = 0) and ○ chains Orion\'s Harpoon to slam it down', () => {
@@ -620,8 +621,8 @@ describe('grab orb tiers (Pummel > Rip > Toss)', () => {
     hits += 1;
     assert.equal(p.redOrbs - before, orbs.pummelPerHit * hits, 'the throw to the floor pays too');
     assert.equal(victim.isDead, false);
-    world.step(['grab']);
-    stepTicks(world, [], c.stabTicks);
+    // he raises the blade (or a tap brings the stab forward) and goes in
+    stepTicks(world, [], c.stabDelayTicks[0] + c.stabTicks);
     hits += 1;
     assert.equal(p.redOrbs - before, orbs.pummelPerHit * hits, 'a stab pays');
   });
@@ -678,7 +679,8 @@ describe('grab chain details', () => {
     assert.equal(victim.isDead, true, 'the fourth stab ends even a very healthy victim');
     assert.equal(victim.heldLying, false, 'a dead victim is no longer held');
     assert.ok((world.snapshot().stats?.totalKills ?? 0) > kills, 'the kill counts');
-    stepTicks(world, [], CONFIG.player.grab.chain.stabTicks); // the killing stab finishes its animation
+    const { stabTicks, lastStabHoldTicks } = CONFIG.player.grab.chain;
+    stepTicks(world, [], stabTicks + lastStabHoldTicks); // the killing stab finishes its animation
     assert.notEqual(p.grabPhase, 'stab');
   });
 

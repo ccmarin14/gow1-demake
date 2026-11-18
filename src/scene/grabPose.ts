@@ -6,6 +6,7 @@
 import KRATOS_ANCHORS from '../assets/kratos-anchors.json' with { type: 'json' };
 import LEGIONNAIRE_ANCHORS from '../assets/legionnaire-anchors.json' with { type: 'json' };
 import { CONFIG } from '../config';
+import { isLastStab, stabDuration } from '../sim/grab';
 import type { EntityState } from '../sim/types';
 
 const CANVAS_W = 64;
@@ -47,12 +48,31 @@ const SLAM_LIFT_FROM = 4;
 const SLAM_LIFT_TICKS = 5;
 /** The Toss: the soldier follows Kratos' hand over this many ticks after Kratos changes pose. */
 const TOSS_FOLLOW_TICKS = 4;
+/** The Toss wind-up: the soldier is dragged behind Kratos over this many ticks, then leans this far further back (px). */
+export const TOSS_DRAG_TICKS = 8;
+const TOSS_LEAN_PX = 3;
+/** How far beyond Kratos' near hand the soldier's neck ends up behind his back (px, on top of the grip). */
+const TOSS_DRAG_BACK_PX = 4;
+/** The top of the whip's arc, as the soldier's neck relative to Kratos' feet (px, facing right): over his shoulder. */
+const TOSS_OVER: Point = [6, -46];
 /** The soldier is lifted from standing to hanging over this many ticks after Kratos arrives in the lunge. */
 const LIFT_TICKS = 3;
 /** A soldier killed by a punch falls from Kratos' hand to the deck over this many ticks. */
 const PUNCH_FALL_TICKS = 6;
 /** Ticks the soldier takes to wrench himself out of the hold (Break Free). */
 const BREAK_FREE_TICKS = 4;
+/** Floor stabs: the blade comes out in stab-a for this many ticks of 'floorhold' and is raised (stab-up) over this many. */
+const FLOOR_RAISE_FROM = 1;
+const FLOOR_RAISE_TICKS = 2;
+/** The blade over Kratos' head before the killing stab goes higher than before the others (degrees, -90 = straight up). */
+const BLADE_UP = -70;
+const BLADE_UP_LAST = -95;
+
+/** Tick of the stab from which the blade is ripped out (stab-a): it stays in two ticks, the killing one longer. */
+function stabOutFrom(player: Readonly<EntityState>): number {
+  return stabDuration(player) - 2;
+}
+
 /** The whiff ends in a neutral guard only for its last ticks. */
 const WHIFF_IDLE_TICKS = 4;
 
@@ -79,12 +99,12 @@ export function kratosGrabFrameKey(player: Readonly<EntityState>): string | null
       if (t < 4) return 'kratos-grab-punch-a';
       return t <= 8 ? 'kratos-grab-punch-b' : 'kratos-grab-hold';
     case 'floorhold':
-      // Pulled the blade out (stab-a) and raises it again (stab-up), ready for the next tap
-      return t < 4 ? 'kratos-grab-stab-a' : 'kratos-grab-stab-up';
+      // The blade comes out already rising (stab-a for one tick) and is up again at once: no rest between stabs
+      return t < FLOOR_RAISE_FROM ? 'kratos-grab-stab-a' : 'kratos-grab-stab-up';
     case 'stab':
-      // Raised blade, the blade goes in for a few ticks, then he pulls it out
+      // One tick of swing from the raised blade, in (two ticks; the killing one stays in longer), ripped out
       if (t < grab.chain.stabImpactTick) return 'kratos-grab-stab-up';
-      return t <= grab.chain.stabImpactTick + 3 ? 'kratos-grab-stab-b' : 'kratos-grab-stab-a';
+      return t < stabOutFrom(player) ? 'kratos-grab-stab-b' : 'kratos-grab-stab-a';
     case 'throw':
       // Holds him at his side, raises the blade, goes in, winds up and lets go on the chain
       if (t < grab.toss.raiseFrom) return 'kratos-grab-hold';
@@ -141,8 +161,8 @@ const lerp = (a: number, b: number, k: number): number => a + (b - a) * Math.min
  */
 export function grabBladeAngle(player: Readonly<EntityState>): number {
   const t = player.grabTicks;
-  const { stabImpactTick, stabTicks } = CONFIG.player.grab.chain;
-  const up = -70;
+  const { stabImpactTick } = CONFIG.player.grab.chain;
+  const up = isLastStab(player) ? BLADE_UP_LAST : BLADE_UP;
   const down = 90;
   const out = 30;
   if (player.grabPhase === 'throw') {
@@ -150,11 +170,14 @@ export function grabBladeAngle(player: Readonly<EntityState>): number {
     const { raiseFrom, stabTick } = CONFIG.player.grab.toss;
     return t < stabTick ? lerp(up, 25, (t - raiseFrom) / Math.max(1, stabTick - raiseFrom)) : 25;
   }
-  if (player.grabPhase === 'floorhold') return t < 6 ? lerp(out, up, t / 6) : up;
+  if (player.grabPhase === 'floorhold') return lerp(out, up, t / FLOOR_RAISE_TICKS);
   if (player.grabPhase === 'stab') {
-    if (t < stabImpactTick) return lerp(up, 0, t / stabImpactTick);
-    if (t <= stabImpactTick + 3) return down;
-    return lerp(down, out, (t - stabImpactTick - 3) / Math.max(1, stabTicks - stabImpactTick - 3));
+    // the swing: one tick halfway down, then in
+    if (t < stabImpactTick) return lerp(up, 20, t / stabImpactTick);
+    const outFrom = stabOutFrom(player);
+    if (t < outFrom) return down;
+    // ripped out and already on its way up
+    return lerp(60, out, t - outFrom);
   }
   return down;
 }
@@ -224,16 +247,24 @@ export function victimPose(player: Readonly<EntityState>, enemy: Readonly<Entity
       return hung;
     }
     case 'throw': {
-      // Toss: his neck stays in Kratos' far hand (he is held at the side, bent over once the blade is raised);
-      // once let go he flies on his own, tumbling
+      // Toss: his neck stays in Kratos' far hand while he is held at the side and stabbed; Kratos turns and drags
+      // him far behind his back (slow), whips him over in an arc in `snapTicks` (the fastest movement of the whole
+      // grab) and lets go of him ahead; once let go he flies on his own, tumbling
       if (t >= grab.toss.releaseTick) {
         return { x: enemy.x, y: enemy.y, textureKey: tumbleFrame(enemy), flipX: enemy.vx < 0, depth: DEPTH_FRONT };
       }
       const textureKey = t < grab.toss.raiseFrom ? HELD_FRAMES[0] : HELD_FRAMES[1];
-      // in the wind-up Kratos swings him behind: he is drawn in front of Kratos (behind him he was hidden) and a bit further back
-      const windUp = t >= grab.toss.stabTick + 8;
-      const offset: Point = [windUp ? GRIP_PX - 16 : GRIP_PX, 0];
-      const pose = attachedToHand(player, enemy, textureKey, flipX, offset);
+      const windFrom = tossWindUpFrom();
+      if (t >= windFrom) {
+        const neck = tossNeckWorld(player, t);
+        const at = placeByNeck(neck, textureKey, flipX);
+        // dragged across Kratos' body he is drawn in front of him (behind it he was hidden); once he is behind his
+        // back he is out of the silhouette and goes behind Kratos' hand; the whip passes in front again
+        const snapping = t >= grab.toss.releaseTick - grab.toss.snapTicks;
+        const crossing = t < windFrom + TOSS_DRAG_TICKS / 2;
+        return { ...at, y: Math.min(at.y, player.y), depth: snapping || crossing ? DEPTH_FRONT : DEPTH_BEHIND_HAND };
+      }
+      const pose = attachedToHand(player, enemy, textureKey, flipX, [GRIP_PX, 0]);
       // When Kratos changes pose his hand jumps; the soldier follows it over the next ticks instead of in one
       const frameAt = (tick: number): string | null => kratosGrabFrameKey({ ...player, grabTicks: tick });
       const frame = frameAt(t);
@@ -241,13 +272,13 @@ export function victimPose(player: Readonly<EntityState>, enemy: Readonly<Entity
       while (since < TOSS_FOLLOW_TICKS - 1 && t - since - 1 >= 0 && frameAt(t - since - 1) === frame) since += 1;
       let { x, y } = pose;
       if (since < TOSS_FOLLOW_TICKS - 1 && t - since - 1 >= 0) {
-        const before = attachedToHand(player, enemy, textureKey, flipX, offset, frameAt(t - since - 1));
+        const before = attachedToHand(player, enemy, textureKey, flipX, [GRIP_PX, 0], frameAt(t - since - 1));
         const k = (since + 1) / TOSS_FOLLOW_TICKS;
         x = before.x + (pose.x - before.x) * k;
         y = before.y + (pose.y - before.y) * k;
       }
       // a bent soldier stands at Kratos' side: never below the floor
-      return { ...pose, x, y: Math.min(y, player.y), depth: t >= grab.toss.stabTick && !windUp ? DEPTH_FRONT : pose.depth };
+      return { ...pose, x, y: Math.min(y, player.y), depth: t >= grab.toss.stabTick ? DEPTH_FRONT : pose.depth };
     }
     case 'break': {
       // Rip: lifted overhead, pulled to the chest and stretched across both hands; at `ripTick` he is torn in two
@@ -261,7 +292,7 @@ export function victimPose(player: Readonly<EntityState>, enemy: Readonly<Entity
     case 'stab': {
       // Lying under Kratos; he jolts (2 px up, a small shake) when the blade goes in (ticks 4..8 of the stab)
       const impact = grab.chain.stabImpactTick;
-      const jolt = player.grabPhase === 'stab' && t >= impact && t <= impact + 4;
+      const jolt = player.grabPhase === 'stab' && t >= impact && t < stabOutFrom(player) + 1;
       return {
         x: enemy.x + (jolt ? (t % 2 === 0 ? 1 : -1) : 0),
         y: player.y - (jolt ? 2 : 0),
@@ -436,4 +467,105 @@ function attachedToHand(
   const x = hand[0] + f * offset[0] - vf * (neck[0] - CANVAS_W / 2);
   const y = hand[1] + offset[1] - (neck[1] - CANVAS_H);
   return { x, y, textureKey, flipX, depth: DEPTH_BEHIND_HAND };
+}
+
+/** Tick of the Toss from which Kratos pulls the soldier back (after the blade went in). */
+function tossWindUpFrom(): number {
+  return CONFIG.player.grab.toss.stabTick + 8;
+}
+
+const smoothstep = (k: number): number => {
+  const c = Math.min(1, Math.max(0, k));
+  return c * c * (3 - 2 * c);
+};
+
+/**
+ * The three places of the whip, as the soldier's neck relative to Kratos' feet (facing right, px): `back` where he
+ * is dragged to behind Kratos' back (past the near hand of `throw-a`), `over` the top of the arc and `ahead` where
+ * he is let go (ahead of the far hand of `throw-b`, as far as the sim releases him: `releaseAheadPx`).
+ */
+function tossPlaces(): { from: Point; back: Point; whipFrom: Point; over: Point; ahead: Point } {
+  const rel = (frame: string, anchor: string): Point => {
+    const a = KRATOS[frame]?.[anchor] ?? [CANVAS_W / 2, 20];
+    return [a[0] - CANVAS_W / 2, a[1] - CANVAS_H];
+  };
+  const from = rel('kratos-grab-toss-stab', 'farHand');
+  const backHand = rel('kratos-grab-throw-a', 'hand');
+  const aheadHand = rel('kratos-grab-throw-b', 'farHand');
+  return {
+    from: [from[0] + GRIP_PX, from[1]],
+    back: [backHand[0] - GRIP_PX - TOSS_DRAG_BACK_PX, backHand[1]],
+    // the whip starts where the lean ends
+    whipFrom: [backHand[0] - GRIP_PX - TOSS_DRAG_BACK_PX - TOSS_LEAN_PX, backHand[1]],
+    over: [TOSS_OVER[0], TOSS_OVER[1]],
+    ahead: [CONFIG.player.grab.toss.releaseAheadPx + 4, aheadHand[1]],
+  };
+}
+
+/**
+ * Where the soldier's neck is at tick `t` of the Toss once Kratos winds up (world px): dragged back along a small
+ * arc over `TOSS_DRAG_TICKS` (eased: slow start, slow arrival), leaning a little further back until the snap, then
+ * whipped along a curve over the top to the release point, one third of it per tick.
+ */
+export function tossNeckWorld(player: Readonly<EntityState>, t: number): Point {
+  const { releaseTick, snapTicks } = CONFIG.player.grab.toss;
+  const f = player.facing === -1 ? -1 : 1;
+  const { from, back, whipFrom, over, ahead } = tossPlaces();
+  const snapFrom = releaseTick - snapTicks;
+  let rel: Point;
+  if (t < snapFrom) {
+    const k = smoothstep((t - tossWindUpFrom() + 1) / TOSS_DRAG_TICKS);
+    const lean = Math.max(0, t - (tossWindUpFrom() + TOSS_DRAG_TICKS - 1)) / Math.max(1, snapFrom - tossWindUpFrom() - TOSS_DRAG_TICKS);
+    rel = [from[0] + (back[0] - from[0]) * k - TOSS_LEAN_PX * Math.min(1, lean), from[1] + (back[1] - from[1]) * k - Math.sin(Math.PI * k) * 6];
+  } else {
+    rel = bezier(whipFrom, over, ahead, Math.min(1, (t - snapFrom + 1) / snapTicks));
+  }
+  return [player.x + f * rel[0], player.y + rel[1]];
+}
+
+/**
+ * The whip of the Toss for the smear (world px): points of the neck's path from behind Kratos to where he is let
+ * go, up to how far the whip has gone at tick `t` (all of it from the release on). Empty before the snap.
+ */
+export function tossWhipPath(player: Readonly<EntityState>, t: number, samples = 12): Point[] {
+  const { releaseTick, snapTicks } = CONFIG.player.grab.toss;
+  const snapFrom = releaseTick - snapTicks;
+  if (t < snapFrom) return [];
+  const f = player.facing === -1 ? -1 : 1;
+  const { whipFrom, over, ahead } = tossPlaces();
+  const upTo = Math.min(1, (t - snapFrom + 1) / snapTicks);
+  const out: Point[] = [];
+  for (let i = 0; i <= samples; i += 1) {
+    const rel = bezier(whipFrom, over, ahead, (upTo * i) / samples);
+    out.push([player.x + f * rel[0], player.y + rel[1]]);
+  }
+  return out;
+}
+
+function bezier(a: Point, b: Point, c: Point, s: number): Point {
+  const u = 1 - s;
+  return [u * u * a[0] + 2 * s * u * b[0] + s * s * c[0], u * u * a[1] + 2 * s * u * b[1] + s * s * c[1]];
+}
+
+/** Places the soldier's sprite so that his neck sits at `neck` (world px). */
+function placeByNeck(neck: Point, textureKey: string, flipX: boolean): VictimPose {
+  const a = LEGIONNAIRE[textureKey]?.neck ?? [CANVAS_W / 2, 20];
+  const vf = flipX ? -1 : 1;
+  return { x: neck[0] - vf * (a[0] - CANVAS_W / 2), y: neck[1] - (a[1] - CANVAS_H), textureKey, flipX, depth: DEPTH_BEHIND_HAND };
+}
+
+/**
+ * The two chains of the Toss as one whip (user: "se ven las dos cadenas como separadas"): both hands hold them
+ * together (they leave from between the hands, the second 1 px under the first) and both end on one hook on the
+ * soldier. `reel` (0..1) pulls the ends back to the hands. Returns [start, end] per chain, world px.
+ */
+export function tossChainLines(player: Readonly<EntityState>, frameKey: string, hook: Point, reel = 0): Array<[Point, Point]> {
+  const near = kratosAnchorWorld(player, frameKey, 'hand');
+  const far = kratosAnchorWorld(player, frameKey, 'farHand');
+  if (!near || !far) return [];
+  const grip: Point = [(near[0] + far[0]) / 2, (near[1] + far[1]) / 2];
+  return [0, 1].map((i): [Point, Point] => [
+    [grip[0], grip[1] + i],
+    [hook[0] + (grip[0] - hook[0]) * reel, hook[1] + i + (grip[1] - hook[1]) * reel],
+  ]);
 }

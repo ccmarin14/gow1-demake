@@ -58,6 +58,32 @@ function killVictim(target: EntityState, onKill?: (target: EntityState) => void)
   }
 }
 
+/** Which floor stab (0 to `stabs - 1`) Kratos is doing, or is about to do while he raises the blade in 'floorhold'. */
+export function stabIndex(player: Readonly<EntityState>): number {
+  const { punches, stabs } = CONFIG.player.grab.chain;
+  // grabPummelCount counts the punches, the slam and the stabs already started
+  const started = (player.grabPummelCount ?? 0) - punches - 1;
+  const index = player.grabPhase === 'stab' ? started - 1 : started;
+  return Math.max(0, Math.min(stabs - 1, index));
+}
+
+/** True for the fourth (killing) stab, or while Kratos raises the blade for it. */
+export function isLastStab(player: Readonly<EntityState>): boolean {
+  return stabIndex(player) === CONFIG.player.grab.chain.stabs - 1;
+}
+
+/** Ticks Kratos raises the blade before the next stab (`CONFIG.player.grab.chain.stabDelayTicks`). */
+export function stabDelayTicks(player: Readonly<EntityState>): number {
+  const delays = CONFIG.player.grab.chain.stabDelayTicks;
+  return delays[Math.min(stabIndex(player), delays.length - 1)];
+}
+
+/** Ticks of the current stab: the killing one keeps the blade in `lastStabHoldTicks` longer. */
+export function stabDuration(player: Readonly<EntityState>): number {
+  const { stabTicks, lastStabHoldTicks } = CONFIG.player.grab.chain;
+  return stabTicks + (isLastStab(player) ? lastStabHoldTicks : 0);
+}
+
 export function isGrabbing(player: EntityState): boolean {
   return player.grabPhase !== 'none';
 }
@@ -483,11 +509,10 @@ export function stepGrab(
 
     keepLying(player, target);
 
-    // He stabs on his own once the blade is up; a tap (after the first ticks) only makes him go in sooner
-    // the killing stab is held up longer (the accent of the chain)
-    const nextIsLast = (player.grabPummelCount ?? 0) + 1 >= cfg.chain.punches + 1 + cfg.chain.stabs;
-    const delay = nextIsLast ? cfg.chain.lastStabDelayTicks : cfg.chain.autoStabDelayTicks;
-    if ((inputActions.includes('grab') && player.grabTicks >= 2) || player.grabTicks >= delay) {
+    // He stabs on his own once the blade is up; a tap (after the first ticks) only makes him go in sooner.
+    // The burst speeds up and the killing stab is held up a beat longer (the accent of the chain).
+    const delay = stabDelayTicks(player);
+    if ((inputActions.includes('grab') && player.grabTicks >= Math.min(2, delay)) || player.grabTicks >= delay) {
       player.grabPummelCount = (player.grabPummelCount ?? 0) + 1;
       player.grabPhase = 'stab';
       player.grabTicks = 0;
@@ -533,7 +558,7 @@ export function stepGrab(
     }
 
     player.grabTicks += 1;
-    if (player.grabTicks >= cfg.chain.stabTicks) {
+    if (player.grabTicks >= stabDuration(player)) {
       if (target.isDead) {
         player.grabPhase = 'recovery';
         player.grabTicks = 0;
@@ -601,6 +626,8 @@ export function stepGrab(
             target.aiState = 'juggle';
             target.aiTicks = 0;
             target.grounded = false;
+            // let go at the end of the whip, ahead of Kratos (not on top of him)
+            target.x = player.x + player.facing * cfg.toss.releaseAheadPx;
             target.vx = player.facing * cfg.throwVx;
             target.vy = cfg.throwVy;
             target.attackHits = [];
