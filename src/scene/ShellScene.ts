@@ -14,6 +14,7 @@ import { HudLayer } from '../ui/HudLayer';
 import { GameFlowOverlay } from '../ui/GameFlowOverlay';
 import { PlayerView } from './PlayerView';
 import { EnemyView } from './EnemyView';
+import { grabImpactPoint } from './grabPose';
 import { VfxLayer } from './VfxLayer';
 import { SoundManager } from '../audio/SoundManager';
 import { STRIKES } from '../sim/strike';
@@ -405,15 +406,25 @@ export class ShellScene extends Phaser.Scene {
         this.prevParryActive = Boolean(player.parryActive);
 
         // Feedback visceral de impacto en los agarres clásicos de GoW 1 (○ Pummel, △ Break, □ Throw, ○ Slam)
+        const grabVictim = player.grabTargetId ? this.simulation.world.peekEntity(player.grabTargetId) : undefined;
+        const impactAt = (
+          kind: 'punch' | 'toss-stab' | 'floor-stab',
+          fallbackDx: number,
+          fallbackDy: number,
+        ): readonly [number, number] =>
+          (grabVictim ? grabImpactPoint(player, grabVictim, kind) : null) ?? [
+            player.x + player.facing * fallbackDx,
+            player.y + fallbackDy,
+          ];
         if (player.grabPhase === 'pummel' && player.grabTicks === 4) {
           // Puñetazo con la víctima sujeta en alto (Grab 1 - TAP ○ REPEATEDLY)
           this.cameras.main.shake(50, 0.006);
-          this.vfxLayer.emitBloodSpurt(player.x + player.facing * 18, player.y - 20, player.facing, 8);
+          { const [ix, iy] = impactAt('punch', 18, -20); this.vfxLayer.emitBloodSpurt(ix, iy, player.facing, 8); }
           this.soundManager?.playStrikeHit('light');
         } else if (player.grabPhase === 'stab' && player.grabTicks === 4) {
           // Puñalada con la Espada del Caos sobre la víctima caída (Grab 1)
           this.cameras.main.shake(60, 0.008);
-          this.vfxLayer.emitBloodSpurt(player.x + player.facing * 20, player.y - 6, player.facing, 22);
+          { const [ix, iy] = impactAt('floor-stab', 20, -6); this.vfxLayer.emitBloodSpurt(ix, iy, player.facing, 22); }
           this.soundManager?.playStab();
         } else if (player.grabPhase === 'break' && player.grabTicks === 11) {
           // Quiebre brutal sobre la cabeza/cubierta (Grab 2 - △ Break)
@@ -425,7 +436,7 @@ export class ShellScene extends Phaser.Scene {
         } else if (player.grabPhase === 'throw' && player.grabTicks === CONFIG.player.grab.toss.stabTick) {
           // Espada hundida en el soldado sujeto de lado (Toss)
           this.cameras.main.shake(50, 0.007);
-          this.vfxLayer.emitBloodSpurt(player.x + player.facing * 14, player.y - 14, player.facing, 18);
+          { const [ix, iy] = impactAt('toss-stab', 14, -14); this.vfxLayer.emitBloodSpurt(ix, iy, player.facing, 18); }
           this.soundManager?.playStab();
         } else if (player.grabPhase === 'throw' && player.grabTicks === CONFIG.player.grab.toss.releaseTick) {
           // Impulso y despegue del proyectil humano (Grab 3 - □ Throw)

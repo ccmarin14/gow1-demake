@@ -1,0 +1,162 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { describe, it } from 'node:test';
+import { CONFIG } from '../src/config';
+import {
+  HELD_FRAMES,
+  grabBladePoint,
+  kratosAnchorWorld,
+  kratosGrabFrameKey,
+  victimAnchorWorld,
+  victimPose,
+} from '../src/scene/grabPose';
+import type { VictimPose } from '../src/scene/grabPose';
+import { PLAYER_ID } from '../src/sim/types';
+import type { EntityState, GameAction } from '../src/sim/types';
+import { World } from '../src/sim/world';
+
+// Contact between the two bodies of the circle (○) grab, tick by tick (BL-45, D-54). The simulation tests
+// say where the entities are; these say that the drawings sit right against each other.
+
+interface Tick {
+  phase: string;
+  t: number;
+  player: EntityState;
+  victim: EntityState;
+  frameKey: string | null;
+  pose: VictimPose | null;
+}
+
+function record(actions: (tick: number, player: EntityState) => GameAction[], ticks: number): Tick[] {
+  const world = new World();
+  world.loadScenario('level1');
+  const p = world.peekEntity(PLAYER_ID) as EntityState;
+  const victim = world.peekEntity('legionnaire-deck-1') as EntityState;
+  p.x = 300;
+  p.facing = 1;
+  victim.x = 328;
+  victim.y = p.y;
+  victim.hp = 60;
+  const out: Tick[] = [];
+  for (let i = 0; i < ticks; i += 1) {
+    world.step(actions(i, p));
+    out.push({
+      phase: p.grabPhase,
+      t: p.grabTicks,
+      player: { ...p },
+      victim: { ...victim },
+      frameKey: kratosGrabFrameKey(p),
+      pose: victimPose(p, victim),
+    });
+  }
+  return out;
+}
+
+// ○ (grab), then three punches, the slam and four stabs: one tap each, as soon as the chain accepts it.
+function circleChain(totalTaps: number): (tick: number, player: EntityState) => GameAction[] {
+  let taps = 0;
+  return (tick, p) => {
+    const ready = tick === 0 || ((p.grabPhase === 'hold' || p.grabPhase === 'floorhold') && p.grabTicks >= 2);
+    if (!ready || taps >= totalTaps) return [];
+    taps += 1;
+    return ['grab'];
+  };
+}
+// ○ then □ (the Toss).
+const TOSS = (tick: number): GameAction[] => (tick === 0 ? ['grab'] : tick === 3 ? ['light-attack'] : []);
+
+function bodyBox(file: string): { x0: number; x1: number; y0: number; y1: number } {
+  const rows = readFileSync(new URL(`../grids/legionnaire/${file}`, import.meta.url), 'utf8').split('\n').filter(Boolean);
+  let x0 = 99;
+  let x1 = -1;
+  let y0 = 99;
+  let y1 = -1;
+  rows.forEach((row, y) => {
+    [...row].forEach((c, x) => {
+      if (c === '.') return;
+      x0 = Math.min(x0, x);
+      x1 = Math.max(x1, x);
+      y0 = Math.min(y0, y);
+      y1 = Math.max(y1, y);
+    });
+  });
+  return { x0, x1, y0, y1 };
+}
+
+// The two ticks of the lunge: Kratos is still reaching for the neck, the soldier is not lifted yet.
+const LUNGE = 'kratos-grab-lunge';
+
+describe('circle grab: the drawings in contact (BL-45)', () => {
+  const chain = record(circleChain(1 + 3 + 1 + 4), 330);
+  const held = chain.filter((k) => k.phase === 'hold' || k.phase === 'pummel');
+
+  it('the sequence really goes through hold, pummel, slam, floorhold and stab', () => {
+    const phases = new Set(chain.map((k) => k.phase));
+    for (const phase of ['hold', 'pummel', 'slam', 'floorhold', 'stab']) assert.ok(phases.has(phase), phase);
+  });
+
+  it('every Kratos grab frame has the anchors the presentation needs', () => {
+    for (const k of chain) {
+      if (!k.frameKey) continue;
+      assert.ok(kratosAnchorWorld(k.player, k.frameKey, 'hand'), `${k.frameKey} has a hand anchor`);
+      assert.ok(kratosAnchorWorld(k.player, k.frameKey, 'farHand'), `${k.frameKey} has a far hand anchor`);
+    }
+  });
+
+  it('C1: the soldier hangs by the neck from Kratos\' far hand while held and punched', () => {
+    assert.ok(held.length > 40);
+    for (const k of held.filter((h) => h.frameKey !== LUNGE)) {
+      assert.ok(k.pose && k.frameKey, `${k.phase} ${k.t}: has a pose`);
+      const hand = kratosAnchorWorld(k.player, k.frameKey!, 'farHand')!;
+      const neck = victimAnchorWorld(k.pose!, 'neck')!;
+      assert.ok(neck, 'neck anchor');
+      const punched = k.pose!.textureKey === HELD_FRAMES[1];
+      const gap = Math.hypot(hand[0] - neck[0], hand[1] - neck[1]);
+      assert.ok(Math.abs(gap - 4) <= (punched ? 4 : 0.5), `${k.phase} ${k.t} (${k.frameKey}): neck ${gap.toFixed(1)} px from the hand (grip 4 px)`);
+    }
+  });
+
+  it('C2: the soldier\'s feet are at least 6 px off the floor while he is held', () => {
+    for (const k of held.filter((h) => h.frameKey !== LUNGE)) {
+      const feet = k.player.y - k.pose!.y;
+      assert.ok(feet >= 6, `${k.phase} ${k.t} (${k.frameKey}): feet ${feet.toFixed(1)} px up`);
+    }
+  });
+
+  it('C3: held, he only uses frames of a soldier off his feet; on the floor, only the lying one', () => {
+    for (const k of chain) {
+      if (!k.pose) continue;
+      if (k.phase === 'hold' || k.phase === 'pummel') {
+        assert.ok((HELD_FRAMES as readonly string[]).includes(k.pose.textureKey), `${k.phase} ${k.t}: ${k.pose.textureKey}`);
+      }
+      if (k.phase === 'floorhold' || k.phase === 'stab') {
+        assert.equal(k.pose.textureKey, 'legionnaire-death-02', `${k.phase} ${k.t}`);
+      }
+    }
+  });
+
+  it('C4: the blade lands on the lying body at the tick of every stab', () => {
+    const body = bodyBox('death-02.txt');
+    const hits = chain.filter((k) => k.phase === 'stab' && k.t >= 4 && k.t <= 8);
+    assert.ok(hits.length >= 3 * 5 + 1, 'four stabs (the last one ends the grab as soon as it kills)');
+    for (const k of hits) {
+      const tip = grabBladePoint(k.player, k.frameKey!, 90, 1);
+      const f = k.pose!.flipX ? -1 : 1;
+      const [a, b] = [k.pose!.x + f * (body.x0 - 32), k.pose!.x + f * (body.x1 + 1 - 32)];
+      const [left, right] = [Math.min(a, b), Math.max(a, b)];
+      assert.ok(Math.abs(tip[0] - (left + right) / 2) <= 8, `stab ${k.t}: the blade is ${Math.abs(tip[0] - (left + right) / 2).toFixed(1)} px from the middle of the body`);
+      const top = k.pose!.y + body.y0 - 56;
+      const bottom = k.pose!.y + body.y1 + 1 - 56;
+      assert.ok(tip[0] >= left - 1 && tip[0] <= right + 1, `stab ${k.t}: tip x ${tip[0].toFixed(1)} outside ${left.toFixed(1)}..${right.toFixed(1)}`);
+      assert.ok(tip[1] >= top - 1 && tip[1] <= bottom + 1, `stab ${k.t}: tip y ${tip[1].toFixed(1)} outside ${top.toFixed(1)}..${bottom.toFixed(1)}`);
+    }
+  });
+
+  it('the Toss holds him in the frames of a soldier off his feet until he is let go', () => {
+    const toss = record(TOSS, 60).filter((k) => k.phase === 'throw' && k.t < CONFIG.player.grab.toss.releaseTick);
+    assert.ok(toss.length >= CONFIG.player.grab.toss.releaseTick - 1);
+    for (const k of toss) {
+      assert.ok((HELD_FRAMES as readonly string[]).includes(k.pose!.textureKey), `toss ${k.t}: ${k.pose!.textureKey}`);
+    }
+  });
+});

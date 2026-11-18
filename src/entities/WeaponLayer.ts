@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { BLADE_KEY, strikeFrameKey } from '../assets/manifest';
 import ANCHORS from '../assets/kratos-anchors.json';
+import { grabBladePoint } from '../scene/grabPose';
 import { CONFIG } from '../config';
 import {
   STRIKES,
@@ -188,16 +189,11 @@ export class WeaponLayer {
     }
 
     const facing = player.facing === -1 ? -1 : 1;
-    const anchors = FRAME_ANCHORS[frameKey];
-    const handLocal = anchors ? toSprite(anchors.hand) : { dx: 8, dy: -18 };
-    const half = CONFIG.presentation.strikeArt.bladeSize.w / 2;
     // Puñaladas al suelo: la hoja apunta hacia abajo (agarre invertido). En el Toss se hunde de frente y algo hacia abajo.
     const deg = player.grabPhase === 'throw' ? 25 : 90;
-    const rad = (deg * Math.PI) / 180;
-    const x = player.x + facing * (handLocal.dx + Math.cos(rad) * half);
-    const y = player.y + handLocal.dy + Math.sin(rad) * half;
+    const middle = grabBladePoint(player, frameKey, deg, 0.5);
     this.nearBlade.setDepth(DEPTH_BLADE);
-    this.placeBlade(this.nearBlade, [x, y], deg, facing);
+    this.placeBlade(this.nearBlade, middle, deg, facing);
   }
 
   /** Las dos Espadas del Caos cruzadas al frente mientras Kratos bloquea (L1, D-50). */

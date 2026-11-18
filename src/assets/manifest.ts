@@ -78,6 +78,7 @@ export const GRAB_KEYS: readonly string[] = [
   'kratos-grab-punch-b',
   'kratos-grab-stab-a',
   'kratos-grab-stab-b',
+  'kratos-grab-stab-up',
   'kratos-grab-whiff-recover',
   'kratos-grab-toss-stab',
 ];

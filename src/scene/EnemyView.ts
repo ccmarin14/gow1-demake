@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { CONFIG } from '../config';
 import type { EntityState } from '../sim/types';
+import { victimPose } from './grabPose';
 import { getLegionnaireFrameKey } from './legionnaireFrames';
 
 /**
@@ -36,71 +37,16 @@ export class EnemyView {
     let drawX = enemy.x;
     let drawY = enemy.y;
 
-    const isGrabVictim = Boolean(player && player.grabTargetId === enemy.id && player.grabPhase !== 'none');
-    if (isGrabVictim && player) {
-      const t = player.grabTicks;
-      const f = player.facing;
-      if (player.grabPhase === 'hold' || player.grabPhase === 'finisher_qte' || player.grabPhase === 'pummel') {
-        const isPunchHit = player.grabPhase === 'pummel' && t >= 4 && t <= 8;
-        // Sujeto del cuello y alzado: GoW 1 lo levanta del suelo y los pies cuelgan. `held-00` lo muestra colgado
-        // (la espada cuelga, la mano libre le araña la muñeca); con cada puñetazo se dobla por la cintura
-        // (`held-01`) y retrocede 3 px.
-        const lift = t < 3 ? 2 + t * 2 : 8 + (Math.floor(t / 12) % 2 === 0 ? 0 : 1);
-        drawX = player.x + f * (isPunchHit ? 19 : 16);
-        drawY = player.y - lift + (isPunchHit ? (t % 2 === 0 ? 1 : -1) : 0);
-        textureKey = isPunchHit ? 'legionnaire-held-01' : 'legionnaire-held-00';
-      } else if (player.grabPhase === 'throw') {
-        // Toss con □: sujeto de lado mientras la espada entra (hasta el tick de la puñalada cuelga como en el agarre,
-        // después se dobla por la cintura) y proyectado en vuelo desde el tick de suelta
-        const toss = CONFIG.player.grab.toss;
-        if (t < toss.releaseTick) {
-          drawX = player.x + f * 12;
-          drawY = player.y - 12;
-          textureKey = t < toss.stabTick ? 'legionnaire-held-00' : 'legionnaire-held-01';
-        } else {
-          drawX = enemy.x;
-          drawY = enemy.y;
-          textureKey = 'legionnaire-juggle-01';
-        }
-      } else if (player.grabPhase === 'break') {
-        // Quiebre con △: izado sobre la cabeza de Kratos (ticks 0..10, grab-break-a) y quebrado contra el suelo (ticks 11+)
-        if (t < 11) {
-          drawX = player.x + f * 6;
-          drawY = player.y - 22;
-          textureKey = 'legionnaire-juggle-01';
-        } else if (t < 18) {
-          drawX = player.x + f * 18;
-          drawY = player.y;
-          textureKey = 'legionnaire-death-01';
-        } else {
-          drawX = player.x + f * 18;
-          drawY = player.y;
-          textureKey = 'legionnaire-death-02';
-        }
-      } else if (player.grabPhase === 'floorhold' || player.grabPhase === 'stab') {
-        // Tendido bajo Kratos tras el azote (Grab 1); sigue tendido y da un respingo (sube 2 px y se sacude) al
-        // entrar la hoja (ticks 4..8 de la puñalada); antes cambiaba a `death-01`, que lo mostraba sentándose
-        const jolt = player.grabPhase === 'stab' && t >= 4 && t <= 8;
-        drawX = player.x + f * 20 + (jolt ? (t % 2 === 0 ? 1 : -1) : 0);
-        drawY = player.y - (jolt ? 2 : 0);
-        textureKey = 'legionnaire-death-02';
-      } else if (player.grabPhase === 'slam' || player.grabPhase === 'finisher_slam') {
-        // Azote con ○: levantado frente al hombro (ticks 0..9, grab-slam-a) y estrellado contra las tablas (ticks 10+, grab-slam-b)
-        if (t < 10) {
-          drawX = player.x + f * 14;
-          drawY = player.y - 16;
-          textureKey = 'legionnaire-juggle-00';
-        } else if (t < 18) {
-          drawX = player.x + f * 18;
-          drawY = player.y;
-          textureKey = 'legionnaire-death-01';
-        } else {
-          drawX = enemy.x;
-          drawY = player.y;
-          textureKey = 'legionnaire-death-02';
-        }
-      }
+    const victim = player ? victimPose(player, enemy) : null;
+    const isGrabVictim = victim !== null;
+    let flipX = enemy.facing === -1;
+    if (victim) {
+      drawX = victim.x;
+      drawY = victim.y;
+      textureKey = victim.textureKey;
+      flipX = victim.flipX;
     }
+    this.sprite.setDepth(victim ? victim.depth : 1);
 
     // Inercia e inclinación del cuerpo lanzado como proyectil humano en vuelo rápido
     let rotation = 0;
@@ -116,7 +62,7 @@ export class EnemyView {
     // Leve sacudida en hitstun para reforzar el impacto
     const shakeX = !isGrabVictim && enemy.hitstunTicks > 0 && enemy.hitstunTicks % 2 === 1 ? 1 : 0;
     this.sprite.setPosition(drawX + shakeX, drawY);
-    this.sprite.setFlipX(enemy.facing === -1);
+    this.sprite.setFlipX(flipX);
     this.sprite.setRotation(rotation);
 
     // Sombra de contacto terrestre (se atenúa cuando está alzado en el aire o muere)

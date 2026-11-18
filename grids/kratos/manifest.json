@@ -538,6 +538,12 @@
       "png": "kratos-grab-stab-b"
     },
     {
+      "file": "grab-stab-up.txt",
+      "state": "grab",
+      "grounded": true,
+      "png": "kratos-grab-stab-up"
+    },
+    {
       "file": "grab-whiff-recover.txt",
       "state": "grab",
       "grounded": true,

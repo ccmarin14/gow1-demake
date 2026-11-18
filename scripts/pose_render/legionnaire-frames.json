@@ -1,0 +1,6 @@
+{
+  "frames": {
+    "held-00": { "action": "Idle_Loop", "frame": 0, "pose": "leg-heldA.json" },
+    "held-01": { "action": "Idle_Loop", "frame": 0, "pose": "leg-heldB.json" }
+  }
+}

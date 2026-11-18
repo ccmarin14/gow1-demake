@@ -2,7 +2,10 @@
 """Re-render every Kratos blockout and export its weapon anchors (D-34).
 
 Usage:
-    python3 scripts/pose_render/build_anchors.py [--blender PATH]
+    python3 scripts/pose_render/build_anchors.py [--blender PATH] [--jobs N] [--only a,b,c]
+
+`--only` re-renders just the named frames (seconds instead of minutes) and merges their anchors into
+the existing file; the full run is still the check that no other frame drifted.
 
 For each entry of `frames.json` it renders the frame into a fresh temporary
 directory under `docs/tmp/` (removed when the run succeeds; only one run at a
@@ -61,6 +64,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--blender", default=str(Path.home() / ".local" / "bin" / "blender"))
     parser.add_argument("--jobs", type=int, default=4, help="frames rendered at once (each in its own directory)")
+    parser.add_argument("--only", default="", help="comma-separated frame names: re-render just those and merge them into the existing anchors")
     args = parser.parse_args()
 
     TMP_ROOT.mkdir(parents=True, exist_ok=True)
@@ -72,7 +76,15 @@ def main() -> int:
         return 1
     out_dir = Path(tempfile.mkdtemp(prefix="anchors-", dir=TMP_ROOT))
     recipes = json.loads((HERE / "frames.json").read_text(encoding="utf-8"))["frames"]
+    only = [name for name in args.only.split(",") if name]
     anchors: dict[str, dict] = {}
+    if only:
+        unknown = [name for name in only if name not in recipes]
+        if unknown:
+            print("FAIL not in frames.json:", ", ".join(unknown))
+            return 1
+        recipes = {name: recipes[name] for name in only}
+        anchors = json.loads(TARGET.read_text(encoding="utf-8"))
     mismatches = []
     with ThreadPoolExecutor(max_workers=max(1, args.jobs)) as pool:
         rendered = dict(zip(recipes, pool.map(lambda item: render(args.blender, out_dir, *item), recipes.items())))

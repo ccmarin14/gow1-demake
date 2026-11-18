@@ -13,6 +13,7 @@ import {
 } from '../assets/manifest';
 import { CONFIG, ROLL_TICKS } from '../config';
 import { WeaponLayer } from '../entities/WeaponLayer';
+import { kratosGrabFrameKey } from './grabPose';
 import { STRIKES, strikePoseAt } from '../sim/strike';
 import type { EntityState, GroundFireState, StrikeSnapshot } from '../sim/types';
 
@@ -222,52 +223,7 @@ export class PlayerView {
   }
 
   private selectGrabFrameKey(simPlayer: Readonly<EntityState>): string {
-    const t = simPlayer.grabTicks;
-    switch (simPlayer.grabPhase) {
-      case 'whiff': {
-        // Ticks 0..12: zarpazo frontal a máxima extensión con zumbido de aire (grab-lunge)
-        if (t <= (CONFIG.player.grab.whiffLungeTicks ?? 12)) return 'kratos-grab-lunge';
-        // Ticks 13..20: frena y retrae el brazo a manos limpias (cuadro de recuperación); luego guardia neutral
-        return t <= 20 ? 'kratos-grab-whiff-recover' : 'kratos-idle-00';
-      }
-      case 'hold':
-      case 'finisher_qte': {
-        return t < (CONFIG.player.grab.lungeTicks ?? 2) ? 'kratos-grab-lunge' : 'kratos-grab-hold';
-      }
-      case 'pummel': {
-        // Grab 1 (○ repetido), puñetazo con la otra mano mientras sujeta en alto:
-        // ticks 0..3: puño atrás; 4..8: puño al frente; 9..13: vuelve a la sujeción
-        if (t < 4) return 'kratos-grab-punch-a';
-        return t <= 8 ? 'kratos-grab-punch-b' : 'kratos-grab-hold';
-      }
-      case 'floorhold': {
-        // Agachado sobre la víctima tendida, hoja en alto, esperando el siguiente toque
-        return 'kratos-grab-stab-a';
-      }
-      case 'stab': {
-        // Ticks 0..3: hoja en alto; 4..8: puñalada clavada; 9..13: la saca
-        return t >= 4 && t <= 8 ? 'kratos-grab-stab-b' : 'kratos-grab-stab-a';
-      }
-      case 'throw': {
-        // Toss (□): sujeta de lado, hunde la espada (ticks 3..8), alza y lanza a un costado
-        const toss = CONFIG.player.grab.toss;
-        if (t < 3) return 'kratos-grab-hold';
-        if (t < toss.stabTick + 4) return 'kratos-grab-toss-stab';
-        return t < toss.releaseTick ? 'kratos-grab-throw-a' : 'kratos-grab-throw-b';
-      }
-      case 'break': {
-        return t < 11 ? 'kratos-grab-break-a' : 'kratos-grab-break-b';
-      }
-      case 'slam':
-      case 'finisher_slam': {
-        return t < 10 ? 'kratos-grab-slam-a' : 'kratos-grab-slam-b';
-      }
-      case 'recovery': {
-        return t < 4 ? 'kratos-sq1-e' : PLAYER_KEY;
-      }
-      default:
-        return PLAYER_KEY;
-    }
+    return kratosGrabFrameKey(simPlayer) ?? PLAYER_KEY;
   }
 
   private stopLoop(): void {
