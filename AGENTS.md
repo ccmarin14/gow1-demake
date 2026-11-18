@@ -35,6 +35,7 @@ Juego de acción lateral 2D hecho con **Phaser 3.90.0**, **TypeScript** y **Vite
 
 - **`tsc` y `pnpm build` no verifican el juego:** un build en verde no detecta texturas 404 ni animaciones rotas. Verifica en navegador real (Chrome DevTools MCP o Chrome headless por CDP) que la consola y la red estén limpias.
 - **Fidelidad de píxel no equivale a calidad visual:** comprobar que un PNG se dibuja idéntico a sí mismo no dice si la pose se entiende. El juicio estético requiere mostrar la imagen ampliada al usuario.
+- **Dos cuerpos en contacto se verifican en el juego real, no en la simulación:** las pruebas de `src/sim/` no dicen si la mano de Kratos toca el cuello de la víctima ni si el soldado se ve de pie flotando. Para cualquier movimiento con contacto (agarres, remates), graba la secuencia tick a tick en el navegador, ponla junto al fotograma del video y mide el contacto con anclajes antes de decir que está listo; un "listo" sin esa tira no vale (error del paso 135).
 - **No mezclar carga de assets:** registra las texturas en `src/assets/manifest.ts` en lugar de dispersar llamadas `this.load` en `ShellScene.ts`.
 
 ## Reparto del trabajo (modelos y bloqueos)
