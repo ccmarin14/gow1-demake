@@ -68,6 +68,9 @@ export class ShellScene extends Phaser.Scene {
   private prevFlowState = 'playing';
   private prevStrikeId: string | null = null;
   private prevGrabPhase = 'none';
+  /** Last grab phase and tick the impact effects saw: they fire on the tick that CROSSES the impact tick, once. */
+  private prevFxPhase = 'none';
+  private prevFxTicks = 0;
 
   constructor(
     private readonly simulation: Simulation,
@@ -416,34 +419,40 @@ export class ShellScene extends Phaser.Scene {
             player.x + player.facing * fallbackDx,
             player.y + fallbackDy,
           ];
-        if (player.grabPhase === 'pummel' && player.grabTicks === 4) {
+        // The sim ticks at 60 Hz but this runs once per screen frame: on a 120 Hz screen the same tick lasts two
+        // frames and the blow would bleed, shake and sound twice; at 30 fps it could be skipped. Each effect fires
+        // on the frame that crosses its tick (and the hitstop, which freezes the tick, does not repeat it).
+        const freshTick = player.grabPhase !== this.prevFxPhase || player.grabTicks < this.prevFxTicks;
+        const crosses = (phases: readonly string[], tick: number): boolean =>
+          phases.includes(player.grabPhase) && player.grabTicks >= tick && (freshTick || this.prevFxTicks < tick);
+        if (crosses(['pummel'], 4)) {
           // Puñetazo con la víctima sujeta en alto (Grab 1 - TAP ○ REPEATEDLY)
           this.cameras.main.shake(50, 0.006);
           { const [ix, iy] = impactAt('punch', 18, -20); this.vfxLayer.emitBloodSpurt(ix, iy, player.facing, 8); }
           this.soundManager?.playStrikeHit('light');
-        } else if (player.grabPhase === 'stab' && player.grabTicks === 4) {
+        } else if (crosses(['stab'], 4)) {
           // Puñalada con la Espada del Caos sobre la víctima caída (Grab 1)
           this.cameras.main.shake(60, 0.008);
           { const [ix, iy] = impactAt('floor-stab', 20, -6); this.vfxLayer.emitBloodSpurt(ix, iy, player.facing, 22); }
           this.soundManager?.playStab();
-        } else if (player.grabPhase === 'break' && player.grabTicks === 11) {
+        } else if (crosses(['break'], 11)) {
           // Quiebre brutal sobre la cabeza/cubierta (Grab 2 - △ Break)
           this.cameras.main.shake(150, 0.016);
           this.vfxLayer.emitBloodBurst(player.x + player.facing * 18, player.y - 8, 36);
           this.vfxLayer.emitDust(player.x + player.facing * 18, player.y);
           this.soundManager?.playBoneBreak();
           this.soundManager?.playStrikeHit('heavy');
-        } else if (player.grabPhase === 'throw' && player.grabTicks === CONFIG.player.grab.toss.stabTick) {
+        } else if (crosses(['throw'], CONFIG.player.grab.toss.stabTick) && player.grabTicks < CONFIG.player.grab.toss.releaseTick) {
           // Espada hundida en el soldado sujeto de lado (Toss)
           this.cameras.main.shake(50, 0.007);
           { const [ix, iy] = impactAt('toss-stab', 14, -14); this.vfxLayer.emitBloodSpurt(ix, iy, player.facing, 18); }
           this.soundManager?.playStab();
-        } else if (player.grabPhase === 'throw' && player.grabTicks === CONFIG.player.grab.toss.releaseTick) {
+        } else if (crosses(['throw'], CONFIG.player.grab.toss.releaseTick)) {
           // Impulso y despegue del proyectil humano (Grab 3 - □ Throw)
           this.cameras.main.shake(50, 0.006);
           this.vfxLayer.emitDust(player.x, player.y);
           this.soundManager?.playThrowRelease();
-        } else if ((player.grabPhase === 'slam' || player.grabPhase === 'finisher_slam') && player.grabTicks === 10) {
+        } else if (crosses(['slam', 'finisher_slam'], 10)) {
           // Azote brutal contra las tablas de cubierta (○ Slam)
           this.cameras.main.shake(120, 0.014);
           this.vfxLayer.emitBloodBurst(player.x + player.facing * 18, player.y - 6, 24);
@@ -451,6 +460,8 @@ export class ShellScene extends Phaser.Scene {
           this.soundManager?.playSlamImpact();
           this.soundManager?.playStrikeHit('heavy');
         }
+        this.prevFxPhase = player.grabPhase;
+        this.prevFxTicks = player.grabTicks;
       }
 
       this.vfxLayer.update(delta / 1000, flowState === 'paused');

@@ -1,9 +1,13 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
+import { withoutGrabHitstop } from './helpers/grab-hitstop';
 import { CONFIG } from '../src/config';
 import { PLAYER_ID } from '../src/sim/types';
 import type { EntityState, GameAction } from '../src/sim/types';
 import { World } from '../src/sim/world';
+
+// Each test file runs in its own process: the ticks of the chain are counted without the hitstop freezes
+withoutGrabHitstop();
 
 function stepTicks(world: World, actions: GameAction[], count: number): void {
   for (let i = 0; i < count; i += 1) {
@@ -70,10 +74,19 @@ describe('combat grab with Circle / L key (BL-06, D-42)', () => {
     e.y = p.y;
     e.aiState = 'approach';
 
+    // Kratos closes the gap at `lungeStepPx` per tick (it was all in one tick: a 26 px teleport), the victim stays put
     world.step(['grab']);
     assert.equal(p.grabPhase, 'hold');
+    const victimStart = e.x;
+    let previousX = p.x;
+    for (let i = 0; i < 12; i += 1) {
+      world.step([]);
+      assert.ok(p.x - previousX <= 6, `tick ${i}: Kratos moves at most 6 px`);
+      previousX = p.x;
+    }
     assert.ok(p.x > 300, 'Kratos lunged forward to close the gap');
     assert.equal(e.x, p.x + CONFIG.player.grab.holdDistancePx, 'victim pinned at hold distance');
+    assert.equal(e.x, victimStart, 'the victim did not move: Kratos came to him');
   });
 
   it('whiffs when enemy is beyond reach or behind Kratos', () => {
@@ -105,6 +118,7 @@ describe('combat grab with Circle / L key (BL-06, D-42)', () => {
     e.aiState = 'approach';
 
     world.step(['grab']);
+    stepTicks(world, ['grab'], 3); // the lunge closes the last px, the button still held
 
     assert.equal(p.grabPhase, 'hold');
     assert.equal(p.grabTargetId, e.id);
@@ -113,7 +127,7 @@ describe('combat grab with Circle / L key (BL-06, D-42)', () => {
     assert.equal(e.x, p.x + CONFIG.player.grab.holdDistancePx, 'victim pinned at hold distance');
     assert.equal(e.vx, 0);
     assert.equal(e.vy, 0);
-    assert.ok(p.invulTicks >= CONFIG.player.grab.invulTicks - 1, 'Kratos gets grab i-frames');
+    assert.ok(p.invulTicks >= CONFIG.player.grab.invulTicks - 4, 'Kratos gets grab i-frames');
 
     // Durante la sujeción (hold), se mantienen anclados incluso si el dedo mantiene presionado 'grab' 15 ticks (250 ms)
     stepTicks(world, ['grab'], 15);
@@ -140,11 +154,12 @@ describe('combat grab with Circle / L key (BL-06, D-42)', () => {
     // Conectar agarre en tick 1
     world.step(['grab']);
     assert.equal(p.grabPhase, 'hold');
+    stepTicks(world, [], 4); // the lunge closes the gap
     const playerXBeforeBreakFree = p.x;
     const enemyXBeforeBreakFree = e.x;
 
-    // Esperar toda la fase hold (holdTicks = 120) sin pulsar □, △ ni ○
-    stepTicks(world, [], CONFIG.player.grab.holdTicks);
+    // Esperar toda la fase hold (holdTicks = 120, 4 ya pasaron) sin pulsar □, △ ni ○
+    stepTicks(world, [], CONFIG.player.grab.holdTicks - 4);
 
     assert.equal(p.grabPhase, 'recovery', 'transitions to recovery when hold expires without choice');
     assert.equal(e.hp, 60, 'no slam damage dealt when hold expires');
@@ -656,11 +671,11 @@ describe('grab chain details', () => {
     assert.notEqual(p.grabPhase, 'stab');
   });
 
-  it('a victim lying on the floor stays 20 px in front of Kratos while he stabs', () => {
+  it('a victim lying on the floor stays under Kratos\' knee (lyingOffsetPx) while he stabs', () => {
     const { world, p, victim } = chainToFloor(1000);
     world.step(['grab']);
     stepTicks(world, [], 5);
-    assert.equal(victim.x, p.x + p.facing * 20);
+    assert.equal(victim.x, p.x + p.facing * CONFIG.player.grab.lyingOffsetPx);
     assert.equal(victim.y, p.y);
     assert.equal(victim.heldLying, true);
   });

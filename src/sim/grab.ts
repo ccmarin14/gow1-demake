@@ -10,8 +10,18 @@ export interface GrabStepResult {
 }
 
 /** Kratos stands over the fallen victim, who lies on the floor in front of him. */
+/** Kratos closes the gap to the victim at `lungeStepPx` per tick (it used to be all of it in one tick: 26 px in 16 ms). */
+function stepLunge(player: EntityState): number {
+  const remaining = player.grabAdvancePx ?? 0;
+  if (remaining <= 0) return 0;
+  const step = Math.min(remaining, CONFIG.player.grab.lungeStepPx);
+  player.x += player.facing * step;
+  player.grabAdvancePx = remaining - step;
+  return player.grabAdvancePx;
+}
+
 function keepLying(player: EntityState, target: EntityState): void {
-  target.x = player.x + player.facing * 20;
+  target.x = player.x + player.facing * CONFIG.player.grab.lyingOffsetPx;
   target.y = player.y;
   target.vx = 0;
   target.vy = 0;
@@ -93,9 +103,7 @@ export function startGrab(player: EntityState, targets: readonly EntityState[]):
   if (minDistance > cfg.holdDistancePx) {
     advance = Math.min(cfg.lungeMaxAdvancePx, Math.max(0, Math.round(minDistance - cfg.holdDistancePx)));
   }
-  const step0 = Math.floor(advance / 2);
-  player.x += player.facing * step0;
-  player.grabAdvancePx = advance - step0;
+  player.grabAdvancePx = advance;
   player.grabPummelCount = 0;
 
   // Solo inicia el QTE contextual si el objetivo está explícitamente en estado 'weakened'.
@@ -210,13 +218,10 @@ export function stepGrab(
       return result;
     }
 
-    if (player.grabAdvancePx && player.grabAdvancePx > 0) {
-      player.x += player.facing * player.grabAdvancePx;
-      player.grabAdvancePx = 0;
-    }
+    stepLunge(player);
 
-    // Mantener al enemigo inmovilizado frente a Kratos
-    target.x = player.x + player.facing * cfg.holdDistancePx;
+    // Mantener al enemigo inmovilizado frente a Kratos (quieto donde estaba mientras Kratos cierra la distancia)
+    target.x = player.x + player.facing * (cfg.holdDistancePx + (player.grabAdvancePx ?? 0));
     target.y = player.y;
     target.vx = 0;
     target.vy = 0;
@@ -320,10 +325,7 @@ export function stepGrab(
       return result;
     }
 
-    if (player.grabAdvancePx && player.grabAdvancePx > 0) {
-      player.x += player.facing * player.grabAdvancePx;
-      player.grabAdvancePx = 0;
-    }
+    stepLunge(player);
 
     // Kratos can be turned to either side before choosing (the throw goes left or right): holding the
     // other direction turns him, and the victim with him.
@@ -331,7 +333,7 @@ export function stepGrab(
       player.facing = heldDirection;
     }
 
-    target.x = player.x + player.facing * cfg.holdDistancePx;
+    target.x = player.x + player.facing * (cfg.holdDistancePx + (player.grabAdvancePx ?? 0));
     target.y = player.y;
     target.vx = 0;
     target.vy = 0;
@@ -391,18 +393,21 @@ export function stepGrab(
     }
 
     const target = targets.find((e) => e.id === player.grabTargetId);
-    if (!target || target.isDead) {
+    if (!target) {
       player.grabPhase = 'none';
       player.grabTicks = 0;
       player.grabTargetId = null;
       return result;
     }
 
-    target.x = player.x + player.facing * cfg.holdDistancePx;
-    target.y = player.y;
-    target.vx = 0;
-    target.vy = 0;
-    target.aiState = 'grabbed';
+    // A victim killed by this very punch is left as it fell: Kratos still finishes the blow (it used to cut at once)
+    if (!target.isDead) {
+      target.x = player.x + player.facing * cfg.holdDistancePx;
+      target.y = player.y;
+      target.vx = 0;
+      target.vy = 0;
+      target.aiState = 'grabbed';
+    }
 
     // El puño impacta en el tick 4
     if (player.grabTicks === 4) {
@@ -474,14 +479,17 @@ export function stepGrab(
     }
 
     const target = targets.find((e) => e.id === player.grabTargetId);
-    if (!target || target.isDead) {
+    if (!target) {
       player.grabPhase = 'none';
       player.grabTicks = 0;
       player.grabTargetId = null;
       return result;
     }
 
-    keepLying(player, target);
+    // The stab that kills does not cut the animation short: the body stays where it lies and Kratos pulls the blade out
+    if (!target.isDead) {
+      keepLying(player, target);
+    }
 
     if (player.grabTicks === 4) {
       const lastStab = (player.grabPummelCount ?? 0) >= cfg.chain.punches + 1 + cfg.chain.stabs;
@@ -643,7 +651,7 @@ export function stepGrab(
           result.killed = killed;
           player.redOrbs = (player.redOrbs ?? 0) + cfg.orbs.pummelPerHit;
 
-          target.x = player.x + player.facing * 18;
+          target.x = player.x + player.facing * cfg.lyingOffsetPx;
           target.y = player.y;
 
           if (killed) {
@@ -687,7 +695,9 @@ export function stepGrab(
     // The break-free impulse lasts for the release tick only.
     player.vx = 0;
     player.grabTicks += 1;
-    if (player.grabTicks >= cfg.recoveryTicks) {
+    // After the floor stabs Kratos has to get up from his knee
+    const recoveryTicks = (player.grabPummelCount ?? 0) > cfg.chain.punches ? cfg.chain.getUpTicks : cfg.recoveryTicks;
+    if (player.grabTicks >= recoveryTicks) {
       player.grabPhase = 'none';
       player.grabTicks = 0;
       player.grabTargetId = null;

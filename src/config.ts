@@ -109,6 +109,10 @@ grab: {
   lungeTicks: 2,
   /** Maximum vertical alignment offset to allow grab (px). */
   verticalReachPx: 20,
+  /** Px per tick Kratos covers while he closes the gap to the victim after the grab connects (the lunge). */
+  lungeStepPx: 4,
+  /** Where the victim lies under Kratos' knee, in front of his feet (px): the floor stabs land on the middle of the body. */
+  lyingOffsetPx: 0,
   /** Fixed horizontal separation between Kratos and the victim during hold (px). */
   holdDistancePx: 22,
   /** Total recovery ticks when grab whiffs with no target in reach (~530 ms at 60 Hz). */
@@ -137,6 +141,8 @@ grab: {
     stabs: 4,
     stabDamage: 5,
     stabTicks: 14,
+    /** Ticks Kratos takes to get up from his knee after the last stab (or after nobody follows the chain). */
+    getUpTicks: 12,
     /** Ticks Kratos waits over the fallen victim for the next tap before he gets up. */
     floorHoldTicks: 60,
   },
@@ -170,6 +176,11 @@ grab: {
    * "Death Bounce"): high enough to leave the ground for the window in which Circle slams him again.
    */
   harpoonBounceVy: 200,
+  /**
+   * Ticks the world freezes when a blow of the circle grab lands (the squares and triangles already do): it gives the
+   * hit weight. Audit of the real game: the circle blows had none.
+   */
+  hitstop: { punch: 3, stab: 3, toss: 3, slam: 6, rip: 5 },
   /** Total invulnerability window granted to Kratos during grab hold & execution. */
   invulTicks: 125,
   /**

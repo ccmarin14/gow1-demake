@@ -767,7 +767,9 @@ export class World {
             if (dodgeEdge) followUpEdges.push('dodge');
           }
           stepGrab(player, this.targets, followUpEdges, undefined, heldDirection(this.input));
+          const grabHitstop = CONFIG.player.grab.hitstop;
           if (player.grabPhase === 'pummel' && player.grabTicks === 4) {
+            this.hitstopTicks = grabHitstop.punch;
             this.strikeHitNotice = {
               x: player.x + player.facing * 16,
               y: player.y - 18,
@@ -775,13 +777,17 @@ export class World {
               kind: 'light',
             };
           } else if (player.grabPhase === 'stab' && player.grabTicks === 4) {
+            this.hitstopTicks = grabHitstop.stab;
             this.strikeHitNotice = {
               x: player.x + player.facing * 20,
               y: player.y - 6,
               power: CONFIG.player.grab.chain.stabDamage,
               kind: 'light',
             };
+          } else if (player.grabPhase === 'throw' && player.grabTicks === CONFIG.player.grab.toss.stabTick) {
+            this.hitstopTicks = grabHitstop.toss;
           } else if (player.grabPhase === 'throw' && player.grabTicks === CONFIG.player.grab.toss.releaseTick) {
+            this.hitstopTicks = grabHitstop.toss;
             this.strikeHitNotice = {
               x: player.x + player.facing * 20,
               y: player.y - 24,
@@ -789,6 +795,7 @@ export class World {
               kind: 'heavy',
             };
           } else if (player.grabPhase === 'break' && player.grabTicks === 11) {
+            this.hitstopTicks = grabHitstop.rip;
             this.strikeImpactNotice = {
               x: player.x + player.facing * 18,
               y: player.y,
@@ -802,6 +809,7 @@ export class World {
               kind: 'heavy',
             };
           } else if ((player.grabPhase === 'slam' || player.grabPhase === 'finisher_slam') && player.grabTicks === 10) {
+            this.hitstopTicks = grabHitstop.slam;
             this.strikeImpactNotice = {
               x: player.x + player.facing * 18,
               y: player.y,

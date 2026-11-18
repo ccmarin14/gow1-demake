@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
+import { withoutGrabHitstop } from './helpers/grab-hitstop';
 import { CONFIG } from '../src/config';
 import {
   HELD_FRAMES,
@@ -11,9 +12,13 @@ import {
   victimPose,
 } from '../src/scene/grabPose';
 import type { VictimPose } from '../src/scene/grabPose';
+import { getLegionnaireFrameKey } from '../src/scene/legionnaireFrames';
 import { PLAYER_ID } from '../src/sim/types';
 import type { EntityState, GameAction } from '../src/sim/types';
 import { World } from '../src/sim/world';
+
+// Each test file runs in its own process: the ticks of the chain are counted without the hitstop freezes
+withoutGrabHitstop();
 
 // Contact between the two bodies of the circle (○) grab, tick by tick (BL-45, D-54). The simulation tests
 // say where the entities are; these say that the drawings sit right against each other.
@@ -27,14 +32,14 @@ interface Tick {
   pose: VictimPose | null;
 }
 
-function record(actions: (tick: number, player: EntityState) => GameAction[], ticks: number): Tick[] {
+function record(actions: (tick: number, player: EntityState) => GameAction[], ticks: number, victimX = 328): Tick[] {
   const world = new World();
   world.loadScenario('level1');
   const p = world.peekEntity(PLAYER_ID) as EntityState;
   const victim = world.peekEntity('legionnaire-deck-1') as EntityState;
   p.x = 300;
   p.facing = 1;
-  victim.x = 328;
+  victim.x = victimX;
   victim.y = p.y;
   victim.hp = 60;
   const out: Tick[] = [];
@@ -126,7 +131,9 @@ describe('circle grab: the drawings in contact (BL-45)', () => {
   it('C3: held, he only uses frames of a soldier off his feet; on the floor, only the lying one', () => {
     for (const k of chain) {
       if (!k.pose) continue;
-      if (k.phase === 'hold' || k.phase === 'pummel') {
+      if (k.frameKey === LUNGE) {
+        assert.equal(k.pose.textureKey, 'legionnaire-hitstun-00', 'still standing while Kratos lunges for the neck');
+      } else if (k.phase === 'hold' || k.phase === 'pummel') {
         assert.ok((HELD_FRAMES as readonly string[]).includes(k.pose.textureKey), `${k.phase} ${k.t}: ${k.pose.textureKey}`);
       }
       if (k.phase === 'floorhold' || k.phase === 'stab') {
@@ -158,5 +165,55 @@ describe('circle grab: the drawings in contact (BL-45)', () => {
     for (const k of toss) {
       assert.ok((HELD_FRAMES as readonly string[]).includes(k.pose!.textureKey), `toss ${k.t}: ${k.pose!.textureKey}`);
     }
+  });
+});
+
+// What the audit of the real game found (docs/tmp/auditoria-circulo): the instant checks above could not see a
+// pose that flashes back, a teleport of 26 px or a body that gets up as it dies. These look at consecutive ticks.
+describe('circle grab: continuity from one tick to the next (audit)', () => {
+  const chain = record(circleChain(1 + 3 + 1 + 4), 330);
+
+  it('Kratos never moves more than 6 px in one tick, even for the longest lunge (it was 26 px at once)', () => {
+    const far = record(circleChain(1), 40, 360); // 60 px away: the longest lunge there is
+    assert.ok(far[0].victim.x - far[0].player.x >= 40, 'the victim really is far');
+    for (const run of [chain, far]) {
+      for (let i = 1; i < run.length; i += 1) {
+        const step = Math.abs(run[i].player.x - run[i - 1].player.x);
+        assert.ok(step <= 6, `tick ${i} (${run[i].phase}): moved ${step} px`);
+      }
+    }
+    const last = far[far.length - 1];
+    assert.equal(last.victim.x - last.player.x, CONFIG.player.grab.holdDistancePx, 'and he does arrive');
+  });
+
+  it('the lunge pose shows only while Kratos closes the distance of the first grab, never after a punch', () => {
+    for (const k of chain) {
+      if (k.frameKey === LUNGE) assert.equal(k.player.grabPummelCount ?? 0, 0, `${k.phase} ${k.t}: lunge frame after a tap`);
+    }
+    const lunges = chain.filter((k) => k.frameKey === LUNGE).length;
+    assert.ok(lunges >= 1 && lunges <= 10, `${lunges} ticks of lunge`);
+  });
+
+  it('the stab that kills still lasts the whole stab and the body stays lying, never standing up', () => {
+    const lastStab = chain.filter((k) => k.phase === 'stab' && k.player.grabPummelCount === 3 + 1 + 4);
+    // the tap that starts the stab already runs its first tick, so 13 of the 14 are seen (it was 5 when it killed)
+    assert.equal(lastStab.length, CONFIG.player.grab.chain.stabTicks - 1, 'the killing stab runs the whole stab');
+    const killedAt = chain.findIndex((k) => k.victim.isDead);
+    assert.ok(killedAt >= 0);
+    for (const k of chain.slice(killedAt)) {
+      if (k.phase === 'stab' || k.phase === 'recovery') {
+        assert.equal(k.pose?.textureKey, 'legionnaire-death-02', `${k.phase} ${k.t}: the body is lying`);
+      }
+    }
+    // when Kratos lets go, the soldier's own animation picks up already lying down
+    const letGo = chain.findIndex((k, i) => i > killedAt && k.phase === 'none');
+    assert.ok(letGo > killedAt);
+    assert.equal(getLegionnaireFrameKey(chain[letGo].victim), 'legionnaire-death-02');
+  });
+
+  it('after the floor stabs Kratos takes the time to get up from his knee', () => {
+    const killedAt = chain.findIndex((k) => k.victim.isDead);
+    const recovery = chain.filter((k, i) => i >= killedAt && k.phase === 'recovery');
+    assert.equal(recovery.length, CONFIG.player.grab.chain.getUpTicks);
   });
 });

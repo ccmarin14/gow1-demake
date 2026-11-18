@@ -1,8 +1,12 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
+import { withoutGrabHitstop } from './helpers/grab-hitstop';
 import { CONFIG } from '../src/config';
 import type { EntityState, GameAction } from '../src/sim/types';
 import { World } from '../src/sim/world';
+
+// Each test file runs in its own process: the ticks of the chain are counted without the hitstop freezes
+withoutGrabHitstop();
 
 function createWorld(): World {
   const world = new World();

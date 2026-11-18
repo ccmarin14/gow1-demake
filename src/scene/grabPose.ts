@@ -31,9 +31,6 @@ const DEPTH_FRONT = 1;
 const DEPTH_BEHIND_HAND = -0.01;
 const DEPTH_LYING = -0.02;
 
-/** Column (of the 64-wide canvas) at the middle of the lying soldier (`legionnaire-death-02`, body from column 0 to 44). */
-const LYING_CENTER_COL = 22;
-
 /** Frames the soldier may use while Kratos holds or hits him: always off his feet (check C3). */
 export const HELD_FRAMES = ['legionnaire-held-00', 'legionnaire-held-01'] as const;
 /** The hand grips the near side of the throat, so his neck anchor sits this far beyond Kratos' hand (px). */
@@ -54,7 +51,12 @@ export function kratosGrabFrameKey(player: Readonly<EntityState>): string | null
       return t <= 20 ? 'kratos-grab-whiff-recover' : 'kratos-idle-00';
     case 'hold':
     case 'finisher_qte':
-      return t < (grab.lungeTicks ?? 2) ? 'kratos-grab-lunge' : 'kratos-grab-hold';
+      // The lunge only shows on the first grab while Kratos closes the distance: coming back to the hold after a
+      // punch (the tick counter restarts) used to flash it again
+      if ((player.grabPummelCount ?? 0) === 0 && ((player.grabAdvancePx ?? 0) > 0 || t < (grab.lungeTicks ?? 2))) {
+        return 'kratos-grab-lunge';
+      }
+      return 'kratos-grab-hold';
     case 'pummel':
       // Ticks 0..3: fist back; 4..8: fist forward; 9..13: back to the hold
       if (t < 4) return 'kratos-grab-punch-a';
@@ -75,6 +77,11 @@ export function kratosGrabFrameKey(player: Readonly<EntityState>): string | null
     case 'finisher_slam':
       return t < 10 ? 'kratos-grab-slam-a' : 'kratos-grab-slam-b';
     case 'recovery':
+      // The chain killed him (the victim is still his target): he gets up from his knee, or lets go of the punched body
+      if (player.grabTargetId !== null) {
+        if ((player.grabPummelCount ?? 0) > grab.chain.punches) return t < 6 ? 'kratos-grab-stab-a' : null;
+        return t < 4 ? 'kratos-grab-hold' : null;
+      }
       return t < 4 ? 'kratos-sq1-e' : null;
     default:
       return null;
@@ -156,19 +163,25 @@ export function victimPose(player: Readonly<EntityState>, enemy: Readonly<Entity
       // Lying under Kratos; he jolts (2 px up, a small shake) when the blade goes in (ticks 4..8 of the stab)
       const jolt = player.grabPhase === 'stab' && t >= 4 && t <= 8;
       return {
-        x: lyingX(player, enemy.facing === -1 ? -1 : 1) + (jolt ? (t % 2 === 0 ? 1 : -1) : 0),
+        x: enemy.x + (jolt ? (t % 2 === 0 ? 1 : -1) : 0),
         y: player.y - (jolt ? 2 : 0),
         textureKey: 'legionnaire-death-02',
         flipX: enemy.facing === -1,
         depth: DEPTH_LYING,
       };
     }
+    case 'recovery':
+      // The floor stabs killed him: he stays lying while Kratos gets up (the body used to reappear standing)
+      if (enemy.isDead && (player.grabPummelCount ?? 0) > grab.chain.punches) {
+        return { x: enemy.x, y: player.y, textureKey: 'legionnaire-death-02', flipX: enemy.facing === -1, depth: DEPTH_LYING };
+      }
+      return null;
     case 'slam':
     case 'finisher_slam':
       // Deck slam: raised at the shoulder (ticks 0..9), then smashed against the boards
       if (t < 10) return { x: player.x + f * 14, y: player.y - 16, textureKey: 'legionnaire-juggle-00', flipX: enemy.facing === -1, depth: DEPTH_FRONT };
       return {
-        x: lyingX(player, enemy.facing === -1 ? -1 : 1),
+        x: enemy.x,
         y: player.y,
         textureKey: t < 18 ? 'legionnaire-death-01' : 'legionnaire-death-02',
         flipX: enemy.facing === -1,
@@ -201,12 +214,6 @@ export function grabImpactPoint(
   return [neck[0] + (pelvis[0] - neck[0]) * at, neck[1] + (pelvis[1] - neck[1]) * at];
 }
 
-/** X of the lying soldier's sprite so that his body is centered under the blade of the plunge (`grab-stab-b`). */
-function lyingX(player: Readonly<EntityState>, vf: number): number {
-  const tip = grabBladePoint(player, 'kratos-grab-stab-b', 90, 1);
-  return tip[0] - vf * (LYING_CENTER_COL - CANVAS_W / 2);
-}
-
 /** Hangs the soldier by the neck from Kratos' far hand. */
 function attachedToHand(
   player: Readonly<EntityState>,
@@ -217,8 +224,8 @@ function attachedToHand(
 ): VictimPose {
   const pose: VictimPose = { x: enemy.x, y: enemy.y, textureKey, flipX, depth: DEPTH_BEHIND_HAND };
   const frameKey = kratosGrabFrameKey(player);
-  // While Kratos lunges for the neck (the first ticks of the hold) the soldier is not lifted yet: he stays where the simulation has him
-  if (frameKey === 'kratos-grab-lunge') return pose;
+  // While Kratos lunges for the neck the soldier is not lifted yet: he stands where the simulation has him
+  if (frameKey === 'kratos-grab-lunge') return { ...pose, textureKey: 'legionnaire-hitstun-00' };
   const hand = frameKey ? kratosAnchorWorld(player, frameKey, 'farHand') : null;
   const neck = LEGIONNAIRE[textureKey]?.neck;
   if (!hand || !neck) return pose;
