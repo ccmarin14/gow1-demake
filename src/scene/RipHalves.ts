@@ -8,7 +8,7 @@ const SIZE_W = 64;
 const SIZE_H = 56;
 /** Column of the horizontal body (head side on the left, unmirrored) where it is torn: at the waist. */
 const SPLIT_COL = 37;
-const GRAVITY = 520;
+const GRAVITY = 900;
 const FADE_AFTER_S = 1.4;
 const FADE_FOR_S = 0.5;
 
@@ -40,6 +40,22 @@ function halfTexture(scene: Phaser.Scene, upper: boolean, mirrored: boolean): st
   ctx.clip();
   ctx.drawImage(source, 0, 0);
   ctx.restore();
+  // The torn edge: a jagged red band along the cut (raw flesh), so each half reads as a half and not as a grey cut-out
+  const image = ctx.getImageData(0, 0, SIZE_W, SIZE_H);
+  for (let y = 0; y < SIZE_H; y += 1) {
+    const jag = (y * 7) % 3;
+    for (let depth = 0; depth <= jag + 1; depth += 1) {
+      const col = upper ? SPLIT_COL - 1 - depth : SPLIT_COL + depth;
+      const x = mirrored ? SIZE_W - 1 - col : col;
+      const at = (y * SIZE_W + x) * 4;
+      if (image.data[at + 3] === 0) continue;
+      const bright = (y + depth) % 2 === 0;
+      image.data[at] = bright ? 220 : 153;
+      image.data[at + 1] = bright ? 38 : 27;
+      image.data[at + 2] = bright ? 38 : 27;
+    }
+  }
+  ctx.putImageData(image, 0, 0);
   canvas.refresh();
   return name;
 }
@@ -47,7 +63,11 @@ function halfTexture(scene: Phaser.Scene, upper: boolean, mirrored: boolean): st
 export class RipHalves {
   private readonly pieces: Piece[] = [];
 
-  constructor(private readonly scene: Phaser.Scene) {}
+  constructor(
+    private readonly scene: Phaser.Scene,
+    /** Called with the place where each half hits the deck (the blood splash). */
+    private readonly onLand: (x: number, y: number) => void = () => {},
+  ) {}
 
   /**
    * Tears the soldier lying across Kratos' hands: `origin` is where his sprite was drawn, `facing` the way Kratos
@@ -55,8 +75,8 @@ export class RipHalves {
    */
   spawn(origin: VictimPose, facing: -1 | 1, floorY: number): void {
     const parts: Array<{ upper: boolean; vx: number; vy: number }> = [
-      { upper: true, vx: facing * 95, vy: -150 },
-      { upper: false, vx: -facing * 70, vy: -110 },
+      { upper: true, vx: facing * 95, vy: -120 },
+      { upper: false, vx: -facing * 70, vy: -90 },
     ];
     for (const part of parts) {
       const key = halfTexture(this.scene, part.upper, origin.flipX);
@@ -78,6 +98,7 @@ export class RipHalves {
         if (piece.sprite.y >= piece.floor && piece.vy > 0) {
           piece.sprite.y = piece.floor;
           piece.landed = true;
+          this.onLand(piece.sprite.x, piece.sprite.y);
         }
       }
       if (piece.age > FADE_AFTER_S) piece.sprite.setAlpha(Math.max(0, 1 - (piece.age - FADE_AFTER_S) / FADE_FOR_S));

@@ -73,3 +73,47 @@ describe('circle grab: hitstop on every blow (audit)', () => {
     assert.equal(frozenTicksAt('throw', CONFIG.player.grab.toss.releaseTick, (t) => (t === 0 ? ['grab'] : afterGrab('light-attack')(t))), hitstop.toss);
   });
 });
+
+describe('circle grab: a follow-up pressed while a punch lands is not lost (audit N2)', () => {
+  function afterPunch(action: GameAction, pressAtPummelTick: number): { world: World; p: EntityState } {
+    const { world, p } = setup();
+    world.step(['grab']); // the grab connects
+    for (let i = 0; i < 12; i += 1) world.step([]);
+    world.step(['grab']); // first punch
+    let pressed = false;
+    for (let i = 0; i < 60 && p.grabPhase !== 'throw' && p.grabPhase !== 'break'; i += 1) {
+      const press = !pressed && p.grabPhase === 'pummel' && p.grabTicks >= pressAtPummelTick;
+      if (press) pressed = true;
+      world.step(press ? [action] : []);
+    }
+    return { world, p };
+  }
+
+  it('a □ pressed while the punch is frozen by its hitstop starts the Toss as soon as he holds him again', () => {
+    const { p } = afterPunch('light-attack', 5);
+    assert.equal(p.grabPhase, 'throw');
+  });
+
+  it('a △ pressed in the middle of the punch starts the Rip', () => {
+    const { p } = afterPunch('heavy-attack', 8);
+    assert.equal(p.grabPhase, 'break');
+  });
+
+  it('a ○ pressed in the middle of a punch gives the next blow without a second tap', () => {
+    const { world, p } = setup();
+    world.step(['grab']);
+    for (let i = 0; i < 12; i += 1) world.step([]);
+    world.step(['grab']);
+    let pressed = false;
+    let blows = 0;
+    let last = '';
+    for (let i = 0; i < 80; i += 1) {
+      const press = !pressed && p.grabPhase === 'pummel' && p.grabTicks >= 8;
+      if (press) pressed = true;
+      world.step(press ? ['grab'] : []);
+      if (p.grabPhase === 'pummel' && last !== 'pummel') blows += 1;
+      last = p.grabPhase;
+    }
+    assert.equal(blows, 2, 'the first punch and the one that was buffered');
+  });
+});

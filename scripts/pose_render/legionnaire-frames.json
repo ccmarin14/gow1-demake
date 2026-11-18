@@ -39,6 +39,11 @@
       "action": "Idle_Loop",
       "frame": 0,
       "pose": "leg-tumbleD.json"
+    },
+    "flip-02": {
+      "action": "Idle_Loop",
+      "frame": 0,
+      "pose": "leg-flipC.json"
     }
   }
 }

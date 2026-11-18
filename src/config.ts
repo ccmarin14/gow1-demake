@@ -109,6 +109,8 @@ grab: {
   lungeTicks: 2,
   /** Maximum vertical alignment offset to allow grab (px). */
   verticalReachPx: 20,
+  /** Ticks a follow-up pressed during a punch waits for the hold (a press ~12 ticks into a punch used to be lost). */
+  followUpBufferTicks: 24,
   /** Px per tick Kratos covers while he closes the gap to the victim after the grab connects (the lunge). */
   lungeStepPx: 4,
   /** Where the victim lies under Kratos' knee, in front of his feet (px): the floor stabs land on the middle of the body. */

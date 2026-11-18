@@ -10,10 +10,28 @@ export interface GrabStepResult {
 }
 
 /** Kratos stands over the fallen victim, who lies on the floor in front of him. */
+const FOLLOW_UPS: readonly GameAction[] = ['light-attack', 'heavy-attack', 'grab'];
+
+/**
+ * Remembers a follow-up (□ throw, △ rip, ○ next blow) pressed while a punch is landing, so it is not lost: it is used
+ * the moment Kratos holds the victim again. Called by the world also while the hitstop freezes the tick.
+ */
+export function bufferGrabInput(player: EntityState, inputActions: readonly GameAction[]): void {
+  if (player.grabPhase !== 'pummel' || player.grabBuffer) return;
+  const pressed = FOLLOW_UPS.find((action) => inputActions.includes(action));
+  if (pressed) {
+    player.grabBuffer = pressed;
+    player.grabBufferTicks = 0;
+  }
+}
+
 /** Kratos closes the gap to the victim at `lungeStepPx` per tick (it used to be all of it in one tick: 26 px in 16 ms). */
 function stepLunge(player: EntityState): number {
   const remaining = player.grabAdvancePx ?? 0;
-  if (remaining <= 0) return 0;
+  if (remaining <= 0) {
+    player.grabLiftTicks = (player.grabLiftTicks ?? 0) + 1;
+    return 0;
+  }
   const step = Math.min(remaining, CONFIG.player.grab.lungeStepPx);
   player.x += player.facing * step;
   player.grabAdvancePx = remaining - step;
@@ -104,7 +122,9 @@ export function startGrab(player: EntityState, targets: readonly EntityState[]):
     advance = Math.min(cfg.lungeMaxAdvancePx, Math.max(0, Math.round(minDistance - cfg.holdDistancePx)));
   }
   player.grabAdvancePx = advance;
+  player.grabLiftTicks = 0;
   player.grabPummelCount = 0;
+  player.grabBuffer = null;
 
   // Solo inicia el QTE contextual si el objetivo está explícitamente en estado 'weakened'.
   // Los legionarios básicos se agarran siempre en 'hold' para elegir □ (lanzar), △ (partir) o ○ (azotar).
@@ -345,9 +365,17 @@ export function stepGrab(
     // - ○ ('grab'): Grab 1, la cadena de ○ repetido (3 puñetazos, azote al suelo, 4 puñaladas; ver `CONFIG.player.grab.chain`).
     // - fin de holdTicks sin elegir: el enemigo se zafa.
     const canChooseOption = player.grabTicks >= 1;
-    const chooseThrow = canChooseOption && inputActions.includes('light-attack');
-    const chooseBreak = canChooseOption && !chooseThrow && inputActions.includes('heavy-attack');
-    const chooseCircle = canChooseOption && !chooseThrow && !chooseBreak && inputActions.includes('grab');
+    // A press made while the last punch was landing counts now (it is dropped if it is too old)
+    let choices = inputActions;
+    if (player.grabBuffer) {
+      if (canChooseOption && (player.grabBufferTicks ?? 0) <= cfg.followUpBufferTicks && !FOLLOW_UPS.some((a) => inputActions.includes(a))) {
+        choices = [...inputActions, player.grabBuffer];
+      }
+      if (canChooseOption) player.grabBuffer = null;
+    }
+    const chooseThrow = canChooseOption && choices.includes('light-attack');
+    const chooseBreak = canChooseOption && !chooseThrow && choices.includes('heavy-attack');
+    const chooseCircle = canChooseOption && !chooseThrow && !chooseBreak && choices.includes('grab');
 
     player.grabTicks += 1;
 
@@ -369,7 +397,7 @@ export function stepGrab(
       // el enemigo se zafa de la presa y vuelve a 'approach' sin recibir azote automático.
       player.grabPhase = 'recovery';
       player.grabTicks = 0;
-      player.grabTargetId = null;
+      // the target stays set through the recovery so the presentation can show him wrenching free (it is cleared at its end)
       player.vx = -player.facing * cfg.breakFreePlayerVx;
       target.aiState = 'guard';
       target.aiTicks = 0;
@@ -391,6 +419,9 @@ export function stepGrab(
     if (player.invulTicks < 2) {
       player.invulTicks = 2;
     }
+    // the tap that started this punch is not a follow-up: only presses made while it lands are kept
+    if (player.grabTicks >= 1) bufferGrabInput(player, inputActions);
+    if (player.grabBuffer) player.grabBufferTicks = (player.grabBufferTicks ?? 0) + 1;
 
     const target = targets.find((e) => e.id === player.grabTargetId);
     if (!target) {

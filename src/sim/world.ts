@@ -17,7 +17,7 @@ import { isGuarding, startGuard, stepGuard } from './guard';
 import { stepLegionnaire } from './legionnaire';
 import { stepHydra } from './hydra';
 import { isCastingMagic, stepMagic } from './magic';
-import { isGrabbing, startGrab, stepGrab } from './grab';
+import { bufferGrabInput, isGrabbing, startGrab, stepGrab } from './grab';
 import { damageEnemy } from './damage';
 import { STRIKES, branchStrike, chainStrike, stepGroundFires, strikeChainTicks, strikeGravityAt, queueChain, startStrike, stepStrike, strikeCancellable, strikeLength, strikePhaseAt, type HeldDirection, type StrikeImpactNotice, type StrikeState } from './strike';
 import { buildLevel1Map, computeCameraScrollX, getSegmentAtX, type LevelMapData } from './map';
@@ -594,6 +594,14 @@ export class World {
     // A strike that connects freezes the whole world for a few ticks; a press
     // made meanwhile still queues the next strike of the combo.
     if (this.hitstopTicks > 0) {
+      const frozenPlayer = this.entities.find((entity) => entity.id === PLAYER_ID);
+      if (frozenPlayer && frozenPlayer.grabPhase === 'pummel') {
+        const edges: GameAction[] = [];
+        if (lightAttackEdge) edges.push('light-attack');
+        if (heavyAttackPress) edges.push('heavy-attack');
+        if (grabEdge) edges.push('grab');
+        bufferGrabInput(frozenPlayer, edges);
+      }
       if (this.strike && lightAttackEdge) {
         queueChain(this.strike, steadyDirection);
       }

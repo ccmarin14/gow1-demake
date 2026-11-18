@@ -47,6 +47,12 @@ const SLAM_LIFT_FROM = 4;
 const SLAM_LIFT_TICKS = 5;
 /** The Toss: the soldier follows Kratos' hand over this many ticks after Kratos changes pose. */
 const TOSS_FOLLOW_TICKS = 4;
+/** The soldier is lifted from standing to hanging over this many ticks after Kratos arrives in the lunge. */
+const LIFT_TICKS = 3;
+/** A soldier killed by a punch falls from Kratos' hand to the deck over this many ticks. */
+const PUNCH_FALL_TICKS = 6;
+/** Ticks the soldier takes to wrench himself out of the hold (Break Free). */
+const BREAK_FREE_TICKS = 4;
 
 /** Texture key of Kratos' frame for a grab phase, or null when Kratos is not in a grab. */
 export function kratosGrabFrameKey(player: Readonly<EntityState>): string | null {
@@ -178,6 +184,19 @@ export function victimPose(player: Readonly<EntityState>, enemy: Readonly<Entity
     case 'finisher_qte':
     case 'pummel': {
       const punched = player.grabPhase === 'pummel' && t >= PUNCH_HIT_FROM && t <= PUNCH_HIT_TO;
+      // The punch killed him: he lets go of nothing, he falls from Kratos' hand to the deck and stays lying
+      // (it used to hold him hanging for the rest of the punch and then jump to lying)
+      if (player.grabPhase === 'pummel' && enemy.isDead && t > PUNCH_HIT_FROM) {
+        const hung = attachedToHand(player, enemy, HELD_FRAMES[1], flipX, [GRIP_PX + PUNCH_RECOIL_PX, 0]);
+        const k = Math.min(1, (t - PUNCH_HIT_FROM) / PUNCH_FALL_TICKS);
+        return {
+          x: hung.x + (enemy.x - hung.x) * k,
+          y: hung.y + (player.y - hung.y) * k,
+          textureKey: k < 1 ? 'legionnaire-death-01' : 'legionnaire-death-02',
+          flipX: enemy.facing === -1,
+          depth: k < 1 ? DEPTH_FRONT : DEPTH_LYING,
+        };
+      }
       // Nobody chose anything for a while: he struggles (bends and straightens, faster as he is about to break free)
       // instead of hanging still for two seconds
       const waiting = player.grabPhase === 'hold' && t >= STRUGGLE_FROM;
@@ -185,7 +204,19 @@ export function victimPose(player: Readonly<EntityState>, enemy: Readonly<Entity
       const bent = waiting && Math.floor(t / period) % 2 === 1;
       const textureKey = punched || bent ? HELD_FRAMES[1] : HELD_FRAMES[0];
       const shake = waiting ? (t % 2 === 0 ? 1 : -1) : 0;
-      return attachedToHand(player, enemy, textureKey, flipX, punched ? [GRIP_PX + PUNCH_RECOIL_PX, t % 2 === 0 ? 1 : -1] : [GRIP_PX + shake, 0]);
+      const hung = attachedToHand(player, enemy, textureKey, flipX, punched ? [GRIP_PX + PUNCH_RECOIL_PX, t % 2 === 0 ? 1 : -1] : [GRIP_PX + shake, 0]);
+      // On the first grab he is lifted from standing to hanging over a few ticks instead of in one
+      const lift = (player.grabPummelCount ?? 0) === 0 && player.grabPhase !== 'pummel' ? Math.min(1, (player.grabLiftTicks ?? 0) / LIFT_TICKS) : 1;
+      if (lift < 1 && kratosGrabFrameKey(player) !== 'kratos-grab-lunge') {
+        return {
+          x: enemy.x + (hung.x - enemy.x) * lift,
+          y: enemy.y + (hung.y - enemy.y) * lift,
+          textureKey: lift < 0.5 ? 'legionnaire-hitstun-00' : hung.textureKey,
+          flipX,
+          depth: DEPTH_FRONT,
+        };
+      }
+      return hung;
     }
     case 'throw': {
       // Toss: his neck stays in Kratos' far hand (he is held at the side, bent over once the blade is raised);
@@ -196,7 +227,7 @@ export function victimPose(player: Readonly<EntityState>, enemy: Readonly<Entity
       const textureKey = t < grab.toss.raiseFrom ? HELD_FRAMES[0] : HELD_FRAMES[1];
       // in the wind-up Kratos swings him behind: he is drawn in front of Kratos (behind him he was hidden) and a bit further back
       const windUp = t >= grab.toss.stabTick + 8;
-      const offset: Point = [windUp ? GRIP_PX - 8 : GRIP_PX, 0];
+      const offset: Point = [windUp ? GRIP_PX - 16 : GRIP_PX, 0];
       const pose = attachedToHand(player, enemy, textureKey, flipX, offset);
       // When Kratos changes pose his hand jumps; the soldier follows it over the next ticks instead of in one
       const frameAt = (tick: number): string | null => kratosGrabFrameKey({ ...player, grabTicks: tick });
@@ -211,7 +242,7 @@ export function victimPose(player: Readonly<EntityState>, enemy: Readonly<Entity
         y = before.y + (pose.y - before.y) * k;
       }
       // a bent soldier stands at Kratos' side: never below the floor
-      return { ...pose, x, y: Math.min(y, player.y), depth: t >= grab.toss.stabTick ? DEPTH_FRONT : pose.depth };
+      return { ...pose, x, y: Math.min(y, player.y), depth: t >= grab.toss.stabTick && !windUp ? DEPTH_FRONT : pose.depth };
     }
     case 'break': {
       // Rip: lifted overhead, pulled to the chest and stretched across both hands; at `ripTick` he is torn in two
@@ -235,12 +266,23 @@ export function victimPose(player: Readonly<EntityState>, enemy: Readonly<Entity
         depth: DEPTH_LYING,
       };
     }
-    case 'recovery':
-      // The floor stabs killed him: he stays lying while Kratos gets up (the body used to reappear standing)
-      if (enemy.isDead && (player.grabPummelCount ?? 0) > grab.chain.punches) {
+    case 'recovery': {
+      // The chain killed him: he stays lying while Kratos gets up (the body used to reappear standing or jump)
+      if (enemy.isDead) {
         return { x: enemy.x, y: player.y, textureKey: 'legionnaire-death-02', flipX: enemy.facing === -1, depth: DEPTH_LYING };
       }
-      return null;
+      // Break Free: he wrenches himself out of the hold and drops from Kratos' hand over a few ticks
+      const hung = attachedToHand(player, enemy, HELD_FRAMES[1], flipX, [GRIP_PX, 0], 'kratos-grab-hold');
+      const k = Math.min(1, (t + 1) / BREAK_FREE_TICKS);
+      if (k >= 1) return null;
+      return {
+        x: hung.x + (enemy.x - hung.x) * k,
+        y: Math.min(hung.y + (enemy.y - hung.y) * k, enemy.y),
+        textureKey: HELD_FRAMES[1],
+        flipX,
+        depth: DEPTH_FRONT,
+      };
+    }
     case 'slam':
     case 'finisher_slam': {
       // Deck slam: lifted overhead across both hands (a body lying along the arms), he dives head first, then he
@@ -255,7 +297,17 @@ export function victimPose(player: Readonly<EntityState>, enemy: Readonly<Entity
           depth: DEPTH_LYING,
         };
       }
-      return carriedAcrossHands(player, enemy, flipX, t < impact - 5 ? 'legionnaire-flip-00' : 'legionnaire-flip-01');
+      if (t < impact - 5) return carriedAcrossHands(player, enemy, flipX, 'legionnaire-flip-00');
+      // The dive: from his place across the hands to the deck, first diagonal then nearly vertical, head first
+      const over = carriedAcrossHands(player, enemy, flipX, 'legionnaire-flip-01');
+      const k = Math.min(1, (t - (impact - 5) + 1) / 6);
+      return {
+        x: over.x + (enemy.x - over.x) * k,
+        y: over.y + (player.y - over.y) * k,
+        textureKey: t < impact - 2 ? 'legionnaire-flip-01' : 'legionnaire-flip-02',
+        flipX,
+        depth: DEPTH_BEHIND_HAND,
+      };
     }
     default:
       return null;

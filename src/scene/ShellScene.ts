@@ -122,7 +122,7 @@ export class ShellScene extends Phaser.Scene {
     this.flowOverlay = new GameFlowOverlay(this);
     this.vfxLayer = new VfxLayer(this);
     this.tossChain = this.add.graphics().setDepth(1.1);
-    this.ripHalves = new RipHalves(this);
+    this.ripHalves = new RipHalves(this, (x, y) => this.vfxLayer.emitBloodBurst(x, y - 6, 14));
     this.soundManager = new SoundManager();
 
     this.input.keyboard?.on('keydown-M', () => {

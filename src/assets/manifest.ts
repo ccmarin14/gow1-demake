@@ -114,6 +114,7 @@ export const LEGIONNAIRE_FRAME_KEYS: readonly string[] = [
   'legionnaire-held-01',
   'legionnaire-flip-00',
   'legionnaire-flip-01',
+  'legionnaire-flip-02',
   'legionnaire-tumble-00',
   'legionnaire-tumble-01',
   'legionnaire-tumble-02',

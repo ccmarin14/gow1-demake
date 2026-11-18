@@ -67,6 +67,8 @@ POSES = {
     # Thrown overhead (the circle grab's deck slam): lying across Kratos' hands, then diving head first. Both
     # are the held soldier with the camera rolled; the head ends on the side the mirrored sprite sends forward.
     "flipA": pose({**legs(6, 10, 12, 18, -8), "neck_01": -8, "Head": -8}, hold(-0.3, -0.05, 0.5), FAR(-0.55, 1.55), sword=[35, 0, 0], camera_roll=-90),
+    # ... and nearly vertical, head down, the last ticks before he hits the deck
+    "flipC": pose({**legs(6, 10, 12, 18, -8), "neck_01": -8, "Head": -8}, hold(-0.3, -0.05, 0.5), FAR(-0.55, 1.55), sword=[35, 0, 0], camera_roll=-170),
     "flipB": pose({**legs(6, 10, 12, 18, -8), "neck_01": -8, "Head": -8}, hold(-0.3, -0.05, 0.5), FAR(-0.55, 1.55), sword=[35, 0, 0], camera_roll=-135),
     # Thrown by the chain (the Toss): the held soldier tumbling, a quarter turn per frame
     "tumbleA": pose(legs(-8, 16, 4, 12, 24), hold(-0.3, 0.15, 0.55), FAR(-0.4, 1.2), sword=[35, 0, 0], camera_roll=-60),

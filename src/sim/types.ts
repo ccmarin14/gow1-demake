@@ -185,6 +185,11 @@ export interface EntityState {
   /** Taps of the Circle chain so far: 1..3 punches, 4 the throw to the floor, 5..8 the stabs. */
   grabPummelCount?: number;
   grabAdvancePx?: number;
+  /** A follow-up pressed while a punch was landing (or frozen by its hitstop): it is used as soon as he holds the victim again. */
+  grabBuffer?: GameAction | null;
+  grabBufferTicks?: number;
+  /** Ticks since Kratos arrived at the victim in the lunge (the soldier is lifted over the next few ticks). */
+  grabLiftTicks?: number;
   /** Remaining ticks of the enemy's break-free push after a grab expires. */
   grabBreakFreeTicks?: number;
   /** The victim of a Circle grab lies on the floor under Kratos (after the throw to the floor). */

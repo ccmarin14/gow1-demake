@@ -166,6 +166,12 @@
       "png": "legionnaire-flip-01"
     },
     {
+      "file": "flip-02.txt",
+      "state": "flip",
+      "grounded": false,
+      "png": "legionnaire-flip-02"
+    },
+    {
       "file": "tumble-00.txt",
       "state": "tumble",
       "grounded": false,
