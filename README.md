@@ -1,46 +1,46 @@
 # God of War 8-bit (`gow-8b`)
 
-Juego de acción lateral 2D en pixel art construido con **Phaser 3.90.0**, **TypeScript** y **Vite** (resolución lógica 480×270). Adapta el inicio del primer *God of War* (PS2) en el mar Egeo al plano lateral 2D inspirado en *God of War: Betrayal*.
+Juego de acción lateral 2D en pixel art construido con **Phaser 3.90.0**, **TypeScript** y **Vite** (resolución lógica 480×270). Adapta el inicio del primer *God of War* (PS2) en el mar Egeo al plano lateral, con el encuadre y la lectura en pixel art de *God of War: Betrayal*: el repertorio de combate de nivel 1 (□, △, agarre con ○, guardia), los no muertos de la cubierta y una tormenta que no se calla.
 
-El estado real del proyecto, lo que funciona y los problemas abiertos se mantienen en un único documento: **[`docs/estado.md`](docs/estado.md)**.
+El estado real, lo que falta revisar o decidir y lo que sigue están en **[`docs/estado.md`](docs/estado.md)**.
 
 ## Comandos
 
 ```bash
 pnpm install
-pnpm dev        # Servidor de desarrollo Vite
-pnpm build      # Typecheck (tsc -b) + build de producción
-pnpm test       # Pruebas de la simulación (runner nativo de Node 22)
-pnpm art        # Valida los grids ASCII y regenera sus PNG
-pnpm art:check  # Solo valida (los PNG deben coincidir con los grids)
-pnpm preview    # Vista previa del build
+pnpm dev          # servidor de desarrollo Vite (también escucha en 0.0.0.0 para probar en el celular)
+pnpm build        # typecheck (tsc -b) + build de producción
+pnpm test         # pruebas de la simulación y de la presentación (runner nativo de Node 22)
+pnpm art          # valida los grids ASCII y regenera sus PNG
+pnpm art:check    # solo valida (los PNG deben coincidir con los grids)
+pnpm audio:check  # renderiza los sonidos fuera de línea y comprueba su peso (graves, chasquido, cola, altavoz pequeño)
+pnpm preview      # vista previa del build
 ```
 
-Los sprites de Kratos se dibujan en `grids/kratos/*.txt` con `palette/kratos.json`; el método está en `docs/direccion.md` §5.
+Verificación completa de un cambio: `pnpm test`, `npx tsc --noEmit -p .`, `pnpm build`, `pnpm art:check` y `scripts/verify/browser-check.sh` (debe decir `errors 0 failed 0`).
 
-## Controles principales
+## Controles
 
-- **Moverse:** `A` / `D` o `←` / `→`
-- **Saltar / Doble salto:** `Espacio` (`Abajo + Espacio` para bajar de plataforma)
-- **Ataque ligero (□) / pesado (△):** `J` / `I` (en el aire también; mantener `I` lanza a los enemigos)
-- **Guardia / Parry:** `Q`
-- **Rodar:** `Shift`
-- **Magia:** `U`
-- **Interactuar (cofres):** `E`
-- **Pausa / Silenciar audio:** `Escape` / `M`
+| Acción | Tecla |
+| --- | --- |
+| Moverse | `A` / `D` o `←` / `→` |
+| Saltar / doble salto (`↓ + Espacio` baja de plataforma) | `Espacio` |
+| Ataque ligero □ / pesado △ (también en el aire; mantener `I` lanza a los enemigos) | `J` / `I` |
+| Agarre ○ (con el enemigo sujeto: `J` lanza, `I` lo parte, `K`/`L` otra vez golpea; en el aire, *Harpoon*) | `K` / `L` |
+| Guardia / desvío | `Q` |
+| Rodar | `Shift` |
+| Magia | `U` |
+| Interactuar (cofres) | `E` |
+| Pausa / silenciar | `Escape` / `M` |
 
-## Estructura del repositorio
+En el celular hay botones táctiles equivalentes (□, △, ○). El mapa completo y la especificación de cada mecánica están en [`docs/direccion.md`](docs/direccion.md).
 
-- `src/` — Simulación determinista (`src/sim/`), escena Phaser (`src/scene/`), capas de armas/UI/audio y configuración (`src/config.ts`).
-- `grids/` y `palette/` — Fuente de verdad en texto ASCII y paleta para los sprites de personajes.
-- `public/assets/` — Texturas cargadas por el juego.
-- `scripts/` — Herramientas de arte: rasterizado y validación (`ascii_to_png.py`, `check_grid.py`), vista previa (`preview_grid.py`), referencia cuantizada (`quantize_reference.py`) y el hook de pruebas (`scripts/test/`).
-- `tests/` — Pruebas de la simulación (`pnpm test`).
-- `docs/` — Documentación vigente:
-  - [`docs/estado.md`](docs/estado.md) — Estado actual, problemas abiertos y registro de pasos.
-  - [`docs/direccion.md`](docs/direccion.md) — Dirección creativa, controles y guía visual.
-  - [`docs/decisiones.md`](docs/decisiones.md) — Decisiones vigentes.
-  - [`docs/arquitectura.md`](docs/arquitectura.md) — Mapa de módulos y flujo de datos.
-  - [`docs/ideas.md`](docs/ideas.md) — Ideas y referencias para etapas futuras (no activas).
-  - `docs/referencias/` — Estudio visual de *God of War: Betrayal*.
-- El material histórico retirado (planes, scripts y arte descartados) ya no está en el árbol; queda en el historial de git, por ejemplo `git show c2e8729:archivo/`.
+## Estructura
+
+- `src/` — simulación determinista a 60 Hz (`sim/`), escena y vistas de Phaser (`scene/`, `entities/`, `ui/`), audio procedural (`audio/`) y configuración (`config.ts`). Detalle en [`docs/arquitectura.md`](docs/arquitectura.md).
+- `grids/` y `palette/` — la fuente de verdad del arte en texto ASCII y sus paletas; los PNG de `public/assets/` se generan de ahí.
+- `scripts/` — rasterizado y validación del arte, el borrador 3D (`pose_render/`, necesita Blender) y la verificación (`verify/`: navegador, rendimiento, grabación del juego tick a tick, audio).
+- `tests/` — pruebas con el runner de Node.
+- `docs/` — [`estado.md`](docs/estado.md) (estado y pendientes), [`direccion.md`](docs/direccion.md) (dirección y especificación de las mecánicas), [`decisiones.md`](docs/decisiones.md), [`arquitectura.md`](docs/arquitectura.md), [`ideas.md`](docs/ideas.md) (ideas futuras, no activas), [`archivo/`](docs/archivo/README.md) (historial en texto) y `referencias/` (estudio visual de *Betrayal*).
+
+La guía de trabajo para agentes (flujo, reglas de arte, reparto de modelos y lecciones) está en [`AGENTS.md`](AGENTS.md).

@@ -84,6 +84,19 @@ Ideas, notas y referencias de diseño para etapas futuras del desarrollo.
 
 ---
 
+## Sonido y sensación de golpe (2026-11-17, no activas)
+
+Ideas que salieron al rehacer el audio y el ritmo de ○; ninguna se implementa sin orden del usuario.
+
+- **Música:** un tema grave y sobrio (coros y percusión de tambores, nada de melodías de chiptune) que sube de tensión en las oleadas y calla en el cierre; hoy solo hay tormenta y efectos.
+- **Audio adaptativo:** los truenos lejanos se acercan cuando Kratos usa magia o hay un jefe; la lluvia amortigua los pasos.
+- **Vibración del celular** (`navigator.vibrate`) con la misma escala de impacto que el hitstop: corta en el puñetazo, larga en el desgarro y el azote.
+- **Cámara lenta breve** en el último golpe de una ráfaga (la cuarta puñalada, el desgarro) para recordar los remates del original.
+- **Gritos y esfuerzo de Kratos** (sílabas procedurales graves, sin voz) en el azote y el desgarro.
+- **Marcador de remate:** el círculo rojo sobre la cabeza de un enemigo grande debilitado, con su sonido propio, cuando haya enemigos que lo pidan (decisión C-O1).
+
+---
+
 ## Fuentes
 
 1. Recorrido del Mar Egeo, *Joshua Cheats & Walkthroughs* (2010): https://joshua-cheats-walkthroughs.blogspot.com/2010/05/aegean-sea-god-of-war.html
