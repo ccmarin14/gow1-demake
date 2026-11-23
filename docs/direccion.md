@@ -327,11 +327,11 @@ Diseño del usuario; en el original las vigas están justo después de la primer
 ## 11. HUD, combate visible y menús (D-48, D-49, D-50)
 
 - **Guardia:** Kratos cruza las dos Espadas del Caos al frente. Hoy la guardia muestra `idle-00` quieto con una sola cuchilla (D-29).
-- **HUD:** barras simples de vida, magia y orbes sobre una Espada del Caos dibujada con cuidado: la espada es lo que tiene que ser bonito, no las barras. Es la composición del original [20].
-- **Contador de golpes ("Impactos"):** visible durante el combo, con el multiplicador de orbes de D-49.
+- **HUD (BL-29):** una **Espada del Caos dibujada con cuidado** con las barras de **vida** y **magia** sobre ella, el contador de **orbes** y los **puntos**: la espada es lo que tiene que ser bonito, no las barras. Es la composición del original [20]. Se dibuja un cuadro por vez y el usuario lo aprueba a ojo (`AGENTS.md` §3).
+- **Contador de golpes, «Impactos» (BL-30):** es una parte central del juego. Sube por golpe conectado, se reinicia tras unos 2 s sin golpear o al recibir daño, y da el multiplicador de orbes de D-49 (×1, ×1,5, ×2, ×3 desde 0, 10, 25 y 50 golpes). Debe leerse claro en medio del combate (posición, tamaño y una animación corta al subir); su aspecto se diseña con el usuario.
 - ***Ira de Poseidón*:** la heredada se rehace para parecerse a la del original: una descarga de energía alrededor de Kratos que daña todo en su radio (su aspecto exacto: P-08). En el slice está activa desde el inicio.
-- **Menú principal:** vertical slice: Nuevo juego, Opciones (volumen, controles, saltar el cómic) y Créditos. Primera versión: suma Continuar, Dificultad y Extras (galería, desafíos). Se pule con el tiempo.
-- **Menú de pausa (por pestañas, como el original [21]):** armas y mejora (en el slice, una sola mejora real de las Espadas del Caos con orbes rojos; en la primera versión, la mejora completa de armas y magia), ataques disponibles y opciones. Nombres y orden de las pestañas: P-09.
+- **Menú principal (BL-31, D-59):** debe **hacer honor al juego** aunque falten cosas. Lleva Nuevo juego, Continuar, Opciones, Extras y Créditos; lo que aún no tiene contenido se muestra **deshabilitado** (atenuado, sin acción y con una marca de «próximamente») y se activa cuando se implementa. Estilo propio de pixel art: marco, tipografía, fondo animado con la tormenta o las espadas, sonido de selección. El diseño se prueba primero sin lógica, y el usuario lo aprueba a ojo antes de conectar nada.
+- **Menú de pausa (por pestañas, como el original [21]):** armas y mejora, ataques disponibles y opciones; en el slice, una sola mejora real de las Espadas del Caos con orbes rojos; lo no implementado, deshabilitado. Nombres y orden de las pestañas: P-09.
 
 ## 12. Construcción del entorno y arquitectura de capas (D-52)
 
@@ -357,6 +357,15 @@ Todos los elementos del entorno usan una paleta dedicada (`palette/environment.j
 | **3. Vigas sobre agua baja** (§10, tramo 5) | Continuación alta de la bodega con entramado de madera al fondo y nivel inferior inundado. | Tres módulos de viga visualmente distinguibles con sutileza (madero firme, madero agrietado que cede/cae y tabla falsa con nudo/tono distinto), escalera vertical de retorno y superficie de agua baja con espuma. |
 | **4. El prisionero y salida** (§10, tramos 6 y 7) | Muro de bodega con celda enrejada (marinero detrás de los barrotes) y marco de la puerta hacia cubierta. | Reja interactiva (R2 / `E`), cofre de orbes rojos y puerta final al caos de cubierta. |
 
+### Referencias de arte (D-59)
+
+El mundo hoy es un fondo plano con rectángulos; la meta es un **mundo vivo en pixel art**. Referencias que el usuario eligió:
+
+- ***God of War: Betrayal* (2007):** lectura lateral, siluetas, plataformas y ritmo (ver `docs/referencias/god-of-war-betrayal.md`).
+- ***Lucky Luna*:** lo que el usuario admira es **el excelente uso del pixel art, sus animaciones preciosas y la belleza de su mundo**. Antes de usarla como guía de método hace falta estudiarla: qué hace con la paleta, las capas de parallax, la iluminación y las animaciones del entorno (hojas, agua, humo, luces). **Pendiente:** conseguir capturas y videos del juego (el usuario aporta el enlace de su página o material) y anotar aquí lo medible; hasta entonces no se afirma nada concreto de ella.
+
+Qué se busca llevar al Egeo, sea cual sea la fuente: capas de profundidad con parallax, iluminación con color (relámpagos, faroles), **animaciones ambientales continuas** (olas, lluvia, cuerdas y velas que se mueven, espuma, humo) y detalle en el primer plano. Cada tramo se aprueba ampliado junto a su referencia (más abajo).
+
 ### Flujo de trabajo y aprobación
 
 1. **Separación simulación / arte:** las pruebas de cámara (BL-23), agua baja (BL-25) y vigas (BL-34) verifican primero la física sobre la geometría de `src/sim/`; `EnvironmentLayer` viste cada elemento sin alterar cajas de colisión.
@@ -373,4 +382,10 @@ Todos los elementos del entorno usan una paleta dedicada (`palette/environment.j
 **Sonidos de apoyo:** Kratos herido, tajo y caída del no muerto, y los que muestran el mundo (pasos sobre madera mojada, aterrizajes, rodada, guardia).
 
 **Cómo se verifica sin oído** (`pnpm audio:check`): cada sonido se renderiza fuera de línea en Chrome, se guarda en WAV y se mide: pico bajo -1 dBFS pero audible, chasquido en el inicio, graves reales, cola de sala en los golpes pesados, que se oiga en un altavoz pequeño y que se respete la escala de intensidad. El timbre y el volumen relativo los decide el oído del usuario: se ajustan en `recipes.ts` y `ambience.ts`.
+
+**Estado (D-58, 2026-11-23).** Lo descrito arriba como gramática de un impacto y banco de medidas es el **diseño objetivo**, no lo que hay hoy: en esta rama los golpes suenan con un oscilador y solo existe la tormenta de fondo, **a volumen suave** (`STORM_LEVEL` 0,11) porque sin música tapaba todo. El audio en capas y las muestras de la rama `decepcion` no se integraron porque al usuario no le gustaron tanto.
+
+**Música (BL-47).** Hoy no hay banda sonora. La referencia es el primer *God of War*: según Wikipedia (`en.wikipedia.org/wiki/God_of_War_(2005_video_game)`) lo compusieron Gerard Marino, Mike Reagan, Ron Fish, Winifred Phillips, Winnie Waldron, Cris Velasco y Marcello De Francisci, la crítica la describe como música orquestal clásica contemporánea y ganó el premio DICE a la mejor composición original; la página no dice quién es el compositor principal ni habla de coros o percusión (dato por confirmar en una fuente primaria). Dirección propuesta, por decidir con el usuario: una pista grave y sobria de **ambiente** para el Egeo y otra de **combate** que sube de tensión, que no compitan con los golpes; mientras no exista, la tormenta se queda suave. Si se usan piezas de licencia libre, su fuente y su licencia se anotan.
+
+**Lo que le gustó al usuario del sonido de *Ghost of Sparta*:** la contundencia de los golpes. Sirve de referencia al hablar con él, no como fuente de audio (nunca se usa audio extraído de un juego).
 
