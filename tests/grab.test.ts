@@ -771,38 +771,6 @@ describe('Turning to either side before the throw (user: the throw only goes lef
     stepTicks(world, [], CONFIG.player.grab.toss.releaseTick);
   }
 
-  it('holding the other direction turns Kratos and carries the victim to that side', () => {
-    const { world, p, victim } = setup();
-    world.step(['move-left']);
-    assert.equal(p.facing, -1);
-    assert.equal(p.grabPhase, 'hold');
-    world.step([]);
-    assert.equal(victim.x, p.x - CONFIG.player.grab.holdDistancePx);
-  });
-
-  it('he can turn at any moment of the hold, not only right after the grab', () => {
-    const { world, p } = setup();
-    stepTicks(world, [], 60);
-    assert.equal(p.grabPhase, 'hold');
-    world.step(['move-left']);
-    assert.equal(p.facing, -1);
-  });
-
-  it('he can turn back and forth before choosing', () => {
-    const { world, p } = setup();
-    world.step(['move-left']);
-    world.step(['move-right']);
-    assert.equal(p.facing, 1);
-  });
-
-  it('Toss after turning: the victim is thrown to the side Kratos was turned to', () => {
-    const { world, p, victim } = setup();
-    world.step(['move-left']);
-    toss(world);
-    assert.equal(p.facing, -1);
-    assert.equal(victim.vx, -CONFIG.player.grab.throwVx);
-  });
-
   it('Toss without turning goes to the side he faces, whoever is near', () => {
     const { world, p, victim } = setup();
     toss(world);

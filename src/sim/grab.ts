@@ -213,7 +213,6 @@ export function stepGrab(
   targets: readonly EntityState[],
   inputActions: readonly GameAction[] = [],
   onKill?: (target: EntityState) => void,
-  heldDirection: -1 | 0 | 1 = 0,
 ): GrabStepResult {
   const result: GrabStepResult = {
     hit: false,
@@ -372,12 +371,6 @@ export function stepGrab(
     }
 
     stepLunge(player);
-
-    // Kratos can be turned to either side before choosing (the throw goes left or right): holding the
-    // other direction turns him, and the victim with him.
-    if (heldDirection !== 0 && heldDirection !== player.facing) {
-      player.facing = heldDirection;
-    }
 
     target.x = player.x + player.facing * (cfg.holdDistancePx + (player.grabAdvancePx ?? 0));
     target.y = player.y;

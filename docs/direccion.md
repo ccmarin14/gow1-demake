@@ -106,7 +106,7 @@ Criterio: se implementa lo que respaldan el manual oficial, el cartel del juego 
 **Decisiones del usuario** (lo que no tiene respaldo o lo corrige):
 
 - ***Pummel*:** 3 puñetazos sujetándolo en alto (un toque de ○ cada uno), el azote al suelo (un toque) y **4 puñaladas que salen solas** ("después del azote debe acuchillar solo"), **con rabia**: ráfaga corta y fuerte, no una tarea; la última siempre mata. El video lo respalda en el suelo (el contador de golpes pasa de 4 a 8) y las guías se contradicen en los golpes en alto.
-- ***Toss*:** no apunta solo (en el 2D solo va a izquierda o derecha) pero se puede **girar a un lado u otro antes de lanzar**, en cualquier momento de la presa. Ritmo de **látigo**: sujeto al frente, la hoja se hunde, Kratos lo lleva atrás despacio y lo suelta con un chasquido rápido; **dos cadenas juntas, bien visibles**; el soldado sale disparado hasta un punto fijo (~145 px) para **golpear a los otros no muertos** del camino.
+- ***Toss*:** no apunta solo (en el 2D solo va a izquierda o derecha) y **no se puede girar durante la presa** (el usuario lo probó y no le gustó; el 2026-11-23 se quitó). Ritmo de **látigo**: sujeto al frente, la hoja se hunde, Kratos lo lleva atrás despacio y lo suelta con un chasquido rápido; **dos cadenas juntas, bien visibles**; el soldado sale disparado hasta un punto fijo (~145 px) para **golpear a los otros no muertos** del camino.
 - ***Rip*:** lo parte en dos (mata siempre, orbes medios); las dos mitades salen despedidas.
 - **Orbes:** *Pummel* > *Rip* > *Toss* (orden de la guía; las cifras, del equipo).
 - **Remate contextual** con ○ sobre el legionario débil: idea del usuario, hoy inalcanzable (C-O1 en `docs/estado.md`).

@@ -774,7 +774,7 @@ export class World {
             if (jumpEdge) followUpEdges.push('jump');
             if (dodgeEdge) followUpEdges.push('dodge');
           }
-          stepGrab(player, this.targets, followUpEdges, undefined, heldDirection(this.input));
+          stepGrab(player, this.targets, followUpEdges);
           // Only the freeze is simulation: the shake, blood, sparks and sound of each circle blow are fired once by the
           // scene on the tick of the contact, from the same scale (`CONFIG.player.grab.shake`). These blows used to
           // also raise the strike notices, so the punch and the slam sounded twice and the first, weaker shake won.
