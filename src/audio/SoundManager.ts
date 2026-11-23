@@ -1,4 +1,5 @@
 import { CONFIG } from '../config';
+import { STORM_LEVEL, startStorm } from './ambience';
 
 export interface SoundStats {
   playCounts: Record<string, number>;
@@ -67,6 +68,8 @@ export class SoundManager {
       this.sfxGain.connect(this.masterGain);
 
       this.isReady = true;
+      // the storm shares the master gain, so the mute key silences it too
+      startStorm(this.ctx, this.masterGain, STORM_LEVEL);
 
       // Autoplay policy unlock listener
       const unlock = () => {
