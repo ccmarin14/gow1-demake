@@ -379,6 +379,11 @@ export const CONFIG = {
     },
   },
   combat: {
+    impactChain: {
+      resetTicks: 120,
+      thresholds: [10, 25, 50] as const,
+      multipliers: [1, 1.5, 2, 3] as const,
+    },
     feel: {
       comboTurnMinTicks: 4,
       comboGraceTicks: 16,

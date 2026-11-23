@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { CONFIG } from '../config';
-import type { EntityState } from '../sim/types';
+import type { CombatStats, EntityState } from '../sim/types';
 
 export interface HudMetrics {
   currentHp: number;
@@ -84,6 +84,10 @@ export class HudLayer {
   private readonly redOrbIconOuter: Phaser.GameObjects.Arc;
   private readonly redOrbIconHighlight: Phaser.GameObjects.Arc;
   private readonly redOrbsText: Phaser.GameObjects.Text;
+
+  // Contador de impactos y multiplicador activo de orbes
+  private readonly impactCountText: Phaser.GameObjects.Text;
+  private readonly orbMultiplierText: Phaser.GameObjects.Text;
 
   // Ranuras ornamentales de Ojos de Górgona bajo el medallón
   private readonly gorgonEyeSlots: Phaser.GameObjects.Rectangle[] = [];
@@ -348,6 +352,33 @@ export class HudLayer {
       .setShadow(1, 1, '#000000', 1);
     this.elements.push(this.redOrbsText);
 
+    const chainX = CONFIG.internal.width - 12;
+    this.impactCountText = scene.add
+      .text(chainX, 8, 'Impactos: 0', {
+        fontFamily: 'monospace',
+        fontSize: '10px',
+        color: '#f8fafc',
+        fontStyle: 'bold',
+      })
+      .setOrigin(1, 0)
+      .setScrollFactor(0)
+      .setDepth(depth + 6)
+      .setShadow(1, 1, '#000000', 2);
+    this.elements.push(this.impactCountText);
+
+    this.orbMultiplierText = scene.add
+      .text(chainX, 20, 'Orbes x1', {
+        fontFamily: 'monospace',
+        fontSize: '8px',
+        color: '#facc15',
+        fontStyle: 'bold',
+      })
+      .setOrigin(1, 0)
+      .setScrollFactor(0)
+      .setDepth(depth + 6)
+      .setShadow(1, 1, '#000000', 2);
+    this.elements.push(this.orbMultiplierText);
+
     // 9. Ranuras ornamentales de Ojos de Górgona bajo el medallón (6 casillas)
     const eyeSlotY = y + barHeight + 9;
     const startSlotX = x - 10;
@@ -497,8 +528,13 @@ export class HudLayer {
     this.hidden = hidden;
   }
 
-  update(player: EntityState | undefined, dt: number, boss?: { hp: number; maxHp: number; name?: string } | null): void {
-    this.render(player, dt, boss);
+  update(
+    player: EntityState | undefined,
+    dt: number,
+    boss?: { hp: number; maxHp: number; name?: string } | null,
+    combatStats?: Pick<CombatStats, 'impactCount' | 'orbMultiplier'>,
+  ): void {
+    this.render(player, dt, boss, combatStats);
     if (this.hidden) {
       for (const elem of this.elements) {
         (elem as Phaser.GameObjects.GameObject & Phaser.GameObjects.Components.Visible).setVisible(false);
@@ -509,7 +545,12 @@ export class HudLayer {
     }
   }
 
-  private render(player: EntityState | undefined, dt: number, boss?: { hp: number; maxHp: number; name?: string } | null): void {
+  private render(
+    player: EntityState | undefined,
+    dt: number,
+    boss?: { hp: number; maxHp: number; name?: string } | null,
+    combatStats?: Pick<CombatStats, 'impactCount' | 'orbMultiplier'>,
+  ): void {
     if (!player) {
       this.greenBarBase.setVisible(false);
       this.greenBarHighlight.setVisible(false);
@@ -522,6 +563,8 @@ export class HudLayer {
       this.criticalGlow.setVisible(false);
       this.hpText.setText('HP: -/-');
       this.redOrbsText.setText('ORBES: -');
+      this.impactCountText.setText('Impactos: -');
+      this.orbMultiplierText.setText('Orbes x-');
       return;
     }
 
@@ -642,6 +685,11 @@ export class HudLayer {
     // 7. Saldo de orbes rojos y nivel de arma
     const redOrbs = player.redOrbs ?? 0;
     this.redOrbsText.setText(`ORBES: ${redOrbs}`);
+
+    const impactCount = combatStats?.impactCount ?? 0;
+    const orbMultiplier = combatStats?.orbMultiplier ?? 1;
+    this.impactCountText.setText(`Impactos: ${impactCount}`);
+    this.orbMultiplierText.setText(`Orbes x${Number.isInteger(orbMultiplier) ? orbMultiplier : orbMultiplier.toFixed(1).replace('.', ',')}`);
 
     // 8. Iluminación de ranuras de Ojos de Górgona
     const gorgonEyes = player.gorgonEyes ?? 0;

@@ -39,6 +39,17 @@ const VERTICAL_PARAMS: VerticalParams = {
   topY: CONFIG.player.vertical.topY,
 };
 
+export function orbMultiplierForImpactCount(impactCount: number): number {
+  const { thresholds, multipliers } = CONFIG.combat.impactChain;
+  let multiplierIndex = 0;
+  for (let i = 0; i < thresholds.length; i += 1) {
+    if (impactCount >= thresholds[i]) {
+      multiplierIndex = i + 1;
+    }
+  }
+  return multipliers[multiplierIndex];
+}
+
 export class World {
   private tick = 0;
   private entities: EntityState[] = [];
@@ -68,6 +79,10 @@ export class World {
   private directionTicks = 0;
   /** Ticks the whole world stays frozen after a strike connects. */
   private hitstopTicks = 0;
+  /** Current connected-hit chain and the ticks left before it resets. */
+  private impactCount = 0;
+  private impactResetTicks = 0;
+  private playerLastHp = 100;
   private strikeHitNotice: { x: number; y: number; power: number; kind: 'light' | 'heavy' | 'air' } | null = null;
   /** A jump pressed during a ground strike, remembered for a few ticks (it fires once the strike ends). */
   private jumpQueuedTicks = 0;
@@ -157,7 +172,20 @@ export class World {
       chestsOpened,
       totalChests: this.chests.length,
       rank,
+      impactCount: this.impactCount,
+      orbMultiplier: orbMultiplierForImpactCount(this.impactCount),
     };
+  }
+
+  private registerImpacts(count = 1): void {
+    if (count <= 0) return;
+    this.impactCount += count;
+    this.impactResetTicks = CONFIG.combat.impactChain.resetTicks;
+  }
+
+  private resetImpactChain(): void {
+    this.impactCount = 0;
+    this.impactResetTicks = 0;
   }
 
   peekEntity(id: string): Readonly<EntityState> | undefined {
@@ -434,6 +462,8 @@ export class World {
     this.directionTicks = 0;
     this.hitstopTicks = 0;
     this.strikeHitNotice = null;
+    this.impactCount = 0;
+    this.impactResetTicks = 0;
     this.jumpQueuedTicks = 0;
     this.grabQueuedTicks = 0;
     this.comboGrace = null;
@@ -441,6 +471,7 @@ export class World {
     this.targetPhysics = Boolean(scenario.targetPhysics);
     this.entities = cloneEntities(scenario.entities);
     this.targets = this.entities.filter((entity) => entity.id !== PLAYER_ID);
+    this.playerLastHp = this.peekEntity(PLAYER_ID)?.hp ?? 100;
     this.orbs = [];
     this.orbIdCounter = 0;
     this.arrows = [];
@@ -495,6 +526,17 @@ export class World {
 
   step(actions: readonly GameAction[] = []): void {
     this.input = sortActions(actions);
+    const playerBeforeHp = this.peekEntity(PLAYER_ID)?.hp;
+    if (playerBeforeHp !== undefined && playerBeforeHp < this.playerLastHp) {
+      this.resetImpactChain();
+    }
+
+    if (this.impactResetTicks > 0) {
+      this.impactResetTicks -= 1;
+      if (this.impactResetTicks === 0) {
+        this.resetImpactChain();
+      }
+    }
 
     const wantsPause = this.input.includes('pause');
     const pauseEdge = wantsPause && !this.pauseHeld;
@@ -707,9 +749,11 @@ export class World {
 
         // Invocación y ejecución de magia 'Ira de Poseidón'
         if (magicEdge && player.grounded && !inHitstun && !isOpeningChest && !striking) {
-          stepMagic(player, true, this.targets);
+          const magicResult = stepMagic(player, true, this.targets);
+          this.registerImpacts(magicResult.hitTargets.length);
         } else if (player.magicPhase !== 'none') {
-          stepMagic(player, false, this.targets);
+          const magicResult = stepMagic(player, false, this.targets);
+          this.registerImpacts(magicResult.hitTargets.length);
         }
         const nowCastingMagic = isCastingMagic(player);
         const rolling = isRolling(player);
@@ -781,16 +825,22 @@ export class World {
           const grabHitstop = CONFIG.player.grab.hitstop;
           if (player.grabPhase === 'pummel' && player.grabTicks === 4) {
             this.hitstopTicks = grabHitstop.punch;
+            this.registerImpacts(1);
           } else if (player.grabPhase === 'stab' && player.grabTicks === CONFIG.player.grab.chain.stabImpactTick) {
             this.hitstopTicks = isLastStab(player) ? grabHitstop.lastStab : grabHitstop.stab;
+            this.registerImpacts(1);
           } else if (player.grabPhase === 'throw' && player.grabTicks === CONFIG.player.grab.toss.stabTick) {
             this.hitstopTicks = grabHitstop.toss;
+            this.registerImpacts(1);
           } else if (player.grabPhase === 'throw' && player.grabTicks === CONFIG.player.grab.toss.releaseTick) {
             this.hitstopTicks = grabHitstop.toss;
+            this.registerImpacts(1);
           } else if (player.grabPhase === 'break' && player.grabTicks === CONFIG.player.grab.ripTick) {
             this.hitstopTicks = grabHitstop.rip;
+            this.registerImpacts(1);
           } else if ((player.grabPhase === 'slam' || player.grabPhase === 'finisher_slam') && player.grabTicks === CONFIG.player.grab.slamImpactTick) {
             this.hitstopTicks = grabHitstop.slam;
+            this.registerImpacts(1);
           }
         }
         const nowGrabbing = isGrabbing(player);
@@ -1067,6 +1117,7 @@ export class World {
             this.strike = null;
           } else if (result.hits.length > 0) {
             const def = STRIKES[this.strike.id];
+            this.registerImpacts(result.hits.length);
             // A heavy blow holds the world a little longer and throws the target back.
             const isHeavy = Boolean(def.heavy || def.damage >= CONFIG.combat.feel.heavyDamage);
             this.hitstopTicks = def.hitstopTicks + (isHeavy ? CONFIG.combat.feel.heavyExtraHitstop : 0);
@@ -1213,6 +1264,7 @@ export class World {
                   CONFIG.player.grab.collateralDamage,
                   CONFIG.enemy.legionnaire.knockdownTicks,
                 );
+                this.registerImpacts(1);
                 // a soldier thrown by the Toss knocks another one down: a Toss blow of the circle grammar
                 const tossShake = CONFIG.player.grab.shake.toss;
                 this.hitstopTicks = Math.max(this.hitstopTicks, CONFIG.player.grab.hitstop.toss);
@@ -1277,6 +1329,7 @@ export class World {
                     target.vx = 0;
                     if (wasHarpoonSlam && !target.isDead) {
                       const killedBySlam = damageEnemy(target, 15, CONFIG.enemy.legionnaire.knockdownTicks);
+                      this.registerImpacts(1);
                       if (killedBySlam) {
                         target.aiState = 'death';
                         target.aiTicks = 0;
@@ -1374,6 +1427,14 @@ export class World {
       if (this.mapData && hydra && hydra.isDead && player && (player.x >= 1280 || hydra.aiTicks >= 30)) {
         this.flowState = 'victory';
       }
+    }
+
+    const playerAfterHp = this.peekEntity(PLAYER_ID)?.hp;
+    if (playerBeforeHp !== undefined && playerAfterHp !== undefined && playerAfterHp < playerBeforeHp) {
+      this.resetImpactChain();
+    }
+    if (playerAfterHp !== undefined) {
+      this.playerLastHp = playerAfterHp;
     }
 
     this.tick += 1;

@@ -294,10 +294,12 @@ export class ShellScene extends Phaser.Scene {
       hydra && player && Math.abs(hydra.x - player.x) <= CONFIG.internal.width,
     );
     this.hudLayer.setHidden(flowState === 'title');
+    const combatStats = this.simulation.world.getCombatStats();
     this.hudLayer.update(
       player ?? undefined,
       delta / 1000,
       hydra && bossInRange ? { hp: hydra.hp, maxHp: hydra.maxHp, name: 'LA HIDRA DE LERNA' } : null,
+      combatStats,
     );
 
     if (this.flowOverlay) {

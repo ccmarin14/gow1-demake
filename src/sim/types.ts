@@ -288,6 +288,8 @@ export interface CombatStats {
   chestsOpened: number;
   totalChests: number;
   rank: string;
+  impactCount: number;
+  orbMultiplier: number;
 }
 
 export interface QtePromptState {
