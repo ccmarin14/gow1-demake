@@ -14,3 +14,7 @@ Comparado con el fotograma real de GoW 1 (`docs/tmp/gow1-grab/full.mp4`, t=120 s
 10. Después de la espada: barras encima (ya funcionan) y el selector de magias con icono y flechas (decisión pendiente del usuario).
 
 v14 (2026-11-24): rediseño sobre las proporciones medidas del fotograma real; los puntos 1 a 8 quedaron superados por el nuevo SVG.
+
+v17 (2026-11-24): acabado nuevo sobre la geometría de la v16 (biselado, grano, medallón con pinchos, garra de hueso). Pendiente: revisión del usuario, curva convexa del borde superior y el punto 10.
+
+v18 (2026-11-24): curvas de la hoja y empuñadura rehechas sobre la mediana limpia. Pendiente: revisión del usuario y el punto 10.
