@@ -41,7 +41,9 @@ export interface HudMetrics {
  */
 export class HudLayer {
   private readonly elements: Phaser.GameObjects.GameObject[] = [];
+  private readonly scene: Phaser.Scene;
   private hidden = false;
+  private lastImpactCount = 0;
 
   // Geometría del marco y fondo
   private readonly frameBg: Phaser.GameObjects.Rectangle;
@@ -85,9 +87,11 @@ export class HudLayer {
   private readonly redOrbIconHighlight: Phaser.GameObjects.Arc;
   private readonly redOrbsText: Phaser.GameObjects.Text;
 
-  // Contador de impactos y multiplicador activo de orbes
+  // Cadena de impactos estilo GoW 1
   private readonly impactCountText: Phaser.GameObjects.Text;
   private readonly orbMultiplierText: Phaser.GameObjects.Text;
+  private readonly impactThresholdText: Phaser.GameObjects.Text;
+  private readonly impactEffectText: Phaser.GameObjects.Text;
 
   // Ranuras ornamentales de Ojos de Górgona bajo el medallón
   private readonly gorgonEyeSlots: Phaser.GameObjects.Rectangle[] = [];
@@ -138,6 +142,7 @@ export class HudLayer {
   };
 
   constructor(scene: Phaser.Scene) {
+    this.scene = scene;
     const { x, y, barWidth, barHeight, depth } = CONFIG.presentation.hud;
 
     // Coordenadas calculadas
@@ -352,32 +357,70 @@ export class HudLayer {
       .setShadow(1, 1, '#000000', 1);
     this.elements.push(this.redOrbsText);
 
-    const chainX = CONFIG.internal.width - 12;
+    const chainX = CONFIG.internal.width * 0.74;
     this.impactCountText = scene.add
-      .text(chainX, 8, 'Impactos: 0', {
-        fontFamily: 'monospace',
-        fontSize: '10px',
-        color: '#f8fafc',
+      .text(chainX, 150, '0', {
+        fontFamily: 'Georgia, Times New Roman, serif',
+        fontSize: '18px',
+        color: '#f8f1d6',
         fontStyle: 'bold',
+        stroke: '#2a1608',
+        strokeThickness: 2,
       })
-      .setOrigin(1, 0)
+      .setOrigin(0.5, 1)
       .setScrollFactor(0)
-      .setDepth(depth + 6)
-      .setShadow(1, 1, '#000000', 2);
+      .setDepth(depth + 7)
+      .setShadow(1, 1, '#000000', 2)
+      .setVisible(false);
     this.elements.push(this.impactCountText);
 
     this.orbMultiplierText = scene.add
-      .text(chainX, 20, 'Orbes x1', {
-        fontFamily: 'monospace',
-        fontSize: '8px',
-        color: '#facc15',
+      .text(chainX, 174, 'IMPACTOS', {
+        fontFamily: 'Georgia, Times New Roman, serif',
+        fontSize: '9px',
+        color: '#f8f1d6',
         fontStyle: 'bold',
+        stroke: '#2a1608',
+        strokeThickness: 1,
       })
-      .setOrigin(1, 0)
+      .setOrigin(0.5, 0)
       .setScrollFactor(0)
-      .setDepth(depth + 6)
-      .setShadow(1, 1, '#000000', 2);
+      .setDepth(depth + 7)
+      .setShadow(1, 1, '#000000', 2)
+      .setVisible(false);
     this.elements.push(this.orbMultiplierText);
+
+    this.impactThresholdText = scene.add
+      .text(chainX, 188, '', {
+        fontFamily: 'Georgia, Times New Roman, serif',
+        fontSize: '10px',
+        color: '#ef4444',
+        fontStyle: 'bold',
+        stroke: '#3f0d0d',
+        strokeThickness: 1,
+      })
+      .setOrigin(0.5, 0)
+      .setScrollFactor(0)
+      .setDepth(depth + 8)
+      .setShadow(1, 1, '#000000', 2)
+      .setVisible(false);
+    this.elements.push(this.impactThresholdText);
+
+    this.impactEffectText = scene.add
+      .text(chainX, 200, '', {
+        fontFamily: 'Georgia, Times New Roman, serif',
+        fontSize: '10px',
+        color: '#ef4444',
+        fontStyle: 'bold',
+        stroke: '#3f0d0d',
+        strokeThickness: 1,
+      })
+      .setOrigin(0.5, 0)
+      .setScrollFactor(0)
+      .setDepth(depth + 8)
+      .setShadow(1, 1, '#000000', 2)
+      .setVisible(false);
+    this.elements.push(this.impactEffectText);
 
     // 9. Ranuras ornamentales de Ojos de Górgona bajo el medallón (6 casillas)
     const eyeSlotY = y + barHeight + 9;
@@ -563,8 +606,10 @@ export class HudLayer {
       this.criticalGlow.setVisible(false);
       this.hpText.setText('HP: -/-');
       this.redOrbsText.setText('ORBES: -');
-      this.impactCountText.setText('Impactos: -');
-      this.orbMultiplierText.setText('Orbes x-');
+      this.impactCountText.setVisible(false);
+      this.orbMultiplierText.setVisible(false);
+      this.impactThresholdText.setVisible(false);
+      this.impactEffectText.setVisible(false);
       return;
     }
 
@@ -688,8 +733,45 @@ export class HudLayer {
 
     const impactCount = combatStats?.impactCount ?? 0;
     const orbMultiplier = combatStats?.orbMultiplier ?? 1;
-    this.impactCountText.setText(`Impactos: ${impactCount}`);
-    this.orbMultiplierText.setText(`Orbes x${Number.isInteger(orbMultiplier) ? orbMultiplier : orbMultiplier.toFixed(1).replace('.', ',')}`);
+    if (impactCount <= 0) {
+      this.impactCountText.setVisible(false);
+      this.orbMultiplierText.setVisible(false);
+      this.impactThresholdText.setVisible(false);
+      this.impactEffectText.setVisible(false);
+    } else {
+      this.impactCountText
+        .setText(`${impactCount}`)
+        .setVisible(true);
+      this.orbMultiplierText
+        .setText('IMPACTOS')
+        .setVisible(true);
+
+      if (impactCount >= 10) {
+        const threshold = `×${Number.isInteger(orbMultiplier)
+          ? orbMultiplier
+          : orbMultiplier.toFixed(1).replace('.', ',')}`;
+        this.impactThresholdText
+          .setText(threshold)
+          .setVisible(true);
+        this.impactEffectText
+          .setText('¡BRUTAL!')
+          .setVisible(true);
+      } else {
+        this.impactThresholdText.setVisible(false);
+        this.impactEffectText.setVisible(false);
+      }
+      if (impactCount !== this.lastImpactCount) {
+        this.scene.tweens.add({
+          targets: [this.impactCountText, this.orbMultiplierText],
+          scaleX: 1.12,
+          scaleY: 1.12,
+          duration: 55,
+          yoyo: true,
+          ease: 'Sine.Out',
+        });
+      }
+    }
+    this.lastImpactCount = impactCount;
 
     // 8. Iluminación de ranuras de Ojos de Górgona
     const gorgonEyes = player.gorgonEyes ?? 0;
