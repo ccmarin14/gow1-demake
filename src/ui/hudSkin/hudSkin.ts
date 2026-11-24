@@ -5,9 +5,9 @@
  * y es la misma para todas las variantes. Módulo puro: sin Phaser, para poder probarlo en node.
  */
 
-export type HudSkinId = 'pixel' | 'pixel2' | 'faithful';
+export type HudSkinId = 'pixel' | 'faithful';
 
-export const HUD_SKIN_IDS: readonly HudSkinId[] = ['pixel', 'pixel2', 'faithful'];
+export const HUD_SKIN_IDS: readonly HudSkinId[] = ['pixel', 'faithful'];
 
 export const DEFAULT_HUD_SKIN_ID: HudSkinId = 'pixel';
 

@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 184 72" width="184" height="72">
+  <!-- Coordenadas dibujadas sobre el fotograma de referencia (640x360); el grupo las lleva al HUD. -->
+  <defs>
+    <linearGradient id="blade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8d9198"/><stop offset="0.5" stop-color="#5a5e65"/><stop offset="1" stop-color="#2f3237"/></linearGradient>
+    <linearGradient id="rod" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6a6f76"/><stop offset="1" stop-color="#2a2d32"/></linearGradient>
+    <linearGradient id="silver" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4f6f8"/><stop offset="0.5" stop-color="#9aa0a8"/><stop offset="1" stop-color="#3d4148"/></linearGradient>
+    <linearGradient id="bone" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f1e8d1"/><stop offset="0.55" stop-color="#c2b595"/><stop offset="1" stop-color="#7b6f56"/></linearGradient>
+    <radialGradient id="sphere" cx="0.35" cy="0.3" r="0.85"><stop offset="0" stop-color="#5d5f68"/><stop offset="0.45" stop-color="#26272c"/><stop offset="1" stop-color="#0a0a0c"/></radialGradient>
+    <radialGradient id="gem" cx="0.35" cy="0.3" r="0.8"><stop offset="0" stop-color="#ffe2a0"/><stop offset="0.5" stop-color="#f08a1c"/><stop offset="1" stop-color="#8f3f0a"/></radialGradient>
+    <clipPath id="bladeClip"><path d="M158 31 L191 31 L192 28 L201 28 L204 26 L205 22 L207 21 L212 24 L225 27 L228 33 L231 33 L235 23 L236 22 L240 23 L243 20 L247 23 L249 23 L252 19 L257 24 L269 24 L284 19 L283 21 L277 33 L268 45 L260 53.5 L250 57.5 L238.5 60.5 L233 64.5 L230 58 L226 57.5 L222 58 L218.5 65.5 L215 61.5 L176 62 L160 62.5 Z"/></clipPath>
+  </defs>
+  <g transform="translate(-112 -14.5)">
+    <!-- mechón oscuro sobre el medallón -->
+    <path d="M116 42 C117 31 126 27 134 32 C144 29 155 35 159 45 L160 66 L120 66 Z" fill="#1c1a18" stroke="#0d0a09" stroke-width="1"/>
+    <!-- espada: barra delgada y hoja curva con tres muescas y un gancho abajo -->
+    <path d="M158 31 L191 31 L192 28 L201 28 L204 26 L205 22 L207 21 L212 24 L225 27 L228 33 L231 33 L235 23 L236 22 L240 23 L243 20 L247 23 L249 23 L252 19 L257 24 L269 24 L284 19 L283 21 L277 33 L268 45 L260 53.5 L250 57.5 L238.5 60.5 L233 64.5 L230 58 L226 57.5 L222 58 L218.5 65.5 L215 61.5 L176 62 L160 62.5 Z" fill="url(#blade)" stroke="#0d0a09" stroke-width="1.6" stroke-linejoin="round"/>
+    <path d="M158 31 L191 31 L192 28 L201 28 L204 26 L205 22 L207 21 L212 24 L225 27 L228 33 L231 33 L235 23 L236 22 L240 23 L243 20 L247 23 L249 23 L252 19 L257 24 L269 24 L284 19 L283 21 L277 33 L268 45 L260 53.5 L250 57.5 L238.5 60.5 L233 64.5 L230 58 L226 57.5 L222 58 L218.5 65.5 L215 61.5 L176 62 L160 62.5 Z" fill="none" stroke="#d3d6da" stroke-opacity="0.5" stroke-width="3" clip-path="url(#bladeClip)"/>
+    <path d="M158 31 L191 31 L192 28 L201 28 L204 26 L205 22 L207 21 L212 24 L225 27 L228 33 L231 33 L235 23 L236 22 L240 23 L243 20 L247 23 L249 23 L252 19 L257 24 L269 24 L284 19 L283 21 L277 33 L268 45 L260 53.5 L250 57.5 L238.5 60.5 L233 64.5 L230 58 L226 57.5 L222 58 L218.5 65.5 L215 61.5 L176 62 L160 62.5 Z" fill="none" stroke="#0d0a09" stroke-width="1.6" stroke-linejoin="round"/>
+    <path d="M221 49 C242 56 264 47 279 25" fill="none" stroke="#17181a" stroke-width="1.5"/>
+    <path d="M222 51.5 C243 58 266 49 281 27.5" fill="none" stroke="#dfe2e5" stroke-opacity="0.85" stroke-width="1"/>
+    <path d="M152 31 C149 44 150 58 156 69 L162 67 C158 57 158 44 161 31 Z" fill="url(#bone)" stroke="#0d0a09" stroke-width="1.1" stroke-linejoin="round"/>
+    <!-- huesos y cadena desde el medallón hasta la hoja -->
+    <g fill="none" stroke="#0d0a09" stroke-linecap="round">
+      <path d="M148 50 C152 39 161 32 173 30 C182 28 192 28 200 31" stroke-width="4.6"/>
+      <path d="M150 56 C158 47 168 40 181 37" stroke-width="3.6"/>
+    </g>
+    <g fill="none" stroke="url(#bone)" stroke-linecap="round">
+      <path d="M148 50 C152 39 161 32 173 30 C182 28 192 28 200 31" stroke-width="3"/>
+      <path d="M150 56 C158 47 168 40 181 37" stroke-width="2.2"/>
+    </g>
+    <g fill="url(#silver)" stroke="#0d0a09" stroke-width="1">
+      <ellipse cx="170" cy="30" rx="4.4" ry="2.8" transform="rotate(-15 170 30)"/><ellipse cx="178.5" cy="28.5" rx="4.4" ry="2.8" transform="rotate(-5 178.5 28.5)"/><ellipse cx="187" cy="28.8" rx="4.4" ry="2.8" transform="rotate(8 187 28.8)"/>
+    </g>
+    <!-- canales de las barras (vacíos: las barras van encima) -->
+    <rect x="167" y="33.5" width="64" height="7" rx="1.5" fill="#0e0d0f" stroke="#c3c7cc" stroke-width="0.9"/>
+    <rect x="167" y="47.5" width="54" height="6" rx="1.5" fill="#0e0d0f" stroke="#c3c7cc" stroke-width="0.9"/>
+    <!-- medallón -->
+    <g stroke="#0d0a09" stroke-linejoin="round" stroke-width="1.1" fill="url(#silver)">
+      <path d="M114 27 L123 43 L132 38 Z" fill="url(#bone)"/><path d="M133 84 L125 75 L141 75 Z"/>
+      <path d="M154 62.5 L146 55.5 L146 69.5 Z"/><path d="M118 49 L125 53 L118 59 Z"/><path d="M151 47 L145 52 L142 44 Z"/>
+    </g>
+    <circle cx="133" cy="63.5" r="18.5" fill="url(#silver)" stroke="#0d0a09" stroke-width="1.5"/>
+    <circle cx="133" cy="63.5" r="16.2" fill="#17161a" stroke="#0d0a09" stroke-width="1"/>
+    <circle cx="133" cy="63.5" r="15" fill="url(#sphere)"/>
+    <g fill="#0d0a09" fill-opacity="0.75">
+      <circle cx="133" cy="46.6" r="0.9"/><circle cx="133" cy="78.4" r="0.9"/><circle cx="117.1" cy="62.5" r="0.9"/><circle cx="148.9" cy="62.5" r="0.9"/>
+      <circle cx="121.8" cy="51.3" r="0.8"/><circle cx="144.2" cy="51.3" r="0.8"/><circle cx="121.8" cy="73.7" r="0.8"/><circle cx="144.2" cy="73.7" r="0.8"/>
+    </g>
+    <path d="M122 57 A11 11 0 0 1 130 50" fill="none" stroke="#fff" stroke-opacity="0.55" stroke-width="1.6" stroke-linecap="round"/>
+    <circle cx="160" cy="31" r="5.6" fill="url(#gem)" stroke="#0d0a09" stroke-width="1.2"/>
+    <circle cx="158.3" cy="29.3" r="1.5" fill="#fff" fill-opacity="0.85"/>
+  </g>
+</svg>

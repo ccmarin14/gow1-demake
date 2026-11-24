@@ -123,9 +123,9 @@ export class HudLayer {
     maxHp: 100,
     currentMp: 100,
     maxMp: 100,
-    manaWidth: 80,
-    currentWidth: 110,
-    ghostWidth: 110,
+    manaWidth: 52,
+    currentWidth: 62,
+    ghostWidth: 62,
     ratio: 1,
     ghostRatio: 1,
     isCritical: false,
@@ -194,7 +194,7 @@ export class HudLayer {
 
     // Notches clásicas de segmento (cada 22 px = 20 HP, 5 muescas para hasta 120 HP)
     for (let s = 1; s <= 5; s += 1) {
-      const notchX = barX + s * 22;
+      const notchX = barX + Math.round((s * barWidth) / 5);
       const notch = scene.add
         .rectangle(notchX, barY, 1, barHeight, 0x0a2612, 0.75)
         .setOrigin(0, 0)
@@ -263,7 +263,7 @@ export class HudLayer {
 
     // 7. Texto numérico pixel-art
     this.hpText = scene.add
-      .text(barX, manaY + manaBarHeight + 3, 'HP: 100/100', {
+      .text(barX, CONFIG.presentation.hud.infoY, 'HP: 100/100', {
         fontFamily: 'monospace',
         fontSize: '9px',
         color: '#cbd5e1',
@@ -277,7 +277,7 @@ export class HudLayer {
 
     // 8. Icono y saldo de orbes rojos
     const orbIconX = x;
-    const orbIconY = manaY + manaBarHeight + 13;
+    const orbIconY = CONFIG.presentation.hud.infoY + 10;
 
     this.redOrbIconOuter = scene.add
       .circle(orbIconX, orbIconY, 3.5, 0xef4444)
@@ -305,7 +305,7 @@ export class HudLayer {
     this.elements.push(this.redOrbsText);
 
     this.pointsText = scene.add
-      .text(barX + 68, orbIconY - 4, 'PUNTOS: 0', {
+      .text(barX + 56, orbIconY - 4, 'PUNTOS: 0', {
         fontFamily: 'monospace',
         fontSize: '9px',
         color: '#fde68a',
@@ -382,7 +382,7 @@ export class HudLayer {
     this.elements.push(this.impactEffectText);
 
     // 9. Ranuras ornamentales de Ojos de Górgona bajo el medallón (6 casillas)
-    const eyeSlotY = y + barHeight + 9;
+    const eyeSlotY = CONFIG.presentation.hud.infoY + 22;
     const startSlotX = x - 10;
     for (let i = 0; i < 6; i += 1) {
       const sx = startSlotX + i * 4;
@@ -647,7 +647,7 @@ export class HudLayer {
 
     // 3. Notches de segmento
     for (let i = 0; i < this.segmentNotches.length; i += 1) {
-      const notchOffset = (i + 1) * 22;
+      const notchOffset = Math.round(((i + 1) * targetBarWidth) / 5);
       const notchHp = (i + 1) * 20;
       const notchExists = notchHp < maxHp;
       this.segmentNotches[i].setVisible(notchExists && ghostWidth > notchOffset);

@@ -143,6 +143,8 @@ export const ASSETS: Record<AssetDomain, readonly AssetEntry[]> = {
     { key: 'egeo-fondo', path: 'assets/environment/egeo-fondo.png' },
   ],
   ui: [
+    { key: 'hud-sword-pixel', path: 'assets/ui/hud-sword-pixel.png' },
+    { key: 'hud-sword-faithful', path: 'assets/ui/hud-sword-faithful.png' },
   ],
   fx: [],
   audio: [],
