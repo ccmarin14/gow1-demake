@@ -285,6 +285,7 @@ export type GameFlowState = 'title' | 'playing' | 'paused' | 'victory' | 'gameov
 export interface CombatStats {
   totalKills: number;
   redOrbs: number;
+  points: number;
   chestsOpened: number;
   totalChests: number;
   rank: string;

@@ -142,7 +142,8 @@ export const ASSETS: Record<AssetDomain, readonly AssetEntry[]> = {
   environment: [
     { key: 'egeo-fondo', path: 'assets/environment/egeo-fondo.png' },
   ],
-  ui: [],
+  ui: [
+  ],
   fx: [],
   audio: [],
   data: [],

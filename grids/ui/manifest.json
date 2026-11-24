@@ -1,0 +1,12 @@
+{
+  "character": "ui",
+  "palette": "hud.json",
+  "frame_size": {
+    "w": 48,
+    "h": 20
+  },
+  "anchors": {
+    "ground": 27
+  },
+  "frames": []
+}

@@ -118,6 +118,7 @@ export class World {
   private flowState: GameFlowState = 'playing';
   private pauseHeld = false;
   private totalKills = 0;
+  private combatPoints = 0;
 
   constructor() {
     this.loadScenario(DEFAULT_SCENARIO);
@@ -169,6 +170,7 @@ export class World {
     return {
       totalKills: kills,
       redOrbs,
+      points: this.combatPoints,
       chestsOpened,
       totalChests: this.chests.length,
       rank,
@@ -180,6 +182,7 @@ export class World {
   private registerImpacts(count = 1): void {
     if (count <= 0) return;
     this.impactCount += count;
+    this.combatPoints += count * 10;
     this.impactResetTicks = CONFIG.combat.impactChain.resetTicks;
   }
 
@@ -445,6 +448,7 @@ export class World {
     this.flowState = 'playing';
     this.pauseHeld = false;
     this.totalKills = 0;
+    this.combatPoints = 0;
     this.input = [];
     this.jumpHeld = false;
     this.dodgeHeld = false;
@@ -1180,6 +1184,7 @@ export class World {
           stepLegionnaire(target, player, this.platforms, TICK_DT, this.targets);
           if (target.aiState === 'death' && target.aiTicks === 0) {
             this.totalKills += 1;
+            this.combatPoints += 250;
             this.spawnOrbs(
               target.x,
               target.y - 18,
@@ -1196,6 +1201,7 @@ export class World {
           stepArcher(target, player, this.platforms, TICK_DT, this.spawnArrow.bind(this));
           if (target.aiState === 'death' && target.aiTicks === 0) {
             this.totalKills += 1;
+            this.combatPoints += 250;
             this.spawnOrbs(
               target.x,
               target.y - 18,
@@ -1215,6 +1221,7 @@ export class World {
           }
           if (hydraRes.orbsSpawned) {
             this.totalKills += 1;
+            this.combatPoints += 250;
             this.spawnOrbs(
               target.x - 70,
               target.y - 30,

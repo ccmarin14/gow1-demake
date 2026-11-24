@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "max_colors": 10,
+  "note": "Original pixel-art palette for the HUD sword and ornaments.",
+  "colors": {
+    "o": "#201513",
+    "d": "#4b3b34",
+    "b": "#82614e",
+    "g": "#c49a45",
+    "l": "#d9d0bd",
+    "m": "#77777f",
+    "s": "#4c4b52",
+    "r": "#c2361b",
+    "y": "#f2a33a",
+    "h": "#2f1712"
+  },
+  "roles": {
+    "o": "outline",
+    "d": "dark_metal",
+    "b": "bronze",
+    "g": "gold",
+    "l": "steel_light",
+    "m": "steel_mid",
+    "s": "steel_shadow",
+    "r": "red_edge",
+    "y": "gold_edge",
+    "h": "leather"
+  }
+}

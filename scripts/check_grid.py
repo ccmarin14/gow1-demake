@@ -25,9 +25,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from ascii_to_png import TRANSPARENT, load_grid, load_palette, rasterize  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
-PNG_DIR = ROOT / "public" / "assets" / "characters"
-
-
 def entries(manifest: dict) -> list[tuple[str, str, bool, str]]:
     """(grid file, png key, grounded, palette_file) for each drawn frame."""
     default_palette = manifest["palette"]
@@ -51,6 +48,8 @@ def main() -> int:
 
     directory = ROOT / "grids" / args.character
     manifest = json.loads((directory / "manifest.json").read_text(encoding="utf-8"))
+    png_dir_name = "ui" if args.character == "ui" else "characters"
+    png_dir = ROOT / "public" / "assets" / png_dir_name
     width, height = manifest["frame_size"]["w"], manifest["frame_size"]["h"]
     ground = int(manifest["anchors"]["ground"])
     palette_cache: dict[str, dict[str, str]] = {}
@@ -80,7 +79,7 @@ def main() -> int:
         if grounded and all(char == TRANSPARENT for char in lines[ground]):
             fail(file_name, f"no opaque pixel on ground row {ground}")
 
-        png_path = PNG_DIR / f"{png_key}.png"
+        png_path = png_dir / f"{png_key}.png"
         if args.build:
             image.save(png_path, format="PNG", optimize=False)
         elif not png_path.exists():

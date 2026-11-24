@@ -1,6 +1,8 @@
 import Phaser from 'phaser';
 import { CONFIG } from '../config';
 import type { CombatStats, EntityState } from '../sim/types';
+import { createHudSkin } from './hudSkin/createHudSkin';
+import { resolveHudSkin } from './hudSkin/hudSkin';
 
 export interface HudMetrics {
   currentHp: number;
@@ -17,6 +19,7 @@ export interface HudMetrics {
   isDead: boolean;
   ghostPauseTimer: number;
   redOrbs: number;
+  points: number;
   gorgonEyes: number;
   gorgonUpgrades: number;
   phoenixFeathers: number;
@@ -26,10 +29,10 @@ export interface HudMetrics {
 }
 
 /**
- * Capa de interfaz de usuario en pantalla (HUD) inspirada en el diseño canónico de
- * God of War 1 (PS2) y God of War: Betrayal adaptada al lienzo pixel art de 480×270:
+ * Capa de interfaz de usuario en pantalla (HUD) del lienzo de 480×270:
  *
- * - Medallón de bronce y piedra griega tallada en la esquina superior izquierda.
+ * - Marco decorativo de la Espada del Caos en la esquina superior izquierda: lo dibuja la
+ *   variante elegida (src/ui/hudSkin/, `?hud=pixel|faithful`). La lógica de barras es la misma.
  * - Canal acanalado oscuro de 110 px de longitud máxima con bisel de bronce.
  * - Barra fantasma (Ghost Health) rojo/ámbar que retiene el daño recibido durante
  *   12 ticks (200 ms) antes de drenar suavemente hacia la vida viva actual.
@@ -41,22 +44,15 @@ export interface HudMetrics {
  */
 export class HudLayer {
   private readonly elements: Phaser.GameObjects.GameObject[] = [];
+  // Arte del marco de la variante elegida: sigue el estado oculto/visible en cada frame
+  private readonly skinObjects: Phaser.GameObjects.GameObject[] = [];
+  private readonly barsOff = typeof window !== 'undefined' && /(?:^|[?&])hudbars=0(?:&|$)/.test(window.location.search);
   private readonly scene: Phaser.Scene;
   private hidden = false;
   private lastImpactCount = 0;
 
-  // Geometría del marco y fondo
-  private readonly frameBg: Phaser.GameObjects.Rectangle;
-  private readonly frameTopBevel: Phaser.GameObjects.Rectangle;
-  private readonly frameBottomShadow: Phaser.GameObjects.Rectangle;
-  private readonly frameEndCap: Phaser.GameObjects.Rectangle;
+  // Canal oscuro bajo las barras; el marco decorativo lo dibuja la variante elegida (hudSkin/)
   private readonly channelTrough: Phaser.GameObjects.Rectangle;
-
-  // Medallón ornamental izquierdo
-  private readonly medallionOuter: Phaser.GameObjects.Arc;
-  private readonly medallionInner: Phaser.GameObjects.Arc;
-  private readonly medallionCore: Phaser.GameObjects.Arc;
-  private readonly medallionHighlight: Phaser.GameObjects.Arc;
 
   // Barra fantasma (Ghost Health)
   private readonly ghostBar: Phaser.GameObjects.Rectangle;
@@ -86,6 +82,7 @@ export class HudLayer {
   private readonly redOrbIconOuter: Phaser.GameObjects.Arc;
   private readonly redOrbIconHighlight: Phaser.GameObjects.Arc;
   private readonly redOrbsText: Phaser.GameObjects.Text;
+  private readonly pointsText: Phaser.GameObjects.Text;
 
   // Cadena de impactos estilo GoW 1
   private readonly impactCountText: Phaser.GameObjects.Text;
@@ -135,6 +132,7 @@ export class HudLayer {
     isDead: false,
     ghostPauseTimer: 0,
     redOrbs: 0,
+    points: 0,
     gorgonEyes: 0,
     gorgonUpgrades: 0,
     phoenixFeathers: 0,
@@ -146,39 +144,8 @@ export class HudLayer {
     const { x, y, barWidth, barHeight, depth } = CONFIG.presentation.hud;
 
     // Coordenadas calculadas
-    const barX = x + 10;
+    const barX = x + 32;
     const barY = y;
-    const frameW = barWidth + 4;
-    const frameH = barHeight + 4;
-
-    // 1. Marco exterior de piedra y bronce
-    this.frameBg = scene.add
-      .rectangle(barX - 2, barY - 2, frameW, frameH, 0x18100c)
-      .setOrigin(0, 0)
-      .setScrollFactor(0)
-      .setDepth(depth);
-    this.elements.push(this.frameBg);
-
-    this.frameTopBevel = scene.add
-      .rectangle(barX - 2, barY - 2, frameW, 1, 0xc49a45)
-      .setOrigin(0, 0)
-      .setScrollFactor(0)
-      .setDepth(depth + 5);
-    this.elements.push(this.frameTopBevel);
-
-    this.frameBottomShadow = scene.add
-      .rectangle(barX - 2, barY + barHeight + 1, frameW, 1, 0x0c0705)
-      .setOrigin(0, 0)
-      .setScrollFactor(0)
-      .setDepth(depth + 5);
-    this.elements.push(this.frameBottomShadow);
-
-    this.frameEndCap = scene.add
-      .rectangle(barX + barWidth + 1, barY - 2, 3, frameH, 0x92662c)
-      .setOrigin(0, 0)
-      .setScrollFactor(0)
-      .setDepth(depth + 5);
-    this.elements.push(this.frameEndCap);
 
     // Fondo acanalado oscuro del canal
     this.channelTrough = scene.add
@@ -286,46 +253,26 @@ export class HudLayer {
       .setVisible(false);
     this.elements.push(this.criticalGlow);
 
-    // 6. Medallón circular a la izquierda
-    const medX = x;
-    const medY = y + barHeight / 2;
-
-    this.medallionOuter = scene.add
-      .circle(medX, medY, 9, 0x92662c)
-      .setStrokeStyle(1, 0xc49a45)
-      .setScrollFactor(0)
-      .setDepth(depth + 5);
-    this.elements.push(this.medallionOuter);
-
-    this.medallionInner = scene.add
-      .circle(medX, medY, 7, 0x1f140e)
-      .setScrollFactor(0)
-      .setDepth(depth + 6);
-    this.elements.push(this.medallionInner);
-
-    this.medallionCore = scene.add
-      .circle(medX, medY, 4, 0xb45309)
-      .setScrollFactor(0)
-      .setDepth(depth + 7);
-    this.elements.push(this.medallionCore);
-
-    this.medallionHighlight = scene.add
-      .circle(medX - 1, medY - 1, 1.5, 0xfde047)
-      .setScrollFactor(0)
-      .setDepth(depth + 8);
-    this.elements.push(this.medallionHighlight);
+    // 6. Marco decorativo (Espada del Caos) de la variante elegida. Va a profundidad `depth`,
+    // por debajo de las barras (depth + 1 en adelante), así que ninguna barra queda tapada.
+    const skinId = resolveHudSkin(typeof window === 'undefined' ? '' : window.location.search);
+    for (const art of createHudSkin(scene, skinId, depth)) {
+      this.elements.push(art);
+      this.skinObjects.push(art);
+    }
 
     // 7. Texto numérico pixel-art
     this.hpText = scene.add
       .text(barX, manaY + manaBarHeight + 3, 'HP: 100/100', {
         fontFamily: 'monospace',
-        fontSize: '7px',
+        fontSize: '9px',
         color: '#cbd5e1',
       })
       .setOrigin(0, 0)
       .setScrollFactor(0)
       .setDepth(depth + 6)
-      .setShadow(1, 1, '#000000', 1);
+      .setShadow(1, 1, '#000000', 1)
+      .setVisible(false);
     this.elements.push(this.hpText);
 
     // 8. Icono y saldo de orbes rojos
@@ -348,7 +295,7 @@ export class HudLayer {
     this.redOrbsText = scene.add
       .text(barX, orbIconY - 4, 'ORBES: 0', {
         fontFamily: 'monospace',
-        fontSize: '7px',
+        fontSize: '9px',
         color: '#fca5a5',
       })
       .setOrigin(0, 0)
@@ -356,6 +303,18 @@ export class HudLayer {
       .setDepth(depth + 6)
       .setShadow(1, 1, '#000000', 1);
     this.elements.push(this.redOrbsText);
+
+    this.pointsText = scene.add
+      .text(barX + 68, orbIconY - 4, 'PUNTOS: 0', {
+        fontFamily: 'monospace',
+        fontSize: '9px',
+        color: '#fde68a',
+      })
+      .setOrigin(0, 0)
+      .setScrollFactor(0)
+      .setDepth(depth + 6)
+      .setShadow(1, 1, '#000000', 1);
+    this.elements.push(this.pointsText);
 
     const chainX = CONFIG.internal.width - 60;
     this.impactCountText = scene.add
@@ -575,9 +534,19 @@ export class HudLayer {
     player: EntityState | undefined,
     dt: number,
     boss?: { hp: number; maxHp: number; name?: string } | null,
-    combatStats?: Pick<CombatStats, 'impactCount' | 'orbMultiplier'>,
+    combatStats?: Pick<CombatStats, 'impactCount' | 'orbMultiplier' | 'points'>,
   ): void {
     this.render(player, dt, boss, combatStats);
+    // render() solo enciende sus propias barras; el arte del marco vuelve a visible aquí.
+    for (const art of this.skinObjects) {
+      (art as Phaser.GameObjects.GameObject & Phaser.GameObjects.Components.Visible).setVisible(!this.hidden);
+    }
+    // Depuración: ?hudbars=0 deja solo la espada (sin barras ni texto) para revisar el arte.
+    if (this.barsOff) {
+      for (const elem of this.elements) {
+        if (!this.skinObjects.includes(elem)) (elem as Phaser.GameObjects.GameObject & Phaser.GameObjects.Components.Visible).setVisible(false);
+      }
+    }
     if (this.hidden) {
       for (const elem of this.elements) {
         (elem as Phaser.GameObjects.GameObject & Phaser.GameObjects.Components.Visible).setVisible(false);
@@ -592,7 +561,7 @@ export class HudLayer {
     player: EntityState | undefined,
     dt: number,
     boss?: { hp: number; maxHp: number; name?: string } | null,
-    combatStats?: Pick<CombatStats, 'impactCount' | 'orbMultiplier'>,
+    combatStats?: Pick<CombatStats, 'impactCount' | 'orbMultiplier' | 'points'>,
   ): void {
     if (!player) {
       this.greenBarBase.setVisible(false);
@@ -606,6 +575,7 @@ export class HudLayer {
       this.criticalGlow.setVisible(false);
       this.hpText.setText('HP: -/-');
       this.redOrbsText.setText('ORBES: -');
+      this.pointsText.setText('PUNTOS: -');
       this.impactCountText.setVisible(false);
       this.orbMultiplierText.setVisible(false);
       this.impactThresholdText.setVisible(false);
@@ -620,14 +590,6 @@ export class HudLayer {
     const targetBarWidth = maxHp >= 120 ? (CONFIG.presentation.hud.upgradedBarWidth ?? 132) : CONFIG.presentation.hud.barWidth;
 
     // Redimensionamiento dinámico del marco exterior cuando maxHp se expande a 120 HP
-    const barX = CONFIG.presentation.hud.x + 10;
-    const barY = CONFIG.presentation.hud.y;
-    const frameW = targetBarWidth + 4;
-    const frameH = barHeight + 4;
-    this.frameBg.setSize(frameW, frameH);
-    this.frameTopBevel.setSize(frameW, 1);
-    this.frameBottomShadow.setSize(frameW, 1);
-    this.frameEndCap.setPosition(barX + targetBarWidth + 1, barY - 2);
     this.channelTrough.setSize(targetBarWidth, barHeight);
 
     // Detección de reinicio, curación o daño
@@ -730,6 +692,8 @@ export class HudLayer {
     // 7. Saldo de orbes rojos y nivel de arma
     const redOrbs = player.redOrbs ?? 0;
     this.redOrbsText.setText(`ORBES: ${redOrbs}`);
+    const points = combatStats?.points ?? 0;
+    this.pointsText.setText(`PUNTOS: ${points}`);
 
     const impactCount = combatStats?.impactCount ?? 0;
     const orbMultiplier = combatStats?.orbMultiplier ?? 1;
@@ -862,6 +826,7 @@ export class HudLayer {
       isDead: Boolean(player.isDead),
       ghostPauseTimer: Number(this.ghostPauseTimer.toFixed(3)),
       redOrbs,
+      points,
       gorgonEyes,
       gorgonUpgrades,
       phoenixFeathers,

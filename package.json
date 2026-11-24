@@ -8,8 +8,8 @@
     "build": "tsc -b && vite build",
     "test": "node --experimental-transform-types --no-warnings --import ./scripts/test/register.mjs --test 'tests/*.test.ts'",
     "preview": "vite preview --host 0.0.0.0",
-    "art": "python3 scripts/check_grid.py kratos --build",
-    "art:check": "python3 scripts/check_grid.py kratos"
+    "art": "python3 scripts/check_grid.py kratos --build && python3 scripts/check_grid.py blades --build && python3 scripts/check_grid.py ui --build",
+    "art:check": "python3 scripts/check_grid.py kratos && python3 scripts/check_grid.py blades && python3 scripts/check_grid.py ui"
   },
   "dependencies": {
     "phaser": "^3.90.0"

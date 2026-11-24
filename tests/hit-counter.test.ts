@@ -5,6 +5,20 @@ import { CONFIG } from '../src/config';
 import { World, orbMultiplierForImpactCount } from '../src/sim/world';
 
 describe('impact and orb multiplier chain', () => {
+  it('adds points for connected impacts and resets them with a new world', () => {
+    const world = new World();
+    world.loadScenario('legionnaire');
+    world.step(['light-attack']);
+    for (let i = 0; i < 30 && world.getCombatStats().impactCount === 0; i += 1) {
+      world.step([]);
+    }
+    assert.ok(world.getCombatStats().impactCount > 0);
+    assert.ok(world.getCombatStats().points >= 10);
+
+    world.reset();
+    assert.equal(world.getCombatStats().points, 0);
+  });
+
   it('uses 1, 2, 3 and 4 at 0, 10, 25 and 50 impacts', () => {
     assert.equal(orbMultiplierForImpactCount(0), 1);
     assert.equal(orbMultiplierForImpactCount(9), 1);
