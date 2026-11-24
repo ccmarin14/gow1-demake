@@ -5,14 +5,14 @@ import { CONFIG } from '../src/config';
 import { World, orbMultiplierForImpactCount } from '../src/sim/world';
 
 describe('impact and orb multiplier chain', () => {
-  it('uses 1, 1.5, 2 and 3 at 0, 10, 25 and 50 impacts', () => {
+  it('uses 1, 2, 3 and 4 at 0, 10, 25 and 50 impacts', () => {
     assert.equal(orbMultiplierForImpactCount(0), 1);
     assert.equal(orbMultiplierForImpactCount(9), 1);
-    assert.equal(orbMultiplierForImpactCount(10), 1.5);
-    assert.equal(orbMultiplierForImpactCount(24), 1.5);
-    assert.equal(orbMultiplierForImpactCount(25), 2);
-    assert.equal(orbMultiplierForImpactCount(49), 2);
-    assert.equal(orbMultiplierForImpactCount(50), 3);
+    assert.equal(orbMultiplierForImpactCount(10), 2);
+    assert.equal(orbMultiplierForImpactCount(24), 2);
+    assert.equal(orbMultiplierForImpactCount(25), 3);
+    assert.equal(orbMultiplierForImpactCount(49), 3);
+    assert.equal(orbMultiplierForImpactCount(50), 4);
   });
 
   it('resets the chain after two seconds without another impact', () => {

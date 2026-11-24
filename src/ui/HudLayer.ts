@@ -359,7 +359,7 @@ export class HudLayer {
 
     const chainX = CONFIG.internal.width * 0.74;
     this.impactCountText = scene.add
-      .text(chainX, 150, '0', {
+      .text(chainX, 158, '0', {
         fontFamily: 'Georgia, Times New Roman, serif',
         fontSize: '18px',
         color: '#f8f1d6',
@@ -375,7 +375,7 @@ export class HudLayer {
     this.elements.push(this.impactCountText);
 
     this.orbMultiplierText = scene.add
-      .text(chainX, 174, 'IMPACTOS', {
+      .text(chainX, 164, 'IMPACTOS', {
         fontFamily: 'Georgia, Times New Roman, serif',
         fontSize: '9px',
         color: '#f8f1d6',
@@ -391,7 +391,7 @@ export class HudLayer {
     this.elements.push(this.orbMultiplierText);
 
     this.impactThresholdText = scene.add
-      .text(chainX, 188, '', {
+      .text(chainX, 178, '', {
         fontFamily: 'Georgia, Times New Roman, serif',
         fontSize: '10px',
         color: '#ef4444',
@@ -407,7 +407,7 @@ export class HudLayer {
     this.elements.push(this.impactThresholdText);
 
     this.impactEffectText = scene.add
-      .text(chainX, 200, '', {
+      .text(chainX, 190, '', {
         fontFamily: 'Georgia, Times New Roman, serif',
         fontSize: '10px',
         color: '#ef4444',
