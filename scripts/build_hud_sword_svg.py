@@ -184,18 +184,23 @@ SVG = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 184 72" width="18
     <path d="M218.2 51.4 L223.8 51.6 L230.6 56.8 L228.8 57.4 L218.4 55.0 Z" fill="#5e636b" fill-opacity="0.9"/>
     <!-- re-stroke outer silhouette cleanly so internal facet lines never poke outside -->
     <path d="{SILHOUETTE}" fill="none" stroke="#14110f" stroke-width="1.05" stroke-linejoin="round"/>
-    <!-- bar channels (empty: the bars are drawn over them). Frame = HUD image + (112, 14.5);
-         the boxes match src/ui/hudSkin/hudWells.ts. -->
-    <rect x="167" y="33.5" width="64" height="7" rx="1.5" fill="#0b0b0d" stroke="#1a1b1e" stroke-width="1.2"/>
-    <path d="M168.5 41.4 L229.5 41.4" stroke="#aeb2b8" stroke-opacity="0.55" stroke-width="0.7"/>
-    <rect x="167" y="41.5" width="54" height="6" rx="1.5" fill="#0b0b0d" stroke="#1a1b1e" stroke-width="1.2"/>
-    <path d="M168.5 48.4 L219.5 48.4" stroke="#aeb2b8" stroke-opacity="0.55" stroke-width="0.7"/>
-    <!-- thin red channel (rage) under the blue one, with the counter box on its left -->
-    <rect x="171.5" y="49" width="45" height="4" rx="0.8" fill="#0b0b0d" stroke="#1a1b1e" stroke-width="1"/>
-    <rect x="172" y="49.5" width="44" height="3" fill="#2a0c0c"/>
-    <path d="M172.5 53.6 L215.5 53.6" stroke="#aeb2b8" stroke-opacity="0.5" stroke-width="0.6"/>
-    <rect x="161.5" y="46.5" width="9" height="9" rx="0.8" fill="#050506" stroke="#8d9299" stroke-width="0.9"/>
-    <rect x="162.4" y="47.4" width="7.2" height="7.2" fill="none" stroke="#2a2d32" stroke-width="0.5"/>
+    <!-- bar channels: slender rounded capsule slots carved into the blade steel, with 2 px of real grey steel
+         breathing between each slot. Frame = HUD image + (112, 14.5); matches src/ui/hudSkin/hudWells.ts. -->
+    <!-- Green slot (HUD 55,19 64x5; fill 56,20 62x3; start at 166.5 so column 55 is crisp black like column 118) -->
+    <rect x="165.8" y="33.0" width="65.9" height="6.0" rx="2.8" fill="#2c3036"/>
+    <path d="M167.8 39.2 L229.6 39.2" stroke="#c4c9d1" stroke-opacity="0.8" stroke-width="0.85" stroke-linecap="round"/>
+    <rect x="166.4" y="33.5" width="64.7" height="5.0" rx="2.3" fill="#060b07" stroke="#0c1014" stroke-width="0.85"/>
+    <!-- Blue mana slot (HUD 55,26 54x5; fill 56,27 52x3) -->
+    <rect x="165.8" y="40.0" width="55.9" height="6.0" rx="2.8" fill="#2c3036"/>
+    <path d="M167.8 46.2 L219.6 46.2" stroke="#c4c9d1" stroke-opacity="0.8" stroke-width="0.85" stroke-linecap="round"/>
+    <rect x="166.4" y="40.5" width="54.7" height="5.0" rx="2.3" fill="#060911" stroke="#0c1014" stroke-width="0.85"/>
+    <!-- Thin red rage slot (HUD 59,33 46x4; fill 60,34 44x2) + counter box on its left -->
+    <rect x="170.5" y="47.1" width="47.0" height="4.8" rx="2.1" fill="#2c3036"/>
+    <path d="M172.2 52.1 L215.8 52.1" stroke="#b8bec6" stroke-opacity="0.72" stroke-width="0.75" stroke-linecap="round"/>
+    <rect x="171.0" y="47.5" width="46.0" height="4.0" rx="1.8" fill="#090708" stroke="#0e1115" stroke-width="0.8"/>
+    <rect x="172.0" y="48.5" width="44.0" height="2.0" rx="0.9" fill="#2e0b0b"/>
+    <rect x="161.0" y="45.5" width="9.0" height="8.0" rx="0.8" fill="#050506" stroke="#8d9299" stroke-width="0.85"/>
+    <rect x="161.9" y="46.4" width="7.2" height="6.2" fill="none" stroke="#25282e" stroke-width="0.5"/>
     <!-- handle (mango) BEHIND the medallion: jagged bone pommel talon + interlocking blackened-iron chain links -->
     <path d="{GRIP_CORE}" fill="#100e0e" stroke="#080707" stroke-width="0.8" stroke-linejoin="round"/>
     <!-- sculpted ivory/bone pommel talon at far left -->

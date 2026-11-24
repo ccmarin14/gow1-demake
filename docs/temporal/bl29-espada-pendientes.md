@@ -7,6 +7,7 @@ El usuario aprobó la v18 como camino correcto y pasa ajustes **uno a uno** (202
 | 1 | No hay espacio para la barra roja: es más delgada que la verde y la azul, va bajo la azul y tiene un contador a la izquierda. | Aprobado (v19) |
 | 2 | El ojo de la empuñadura no se nota agresivo como el de la referencia. | Aprobado (v22) |
 | 3 | La empuñadura, solo la parte del mango, no se parece a la original (va por buen camino). | Aprobado (v23) |
-| 4 | El inicio del filo de la hoja por el frente (el borde que mira hacia abajo) se ve muy recto; la referencia también tiene un tramo recto, pero no tan largo. | Hecho en v24 sobre mediana 720p, a la espera de tu revisión |
+| 4 | El inicio del filo de la hoja por el frente (el borde que mira hacia abajo) se ve muy recto; la referencia también tiene un tramo recto, pero no tan largo. | Aprobado (v24) |
+| 5 | Las barras de vida y magia: sin líneas internas, esbeltas (no altas) y con bordes redondeados/biselados como las reales. | Hecho en v26 (3 px de alto, cápsula redondeada, bisel en acero y 2 px de acero libre entre barras; v25 descartada por alta y cuadrada), a la espera de tu revisión |
 
 Después de la espada: el selector de magias con icono y flechas (decisión pendiente del usuario).

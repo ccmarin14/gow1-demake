@@ -34,10 +34,10 @@ export interface HudMetrics {
  * - Marco decorativo de la Espada del Caos en la esquina superior izquierda: lo dibuja la
  *   variante elegida (src/ui/hudSkin/, `?hud=pixel|faithful`). La lógica de barras es la misma.
  * - Canal acanalado oscuro de 110 px de longitud máxima con bisel de bronce.
- * - Barra fantasma (Ghost Health) rojo/ámbar que retiene el daño recibido durante
+ * - Barra fantasma (Ghost Health) carmesí lisa que retiene el daño recibido durante
  *   12 ticks (200 ms) antes de drenar suavemente hacia la vida viva actual.
- * - Barra de salud frontal verde esmeralda brillante que refleja de inmediato el % de vida.
- * - Notches / divisiones segmentadas clásicas de 20 HP.
+ * - Barras frontales sencillas y lisas de salud (`0x08a82c`) y maná (`0x127de4`), sin muescas
+ *   verticales ni rayas internas, fieles al HUD original de GoW 1.
  * - Pulso de advertencia carmesí cuando la salud desciende al nivel crítico (<= 25%).
  * - Reseteo instantáneo al 100% al pulsar 'R' (reinicio determinista).
  * - Elementos fijados a la pantalla con setScrollFactor(0) y alta profundidad (depth >= 100).
@@ -51,25 +51,19 @@ export class HudLayer {
   private hidden = false;
   private lastImpactCount = 0;
 
-  // Canal oscuro bajo las barras; el marco decorativo lo dibuja la variante elegida (hudSkin/)
-  private readonly channelTrough: Phaser.GameObjects.Rectangle;
+  // Barra fantasma (Ghost Health, cápsula redondeada de 3 px)
+  private readonly ghostBarOuter: Phaser.GameObjects.Rectangle;
+  private readonly ghostBarCore: Phaser.GameObjects.Rectangle;
 
-  // Barra fantasma (Ghost Health)
-  private readonly ghostBar: Phaser.GameObjects.Rectangle;
-  private readonly ghostBarHighlight: Phaser.GameObjects.Rectangle;
+  // Barra verde frontal (cápsula esbelta de 3 px con puntas redondeadas y brillo cilíndrico suave, sin muescas)
+  private readonly greenBarOuter: Phaser.GameObjects.Rectangle;
+  private readonly greenBarBody: Phaser.GameObjects.Rectangle;
+  private readonly greenBarCore: Phaser.GameObjects.Rectangle;
 
-  // Barra verde frontal
-  private readonly greenBarBase: Phaser.GameObjects.Rectangle;
-  private readonly greenBarHighlight: Phaser.GameObjects.Rectangle;
-  private readonly greenBarShadow: Phaser.GameObjects.Rectangle;
-  private readonly segmentNotches: Phaser.GameObjects.Rectangle[] = [];
-
-  // Barra de maná (Ira de Poseidón)
-  private readonly manaFrameBg: Phaser.GameObjects.Rectangle;
-  private readonly manaChannelTrough: Phaser.GameObjects.Rectangle;
-  private readonly manaBarBase: Phaser.GameObjects.Rectangle;
-  private readonly manaBarHighlight: Phaser.GameObjects.Rectangle;
-  private readonly manaBarShadow: Phaser.GameObjects.Rectangle;
+  // Barra de maná azul (cápsula esbelta de 3 px con puntas redondeadas y brillo cilíndrico suave)
+  private readonly manaBarOuter: Phaser.GameObjects.Rectangle;
+  private readonly manaBarBody: Phaser.GameObjects.Rectangle;
+  private readonly manaBarCore: Phaser.GameObjects.Rectangle;
 
   // Alerta de salud crítica
   private readonly criticalGlow: Phaser.GameObjects.Rectangle;
@@ -147,102 +141,76 @@ export class HudLayer {
     const barX = x + 32;
     const barY = y;
 
-    // Fondo acanalado oscuro del canal
-    this.channelTrough = scene.add
-      .rectangle(barX, barY, barWidth, barHeight, 0x120c09)
-      .setOrigin(0, 0)
-      .setScrollFactor(0)
-      .setDepth(depth);
-    this.elements.push(this.channelTrough);
-
-    // 2. Barra fantasma (Ghost Health)
-    this.ghostBar = scene.add
-      .rectangle(barX, barY, barWidth, barHeight, 0xdc2626)
-      .setOrigin(0, 0)
-      .setScrollFactor(0)
-      .setDepth(depth + 1);
-    this.elements.push(this.ghostBar);
-
-    this.ghostBarHighlight = scene.add
-      .rectangle(barX, barY, barWidth, 2, 0xf59e0b)
-      .setOrigin(0, 0)
-      .setScrollFactor(0)
-      .setDepth(depth + 1);
-    this.elements.push(this.ghostBarHighlight);
-
-    // 3. Barra frontal verde esmeralda brillante
-    this.greenBarBase = scene.add
-      .rectangle(barX, barY, barWidth, barHeight, 0x16a34a)
-      .setOrigin(0, 0)
-      .setScrollFactor(0)
-      .setDepth(depth + 2);
-    this.elements.push(this.greenBarBase);
-
-    this.greenBarHighlight = scene.add
-      .rectangle(barX, barY, barWidth, 2, 0x4ade80)
-      .setOrigin(0, 0)
-      .setScrollFactor(0)
-      .setDepth(depth + 2);
-    this.elements.push(this.greenBarHighlight);
-
-    this.greenBarShadow = scene.add
-      .rectangle(barX, barY + barHeight - 2, barWidth, 2, 0x14532d)
-      .setOrigin(0, 0)
-      .setScrollFactor(0)
-      .setDepth(depth + 2);
-    this.elements.push(this.greenBarShadow);
-
-    // Notches clásicas de segmento (cada 22 px = 20 HP, 5 muescas para hasta 120 HP)
-    for (let s = 1; s <= 5; s += 1) {
-      const notchX = barX + Math.round((s * barWidth) / 5);
-      const notch = scene.add
-        .rectangle(notchX, barY, 1, barHeight, 0x0a2612, 0.75)
-        .setOrigin(0, 0)
-        .setScrollFactor(0)
-        .setDepth(depth + 3);
-      this.segmentNotches.push(notch);
-      this.elements.push(notch);
+    // 1. Marco decorativo (Espada del Caos) con los canales biselados y redondeados ya esculpidos
+    // en el acero (sin rectángulos opacos sueltos que tapen el metal entre barras).
+    const skinId = resolveHudSkin(typeof window === 'undefined' ? '' : window.location.search);
+    for (const art of createHudSkin(scene, skinId, depth)) {
+      this.elements.push(art);
+      this.skinObjects.push(art);
     }
 
-    // 4. Barra de maná azul zafiro (Ira de Poseidón)
+    // 2. Barra fantasma (Ghost Health, cápsula de 3 px con puntas redondeadas)
+    this.ghostBarOuter = scene.add
+      .rectangle(barX + 1, barY, Math.max(0, barWidth - 2), barHeight, 0x991b1b)
+      .setOrigin(0, 0)
+      .setScrollFactor(0)
+      .setDepth(depth + 1);
+    this.elements.push(this.ghostBarOuter);
+
+    this.ghostBarCore = scene.add
+      .rectangle(barX, barY + 1, barWidth, Math.max(1, barHeight - 2), 0xdc2626)
+      .setOrigin(0, 0)
+      .setScrollFactor(0)
+      .setDepth(depth + 1);
+    this.elements.push(this.ghostBarCore);
+
+    // 3. Barra frontal verde esbelta (3 px): puntas en cápsula redondeada + brillo cilíndrico suave como en GoW 1
+    this.greenBarOuter = scene.add
+      .rectangle(barX, barY, barWidth, barHeight, 0x055a18)
+      .setOrigin(0, 0)
+      .setScrollFactor(0)
+      .setDepth(depth + 2);
+    this.elements.push(this.greenBarOuter);
+
+    this.greenBarBody = scene.add
+      .rectangle(barX + 1, barY, Math.max(0, barWidth - 2), barHeight, 0x079928)
+      .setOrigin(0, 0)
+      .setScrollFactor(0)
+      .setDepth(depth + 2);
+    this.elements.push(this.greenBarBody);
+
+    this.greenBarCore = scene.add
+      .rectangle(barX, barY + 1, barWidth, Math.max(1, barHeight - 2), 0x16c93b)
+      .setOrigin(0, 0)
+      .setScrollFactor(0)
+      .setDepth(depth + 2);
+    this.elements.push(this.greenBarCore);
+
+    // 4. Barra de maná azul esbelta (3 px): puntas en cápsula redondeada + brillo cilíndrico suave
     const { manaBarWidth, manaBarHeight, manaBarYOffset } = CONFIG.presentation.hud;
     const manaX = barX;
     const manaY = barY + manaBarYOffset;
 
-    this.manaFrameBg = scene.add
-      .rectangle(manaX - 1, manaY - 1, manaBarWidth + 2, manaBarHeight + 2, 0x0f172a)
-      .setOrigin(0, 0)
-      .setScrollFactor(0)
-      .setDepth(depth);
-    this.elements.push(this.manaFrameBg);
-
-    this.manaChannelTrough = scene.add
-      .rectangle(manaX, manaY, manaBarWidth, manaBarHeight, 0x030712)
-      .setOrigin(0, 0)
-      .setScrollFactor(0)
-      .setDepth(depth);
-    this.elements.push(this.manaChannelTrough);
-
-    this.manaBarBase = scene.add
-      .rectangle(manaX, manaY, manaBarWidth, manaBarHeight, 0x1e60ff)
+    this.manaBarOuter = scene.add
+      .rectangle(manaX, manaY, manaBarWidth, manaBarHeight, 0x083878)
       .setOrigin(0, 0)
       .setScrollFactor(0)
       .setDepth(depth + 2);
-    this.elements.push(this.manaBarBase);
+    this.elements.push(this.manaBarOuter);
 
-    this.manaBarHighlight = scene.add
-      .rectangle(manaX, manaY, manaBarWidth, 1, 0x60b0ff)
+    this.manaBarBody = scene.add
+      .rectangle(manaX + 1, manaY, Math.max(0, manaBarWidth - 2), manaBarHeight, 0x1068cc)
       .setOrigin(0, 0)
       .setScrollFactor(0)
       .setDepth(depth + 2);
-    this.elements.push(this.manaBarHighlight);
+    this.elements.push(this.manaBarBody);
 
-    this.manaBarShadow = scene.add
-      .rectangle(manaX, manaY + manaBarHeight - 1, manaBarWidth, 1, 0x0f3b8c)
+    this.manaBarCore = scene.add
+      .rectangle(manaX, manaY + 1, manaBarWidth, Math.max(1, manaBarHeight - 2), 0x2994ff)
       .setOrigin(0, 0)
       .setScrollFactor(0)
       .setDepth(depth + 2);
-    this.elements.push(this.manaBarShadow);
+    this.elements.push(this.manaBarCore);
 
     // 5. Alerta de salud crítica
     this.criticalGlow = scene.add
@@ -252,14 +220,6 @@ export class HudLayer {
       .setDepth(depth + 4)
       .setVisible(false);
     this.elements.push(this.criticalGlow);
-
-    // 6. Marco decorativo (Espada del Caos) de la variante elegida. Va a profundidad `depth`,
-    // por debajo de las barras (depth + 1 en adelante), así que ninguna barra queda tapada.
-    const skinId = resolveHudSkin(typeof window === 'undefined' ? '' : window.location.search);
-    for (const art of createHudSkin(scene, skinId, depth)) {
-      this.elements.push(art);
-      this.skinObjects.push(art);
-    }
 
     // 7. Texto numérico pixel-art
     this.hpText = scene.add
@@ -564,14 +524,14 @@ export class HudLayer {
     combatStats?: Pick<CombatStats, 'impactCount' | 'orbMultiplier' | 'points'>,
   ): void {
     if (!player) {
-      this.greenBarBase.setVisible(false);
-      this.greenBarHighlight.setVisible(false);
-      this.greenBarShadow.setVisible(false);
-      this.ghostBar.setVisible(false);
-      this.ghostBarHighlight.setVisible(false);
-      this.manaBarBase.setVisible(false);
-      this.manaBarHighlight.setVisible(false);
-      this.manaBarShadow.setVisible(false);
+      this.greenBarOuter.setVisible(false);
+      this.greenBarBody.setVisible(false);
+      this.greenBarCore.setVisible(false);
+      this.ghostBarOuter.setVisible(false);
+      this.ghostBarCore.setVisible(false);
+      this.manaBarOuter.setVisible(false);
+      this.manaBarBody.setVisible(false);
+      this.manaBarCore.setVisible(false);
       this.criticalGlow.setVisible(false);
       this.hpText.setText('HP: -/-');
       this.redOrbsText.setText('ORBES: -');
@@ -588,9 +548,6 @@ export class HudLayer {
     const { barHeight, manaBarHeight, ghostDrainSpeed, ghostPauseMs, criticalHpThreshold } =
       CONFIG.presentation.hud;
     const targetBarWidth = maxHp >= 120 ? (CONFIG.presentation.hud.upgradedBarWidth ?? 132) : CONFIG.presentation.hud.barWidth;
-
-    // Redimensionamiento dinámico del marco exterior cuando maxHp se expande a 120 HP
-    this.channelTrough.setSize(targetBarWidth, barHeight);
 
     // Detección de reinicio, curación o daño
     if (currentHp > this.prevHp) {
@@ -625,35 +582,35 @@ export class HudLayer {
     const currentWidth = Math.round(targetBarWidth * ratio);
     const ghostWidth = Math.round(targetBarWidth * ghostRatio);
 
-    // 1. Barra frontal verde
+    // 1. Barra frontal verde en cápsula de 3 px
     if (currentWidth > 0) {
-      this.greenBarBase.setSize(currentWidth, barHeight).setVisible(true);
-      this.greenBarHighlight.setSize(currentWidth, 2).setVisible(true);
-      this.greenBarShadow.setSize(currentWidth, 2).setVisible(true);
+      this.greenBarOuter.setSize(currentWidth, barHeight).setVisible(true);
+      if (currentWidth > 2) {
+        this.greenBarBody.setSize(currentWidth - 2, barHeight).setVisible(true);
+      } else {
+        this.greenBarBody.setVisible(false);
+      }
+      this.greenBarCore.setSize(currentWidth, Math.max(1, barHeight - 2)).setVisible(true);
     } else {
-      this.greenBarBase.setVisible(false);
-      this.greenBarHighlight.setVisible(false);
-      this.greenBarShadow.setVisible(false);
+      this.greenBarOuter.setVisible(false);
+      this.greenBarBody.setVisible(false);
+      this.greenBarCore.setVisible(false);
     }
 
-    // 2. Barra fantasma roja/ámbar
+    // 2. Barra fantasma carmesí en cápsula de 3 px
     if (ghostWidth > 0 && ghostWidth >= currentWidth) {
-      this.ghostBar.setSize(ghostWidth, barHeight).setVisible(true);
-      this.ghostBarHighlight.setSize(ghostWidth, 2).setVisible(true);
+      if (ghostWidth > 2) {
+        this.ghostBarOuter.setSize(ghostWidth - 2, barHeight).setVisible(true);
+      } else {
+        this.ghostBarOuter.setVisible(false);
+      }
+      this.ghostBarCore.setSize(ghostWidth, Math.max(1, barHeight - 2)).setVisible(true);
     } else {
-      this.ghostBar.setVisible(false);
-      this.ghostBarHighlight.setVisible(false);
+      this.ghostBarOuter.setVisible(false);
+      this.ghostBarCore.setVisible(false);
     }
 
-    // 3. Notches de segmento
-    for (let i = 0; i < this.segmentNotches.length; i += 1) {
-      const notchOffset = Math.round(((i + 1) * targetBarWidth) / 5);
-      const notchHp = (i + 1) * 20;
-      const notchExists = notchHp < maxHp;
-      this.segmentNotches[i].setVisible(notchExists && ghostWidth > notchOffset);
-    }
-
-    // 4. Alerta de salud crítica
+    // 3. Alerta de salud crítica
     const isCritical = currentHp > 0 && currentHp <= criticalHpThreshold && !player.isDead;
     if (isCritical) {
       this.criticalPulseTimer += dt * 6;
@@ -666,24 +623,26 @@ export class HudLayer {
       this.criticalGlow.setVisible(false);
     }
 
-    // 5. Barra de maná azul
+    // 4. Barra de maná azul en cápsula de 3 px
     const maxMp = player.maxMp > 0 ? player.maxMp : 100;
     const currentMp = Math.max(0, player.mp ?? 100);
     const targetManaBarWidth = maxMp >= 120 ? (CONFIG.presentation.hud.upgradedManaBarWidth ?? 96) : CONFIG.presentation.hud.manaBarWidth;
-    this.manaFrameBg.setSize(targetManaBarWidth + 2, manaBarHeight + 2);
-    this.manaChannelTrough.setSize(targetManaBarWidth, manaBarHeight);
 
     const manaRatio = Math.max(0, Math.min(1, currentMp / maxMp));
     const manaWidth = Math.round(targetManaBarWidth * manaRatio);
 
     if (manaWidth > 0) {
-      this.manaBarBase.setSize(manaWidth, manaBarHeight).setVisible(true);
-      this.manaBarHighlight.setSize(manaWidth, 1).setVisible(true);
-      this.manaBarShadow.setSize(manaWidth, 1).setVisible(true);
+      this.manaBarOuter.setSize(manaWidth, manaBarHeight).setVisible(true);
+      if (manaWidth > 2) {
+        this.manaBarBody.setSize(manaWidth - 2, manaBarHeight).setVisible(true);
+      } else {
+        this.manaBarBody.setVisible(false);
+      }
+      this.manaBarCore.setSize(manaWidth, Math.max(1, manaBarHeight - 2)).setVisible(true);
     } else {
-      this.manaBarBase.setVisible(false);
-      this.manaBarHighlight.setVisible(false);
-      this.manaBarShadow.setVisible(false);
+      this.manaBarOuter.setVisible(false);
+      this.manaBarBody.setVisible(false);
+      this.manaBarCore.setVisible(false);
     }
 
     // 6. Texto numérico
@@ -844,7 +803,6 @@ export class HudLayer {
       elem.destroy();
     }
     this.elements.length = 0;
-    this.segmentNotches.length = 0;
     this.gorgonEyeSlots.length = 0;
     this.gorgonEyeGems.length = 0;
     this.phoenixFeatherSlots.length = 0;
