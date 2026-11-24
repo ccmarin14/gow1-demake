@@ -357,7 +357,7 @@ export class HudLayer {
       .setShadow(1, 1, '#000000', 1);
     this.elements.push(this.redOrbsText);
 
-    const chainX = CONFIG.internal.width * 0.74;
+    const chainX = CONFIG.internal.width - 60;
     this.impactCountText = scene.add
       .text(chainX, 158, '0', {
         fontFamily: 'Georgia, Times New Roman, serif',
