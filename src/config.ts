@@ -610,7 +610,7 @@ export const CONFIG = {
       manaBarWidth: 52,
       upgradedManaBarWidth: 62,
       manaBarHeight: 4,
-      manaBarYOffset: 14,
+      manaBarYOffset: 8,
       ghostDrainSpeed: 45,
       ghostPauseMs: 200,
       criticalHpThreshold: 25,
