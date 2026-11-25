@@ -300,6 +300,7 @@ export class ShellScene extends Phaser.Scene {
       delta / 1000,
       hydra && bossInRange ? { hp: hydra.hp, maxHp: hydra.maxHp, name: 'LA HIDRA DE LERNA' } : null,
       combatStats,
+      actions,
     );
 
     if (this.flowOverlay) {

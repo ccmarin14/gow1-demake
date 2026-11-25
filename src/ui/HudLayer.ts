@@ -1,8 +1,9 @@
 import Phaser from 'phaser';
 import { CONFIG } from '../config';
-import type { CombatStats, EntityState } from '../sim/types';
+import type { CombatStats, EntityState, GameAction } from '../sim/types';
 import { createHudSkin } from './hudSkin/createHudSkin';
 import { resolveHudSkin } from './hudSkin/hudSkin';
+import { advanceMagicSelector, INITIAL_MAGIC_SELECTOR_STATE, type MagicSelectorState } from './magicSelector';
 
 export interface HudMetrics {
   currentHp: number;
@@ -50,6 +51,8 @@ export class HudLayer {
   private readonly scene: Phaser.Scene;
   private hidden = false;
   private lastImpactCount = 0;
+  // Selector del HUD: las flechas recorren los huecos del icono ya dibujado, sin añadir feedback visual.
+  private magicSelector: MagicSelectorState = INITIAL_MAGIC_SELECTOR_STATE;
 
   // Barra fantasma (Ghost Health, cápsula redondeada de 3 px)
   private readonly ghostBarOuter: Phaser.GameObjects.Rectangle;
@@ -495,7 +498,9 @@ export class HudLayer {
     dt: number,
     boss?: { hp: number; maxHp: number; name?: string } | null,
     combatStats?: Pick<CombatStats, 'impactCount' | 'orbMultiplier' | 'points'>,
+    actions: readonly GameAction[] = [],
   ): void {
+    this.magicSelector = advanceMagicSelector(this.magicSelector, actions);
     this.render(player, dt, boss, combatStats);
     // render() solo enciende sus propias barras; el arte del marco vuelve a visible aquí.
     for (const art of this.skinObjects) {
