@@ -369,7 +369,14 @@ export class ShellScene extends Phaser.Scene {
         // Thunder fires when the sky bolt lands, not while Kratos is charging.
         if (player.magicPhase === 'active' && this.prevMagicPhase !== 'active') {
           this.soundManager.playMagicThunder();
-          this.cameras.main.shake(60, 0.002);
+          this.soundManager.startMagicHum();
+          this.cameras.main.shake(
+            CONFIG.vfx.magicWave.impactShakeMs,
+            CONFIG.vfx.magicWave.impactShakeRatio,
+          );
+        }
+        if (player.magicPhase === 'none' && this.prevMagicPhase !== 'none') {
+          this.soundManager.stopMagicHum();
         }
         this.prevMagicPhase = player.magicPhase;
 
@@ -388,6 +395,9 @@ export class ShellScene extends Phaser.Scene {
           }
         }
         this.prevGrabPhase = player.grabPhase;
+      } else {
+        this.soundManager.stopMagicHum();
+        this.prevMagicPhase = 'none';
       }
 
       // Hydra roar sound
@@ -1092,30 +1102,33 @@ export class ShellScene extends Phaser.Scene {
 
     if (player.magicPhase === 'active') {
       const tick = player.magicTicks;
-      const pulseTick = tick % 10;
-      const boltAlpha = pulseTick < 4 ? 1 - pulseTick * 0.12 : 0.62;
-      const glow = 0.55 + 0.45 * boltAlpha;
+      const pulse = tick % 8;
+      const boltAlpha = pulse < 3 ? 1 - pulse * 0.1 : 0.68;
+      const coreAlpha = pulse < 3 ? 1 : 0.65;
+      const glow = 0.6 + 0.4 * boltAlpha;
+      const gfx = this.magicGraphics!;
 
-      // Localized blue-white light around Kratos, not a full-screen flash.
-      this.magicGraphics.fillStyle(0x0284c7, 0.1 * glow);
-      this.magicGraphics.fillCircle(cx, groundY - 20, waveCfg.glowRadiusPx);
-      this.magicGraphics.fillStyle(0x0ea5e9, 0.12 * glow);
-      this.magicGraphics.fillCircle(cx, groundY - 20, waveCfg.glowRadiusPx * 0.65);
-      this.magicGraphics.fillStyle(waveCfg.coreColor, 0.14 * glow);
-      this.magicGraphics.fillCircle(cx, groundY - 20, waveCfg.glowRadiusPx * 0.35);
+      // Localized blue-white light around Kratos, never a full-screen flash.
+      gfx.fillStyle(0x0284c7, 0.12 * glow);
+      gfx.fillCircle(cx, groundY - 22, waveCfg.glowRadiusPx);
+      gfx.fillStyle(0x0ea5e9, 0.16 * glow);
+      gfx.fillCircle(cx, groundY - 22, waveCfg.glowRadiusPx * 0.66);
+      gfx.fillStyle(waveCfg.coreColor, 0.2 * glow * coreAlpha);
+      gfx.fillCircle(cx, groundY - 22, waveCfg.glowRadiusPx * 0.34);
+      gfx.lineStyle(1, waveCfg.color, 0.3 * glow);
+      gfx.strokeCircle(cx, groundY - 22, waveCfg.glowRadiusPx * 0.82);
 
-      // A jagged bolt that starts above Kratos and lands at his feet.
+      // A forked bolt that starts above Kratos and lands at his feet.
       const startY = groundY - waveCfg.boltStartAbovePx;
       const endY = groundY - 2;
       const points: Array<{ x: number; y: number }> = [{ x: cx, y: startY }];
-      for (let s = 1; s < 5; s += 1) {
-        const t = s / 5;
-        const jitter = Math.sin(frame * 0.33 + s * 2.1) * 5 * (1 - t * 0.5);
+      for (let s = 1; s < 7; s += 1) {
+        const t = s / 7;
+        const jitter = Math.sin(frame * 0.41 + s * 2.3) * 6.5 * (1 - t * 0.45);
         points.push({ x: cx + jitter, y: startY + (endY - startY) * t });
       }
       points.push({ x: cx, y: endY });
 
-      const gfx = this.magicGraphics!;
       const strokeBolt = (width: number, color: number, alpha: number): void => {
         gfx.lineStyle(width, color, alpha);
         gfx.beginPath();
@@ -1125,29 +1138,45 @@ export class ShellScene extends Phaser.Scene {
         }
         gfx.strokePath();
       };
-      strokeBolt(6, waveCfg.color, 0.18 * boltAlpha);
-      strokeBolt(3, 0x7dd3fc, 0.55 * boltAlpha);
-      strokeBolt(1, waveCfg.coreColor, 0.95 * boltAlpha);
+      strokeBolt(8, waveCfg.color, 0.14 * boltAlpha);
+      strokeBolt(4, 0x7dd3fc, 0.5 * boltAlpha);
+      strokeBolt(2, waveCfg.coreColor, 0.95 * coreAlpha);
 
-      for (const side of [-1, 1]) {
-        const from = side === -1 ? points[1] : points[2];
-        this.magicGraphics.lineStyle(1, waveCfg.coreColor, 0.5 * boltAlpha);
-        this.magicGraphics.beginPath();
-        this.magicGraphics.moveTo(from.x, from.y);
-        this.magicGraphics.lineTo(from.x + side * 10, from.y + 8);
-        this.magicGraphics.lineTo(from.x + side * 16, from.y + 12);
-        this.magicGraphics.strokePath();
+      // Forks peel off the main channel instead of a single clean zigzag.
+      for (let i = 1; i < points.length - 1; i += 1) {
+        const side = i % 2 === 0 ? 1 : -1;
+        const from = points[i];
+        const reach = 9 + ((frame + i * 3) % 7);
+        gfx.lineStyle(i % 2 === 0 ? 2 : 1, i % 2 === 0 ? 0x7dd3fc : waveCfg.coreColor, 0.55 * boltAlpha);
+        gfx.beginPath();
+        gfx.moveTo(from.x, from.y);
+        gfx.lineTo(from.x + side * (reach * 0.65), from.y + 6);
+        gfx.lineTo(from.x + side * reach, from.y + 13);
+        gfx.strokePath();
+      }
+
+      // The bolt discharges into the deck on impact.
+      if (tick < 8) {
+        const strength = 1 - tick / 8;
+        gfx.lineStyle(1, waveCfg.coreColor, 0.75 * strength);
+        for (let i = 0; i < 8; i += 1) {
+          const side = i % 2 === 0 ? -1 : 1;
+          gfx.beginPath();
+          gfx.moveTo(cx, groundY - 1);
+          gfx.lineTo(cx + side * (4 + ((i * 5 + frame) % 12)), groundY - 2 - ((i + frame) % 5));
+          gfx.strokePath();
+        }
       }
 
       // The 3D circle becomes a flattened wave running along the deck.
       const waveRadius = ((tick + 1) * cfg.radius) / cfg.activeTicks;
       for (let trail = 0; trail < waveCfg.waveTrails; trail += 1) {
-        const r = waveRadius - trail * 7;
+        const r = waveRadius - trail * 6;
         if (r <= 1) continue;
         const alpha =
           (1 - trail / waveCfg.waveTrails) *
-          0.55 *
-          (1 - (tick / cfg.activeTicks) * 0.35);
+          0.6 *
+          (1 - (tick / cfg.activeTicks) * 0.3);
         this.magicGroundGraphics.lineStyle(
           trail === 0 ? 2 : 1,
           trail === 0 ? waveCfg.coreColor : waveCfg.color,
@@ -1161,15 +1190,31 @@ export class ShellScene extends Phaser.Scene {
         );
       }
 
-      this.magicGroundGraphics.fillStyle(waveCfg.coreColor, 0.7);
+      // Arcs jump from the bolt to both ends of the advancing front.
+      if (tick % 12 < 8) {
+        const anchor = points[3];
+        for (const side of [-1, 1]) {
+          gfx.lineStyle(1, 0x7dd3fc, 0.45 * boltAlpha);
+          gfx.beginPath();
+          gfx.moveTo(anchor.x, anchor.y);
+          gfx.lineTo(cx + side * (14 + (frame % 6)), groundY - 12);
+          gfx.lineTo(cx + side * waveRadius, groundY - 2);
+          gfx.strokePath();
+        }
+      }
+
+      this.magicGroundGraphics.fillStyle(waveCfg.coreColor, 0.8);
       for (const side of [-1, 1]) {
         const sx = cx + side * waveRadius;
-        this.magicGroundGraphics.fillRect(sx - 1, groundY - 3, 2, 2);
-        this.magicGroundGraphics.lineStyle(1, waveCfg.color, 0.5);
-        this.magicGroundGraphics.beginPath();
-        this.magicGroundGraphics.moveTo(sx, groundY - 1);
-        this.magicGroundGraphics.lineTo(sx + side * 3, groundY - 5);
-        this.magicGroundGraphics.strokePath();
+        this.magicGroundGraphics.fillRect(sx - 1, groundY - 3, 2, 3);
+        for (let i = 0; i < 3; i += 1) {
+          const jitter = (frame + i * 7) % 6;
+          this.magicGroundGraphics.lineStyle(1, waveCfg.color, 0.55 - i * 0.12);
+          this.magicGroundGraphics.beginPath();
+          this.magicGroundGraphics.moveTo(sx, groundY - 1);
+          this.magicGroundGraphics.lineTo(sx + side * (3 + jitter), groundY - 4 - jitter);
+          this.magicGroundGraphics.strokePath();
+        }
       }
       return;
     }

@@ -269,9 +269,10 @@ magic: {
   maxMp: 100,
   poseidonsRage: {
     cost: 35,
-    startupTicks: 8,
-    activeTicks: 40,
-    recoveryTicks: 12,
+    // 8/40/12 scaled by 1.4 -> 11/56/17 (84 ticks total, BL-32).
+    startupTicks: 11,
+    activeTicks: 56,
+    recoveryTicks: 17,
     radius: 90,
     damagePerHit: 8,
     stunTicksPerHit: 24,
@@ -721,9 +722,16 @@ export const CONFIG = {
       boltDepth: 15,
       /** The bolt starts above Kratos, not at the top edge of the screen. */
       boltStartAbovePx: 80,
-      glowRadiusPx: 34,
+      glowRadiusPx: 42,
       waveHeightPx: 8,
-      waveTrails: 3,
+      waveTrails: 4,
+      /** Visual-only lift: the simulation stays on the deck. */
+      liftPx: 6,
+      liftInTicks: 12,
+      liftOutTicks: 17,
+      /** Camera kick when the bolt lands. */
+      impactShakeMs: 110,
+      impactShakeRatio: 0.004,
     },
   },
   audio: {

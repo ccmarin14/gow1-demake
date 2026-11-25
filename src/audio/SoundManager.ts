@@ -17,6 +17,7 @@ export class SoundManager {
   private sfxGain: GainNode | null = null;
   private muted = false;
   private isReady = false;
+  private magicHum: { osc: OscillatorNode; gain: GainNode } | null = null;
 
   private readonly playCounts: Record<string, number> = {
     strikeHit: 0,
@@ -26,6 +27,7 @@ export class SoundManager {
     strikeWhoosh: 0,
     parry: 0,
     magicThunder: 0,
+    magicHum: 0,
     magicCrackle: 0,
     hydraRoar: 0,
     hydraSlam: 0,
@@ -369,6 +371,45 @@ export class SoundManager {
       // Filtered noise gives the strike a crack instead of a clean tone.
       this.playMagicNoise(now, 0.3, 1200, 'lowpass', 0.24);
       this.playMagicNoise(now, 0.09, 2600, 'highpass', 0.18);
+    } catch {}
+  }
+
+  /** Soft electric buzz while the bolt sustains; one voice, not a new node per tick. */
+  startMagicHum(): void {
+    this.recordSound('magicHum');
+    if (!this.ctx || !this.sfxGain || this.muted || this.magicHum) return;
+
+    try {
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const filter = this.ctx.createBiquadFilter();
+      const gain = this.ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(58, now);
+      osc.frequency.linearRampToValueAtTime(74, now + 0.9);
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(180, now);
+      filter.Q.value = 0.7;
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.linearRampToValueAtTime(0.05, now + 0.15);
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(this.sfxGain);
+      osc.start(now);
+      this.magicHum = { osc, gain };
+    } catch {}
+  }
+
+  stopMagicHum(): void {
+    if (!this.magicHum || !this.ctx) return;
+    const { osc, gain } = this.magicHum;
+    this.magicHum = null;
+    try {
+      const now = this.ctx.currentTime;
+      gain.gain.cancelScheduledValues(now);
+      gain.gain.setValueAtTime(Math.max(0.0001, gain.gain.value), now);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
+      osc.stop(now + 0.2);
     } catch {}
   }
 

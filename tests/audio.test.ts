@@ -38,6 +38,18 @@ describe('strike audio profiles', () => {
     assert.equal(stats.totalPlayed, 3);
   });
 
+  it('starts the sustained electric buzz and can stop it cleanly', () => {
+    const sound = new SoundManager();
+
+    sound.startMagicHum();
+    sound.stopMagicHum();
+    sound.stopMagicHum();
+
+    const stats = sound.getStats();
+    assert.equal(stats.playCounts.magicHum, 1);
+    assert.equal(stats.lastPlayed, 'magicHum');
+  });
+
   it('records grab execution audio generators (stab, bone break, throw release, slam, whoosh, clamp)', () => {
     const sound = new SoundManager();
 

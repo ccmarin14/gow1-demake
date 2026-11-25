@@ -16,6 +16,10 @@ import { WeaponLayer } from '../entities/WeaponLayer';
 import { kratosGrabFrameKey } from './grabPose';
 import { STRIKES, strikePoseAt } from '../sim/strike';
 import type { EntityState, GroundFireState, StrikeSnapshot } from '../sim/types';
+import { magicLiftPx } from './magicPose';
+
+/** Dedicated tension frame, added once the user approves its blockout. */
+const MAGIC_TENSION_KEY = 'kratos-magic-tension';
 
 /**
  * Presentation of the player: the Kratos sprite and its animation selection,
@@ -63,10 +67,13 @@ export class PlayerView {
   }
 
   update(player: Readonly<EntityState>, isOpeningChest: boolean, strike: Readonly<StrikeSnapshot> | null = null): void {
-    this.sprite.setPosition(player.x, player.y);
+    const lift = magicLiftPx(player);
+    this.sprite.setPosition(player.x, player.y - lift);
     this.sprite.setFlipX(player.facing === -1);
     this.applyAnimation(player, isOpeningChest, strike);
     this.shadow.setPosition(player.x, player.y - 1);
+    const shadowFactor = 1 - 0.35 * (lift / CONFIG.vfx.magicWave.liftPx);
+    this.shadow.setScale(shadowFactor, shadowFactor);
     this.shadow.setVisible(CONFIG.presentation.playerShadow.enabled && player.grounded && !player.isDead);
 
     // Damage feedback (tint during hitstun)
@@ -137,6 +144,20 @@ export class PlayerView {
     const { grounded, facing } = simPlayer;
     const speed = Math.abs(simPlayer.vx);
     const rolling = simPlayer.rollPhase !== 'none';
+
+    if (simPlayer.magicPhase !== 'none') {
+      // Tense, rigid pose while the bolt holds him; the dedicated frame replaces
+      // the braced guard pose as soon as its blockout is approved.
+      this.stopLoop();
+      const key = this.scene.textures.exists(MAGIC_TENSION_KEY) ? MAGIC_TENSION_KEY : 'kratos-guard-b';
+      player.setTexture(key, 0);
+      player.setFlipX(facing === -1);
+      player.setScale(1, 1);
+      player.setRotation(Math.sin(simPlayer.magicTicks * 2.9) * 0.012);
+      player.setAlpha(1);
+      player.anims.timeScale = 1;
+      return;
+    }
 
     // Elastic landing compression (squash)
     if (CONFIG.presentation.landingSquash && simPlayer.landingTicks > 0 && grounded && !rolling) {
