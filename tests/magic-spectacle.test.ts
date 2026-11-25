@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { CONFIG } from '../src/config';
-import { magicLiftPx, magicTensionPose } from '../src/scene/magicPose';
+import { CONFIG, PLAYER_SPRITE_HEIGHT } from '../src/config';
+import { magicBoltEndY, magicLiftPx, magicPoseStyle } from '../src/scene/magicPose';
 import { stepMagic } from '../src/sim/magic';
 import type { EntityState } from '../src/sim/types';
 import { World } from '../src/sim/world';
@@ -60,10 +60,31 @@ describe('Poseidon\'s Rage spectacle (BL-32)', () => {
     assert.equal(magicLiftPx(phase('active', cfg.liftInTicks - 1)), cfg.liftPx);
     assert.ok(magicLiftPx(phase('recovery', 1)) < cfg.liftPx);
 
-    assert.equal(magicTensionPose(phase('startup', spell.startupTicks - 1)), false);
-    assert.equal(magicTensionPose(phase('active', 0)), true);
-    assert.equal(magicTensionPose(phase('active', spell.activeTicks - 1)), true);
-    assert.equal(magicTensionPose(phase('recovery', 0)), false);
-    assert.equal(magicTensionPose(phase('none', 0)), false);
+    assert.equal(magicPoseStyle(phase('startup', spell.startupTicks - 1)), 'bridge');
+    assert.equal(magicPoseStyle(phase('active', 0)), 'bridge');
+    assert.equal(magicPoseStyle(phase('active', 2)), 'tension');
+    assert.equal(magicPoseStyle(phase('active', spell.activeTicks - 3)), 'tension');
+    assert.equal(magicPoseStyle(phase('recovery', 0)), 'bridge');
+    assert.equal(magicPoseStyle(phase('recovery', 2)), 'normal');
+    assert.equal(magicPoseStyle(phase('none', 0)), 'normal');
+  });
+
+  it('stops the bolt at mid torso and reuses one bridge pose on both ends', () => {
+    const cfg = CONFIG.vfx.magicWave;
+    const spell = CONFIG.player.magic.poseidonsRage;
+    assert.equal(cfg.boltStopAtBodyFraction, 0.5);
+    assert.equal(cfg.poseTransitionTicks, 2);
+
+    assert.equal(magicPoseStyle(phase('startup', spell.startupTicks - 2)), 'bridge');
+    assert.equal(magicPoseStyle(phase('active', spell.activeTicks - 2)), 'bridge');
+    assert.equal(magicPoseStyle(phase('active', spell.activeTicks - 1)), 'bridge');
+
+    const player = { ...caster(), magicPhase: 'active', magicTicks: 10 } as EntityState;
+    assert.equal(
+      magicBoltEndY(player),
+      player.y - magicLiftPx(player) - PLAYER_SPRITE_HEIGHT * cfg.boltStopAtBodyFraction,
+    );
+    assert.ok(magicBoltEndY(player) < player.y - 20, 'the bolt stops at the torso');
+    assert.ok(magicBoltEndY(player) > player.y - 40, 'the bolt does not run past him');
   });
 });

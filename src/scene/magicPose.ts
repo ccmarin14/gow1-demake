@@ -1,4 +1,4 @@
-import { CONFIG } from '../config';
+import { CONFIG, PLAYER_SPRITE_HEIGHT } from '../config';
 import type { EntityState } from '../sim/types';
 
 /**
@@ -20,7 +20,36 @@ export function magicLiftPx(player: Readonly<EntityState>): number {
   return 0;
 }
 
-/** The tense, resisting pose belongs to the bolt, not to the whole spell. */
-export function magicTensionPose(player: Readonly<EntityState>): boolean {
-  return player.magicPhase === 'active';
+export type MagicPoseStyle = 'normal' | 'bridge' | 'tension';
+
+/**
+ * The same bracing frame bridges into and out of the tense pose, so he does
+ * not snap into or out of the cramp. Recovery ends on the ordinary pose.
+ */
+export function magicPoseStyle(player: Readonly<EntityState>): MagicPoseStyle {
+  const cfg = CONFIG.vfx.magicWave;
+  const spell = CONFIG.player.magic.poseidonsRage;
+  const edge = Math.min(cfg.poseTransitionTicks, Math.floor(spell.activeTicks / 2));
+
+  if (player.magicPhase === 'startup') {
+    return player.magicTicks >= spell.startupTicks - edge ? 'bridge' : 'normal';
+  }
+  if (player.magicPhase === 'active') {
+    return player.magicTicks < edge || player.magicTicks >= spell.activeTicks - edge
+      ? 'bridge'
+      : 'tension';
+  }
+  if (player.magicPhase === 'recovery') {
+    return player.magicTicks < edge ? 'bridge' : 'normal';
+  }
+  return 'normal';
+}
+
+/** Where the descending bolt grips him: half the sprite, following the lift. */
+export function magicBoltEndY(player: Readonly<EntityState>): number {
+  return (
+    player.y -
+    magicLiftPx(player) -
+    PLAYER_SPRITE_HEIGHT * CONFIG.vfx.magicWave.boltStopAtBodyFraction
+  );
 }

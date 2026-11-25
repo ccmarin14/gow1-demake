@@ -3,8 +3,10 @@ import {
   ASSET_DOMAINS,
   ASSETS,
   BACKGROUND_KEY,
+  MAGIC_TENSION_KEY,
 } from '../assets/manifest';
 import { CONFIG } from '../config';
+import { magicBoltEndY } from './magicPose';
 import {
   attachScaleReferenceOverlay,
   updateScaleReference,
@@ -107,6 +109,15 @@ export class ShellScene extends Phaser.Scene {
           this.load.image(asset.key, asset.path);
         }
       }
+    }
+
+    // Dev-only review of the unapproved frame with ?magicPosePreview=1.
+    // Production builds never request this scratch file.
+    if (
+      import.meta.env.DEV &&
+      new URLSearchParams(window.location.search).has('magicPosePreview')
+    ) {
+      this.load.image(MAGIC_TENSION_KEY, '/docs/tmp/magia1-ref/magic-tension-v10.png');
     }
   }
 
@@ -1118,9 +1129,10 @@ export class ShellScene extends Phaser.Scene {
       gfx.lineStyle(1, waveCfg.color, 0.3 * glow);
       gfx.strokeCircle(cx, groundY - 22, waveCfg.glowRadiusPx * 0.82);
 
-      // A forked bolt that starts above Kratos and lands at his feet.
+      // A forked bolt that starts above Kratos and grips him at mid torso.
+      // The ground wave stays on the deck; only the bolt's reach changed.
       const startY = groundY - waveCfg.boltStartAbovePx;
-      const endY = groundY - 2;
+      const endY = magicBoltEndY(player);
       const points: Array<{ x: number; y: number }> = [{ x: cx, y: startY }];
       for (let s = 1; s < 7; s += 1) {
         const t = s / 7;
@@ -1155,7 +1167,31 @@ export class ShellScene extends Phaser.Scene {
         gfx.strokePath();
       }
 
-      // The bolt discharges into the deck on impact.
+      // Sharp filaments at the contact point make the grip read as electric.
+      gfx.fillStyle(waveCfg.coreColor, 0.18 * coreAlpha);
+      gfx.fillCircle(cx, endY, 9);
+      gfx.lineStyle(1, waveCfg.coreColor, 0.8 * coreAlpha);
+      for (let i = 0; i < 10; i += 1) {
+        const side = i % 2 === 0 ? -1 : 1;
+        const reach = 6 + ((frame * 3 + i * 5) % 12);
+        gfx.beginPath();
+        gfx.moveTo(cx, endY);
+        gfx.lineTo(cx + side * reach * 0.6, endY - 3 - (i % 3));
+        gfx.lineTo(cx + side * reach, endY + ((i % 4) - 1) * 3);
+        gfx.strokePath();
+      }
+      if (tick % 4 === 0) {
+        gfx.lineStyle(1, 0x7dd3fc, 0.45 * boltAlpha);
+        for (const side of [-1, 1]) {
+          gfx.beginPath();
+          gfx.moveTo(cx + side * 4, endY);
+          gfx.lineTo(cx + side * 11, endY - 7);
+          gfx.lineTo(cx + side * 8, endY - 15);
+          gfx.strokePath();
+        }
+      }
+
+      // The deck still discharges into the ground wave on impact.
       if (tick < 8) {
         const strength = 1 - tick / 8;
         gfx.lineStyle(1, waveCfg.coreColor, 0.75 * strength);

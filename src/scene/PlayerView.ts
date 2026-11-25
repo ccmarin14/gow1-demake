@@ -5,6 +5,7 @@ import {
   AIR_RISE_KEY,
   IDLE_KEY,
   IDLE_KEYS,
+  MAGIC_TENSION_KEY,
   PLAYER_KEY,
   ROLL_KEYS,
   RUN_KEY,
@@ -16,10 +17,7 @@ import { WeaponLayer } from '../entities/WeaponLayer';
 import { kratosGrabFrameKey } from './grabPose';
 import { STRIKES, strikePoseAt } from '../sim/strike';
 import type { EntityState, GroundFireState, StrikeSnapshot } from '../sim/types';
-import { magicLiftPx, magicTensionPose } from './magicPose';
-
-/** Dedicated tension frame, added once the user approves its blockout. */
-const MAGIC_TENSION_KEY = 'kratos-magic-tension';
+import { magicLiftPx, magicPoseStyle } from './magicPose';
 
 /**
  * Presentation of the player: the Kratos sprite and its animation selection,
@@ -145,15 +143,21 @@ export class PlayerView {
     const speed = Math.abs(simPlayer.vx);
     const rolling = simPlayer.rollPhase !== 'none';
 
-    if (magicTensionPose(simPlayer)) {
-      // A cramp he resists: the pose and tremor end with the bolt, so recovery
-      // reads as an ordinary landing. The approved frame replaces guard-b.
+    const magicPose = magicPoseStyle(simPlayer);
+    if (magicPose !== 'normal') {
+      // One shared bracing frame eases into and out of the cramp; the tense
+      // frame (pending approval) holds only while the bolt grips him.
       this.stopLoop();
-      const key = this.scene.textures.exists(MAGIC_TENSION_KEY) ? MAGIC_TENSION_KEY : 'kratos-guard-b';
-      player.setTexture(key, 0);
+      const key =
+        magicPose === 'tension'
+          ? this.scene.textures.exists(MAGIC_TENSION_KEY)
+            ? MAGIC_TENSION_KEY
+            : 'kratos-guard-b'
+          : 'kratos-guard-a';
+      player.setTexture(this.scene.textures.exists(key) ? key : PLAYER_KEY, 0);
       player.setFlipX(facing === -1);
       player.setScale(1, 1);
-      player.setRotation(Math.sin(simPlayer.magicTicks * 3.6) * 0.005);
+      player.setRotation(magicPose === 'tension' ? Math.sin(simPlayer.magicTicks * 3.6) * 0.005 : 0);
       player.setAlpha(1);
       player.anims.timeScale = 1;
       return;

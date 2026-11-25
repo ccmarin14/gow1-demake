@@ -729,6 +729,10 @@ export const CONFIG = {
       liftPx: 6,
       liftInTicks: 4,
       liftOutTicks: 4,
+      /** The bolt stops at half the sprite, over the ground wave. */
+      boltStopAtBodyFraction: 0.5,
+      /** One shared bracing frame bridges into and out of the tense pose. */
+      poseTransitionTicks: 2,
       /** Camera kick when the bolt lands. */
       impactShakeMs: 110,
       impactShakeRatio: 0.004,
