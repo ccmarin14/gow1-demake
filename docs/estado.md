@@ -2,7 +2,7 @@
 
 Documento único del estado medido de `gow-8b`: qué funciona, qué falta revisar o decidir y qué sigue. Se actualiza en el mismo commit de cada paso. La cronología completa y lo ya resuelto viven en [`docs/archivo/`](archivo/README.md); el historial de git conserva todo lo demás.
 
-**Sincronizado el 2026-11-23 · 367 pruebas · rama `tarea/ataques-circulo` (parte del 12 de nov; el trabajo de BL-46 y el audio en capas quedan en la rama `decepcion`).**
+**Sincronizado el 2026-11-25 · 377 pruebas · rama `master` (BL-29: barras aprobadas y variante fiel por defecto; BL-46 y el audio en capas siguen en `decepcion`).**
 
 ## 1. Qué funciona hoy
 
