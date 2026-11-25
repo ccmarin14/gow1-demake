@@ -5,7 +5,6 @@ import {
   AIR_RISE_KEY,
   IDLE_KEY,
   IDLE_KEYS,
-  MAGIC_TENSION_KEY,
   PLAYER_KEY,
   ROLL_KEYS,
   RUN_KEY,
@@ -17,7 +16,7 @@ import { WeaponLayer } from '../entities/WeaponLayer';
 import { kratosGrabFrameKey } from './grabPose';
 import { STRIKES, strikePoseAt } from '../sim/strike';
 import type { EntityState, GroundFireState, StrikeSnapshot } from '../sim/types';
-import { magicLiftPx, magicPoseStyle } from './magicPose';
+import { magicFrameKey, magicLiftPx, magicPoseStyle } from './magicPose';
 
 /**
  * Presentation of the player: the Kratos sprite and its animation selection,
@@ -144,17 +143,12 @@ export class PlayerView {
     const rolling = simPlayer.rollPhase !== 'none';
 
     const magicPose = magicPoseStyle(simPlayer);
-    if (magicPose !== 'normal') {
-      // One shared bracing frame eases into and out of the cramp; the tense
-      // frame (pending approval) holds only while the bolt grips him.
+    const magicKey = magicFrameKey(magicPose);
+    if (magicKey) {
+      // The same raised-arm frame runs from the first bridge tick to the last:
+      // only the small tremor marks the moment the bolt actually grips him.
       this.stopLoop();
-      const key =
-        magicPose === 'tension'
-          ? this.scene.textures.exists(MAGIC_TENSION_KEY)
-            ? MAGIC_TENSION_KEY
-            : 'kratos-guard-b'
-          : 'kratos-guard-a';
-      player.setTexture(this.scene.textures.exists(key) ? key : PLAYER_KEY, 0);
+      player.setTexture(magicKey, 0);
       player.setFlipX(facing === -1);
       player.setScale(1, 1);
       player.setRotation(magicPose === 'tension' ? Math.sin(simPlayer.magicTicks * 3.6) * 0.005 : 0);

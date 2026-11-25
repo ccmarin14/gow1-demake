@@ -1,3 +1,4 @@
+import { MAGIC_TENSION_KEY } from '../assets/manifest';
 import { CONFIG, PLAYER_SPRITE_HEIGHT } from '../config';
 import type { EntityState } from '../sim/types';
 
@@ -23,8 +24,9 @@ export function magicLiftPx(player: Readonly<EntityState>): number {
 export type MagicPoseStyle = 'normal' | 'bridge' | 'tension';
 
 /**
- * The same bracing frame bridges into and out of the tense pose, so he does
- * not snap into or out of the cramp. Recovery ends on the ordinary pose.
+ * The same bracing frame bridges into and out of the cramp, so the arms are
+ * already raised when the bolt grips him and stay raised as it lets go.
+ * Only the tremor distinguishes the held pose from the transition.
  */
 export function magicPoseStyle(player: Readonly<EntityState>): MagicPoseStyle {
   const cfg = CONFIG.vfx.magicWave;
@@ -43,6 +45,11 @@ export function magicPoseStyle(player: Readonly<EntityState>): MagicPoseStyle {
     return player.magicTicks < edge ? 'bridge' : 'normal';
   }
   return 'normal';
+}
+
+/** One drawn frame for the whole electric interval; null outside it. */
+export function magicFrameKey(style: MagicPoseStyle): string | null {
+  return style === 'normal' ? null : MAGIC_TENSION_KEY;
 }
 
 /** Where the descending bolt grips him: half the sprite, following the lift. */

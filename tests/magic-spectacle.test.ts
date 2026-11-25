@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
+import { ASSETS, MAGIC_TENSION_KEY, PLAYER_FRAME_KEYS } from '../src/assets/manifest';
 import { CONFIG, PLAYER_SPRITE_HEIGHT } from '../src/config';
-import { magicBoltEndY, magicLiftPx, magicPoseStyle } from '../src/scene/magicPose';
+import { magicBoltEndY, magicFrameKey, magicLiftPx, magicPoseStyle } from '../src/scene/magicPose';
 import { stepMagic } from '../src/sim/magic';
 import type { EntityState } from '../src/sim/types';
 import { World } from '../src/sim/world';
@@ -86,5 +87,16 @@ describe('Poseidon\'s Rage spectacle (BL-32)', () => {
     );
     assert.ok(magicBoltEndY(player) < player.y - 20, 'the bolt stops at the torso');
     assert.ok(magicBoltEndY(player) > player.y - 40, 'the bolt does not run past him');
+  });
+
+  it('loads the Ki-arm frame in production and uses it on both sides of the cramp', () => {
+    assert.ok(PLAYER_FRAME_KEYS.includes(MAGIC_TENSION_KEY), 'the frame is a player asset');
+    assert.ok(
+      ASSETS.characters.some((asset) => asset.key === MAGIC_TENSION_KEY),
+      'the frame is loaded by the scene, not only by a dev flag',
+    );
+    assert.equal(magicFrameKey('normal'), null);
+    assert.equal(magicFrameKey('bridge'), MAGIC_TENSION_KEY);
+    assert.equal(magicFrameKey('tension'), MAGIC_TENSION_KEY);
   });
 });

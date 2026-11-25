@@ -77,14 +77,17 @@ def main() -> int:
     out_dir = Path(tempfile.mkdtemp(prefix="anchors-", dir=TMP_ROOT))
     recipes = json.loads((HERE / "frames.json").read_text(encoding="utf-8"))["frames"]
     only = [name for name in args.only.split(",") if name]
-    anchors: dict[str, dict] = {}
+    # Hand-finished frames are not rendered from frames.json but still need
+    # anchors: keep existing entries so a full rebuild does not drop their blades.
+    anchors: dict[str, dict] = (
+        json.loads(TARGET.read_text(encoding="utf-8")) if TARGET.exists() else {}
+    )
     if only:
         unknown = [name for name in only if name not in recipes]
         if unknown:
             print("FAIL not in frames.json:", ", ".join(unknown))
             return 1
         recipes = {name: recipes[name] for name in only}
-        anchors = json.loads(TARGET.read_text(encoding="utf-8"))
     mismatches = []
     with ThreadPoolExecutor(max_workers=max(1, args.jobs)) as pool:
         rendered = dict(zip(recipes, pool.map(lambda item: render(args.blender, out_dir, *item), recipes.items())))

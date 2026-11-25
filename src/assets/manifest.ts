@@ -52,7 +52,7 @@ export const AIR_RISE_KEY = 'kratos-air-00';
 export const AIR_FALL_KEY = 'kratos-air-01';
 /** Double jump: arms thrust down, knees tucked, as if pushing off the air. */
 export const AIR_DOUBLE_KEY = 'kratos-air-02';
-/** Pending Poseidon's Rage frame: Ki-like arms resisting the electric shock. */
+/** Poseidon's Rage frame: Ki-like arms raised while he resists the shock. */
 export const MAGIC_TENSION_KEY = 'kratos-magic-tension';
 /** Roll blockout (D-34): crouch, dive, hands down, curled, recover; spread over the roll. */
 export const ROLL_KEYS: readonly string[] = Array.from({ length: 5 }, (_, i) => `kratos-roll-0${i}`);
@@ -101,6 +101,7 @@ export const PLAYER_FRAME_KEYS: readonly string[] = [
   ...STRIKE_KEYS,
   ...GRAB_KEYS,
   ...GUARD_KEYS,
+  MAGIC_TENSION_KEY,
 ];
 
 /** All 27 approved legionnaire frames (64x56, ground anchor at 55). */

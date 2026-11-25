@@ -3,7 +3,6 @@ import {
   ASSET_DOMAINS,
   ASSETS,
   BACKGROUND_KEY,
-  MAGIC_TENSION_KEY,
 } from '../assets/manifest';
 import { CONFIG } from '../config';
 import { magicBoltEndY } from './magicPose';
@@ -109,15 +108,6 @@ export class ShellScene extends Phaser.Scene {
           this.load.image(asset.key, asset.path);
         }
       }
-    }
-
-    // Dev-only review of the unapproved frame with ?magicPosePreview=1.
-    // Production builds never request this scratch file.
-    if (
-      import.meta.env.DEV &&
-      new URLSearchParams(window.location.search).has('magicPosePreview')
-    ) {
-      this.load.image(MAGIC_TENSION_KEY, '/docs/tmp/magia1-ref/magic-tension-v10.png');
     }
   }
 

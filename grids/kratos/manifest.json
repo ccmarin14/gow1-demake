@@ -578,6 +578,12 @@
       "state": "grab",
       "grounded": true,
       "png": "kratos-grab-toss-stab"
+    },
+    {
+      "file": "magic-tension.txt",
+      "state": "magic",
+      "grounded": true,
+      "png": "kratos-magic-tension"
     }
   ]
 }
