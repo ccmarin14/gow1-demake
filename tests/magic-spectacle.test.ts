@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
 import { CONFIG } from '../src/config';
-import { magicLiftPx } from '../src/scene/magicPose';
+import { magicLiftPx, magicTensionPose } from '../src/scene/magicPose';
 import { stepMagic } from '../src/sim/magic';
 import type { EntityState } from '../src/sim/types';
 import { World } from '../src/sim/world';
@@ -50,5 +50,20 @@ describe('Poseidon\'s Rage spectacle (BL-32)', () => {
     assert.equal(magicLiftPx(phase('active', cfg.liftInTicks)), cfg.liftPx);
     assert.ok(magicLiftPx(phase('recovery', 0)) > 0, 'he comes down during recovery');
     assert.equal(magicLiftPx(phase('recovery', cfg.liftOutTicks)), 0);
+  });
+
+  it('rises and lands quickly, and drops the tense pose with the bolt', () => {
+    const cfg = CONFIG.vfx.magicWave;
+    const spell = CONFIG.player.magic.poseidonsRage;
+    assert.ok(cfg.liftInTicks <= 4, 'the lift starts with the bolt');
+    assert.ok(cfg.liftOutTicks <= 4, 'he lands as soon as the bolt ends');
+    assert.equal(magicLiftPx(phase('active', cfg.liftInTicks - 1)), cfg.liftPx);
+    assert.ok(magicLiftPx(phase('recovery', 1)) < cfg.liftPx);
+
+    assert.equal(magicTensionPose(phase('startup', spell.startupTicks - 1)), false);
+    assert.equal(magicTensionPose(phase('active', 0)), true);
+    assert.equal(magicTensionPose(phase('active', spell.activeTicks - 1)), true);
+    assert.equal(magicTensionPose(phase('recovery', 0)), false);
+    assert.equal(magicTensionPose(phase('none', 0)), false);
   });
 });

@@ -727,8 +727,8 @@ export const CONFIG = {
       waveTrails: 4,
       /** Visual-only lift: the simulation stays on the deck. */
       liftPx: 6,
-      liftInTicks: 12,
-      liftOutTicks: 17,
+      liftInTicks: 4,
+      liftOutTicks: 4,
       /** Camera kick when the bolt lands. */
       impactShakeMs: 110,
       impactShakeRatio: 0.004,

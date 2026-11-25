@@ -16,7 +16,7 @@ import { WeaponLayer } from '../entities/WeaponLayer';
 import { kratosGrabFrameKey } from './grabPose';
 import { STRIKES, strikePoseAt } from '../sim/strike';
 import type { EntityState, GroundFireState, StrikeSnapshot } from '../sim/types';
-import { magicLiftPx } from './magicPose';
+import { magicLiftPx, magicTensionPose } from './magicPose';
 
 /** Dedicated tension frame, added once the user approves its blockout. */
 const MAGIC_TENSION_KEY = 'kratos-magic-tension';
@@ -145,15 +145,15 @@ export class PlayerView {
     const speed = Math.abs(simPlayer.vx);
     const rolling = simPlayer.rollPhase !== 'none';
 
-    if (simPlayer.magicPhase !== 'none') {
-      // Tense, rigid pose while the bolt holds him; the dedicated frame replaces
-      // the braced guard pose as soon as its blockout is approved.
+    if (magicTensionPose(simPlayer)) {
+      // A cramp he resists: the pose and tremor end with the bolt, so recovery
+      // reads as an ordinary landing. The approved frame replaces guard-b.
       this.stopLoop();
       const key = this.scene.textures.exists(MAGIC_TENSION_KEY) ? MAGIC_TENSION_KEY : 'kratos-guard-b';
       player.setTexture(key, 0);
       player.setFlipX(facing === -1);
       player.setScale(1, 1);
-      player.setRotation(Math.sin(simPlayer.magicTicks * 2.9) * 0.012);
+      player.setRotation(Math.sin(simPlayer.magicTicks * 3.6) * 0.005);
       player.setAlpha(1);
       player.anims.timeScale = 1;
       return;

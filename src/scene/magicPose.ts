@@ -19,3 +19,8 @@ export function magicLiftPx(player: Readonly<EntityState>): number {
   }
   return 0;
 }
+
+/** The tense, resisting pose belongs to the bolt, not to the whole spell. */
+export function magicTensionPose(player: Readonly<EntityState>): boolean {
+  return player.magicPhase === 'active';
+}
