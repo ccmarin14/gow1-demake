@@ -63,6 +63,8 @@ export class ShellScene extends Phaser.Scene {
   private barrierGraphics: Phaser.GameObjects.Graphics | null = null;
   private checkpointGraphics: Phaser.GameObjects.Graphics | null = null;
   private magicGraphics: Phaser.GameObjects.Graphics | null = null;
+  /** The ground wave lives below Kratos; the bolt and local glow live above him. */
+  private magicGroundGraphics: Phaser.GameObjects.Graphics | null = null;
   hudLayer!: HudLayer;
   flowOverlay!: GameFlowOverlay;
   vfxLayer!: VfxLayer;
@@ -73,6 +75,8 @@ export class ShellScene extends Phaser.Scene {
   soundManager!: SoundManager;
   private prevParryActive = false;
   private prevMagicPhase = 'none';
+  /** Enemy IDs already spark-burst by the visual wave in the current cast. */
+  private prevMagicHitIds: string[] = [];
   private prevHydraState = 'none';
   private prevAbsorbedOrbsCount = 0;
   private prevOpenChestsCount = 0;
@@ -362,9 +366,10 @@ export class ShellScene extends Phaser.Scene {
 
     if (this.soundManager) {
       if (player) {
-        // Magic thunder sound
-        if (player.magicPhase === 'startup' && this.prevMagicPhase !== 'startup') {
+        // Thunder fires when the sky bolt lands, not while Kratos is charging.
+        if (player.magicPhase === 'active' && this.prevMagicPhase !== 'active') {
           this.soundManager.playMagicThunder();
+          this.cameras.main.shake(60, 0.002);
         }
         this.prevMagicPhase = player.magicPhase;
 
@@ -756,6 +761,9 @@ export class ShellScene extends Phaser.Scene {
     if (this.magicGraphics) {
       this.magicGraphics.clear();
     }
+    if (this.magicGroundGraphics) {
+      this.magicGroundGraphics.clear();
+    }
     const {
       platformColor,
       platformHighlightColor,
@@ -1022,75 +1030,162 @@ export class ShellScene extends Phaser.Scene {
   }
 
   private updateMagic(player: Readonly<EntityState> | null): void {
+    const cfg = CONFIG.player.magic.poseidonsRage;
+    const waveCfg = CONFIG.vfx.magicWave;
+
     if (!player || player.magicPhase === 'none') {
-      if (this.magicGraphics) {
-        this.magicGraphics.clear();
-        this.magicGraphics.setVisible(false);
-      }
+      this.magicGraphics?.clear();
+      this.magicGraphics?.setVisible(false);
+      this.magicGroundGraphics?.clear();
+      this.magicGroundGraphics?.setVisible(false);
+      this.prevMagicHitIds = [];
       return;
     }
 
     if (!this.magicGraphics) {
-      this.magicGraphics = this.add.graphics().setDepth(15);
+      this.magicGraphics = this.add.graphics().setDepth(waveCfg.boltDepth);
+    }
+    if (!this.magicGroundGraphics) {
+      this.magicGroundGraphics = this.add.graphics().setDepth(waveCfg.groundDepth);
     }
 
     this.magicGraphics.clear();
     this.magicGraphics.setVisible(true);
+    this.magicGroundGraphics.clear();
+    this.magicGroundGraphics.setVisible(true);
 
     const cx = player.x;
-    const cy = player.y - 18;
-    const radius = CONFIG.player.magic.poseidonsRage.radius;
+    const groundY = player.y;
     const frame = this.simulation.world.frame;
+    const hitIds = player.magicHitIds ?? [];
+
+    // Each new target reached by the wave gets its own burst and crackle.
+    for (const id of hitIds) {
+      if (this.prevMagicHitIds.includes(id)) continue;
+      const target = this.simulation.world.peekEntity(id);
+      if (target) {
+        this.vfxLayer?.emitCombatSparks(target.x, target.y - 12, 6, true);
+        this.soundManager?.playMagicCrackle();
+      }
+    }
+    this.prevMagicHitIds = [...hitIds];
 
     if (player.magicPhase === 'startup') {
-      // 1. Círculo de invocación rúnica en el suelo y carga celestial
-      const progress = player.magicTicks / CONFIG.player.magic.poseidonsRage.startupTicks;
-      const r = radius * progress;
-      this.magicGraphics.lineStyle(1.5, 0x38bdf8, 0.7);
-      this.magicGraphics.strokeCircle(cx, cy, r);
-      this.magicGraphics.fillStyle(0x0284c7, 0.15 * progress);
-      this.magicGraphics.fillCircle(cx, cy, r);
-    } else if (player.magicPhase === 'active') {
-      // 2. Tormenta eléctrica activa (Poseidon's Rage): disco de energía + relámpagos
-      const pulse = 0.85 + 0.15 * Math.sin(frame * 0.4);
-      this.magicGraphics.fillStyle(0x0284c7, 0.16 * pulse);
-      this.magicGraphics.fillCircle(cx, cy, radius);
+      const progress = player.magicTicks / cfg.startupTicks;
+      const charge = 0.25 + 0.75 * progress;
 
-      this.magicGraphics.lineStyle(2, 0x38bdf8, 0.8 * pulse);
-      this.magicGraphics.strokeCircle(cx, cy, radius);
-
-      // Relámpagos ramificados procedurales celestes y blancos
-      const boltCount = 4;
-      for (let b = 0; b < boltCount; b += 1) {
-        const seedAngle = frame * 0.35 + (b * Math.PI * 2) / boltCount;
-        const targetDist = radius * (0.6 + (0.4 * ((frame + b * 7) % 5)) / 5);
-        const tx = cx + Math.cos(seedAngle) * targetDist;
-        const ty = cy + Math.sin(seedAngle) * targetDist;
-
-        // Trazar relámpago con zigzag
-        this.magicGraphics.lineStyle(1.5, 0xbae6fd, 0.9);
+      // Only a tremor around the blades: no disc and no circle around the body.
+      this.magicGraphics.lineStyle(1, waveCfg.coreColor, 0.35 * charge);
+      for (let i = 0; i < 3; i += 1) {
+        const side = i % 2 === 0 ? -1 : 1;
+        const y = groundY - 28 - i * 4;
         this.magicGraphics.beginPath();
-        this.magicGraphics.moveTo(cx, cy - 6);
-
-        const midX = (cx + tx) / 2 + (((frame * 13 + b * 23) % 17) - 8);
-        const midY = (cy + ty) / 2 + (((frame * 19 + b * 29) % 17) - 8);
-        this.magicGraphics.lineTo(midX, midY);
-        this.magicGraphics.lineTo(tx, ty);
-        this.magicGraphics.strokePath();
-
-        // Núcleo blanco caliente
-        this.magicGraphics.lineStyle(1, 0xffffff, 1.0);
-        this.magicGraphics.beginPath();
-        this.magicGraphics.moveTo(cx, cy - 6);
-        this.magicGraphics.lineTo(midX, midY);
-        this.magicGraphics.lineTo(tx, ty);
+        this.magicGraphics.moveTo(cx + side * 4, y);
+        this.magicGraphics.lineTo(cx + side * (8 + ((frame + i) % 4)), y - 3);
+        this.magicGraphics.lineTo(cx + side * 6, y - 6);
         this.magicGraphics.strokePath();
       }
-    } else if (player.magicPhase === 'recovery') {
-      // 3. Chispas residuales extinguiéndose
-      const rem = 1 - player.magicTicks / CONFIG.player.magic.poseidonsRage.recoveryTicks;
-      this.magicGraphics.lineStyle(1, 0x38bdf8, rem * 0.5);
-      this.magicGraphics.strokeCircle(cx, cy, radius * rem);
+      this.magicGroundGraphics.fillStyle(waveCfg.color, 0.1 * charge);
+      this.magicGroundGraphics.fillEllipse(cx, groundY, 18 + progress * 10, 4);
+      return;
+    }
+
+    if (player.magicPhase === 'active') {
+      const tick = player.magicTicks;
+      const pulseTick = tick % 10;
+      const boltAlpha = pulseTick < 4 ? 1 - pulseTick * 0.12 : 0.62;
+      const glow = 0.55 + 0.45 * boltAlpha;
+
+      // Localized blue-white light around Kratos, not a full-screen flash.
+      this.magicGraphics.fillStyle(0x0284c7, 0.1 * glow);
+      this.magicGraphics.fillCircle(cx, groundY - 20, waveCfg.glowRadiusPx);
+      this.magicGraphics.fillStyle(0x0ea5e9, 0.12 * glow);
+      this.magicGraphics.fillCircle(cx, groundY - 20, waveCfg.glowRadiusPx * 0.65);
+      this.magicGraphics.fillStyle(waveCfg.coreColor, 0.14 * glow);
+      this.magicGraphics.fillCircle(cx, groundY - 20, waveCfg.glowRadiusPx * 0.35);
+
+      // A jagged bolt that starts above Kratos and lands at his feet.
+      const startY = groundY - waveCfg.boltStartAbovePx;
+      const endY = groundY - 2;
+      const points: Array<{ x: number; y: number }> = [{ x: cx, y: startY }];
+      for (let s = 1; s < 5; s += 1) {
+        const t = s / 5;
+        const jitter = Math.sin(frame * 0.33 + s * 2.1) * 5 * (1 - t * 0.5);
+        points.push({ x: cx + jitter, y: startY + (endY - startY) * t });
+      }
+      points.push({ x: cx, y: endY });
+
+      const gfx = this.magicGraphics!;
+      const strokeBolt = (width: number, color: number, alpha: number): void => {
+        gfx.lineStyle(width, color, alpha);
+        gfx.beginPath();
+        gfx.moveTo(points[0].x, points[0].y);
+        for (let i = 1; i < points.length; i += 1) {
+          gfx.lineTo(points[i].x, points[i].y);
+        }
+        gfx.strokePath();
+      };
+      strokeBolt(6, waveCfg.color, 0.18 * boltAlpha);
+      strokeBolt(3, 0x7dd3fc, 0.55 * boltAlpha);
+      strokeBolt(1, waveCfg.coreColor, 0.95 * boltAlpha);
+
+      for (const side of [-1, 1]) {
+        const from = side === -1 ? points[1] : points[2];
+        this.magicGraphics.lineStyle(1, waveCfg.coreColor, 0.5 * boltAlpha);
+        this.magicGraphics.beginPath();
+        this.magicGraphics.moveTo(from.x, from.y);
+        this.magicGraphics.lineTo(from.x + side * 10, from.y + 8);
+        this.magicGraphics.lineTo(from.x + side * 16, from.y + 12);
+        this.magicGraphics.strokePath();
+      }
+
+      // The 3D circle becomes a flattened wave running along the deck.
+      const waveRadius = ((tick + 1) * cfg.radius) / cfg.activeTicks;
+      for (let trail = 0; trail < waveCfg.waveTrails; trail += 1) {
+        const r = waveRadius - trail * 7;
+        if (r <= 1) continue;
+        const alpha =
+          (1 - trail / waveCfg.waveTrails) *
+          0.55 *
+          (1 - (tick / cfg.activeTicks) * 0.35);
+        this.magicGroundGraphics.lineStyle(
+          trail === 0 ? 2 : 1,
+          trail === 0 ? waveCfg.coreColor : waveCfg.color,
+          alpha,
+        );
+        this.magicGroundGraphics.strokeEllipse(
+          cx,
+          groundY,
+          r * 2,
+          waveCfg.waveHeightPx + r * 0.08,
+        );
+      }
+
+      this.magicGroundGraphics.fillStyle(waveCfg.coreColor, 0.7);
+      for (const side of [-1, 1]) {
+        const sx = cx + side * waveRadius;
+        this.magicGroundGraphics.fillRect(sx - 1, groundY - 3, 2, 2);
+        this.magicGroundGraphics.lineStyle(1, waveCfg.color, 0.5);
+        this.magicGroundGraphics.beginPath();
+        this.magicGroundGraphics.moveTo(sx, groundY - 1);
+        this.magicGroundGraphics.lineTo(sx + side * 3, groundY - 5);
+        this.magicGroundGraphics.strokePath();
+      }
+      return;
+    }
+
+    // Recovery: only low residual sparks, never a ring around the torso.
+    const rem = 1 - player.magicTicks / cfg.recoveryTicks;
+    this.magicGroundGraphics.lineStyle(1, waveCfg.color, rem * 0.3);
+    this.magicGroundGraphics.strokeEllipse(cx, groundY, cfg.radius * 0.6 * rem, 6);
+    this.magicGraphics.lineStyle(1, waveCfg.coreColor, rem * 0.5);
+    for (let i = 0; i < 3; i += 1) {
+      const side = i % 2 === 0 ? -1 : 1;
+      const sx = cx + side * (4 + i * 3);
+      this.magicGraphics.beginPath();
+      this.magicGraphics.moveTo(sx, groundY - 2);
+      this.magicGraphics.lineTo(sx + side * 2, groundY - 5 - ((frame + i) % 4));
+      this.magicGraphics.strokePath();
     }
   }
 

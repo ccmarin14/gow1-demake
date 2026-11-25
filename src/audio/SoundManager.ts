@@ -26,6 +26,7 @@ export class SoundManager {
     strikeWhoosh: 0,
     parry: 0,
     magicThunder: 0,
+    magicCrackle: 0,
     hydraRoar: 0,
     hydraSlam: 0,
     orbAbsorb: 0,
@@ -351,22 +352,68 @@ export class SoundManager {
 
     try {
       const now = this.ctx.currentTime;
-      const osc = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
 
-      osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(65, now);
-      osc.frequency.linearRampToValueAtTime(140, now + 0.2);
-      osc.frequency.exponentialRampToValueAtTime(40, now + 0.4);
+      // Low rumble under the bolt impact.
+      const rumble = this.ctx.createOscillator();
+      const rumbleGain = this.ctx.createGain();
+      rumble.type = 'sine';
+      rumble.frequency.setValueAtTime(85, now);
+      rumble.frequency.exponentialRampToValueAtTime(32, now + 0.45);
+      rumbleGain.gain.setValueAtTime(0.5, now);
+      rumbleGain.gain.exponentialRampToValueAtTime(0.001, now + 0.48);
+      rumble.connect(rumbleGain);
+      rumbleGain.connect(this.sfxGain);
+      rumble.start(now);
+      rumble.stop(now + 0.48);
 
-      gain.gain.setValueAtTime(0.35, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.42);
-
-      osc.connect(gain);
-      gain.connect(this.sfxGain);
-      osc.start(now);
-      osc.stop(now + 0.42);
+      // Filtered noise gives the strike a crack instead of a clean tone.
+      this.playMagicNoise(now, 0.3, 1200, 'lowpass', 0.24);
+      this.playMagicNoise(now, 0.09, 2600, 'highpass', 0.18);
     } catch {}
+  }
+
+  /** Short crackle when the ground wave reaches an enemy. */
+  playMagicCrackle(): void {
+    this.recordSound('magicCrackle');
+    if (!this.ctx || !this.sfxGain || this.muted) return;
+
+    try {
+      this.playMagicNoise(this.ctx.currentTime, 0.14, 1800, 'highpass', 0.2);
+    } catch {}
+  }
+
+  private playMagicNoise(
+    start: number,
+    duration: number,
+    frequency: number,
+    filterType: 'lowpass' | 'highpass',
+    volume: number,
+  ): void {
+    const ctx = this.ctx;
+    const sfxGain = this.sfxGain;
+    if (!ctx || !sfxGain) return;
+
+    const frames = Math.max(1, Math.floor(ctx.sampleRate * duration));
+    const buffer = ctx.createBuffer(1, frames, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < frames; i += 1) {
+      const decay = 1 - i / frames;
+      data[i] = (Math.random() * 2 - 1) * decay;
+    }
+
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    const filter = ctx.createBiquadFilter();
+    filter.type = filterType;
+    filter.frequency.setValueAtTime(frequency, start);
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(volume, start);
+    gain.gain.exponentialRampToValueAtTime(0.001, start + duration);
+    source.connect(filter);
+    filter.connect(gain);
+    gain.connect(sfxGain);
+    source.start(start);
+    source.stop(start + duration);
   }
 
   playHydraRoar(): void {

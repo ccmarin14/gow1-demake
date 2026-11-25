@@ -233,7 +233,7 @@ Puntos que las fuentes no aclaran o en los que se contradicen. El usuario los re
 | P-03 | Si hay más de tres puntos de guardado en el Egeo y dónde. | Ninguna fuente da el total. |
 | P-04 | Qué ataques tiene la cabeza principal además de la mordida avisada con un cabeceo. | Las fuentes solo describen la mordida. |
 | P-05 | Qué hay dentro del camarote del capitán y qué dice Atenea al cerrar el nivel (tramo 11). | El video muestra que se abre con R2 y que aparece Atenea, pero no se leyó el diálogo [20]. |
-| P-08 | Cómo se ve la *Ira de Poseidón* del original (D-50). | Las fuentes la describen como una descarga de energía alrededor de Kratos que daña en un radio; el video [20] no la muestra usada. |
+| P-08 | ~~Cómo se ve la *Ira de Poseidón* del original (D-50).~~ **Resuelto:** rayos pálidos que caen del cielo sobre Kratos, destello local y una onda circular en el suelo que se expande; en 2D se traduce como onda aplanada hacia delante y detrás [20] [22]. | El video [20] sí la muestra en el tutorial (OCR de «ELIGE IRA DE POSEIDON» a 18:34-18:36, descargas a 18:40-18:43 y 18:59); la wiki [22] describe la descarga circular y distingue la pose de GoW 1 de la de GoW 2. |
 | P-09 | Nombre y orden de las pestañas del menú de pausa del original (§11). | Las guías solo dicen que Start abre las mejoras y que R1 o la cruceta cambian de pantalla [21]. |
 | P-06 | Qué golpes tiene Kratos colgado de una cuerda horizontal y trepando una red. | El usuario lo deja para después (D-44). |
 | P-07 | En *Hollow Knight*, si mirar arriba o abajo exige estar quieto (§9). | La wiki no lo dice. |
@@ -261,6 +261,7 @@ Puntos que las fuentes no aclaran o en los que se contradicen. El usuario los re
 19. *gow-ash*, The Aegean Sea (reja que se abre machacando R2): http://gow-ash.blogspot.com/2010/03/aegean-sea.html
 20. Video de la partida del Egeo (colección remasterizada, en español), visto por el usuario y el agente; cuadros extraídos en `docs/tmp/egeo-video/`: https://youtu.be/f5Gq_zox7bI (minuto 5:10: vigas después de la Hidra; 6:20: el prisionero)
 21. GameFAQs, guías del original (Start abre la pantalla de mejoras; se mejora manteniendo X con orbes suficientes): https://gamefaqs.gamespot.com/ps2/919864-god-of-war/faqs/37813 · https://gamefaqs.gamespot.com/ps2/919864-god-of-war/answers/245404-collecting-orbs-and-how-to-use-weapons
+22. *God of War Wiki*, Poseidon's Rage (vía buscador): https://godofwar.fandom.com/wiki/Poseidon%27s_Rage
 
 ## 9. Cámara (D-46)
 
@@ -329,7 +330,7 @@ Diseño del usuario; en el original las vigas están justo después de la primer
 - **Guardia:** Kratos cruza las dos Espadas del Caos al frente. Hoy la guardia muestra `idle-00` quieto con una sola cuchilla (D-29).
 - **HUD (BL-29):** una **Espada del Caos dibujada con cuidado** con las barras de **vida** y **magia** sobre ella, el contador de **orbes** y los **puntos**: la espada es lo que tiene que ser bonito, no las barras. Es la composición del original [20]. Se dibuja un cuadro por vez y el usuario lo aprueba a ojo (`AGENTS.md` §3).
 - **Contador de golpes, «Impactos» (BL-30):** es una parte central del juego. Sube por golpe conectado, se reinicia tras unos 2 s sin golpear o al recibir daño, y da el multiplicador de orbes de D-49 (×1, ×2, ×3, ×4 desde 0, 10, 25 y 50 golpes). Debe leerse claro en medio del combate: número grande sobre `IMPACTOS`, ambos centrados entre sí en el bloque inferior derecho; al subir puede aparecer `BRUTAL!` y el multiplicador activo.
-- ***Ira de Poseidón*:** la heredada se rehace para parecerse a la del original: una descarga de energía alrededor de Kratos que daña todo en su radio (su aspecto exacto: P-08). En el slice está activa desde el inicio.
+- ***Ira de Poseidón* (BL-32):** la heredada se rehace para parecerse a la del original (P-08 resuelto [20] [22]): un rayo claro cae del cielo sobre Kratos desde más arriba de él, lo ilumina alrededor sin blanquear la pantalla y una onda se expande lentamente por el suelo. Como la vista es lateral, el círculo 3D se traduce en un frente aplanado que corre hacia delante y detrás de Kratos; cada enemigo recibe 8 de daño cuando el frente lo alcanza, una sola vez. En el slice está activa desde el inicio.
 - **Menú principal (BL-31, D-59):** debe **hacer honor al juego** aunque falten cosas. Lleva Nuevo juego, Continuar, Opciones, Extras y Créditos; lo que aún no tiene contenido se muestra **deshabilitado** (atenuado, sin acción y con una marca de «próximamente») y se activa cuando se implementa. Estilo propio de pixel art: marco, tipografía, fondo animado con la tormenta o las espadas, sonido de selección. El diseño se prueba primero sin lógica, y el usuario lo aprueba a ojo antes de conectar nada.
 - **Menú de pausa (por pestañas, como el original [21]):** armas y mejora, ataques disponibles y opciones; en el slice, una sola mejora real de las Espadas del Caos con orbes rojos; lo no implementado, deshabilitado. Nombres y orden de las pestañas: P-09.
 

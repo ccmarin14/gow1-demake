@@ -24,6 +24,20 @@ describe('strike audio profiles', () => {
     assert.equal(stats.totalPlayed, 9);
   });
 
+  it('records layered Poseidon thunder and the crackle of the ground wave', () => {
+    const sound = new SoundManager();
+
+    sound.playMagicThunder();
+    sound.playMagicCrackle();
+    sound.playMagicCrackle();
+
+    const stats = sound.getStats();
+    assert.equal(stats.playCounts.magicThunder, 1);
+    assert.equal(stats.playCounts.magicCrackle, 2);
+    assert.equal(stats.lastPlayed, 'magicCrackle');
+    assert.equal(stats.totalPlayed, 3);
+  });
+
   it('records grab execution audio generators (stab, bone break, throw release, slam, whoosh, clamp)', () => {
     const sound = new SoundManager();
 

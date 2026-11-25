@@ -179,6 +179,8 @@ export interface EntityState {
   maxMp: number;
   magicPhase: 'none' | 'startup' | 'active' | 'recovery';
   magicTicks: number;
+  /** Enemy IDs already reached by the expanding ground wave of the current cast. */
+  magicHitIds?: string[];
   grabPhase: 'none' | 'whiff' | 'hold' | 'pummel' | 'floorhold' | 'stab' | 'slam' | 'throw' | 'break' | 'recovery' | 'finisher_qte' | 'finisher_slam';
   grabTicks: number;
   grabTargetId: string | null;

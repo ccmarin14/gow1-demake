@@ -273,7 +273,6 @@ magic: {
     activeTicks: 40,
     recoveryTicks: 12,
     radius: 90,
-    hitIntervalTicks: 8,
     damagePerHit: 8,
     stunTicksPerHit: 24,
   },
@@ -713,6 +712,18 @@ export const CONFIG = {
       radius: 12,
       color: 0xfef08a,
       depth: 36,
+    },
+    /** Poseidon's Rage: sky bolt on Kratos plus a flattened ground wave (BL-32). */
+    magicWave: {
+      color: 0x38bdf8,
+      coreColor: 0xe0f2fe,
+      groundDepth: -1,
+      boltDepth: 15,
+      /** The bolt starts above Kratos, not at the top edge of the screen. */
+      boltStartAbovePx: 80,
+      glowRadiusPx: 34,
+      waveHeightPx: 8,
+      waveTrails: 3,
     },
   },
   audio: {

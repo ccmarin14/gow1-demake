@@ -25,6 +25,7 @@ export function startMagic(player: EntityState): boolean {
   player.mp -= cfg.cost;
   player.magicPhase = 'startup';
   player.magicTicks = 0;
+  player.magicHitIds = [];
   player.vx = 0;
   player.vy = 0;
 
@@ -45,7 +46,8 @@ export function startMagic(player: EntityState): boolean {
 /**
  * Simulación y ejecución de la magia 'Ira de Poseidón' (Poseidon's Rage):
  * - Startup (8 ticks): hincado de rodillas y anclaje de espadas.
- * - Active (40 ticks): tormenta eléctrica celestial multi-hit cada 8 ticks en radio de 90 px.
+ * - Active (40 ticks): onda eléctrica en el suelo que se expande hasta 90 px y
+ *   golpea a cada enemigo una vez cuando el frente de onda lo alcanza.
  * - Recovery (12 ticks): retirada de espadas y retorno al control normal.
  */
 export function stepMagic(
@@ -86,32 +88,38 @@ export function stepMagic(
     return result;
   }
 
-  // 3. Fase Activa (40 ticks, multi-hit cada 8 ticks en ticks 0, 8, 16, 24, 32)
+  // 3. Fase Activa: el círculo 3D es una onda en el suelo. En 2D su frente
+  // avanza desde los pies de Kratos hacia ambos lados y golpea a cada enemigo
+  // una sola vez, cuando la onda lo alcanza.
   if (player.magicPhase === 'active') {
-    const isHitTick = player.magicTicks % cfg.hitIntervalTicks === 0;
-    if (isHitTick) {
-      const radiusSq = cfg.radius * cfg.radius;
-      for (let i = 0; i < targets.length; i += 1) {
-        const target = targets[i];
-        if (target.isDead || target.aiState === 'death' || target.aiState === 'hydra_defeat') {
-          continue;
-        }
+    const alreadyHit = player.magicHitIds ?? (player.magicHitIds = []);
+    const waveRadius = ((player.magicTicks + 1) * cfg.radius) / cfg.activeTicks;
+    const waveRadiusSq = waveRadius * waveRadius;
 
-        const targetEffectiveX = target.kind === 'hydra'
-          ? Math.min(target.x, Math.max(target.x - 100, player.x))
-          : target.x;
-        const dx = targetEffectiveX - player.x;
-        const dy = (target.y - 18) - (player.y - 20);
-        const distSq = dx * dx + dy * dy;
+    for (let i = 0; i < targets.length; i += 1) {
+      const target = targets[i];
+      if (target.isDead || target.aiState === 'death' || target.aiState === 'hydra_defeat') {
+        continue;
+      }
+      if (alreadyHit.includes(target.id)) {
+        continue;
+      }
 
-        if (distSq <= radiusSq) {
-          result.hitTargets.push(target.id);
-          result.totalDamage += cfg.damagePerHit;
-          if (damageEnemy(target, cfg.damagePerHit, cfg.stunTicksPerHit)) {
-            result.kills.push(target.id);
-            if (onEnemyKilled) {
-              onEnemyKilled(target);
-            }
+      const targetEffectiveX = target.kind === 'hydra'
+        ? Math.min(target.x, Math.max(target.x - 100, player.x))
+        : target.x;
+      const dx = targetEffectiveX - player.x;
+      const dy = (target.y - 18) - (player.y - 20);
+      const distSq = dx * dx + dy * dy;
+
+      if (distSq <= waveRadiusSq) {
+        alreadyHit.push(target.id);
+        result.hitTargets.push(target.id);
+        result.totalDamage += cfg.damagePerHit;
+        if (damageEnemy(target, cfg.damagePerHit, cfg.stunTicksPerHit)) {
+          result.kills.push(target.id);
+          if (onEnemyKilled) {
+            onEnemyKilled(target);
           }
         }
       }
