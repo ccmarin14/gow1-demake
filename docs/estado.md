@@ -2,7 +2,7 @@
 
 Documento único del estado medido de `gow-8b`: qué funciona, qué falta revisar o decidir y qué sigue. Se actualiza en el mismo commit de cada paso. La cronología completa y lo ya resuelto viven en [`docs/archivo/`](archivo/README.md); el historial de git conserva todo lo demás.
 
-**Sincronizado el 2026-11-25 · 381 pruebas · rama `feat/bl29-magic-selector` (BL-29: barras e icono aprobados, variante fiel por defecto y selector implementado; BL-46 y el audio en capas siguen en `decepcion`).**
+**Sincronizado el 2026-11-25 · 381 pruebas · rama `master` (BL-29: barras e icono aprobados, variante fiel por defecto y selector implementado; BL-46 y el audio en capas siguen en `decepcion`).**
 
 ## 1. Qué funciona hoy
 
@@ -192,3 +192,4 @@ La cronología completa (pasos 0 a 146) está en [`docs/archivo/registro-pasos.m
 - **2026-11-25 · BL-29 selector de magias (decisión):** el usuario decidió que sí se implemente, con una sola magia (*Ira de Poseidón*). Las direcciones del selector se verán habilitadas pero no cambiarán la magia; el juego sigue en *Ira de Poseidón*. Es una decisión documental: no se implementa en este paso.
 - **2026-11-25 · BL-29 icono de magia (v10, aprobado):** tres rayos estilo Flash doblados sobre el medallón, con la cola ancha que se afina hasta la punta y contorno oscuro de 1,1 px; girados 120° para cerrar el anillo, sin círculo central. Se dibuja en `magic_icon()` de `scripts/build_hud_sword_svg.py`; se regeneraron `art/hud/chaos-blade.svg` y los dos PNG del HUD. Comparación `docs/tmp/bl29-hud/magic-icon-v10.png`. Aprobado por el usuario el 2026-11-25. 377 pruebas, `build` y `art:check` en verde.
 - **2026-11-25 · BL-29 selector de magias (implementado):** `src/ui/magicSelector.ts` es un módulo puro que intenta recorrer los huecos con `move-left`/`move-right`; con el único hueco (*Ira de Poseidón*) el índice vuelve a 0 y la magia no cambia. `HudLayer.update` recibe las acciones del frame y `ShellScene` se las pasa; no se añaden ni animan flechas ni otro feedback visual. Cuatro pruebas nuevas (`tests/magic-selector.test.ts`): rojo antes del módulo, verde después. 381 pruebas, `build`, `art:check` y `scripts/verify/browser-check.sh` (`errors 0 failed 0`) en verde. Se cierra el brief `docs/temporal/bl29-espada-pendientes.md`.
+- **2026-11-25 · BL-29 integrado en `master`:** el usuario pidió pasar el cambio; la rama `feat/bl29-magic-selector` se mergea en `master` como fast-forward. Sin cambios de código nuevos.
