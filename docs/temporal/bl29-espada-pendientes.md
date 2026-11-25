@@ -11,3 +11,5 @@ El usuario aprobó la v18 como camino correcto y pasa ajustes **uno a uno** (202
 | 5 | Las barras de vida y magia: sin líneas internas, esbeltas (no altas) y con bordes redondeados/biselados como las reales. | Hecho en v26 (3 px de alto, cápsula redondeada, bisel en acero y 2 px de acero libre entre barras; v25 descartada por alta y cuadrada), Aprobado (v26) |
 
 Después de la espada: el selector de magias con icono y flechas (decisión pendiente del usuario).
+
+Variante por defecto: fiel (decidido el 2026-11-25).

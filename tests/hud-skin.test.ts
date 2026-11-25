@@ -7,20 +7,20 @@ import { HUD_COUNTER_BOX, HUD_GREEN_TROUGH, HUD_MANA_TROUGH, HUD_RAGE_TROUGH } f
 
 describe('resolveHudSkin', () => {
   it('uses the default variant without a query string', () => {
-    assert.equal(resolveHudSkin(''), 'pixel');
-    assert.equal(resolveHudSkin(undefined), 'pixel');
-    assert.equal(resolveHudSkin(null), 'pixel');
+    assert.equal(resolveHudSkin(''), 'faithful');
+    assert.equal(resolveHudSkin(undefined), 'faithful');
+    assert.equal(resolveHudSkin(null), 'faithful');
   });
 
   it('falls back to the default for unknown values', () => {
-    assert.equal(resolveHudSkin('?hud=bogus'), 'pixel');
-    assert.equal(resolveHudSkin('?hud=pixel2'), 'pixel');
+    assert.equal(resolveHudSkin('?hud=bogus'), 'faithful');
+    assert.equal(resolveHudSkin('?hud=pixel2'), 'faithful');
   });
 
   it('reads the requested variant from the hud parameter', () => {
     assert.equal(resolveHudSkin('?hud=pixel'), 'pixel');
     assert.equal(resolveHudSkin('?hud=faithful'), 'faithful');
-    assert.equal(resolveHudSkin('?hud=render3d'), 'pixel');
+    assert.equal(resolveHudSkin('?hud=render3d'), 'faithful');
   });
 });
 

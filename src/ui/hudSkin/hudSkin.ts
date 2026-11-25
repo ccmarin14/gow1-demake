@@ -9,7 +9,7 @@ export type HudSkinId = 'pixel' | 'faithful';
 
 export const HUD_SKIN_IDS: readonly HudSkinId[] = ['pixel', 'faithful'];
 
-export const DEFAULT_HUD_SKIN_ID: HudSkinId = 'pixel';
+export const DEFAULT_HUD_SKIN_ID: HudSkinId = 'faithful';
 
 /** Lee `?hud=<id>` de la URL. Un valor desconocido o ausente usa la variante por defecto. */
 export function resolveHudSkin(search: string | null | undefined): HudSkinId {
