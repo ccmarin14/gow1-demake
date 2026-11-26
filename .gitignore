@@ -1,0 +1,13 @@
+node_modules/
+dist/
+*.tsbuildinfo
+.DS_Store
+.atl/
+odd/
+scripts/verification/output/
+
+art-src/kratos-2d/frames/
+art-src/kratos-2d/out/
+scratch/
+__pycache__/
+docs/tmp/
