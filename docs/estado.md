@@ -7,7 +7,8 @@ Documento único del estado medido de `gow-8b`: qué funciona, qué falta revisa
 ## 1. Qué funciona hoy
 
 - **Verificación:** `pnpm test` (Node nativo, sin dependencias), `npx tsc --noEmit -p .`, `pnpm build`, `pnpm art:check` y `scripts/verify/browser-check.sh` (arranca Vite y Chrome sin cabeza, graba la partida y debe decir `errors 0 failed 0`). `pnpm audio:check` no existe en esta rama: el audio se cubre con `tests/audio.test.ts`. `scripts/verify/perf.mjs` mide cuadros con la CPU frenada (modos `combo`, `idle`, `grab`): 60 ticks/s con la CPU 4 veces más lenta, también en la secuencia de agarre.
-- **Simulación determinista a 60 Hz (`src/sim/`):** movimiento con inercia, salto y doble salto, plataformas de un sentido, rodada con i-frames, guardia y desvío (*parry*), magia (*Ira de Poseidón*: onda en el suelo que golpea a cada enemigo una vez al alcanzarlo), orbes, cofres, puntos de control, oleadas, y la IA del legionario, el arquero y la hidra.
+- **Controles táctiles:** incluyen magia y conservan abajo para bajar de plataformas; los controles de movimiento y combate ocupan dos grupos compactos abajo y los botones de prueba quedan arriba, separados.
+- **Simulación determinista a 60 Hz (`src/sim/`):** movimiento con inercia, salto y doble salto, plataformas de un sentido, rodada con i-frames, guardia y desvío (*parry*), magia (*Ira de Poseidón*: onda en el suelo con impactos repetidos), orbes, cofres, puntos de control, oleadas, y la IA del legionario, el arquero y la hidra.
 - **Combate de □ y △ (aprobado por el usuario):** combo de 6 □ con *Plume* (□ □ △) y *Spirit of Hercules* (5 □ + △), △ en tres niveles por tiempo (tajo doble, lanzador, *Ascension*), golpes aéreos y giro entre golpes. Las trayectorias de las hojas salen de datos medidos del video (`src/sim/strike.ts`).
 - **Combate de ○ (agarre, `src/sim/grab.ts`):** embestida y presa (con forcejeo si nadie elige); ○ ○ ○ = tres puñetazos, azote al suelo y cuatro puñaladas **automáticas**, la última mata; ○ □ = *Toss* con ritmo de látigo (tirón atrás, chasquido, dos cadenas; el soldado sale unos 145 px y derriba a los que encuentre; ○ △ = *Rip*, lo parte en dos; ○ en el aire tras lanzar = *Orion's Harpoon* con rebote; *Whiff* si no hay a quién agarrar. Todos los golpes comparten una escala de impacto (hitstop y sacudida en `CONFIG.player.grab`). El remate contextual con ○ existe pero es inalcanzable con el legionario común (decisión C-O1).
 - **Presentación (`src/scene/`, `src/entities/`):** `PlayerView` y `EnemyView` eligen cuadro; `grabPose.ts` decide dónde se dibuja cada cuerpo en el agarre a partir de anclajes del esqueleto 3D (la mano de Kratos en el cuello del soldado, la punta de la hoja sobre el cuerpo tendido); `RipHalves.ts` dibuja las dos mitades del desgarro; `WeaponLayer` dibuja espadas, cadenas y estelas; `VfxLayer` las partículas; `HudLayer` el HUD y `GameFlowOverlay` el flujo.
@@ -155,6 +156,12 @@ Lista viva; el estado lo pone el usuario después de jugar. `—` = sin revisar;
 | Defensa | guardia, desvío, rodada, magia (*Ira de Poseidón*) | — |
 
 ## 4. Últimos pasos
+
+- **2026-11-26 · control de arquero:** el botón para añadir arqueros queda deshabilitado hasta que su arte esté listo; reiniciar y añadir legionarios siguen disponibles.
+
+- **2026-11-26 · controles táctiles:** se añadió el botón de magia, se redujeron los controles y se separaron de los botones de prueba. La flecha abajo se conserva para bajar de plataformas. `tests/touch-controls.test.ts` verifica el botón de magia y las acciones existentes.
+
+- **2026-11-26 · nombres:** registrados los nombres acordados para las posibles adaptaciones de la saga en `docs/decisiones.md`.
 
 La cronología completa (pasos 0 a 146) está en [`docs/archivo/registro-pasos.md`](archivo/registro-pasos.md). Aquí, el trabajo de ○ y del sonido de los últimos días (2026-11-17), en una línea cada uno:
 
