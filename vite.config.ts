@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  base: './',
+  base: '/gow1-demake/',
   build: {
     rollupOptions: {
       output: {
