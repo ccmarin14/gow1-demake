@@ -43,6 +43,7 @@ export function startMagic(player: EntityState): boolean {
   player.magicPhase = 'startup';
   player.magicTicks = 0;
   player.magicHitIds = [];
+  player.magicNextHitTick = {};
   player.vx = 0;
   player.vy = 0;
 
@@ -62,10 +63,13 @@ export function startMagic(player: EntityState): boolean {
 
 /**
  * Simulación y ejecución de la magia 'Ira de Poseidón' (Poseidon's Rage):
- * - Startup (8 ticks): hincado de rodillas y anclaje de espadas.
- * - Active (40 ticks): onda eléctrica en el suelo que se expande hasta 90 px y
- *   golpea a cada enemigo una vez cuando el frente de onda lo alcanza.
- * - Recovery (12 ticks): retirada de espadas y retorno al control normal.
+ * - Startup (11 ticks): hincado de rodillas y anclaje de espadas.
+ * - Active (56 ticks): onda eléctrica en el suelo que se expande hasta 90 px.
+ *   Cada enemigo recibe el primer impacto cuando el frente lo alcanza y, si
+ *   sigue dentro de la elipse, otro cada `hitIntervalTicks` (BL-51): el que
+ *   está en los pies de Kratos recibe los 14 del hechizo, el que está lejos
+ *   recibe menos porque la onda llega tarde.
+ * - Recovery (17 ticks): retirada de espadas y retorno al control normal.
  */
 export function stepMagic(
   player: EntityState,
@@ -106,10 +110,12 @@ export function stepMagic(
   }
 
   // 3. Fase Activa: el círculo 3D es una onda en el suelo. En 2D su frente
-  // avanza desde los pies de Kratos hacia ambos lados y golpea a cada enemigo
-  // una sola vez, cuando la onda lo alcanza.
+  // avanza desde los pies de Kratos hacia ambos lados. Cada enemigo recibe un
+  // impacto cuando el frente lo alcanza y otro cada `hitIntervalTicks` mientras
+  // siga dentro de la elipse, como los impactos repetidos del original.
   if (player.magicPhase === 'active') {
-    const alreadyHit = player.magicHitIds ?? (player.magicHitIds = []);
+    const reached = player.magicHitIds ?? (player.magicHitIds = []);
+    const nextHitTick = player.magicNextHitTick ?? (player.magicNextHitTick = {});
     const waveRadius = magicWaveRadiusAtTick(player.magicTicks);
     const waveHalfHeight = magicWaveHalfHeightPx(waveRadius);
 
@@ -118,7 +124,10 @@ export function stepMagic(
       if (target.isDead || target.aiState === 'death' || target.aiState === 'hydra_defeat') {
         continue;
       }
-      if (alreadyHit.includes(target.id)) {
+      // Only the first reach is recorded: the presentation uses it to spawn
+      // one burst and one crackle per enemy instead of one per shock.
+      const readyAtTick = nextHitTick[target.id] ?? 0;
+      if (player.magicTicks < readyAtTick) {
         continue;
       }
 
@@ -133,7 +142,10 @@ export function stepMagic(
         (dx / waveRadius) ** 2 + (dy / waveHalfHeight) ** 2 <= 1;
 
       if (inWave) {
-        alreadyHit.push(target.id);
+        if (!reached.includes(target.id)) {
+          reached.push(target.id);
+        }
+        nextHitTick[target.id] = player.magicTicks + cfg.hitIntervalTicks;
         result.hitTargets.push(target.id);
         result.totalDamage += cfg.damagePerHit;
         if (damageEnemy(target, cfg.damagePerHit, cfg.stunTicksPerHit)) {

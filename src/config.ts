@@ -274,7 +274,14 @@ magic: {
     activeTicks: 56,
     recoveryTicks: 17,
     radius: 90,
-    damagePerHit: 8,
+    /**
+     * 4 is the original's level-1 ratio: 2.5 damage on a ~40 HP soldier is
+     * ~6%, and 6% of our 60 HP legionnaire is 3.6 -> 4 (see
+     * docs/archivo/investigacion-magia-gow1.md).
+     */
+    damagePerHit: 4,
+    /** Ticks between two shocks on the same enemy while it stays inside the wave. */
+    hitIntervalTicks: 4,
     stunTicksPerHit: 24,
   },
 },

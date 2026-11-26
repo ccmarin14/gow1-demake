@@ -21,12 +21,14 @@ function phase(phaseName: EntityState['magicPhase'], ticks: number): EntityState
 }
 
 describe('Poseidon\'s Rage spectacle (BL-32)', () => {
-  it('lasts 40% longer without changing cost, radius or damage', () => {
+  it('lasts 40% longer without changing cost or radius', () => {
     const cfg = CONFIG.player.magic.poseidonsRage;
     assert.equal(cfg.startupTicks + cfg.activeTicks + cfg.recoveryTicks, 84);
     assert.equal(cfg.cost, 35);
     assert.equal(cfg.radius, 90);
-    assert.equal(cfg.damagePerHit, 8);
+    // Level-1 translation: 2.5 damage on a ~40 HP soldier is ~6%; 6% of 60 is 4.
+    assert.equal(cfg.damagePerHit, 4);
+    assert.equal(cfg.hitIntervalTicks, 4);
 
     const player = caster();
     stepMagic(player, true, []);

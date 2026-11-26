@@ -38,19 +38,87 @@ describe('Poseidon\'s Rage ground wave', () => {
     assert.ok(nearTick < farTick, `wave must reach near (${nearTick}) before far (${farTick})`);
   });
 
-  it('hits each enemy once as the wave passes, not on every fixed cadence', () => {
+  it('shocks the same enemy every hitIntervalTicks while it stays inside the wave', () => {
+    const { world, player } = setup();
+    const spell = CONFIG.player.magic.poseidonsRage;
+    const centered = world.spawnEnemy('legionnaire', player.x);
+    const targets = [centered];
+    stepMagic(player, true, targets);
+    for (let i = 0; i < 11; i += 1) stepMagic(player, false, targets);
+
+    const hitTicks: number[] = [];
+    for (let tick = 0; tick < spell.activeTicks; tick += 1) {
+      if (stepMagic(player, false, targets).hitTargets.includes(centered.id)) hitTicks.push(tick);
+    }
+
+    const expectedHits = Math.ceil(spell.activeTicks / spell.hitIntervalTicks);
+    assert.equal(hitTicks.length, expectedHits, 'a centered enemy takes every shock of the wave');
+    for (let i = 1; i < hitTicks.length; i += 1) {
+      assert.equal(
+        hitTicks[i] - hitTicks[i - 1],
+        spell.hitIntervalTicks,
+        'the shocks are evenly spaced',
+      );
+    }
+    assert.equal(centered.hp, centered.maxHp - expectedHits * spell.damagePerHit);
+    assert.ok(centered.hp > 0, 'a level-1 cast leaves the legionnaire alive, as in the original');
+  });
+
+  it('shocks fewer times the farther the enemy stands, because the front arrives later', () => {
     const { player, near, far } = setup();
     const targets = [near, far];
     const counts = new Map<string, number>([[near.id, 0], [far.id, 0]]);
     stepMagic(player, true, targets);
-    for (let i = 0; i < 7; i += 1) stepMagic(player, false, targets);
+    for (let i = 0; i < 11; i += 1) stepMagic(player, false, targets);
     for (let tick = 0; tick < CONFIG.player.magic.poseidonsRage.activeTicks; tick += 1) {
       for (const id of stepMagic(player, false, targets).hitTargets) {
         counts.set(id, (counts.get(id) ?? 0) + 1);
       }
     }
-    assert.equal(counts.get(near.id), 1);
-    assert.equal(counts.get(far.id), 1);
+    // The front reaches 20 px at active tick 12 and 80 px at tick 49, so the
+    // 4-tick cadence fits 11 shocks in the first case and 2 in the second.
+    assert.equal(counts.get(near.id), 11);
+    assert.equal(counts.get(far.id), 2);
+  });
+
+  it('stops shocking an enemy as soon as it dies', () => {
+    const { world, player } = setup();
+    const spell = CONFIG.player.magic.poseidonsRage;
+    const soldier = world.spawnEnemy('legionnaire', player.x);
+    soldier.hp = 10;
+    const targets = [soldier];
+    stepMagic(player, true, targets);
+    for (let i = 0; i < 11; i += 1) stepMagic(player, false, targets);
+
+    let hits = 0;
+    for (let tick = 0; tick < spell.activeTicks; tick += 1) {
+      if (stepMagic(player, false, targets).hitTargets.includes(soldier.id)) hits += 1;
+    }
+    assert.equal(soldier.hp, 0);
+    assert.equal(soldier.aiState, 'death');
+    assert.equal(hits, Math.ceil(10 / spell.damagePerHit), 'no shock lands after the death');
+  });
+
+  it('renews the stun on every shock, so the soldier stays locked for the whole spell', () => {
+    const world = new World();
+    world.loadScenario('movement');
+    const player = world.snapshot().entities.find((e) => e.kind === 'player');
+    assert.ok(player);
+    const soldier = world.spawnEnemy('legionnaire', player.x + 20);
+    const startX = soldier.x;
+
+    world.step(['magic']);
+    let struck = false;
+    for (let tick = 0; tick < 84; tick += 1) {
+      world.step([]);
+      const current = world.snapshot().entities.find((e) => e.id === soldier.id);
+      assert.ok(current);
+      if (current.hp < current.maxHp) struck = true;
+      if (!struck) continue;
+      assert.equal(current.aiState, 'hitstun', `the soldier must stay stunned (tick ${tick})`);
+      assert.equal(current.x, startX, `the soldier must not advance (tick ${tick})`);
+    }
+    assert.ok(struck, 'the wave must reach the soldier during the spell');
   });
 
   it('keeps the damage front inside the drawn ground-wave band', () => {

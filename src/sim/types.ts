@@ -181,6 +181,8 @@ export interface EntityState {
   magicTicks: number;
   /** Enemy IDs already reached by the expanding ground wave of the current cast. */
   magicHitIds?: string[];
+  /** Active tick at which each enemy can be shocked again by the current cast. */
+  magicNextHitTick?: Record<string, number>;
   grabPhase: 'none' | 'whiff' | 'hold' | 'pummel' | 'floorhold' | 'stab' | 'slam' | 'throw' | 'break' | 'recovery' | 'finisher_qte' | 'finisher_slam';
   grabTicks: number;
   grabTargetId: string | null;

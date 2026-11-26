@@ -47,7 +47,7 @@ Referencia de potencia relativa: un golpe básico de Espada del Caos pega del or
 - A los enemigos grandes (Cíclopes, Minotauros) les hace daño pero **no los aturde de forma fiable**. **Medido** (Prima; y la comparación de la comunidad con *Atlas Quake* en GoW II, que sí aturde a los pesados).
 - A nivel 3 el daño total supera la vida de cualquier enemigo común: **los mata dentro del lanzamiento**. **Medido** (GameFAQs).
 
-## 5. Comparación con el juego actual (`e862406`)
+## 5. Comparación con el juego en el momento del estudio (`e862406`)
 
 | | GoW 1 (nivel 1 → 3) | Nuestro juego |
 | --- | --- | --- |
@@ -72,6 +72,20 @@ Lo que falta, en orden de impacto sobre lo que se siente al jugar:
 3. **Aturdimiento único.** Al no renovarse, el soldado golpeado vuelve a su IA enseguida.
 4. **Alcance vertical.** En el original alcanza a los que están en el aire; nuestra elipse es de 15 px de alto.
 5. **Duración y niveles.** 1,4 s sin mejoras posibles.
+
+### Estado tras BL-51 (2026-11-26)
+
+Se implementó el punto medio: **impactos repetidos cada 4 ticks con 4 de daño**, sin cambiar la duración ni la geometría de la onda.
+
+| | GoW 1 nivel 1 | Tras BL-51 |
+| --- | --- | --- |
+| Impactos por enemigo | 13 | **14** en los pies, 11 a 20 px, 2 a 80 px |
+| Daño total por enemigo | 32 | **56 / 44 / 8** |
+| Daño por maná | 1:1 | **1,6:1** en los pies (56 por 35 PM) |
+| Aturdimiento | renovado en cada impacto | **renovado en cada impacto** ✓ |
+| Legionario (60 de vida) | — | queda con **4**; el arquero (40) muere |
+
+Lo que sigue faltando, ya como historias aparte: niveles con orbes (1.650 / 4.500), *Wrath of Poseidon* pulsando ○, alcance a los enemigos en el aire, versión aérea y la unificación de la escala de vida y dificultades (BL-50).
 
 ## 6. Lo que hay que decidir antes de tocar código
 
