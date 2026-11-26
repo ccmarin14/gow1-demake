@@ -83,6 +83,34 @@ La pregunta de diseño es **para qué sirve la magia en nuestro juego**, porque 
 
 Sin decidir (a), (b) o (c), cualquier número que ponga es una decisión de diseño tomada por mí y no por vos.
 
+## 6. Escala de vida, maná y dificultades (pendiente, no es parte de este cambio)
+
+El original usa **una sola escala** para todo: un golpe básico de □ pega del orden de 2, un soldado tiene decenas de vida, y la magia pega 32 / 83 / 154. Nuestro juego rompió esa escala: el □ pega 10 y el legionario tiene 60, así que muere en 6 golpes, mientras que en el original hacen falta del orden de 20 a 40. Por eso la magia parece débil: no está mal calibrada ella, está calibrado en otra unidad todo lo demás. Mientras eso no se unifique, la *Ira de Poseidón* solo se puede **traducir por proporción** (6 % de la vida de un soldado por impacto), no copiar.
+
+| | GoW 1 | Nuestro juego |
+| --- | --- | --- |
+| Golpe básico de □ | ~2 | 10 |
+| Vida de un legionario | ~40–80 (**sin cifra publicada**; se deduce del daño de la magia) | 60 |
+| Golpes de □ para matarlo | ~20–40 | 6 |
+| Vida de Kratos | 100 → **175** (18 Ojos de Gorgona, +25 cada 6) | 100 → 120 |
+| Maná | 100 → **200** (18 Plumas de Fénix, +25 cada 6, más la mejora de la puerta de las Musas) | 100 → 120 |
+| Daño de la magia Nv1 / Nv3 | 32 / 154 | 8 |
+
+**Dificultades del original** (guía Prima), con dos multiplicadores: daño que hacés y daño que recibís. La columna de "recovery" (frecuencia de ataque enemiga) existe pero no sobrevivió al OCR de la guía.
+
+| Dificultad | Daño que hacés | Daño que recibís |
+| --- | --- | --- |
+| Mortal (fácil) | ×2,00 | ×0,50 |
+| Héroe (normal) | ×1,00 | ×1,00 |
+| Espartano (difícil) | ×0,75 | ×2,50 |
+| Dios (muy difícil) | ×0,50 | ×5,00 |
+
+Corroboración independiente de la fila Espartano: el hilo de pruebas dice "on Hard, enemies are at 250%, thus x2.5".
+
+La *Ira de los Dioses* del original va en la misma lógica: daño ×2,00 y armadura de 0,75 / 0,60 / 0,45 / 0,30 según el nivel de las espadas.
+
+Recomendación: no mover estas cantidades de a una. Se hace **una sola pasada de escala + dificultades**, después de que los golpes estén aprobados jugando (BL-46), porque tocar la vida de Kratos o de los enemigos ahora invalida el feel de todo lo aprobado. Queda anotado como **BL-50** en `docs/estado.md` §3.
+
 ## Fuentes
 
 - **Guía oficial Prima** (*God of War*, 2005), capítulo "Power of the Gods": tabla de *Poseidon's Rage* (coste, daño base, daño machacando, mejora), invulnerabilidad durante la animación, versión aérea, uso como control de multitudes. Texto completo: <https://archive.org/details/God_of_War_Prima_Official_eGuide>.
