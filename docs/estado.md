@@ -150,6 +150,8 @@ Lista viva; el estado lo pone el usuario después de jugar. `—` = sin revisar;
 
 ## 4. Últimos pasos
 
+- **2026-11-26 · control de arquero:** el botón para añadir arqueros queda deshabilitado hasta que su arte esté listo; reiniciar y añadir legionarios siguen disponibles.
+
 - **2026-11-26 · controles táctiles:** se añadió el botón de magia, se redujeron los controles y se separaron de los botones de prueba. La flecha abajo se conserva para bajar de plataformas. `tests/touch-controls.test.ts` verifica el botón de magia y las acciones existentes.
 
 - **2026-11-26 · nombres:** registrados los nombres acordados para las posibles adaptaciones de la saga en `docs/decisiones.md`.

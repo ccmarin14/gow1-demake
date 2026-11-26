@@ -90,6 +90,11 @@ p {
   transform: translateY(1px);
 }
 
+.test-controls button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 /* Touch controls (src/input/touchControls.ts), only on touch screens. */
 @media (pointer: coarse) {
   #game-root {
