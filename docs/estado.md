@@ -149,6 +149,8 @@ Lista viva; el estado lo pone el usuario después de jugar. `—` = sin revisar;
 
 ## 4. Últimos pasos
 
+- **2026-11-26 · nombres:** registrados los nombres acordados para las posibles adaptaciones de la saga en `docs/decisiones.md`.
+
 La cronología completa (pasos 0 a 146) está en [`docs/archivo/registro-pasos.md`](archivo/registro-pasos.md). Aquí, el trabajo de ○ y del sonido de los últimos días (2026-11-17), en una línea cada uno:
 
 - **Pasos 133 a 135:** giro libre antes de lanzar y *Toss* sin autoapuntado (decisión tuya); revisión propia de 8 cuadros; contraste de □ y △ con la lista de movimientos de Supercheats (todo el nivel 1 está); modo `grab` en `perf.mjs`.

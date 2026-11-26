@@ -44,3 +44,18 @@ Las decisiones históricas o reemplazadas de ciclos anteriores quedan en el hist
 | **D-58** | El audio en capas, las muestras CC0 y la medida contra *Ghost of Sparta* (rama `decepcion`) **no se integraron** (2026-11-23): al usuario no le gustaron tanto los sonidos nuevos. Hoy el juego tiene los sonidos de un oscilador por golpe y una tormenta suave. `direccion.md` §13 queda como diseño objetivo; el sonido se retoma después de pulir los golpes (BL-48), con la tormenta a volumen suave mientras no haya música. |
 | **D-59** | **El usuario dirige y el agente no avanza solo** (2026-11-23): tras un trabajo grande (BL-46, fichas, auditorías y olas de cambios) que el usuario sintió que perdió el foco y no mejoró la jugabilidad, el método es chico y guiado: (1) el usuario juega el juego real y da feedback de **un golpe a la vez**, (2) el agente reproduce el problema antes de cambiar, hace un cambio chico y lo muestra, (3) un golpe se aprueba solo cuando el usuario lo dice. Las pruebas protegen lo aprobado y no sustituyen su juicio. Los menús son de diseño digno aunque falten funciones: lo no implementado se muestra **deshabilitado**. El mundo se construye con pixel art de calidad, con *Betrayal* y *Lucky Luna* como referencias de arte. |
 
+## Nombres acordados para los proyectos
+
+Estos nombres identifican posibles adaptaciones; no implican que se hayan creado los repositorios ni que se haya decidido una estructura compartida.
+
+| Juego | Nombre |
+| --- | --- |
+| *God of War* (2005) | `gow1-demake` |
+| *God of War II* | `gow2-demake` |
+| *Chains of Olympus* | `gow-chains-demake` |
+| *God of War III* | `gow3-demake` |
+| *Ghost of Sparta* | `gow-sparta-demake` |
+| *Ascension* | `gow-ascension-demake` |
+| *God of War* (2018) | `gow-norse-demake` |
+| *Ragnarök* | `gow-ragnarok-demake` |
+| *Betrayal* | `gow-betrayal-demake` |
