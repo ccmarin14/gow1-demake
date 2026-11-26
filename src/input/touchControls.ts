@@ -28,6 +28,7 @@ const ACTION_BUTTONS: readonly TouchButton[] = [
   { label: '△', action: 'heavy-attack' },
   { label: '○', action: 'grab' },
   { label: 'Saltar', action: 'jump' },
+  { label: 'Magia', action: 'magic' },
 ];
 
 /** Actions currently held on the touch controls. */
