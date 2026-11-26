@@ -1,5 +1,24 @@
 # *Ira de Poseidón* en God of War (2005): qué hace, cuánto pega y cuánto dura
 
+> **Revisión pendiente:** este estudio contiene inferencias presentadas con demasiada seguridad. La cadencia de ~4,6 impactos/s no está demostrada; tampoco el rango de vida del soldado, el supuesto 6 % por impacto ni la comparación de potencia del golpe básico. Las cifras de vida, duración, cadencia y versión aérea deben contrastarse con fuentes o mediciones antes de usarlas para cambios. Seguimiento: BL-50, BL-52 y BL-53 en `docs/estado.md`.
+
+## Contraste posterior: duración y magia aérea
+
+- **Magia aérea:** la [guía Prima](https://archive.org/details/God_of_War_Prima_Official_eGuide), en la tabla de *Poseidon's Rage*, enumera «LEVEL 1: POSEIDON'S RAGE (AIR)» y «press L2 while in the air to activate». Es evidencia textual de activación aérea desde el nivel 1, no una medición de su trayectoria, duración ni alcance. La [wiki](https://web.archive.org/web/20250119094824/https://godofwar.fandom.com/wiki/Poseidon%27s_Rage) también la lista en nivel 1; un [resultado de IGN](https://www.ign.com/wikis/god-of-war/Power-Ups) la atribuye a nivel 2. Esa discrepancia requiere contrastar el juego o la pantalla original de mejoras.
+- **Dos lanzamientos de referencia:** en el video local `docs/tmp/egeo-video/egeo.mp4`, a partir de 18:40, se revisaron 25 muestras a 5 cuadros por segundo (una cada 0,2 s). La descarga visible aparece aproximadamente entre 18:40,4 y 18:41,2 en el primer lanzamiento, y entre 18:42,8 y 18:43,6 en el segundo; en la muestra siguiente ya no aparece. Esto acota solo el **efecto visible en ese video**, no la duración completa del movimiento ni la ventana de daño. No se identificaron con certeza plataforma o versión, entradas ni mejoras. La frecuencia del video es 29,97 fps; el muestreo a 5 fps no permite precisión menor que 0,2 s.
+- **Impactos:** el contador visible llega a 41 tras el primer lanzamiento y a 62 tras el segundo, pero hay varios enemigos y el contador puede acumular golpes. No permite calcular impactos por enemigo ni su cadencia. Las cifras de 13/25/37 impactos por enemigo del resto de este documento siguen pendientes de corroboración directa; la cita «37+ hits» no identifica por sí sola un único enemigo.
+- **Siguiente prueba:** obtener o localizar una grabación con versión, nivel y entradas identificables, un enemigo resistente aislado y contador legible; medir por separado la acción completa, el tramo de daño y la versión aérea. Si no se observan cada uno de esos datos, conservar la incertidumbre y no derivar una cadencia exacta.
+
+### Búsqueda de una descarga aislada
+
+En [*Kratos Moveset Showcase*](https://www.youtube.com/watch?v=0X9RiODtCB4), copia local `docs/tmp/golpes-ref/moveset.mp4`, se revisó el tramo 3:25–3:29 a 5 muestras por segundo. El video etiqueta la demostración «Poseidon's Rage» y **L2**: L2 identifica el botón, no el nivel de mejora. No hay enemigos visibles durante esa demostración. Se ve una postura previa alrededor de 3:26,4, electricidad entre las muestras aproximadas 3:26,6 y 3:27,4, y ausencia del efecto en la muestra siguiente. La secuencia muestra un lanzamiento sin blancos, pero no permite contar impactos ni confirmar el nivel, si se pulsó ○ fuera de cuadro, la duración exacta de la acción o el comportamiento de enemigos.
+
+En el mismo video aparecen demostraciones rotuladas «Wrath of Poseidon» con L2 y pulsaciones de ○ frente a varios enemigos; el contador agregado tampoco permite atribuir los impactos a un blanco individual. No se localizó en los materiales revisados una secuencia que reúna a la vez un solo enemigo resistente, nivel e entradas identificables y contador legible. **BL-52 sigue pendiente de esa evidencia**; no se fijó una cadencia.
+
+**Fuente externa:** [*Fighting Every Boss Using Poseidon's Rage Skill!!*](https://www.youtube.com/watch?v=yNkCWFyQKF0), de Amman Aria Ramadhan. Su descripción anuncia GoW 1 y 2 en dificultad muy difícil y lista para GoW 1: hidras menores en 4:41 y 5:30, Hidra Rey en 6:32, Medusa en 9:08, Guardián de Pandora en 10:25 y Ares en 12:50. La descripción incluye las etiquetas PS2 y PCSX2.
+
+**Inspección posterior de Medusa:** se revisó el combate alrededor de [10:00](https://www.youtube.com/watch?v=yNkCWFyQKF0&t=600s), con fotogramas muestreados cada 0,2 s de un fragmento de 30 fps. Se observa a Medusa como único enemigo visible y una descarga eléctrica sostenida; después aparece **40 HITS**. No se aprecia otro enemigo ni un contador previo en las muestras inmediatas. El caso es compatible con múltiples impactos sobre un único enemigo, pero la resolución, los destellos y la webcam tapan parte del contador durante el ataque; no permiten verificar cada incremento ni excluir blancos fuera de cuadro. El efecto aparece en muestras separadas por unos **2,8 s**, no necesariamente la duración total de la acción o del daño. El nivel de la magia, las pulsaciones de ○, la velocidad de reproducción y posibles cortes no se conocen. Por eso **40/2,8 no es una cadencia verificada** y esta observación no fija la cifra de impactos por lanzamiento.
+
 Investigación hecha el 2026-11-26 para decidir qué cambiar en nuestra *Ira de Poseidón* (BL-32 / BL-49). **Sin cambios de código**: es un estudio para decidir.
 
 Cada número lleva su origen: **medido** (dato publicado por quien lo midió en el juego), **deducido** (aritmética sobre datos medidos) o **sin respaldo** (no lo encontré en ninguna fuente).
@@ -10,8 +29,8 @@ Cada número lleva su origen: **medido** (dato publicado por quien lo midió en 
 - **Golpea a varios enemigos a la vez, sin límite de enemigos.** **Medido** (Prima: "attack multiple foes at once"; el hilo de pruebas: "no maximum number of enemies").
 - **Alcanza enemigos en el aire.** La comunidad lo describe como "hits infinitely vertically", es decir, el área es un cilindro: no importa la altura del enemigo. **Medido** (hilo de pruebas de la comunidad).
 - **Kratos es invulnerable durante toda la animación**, no solo en el arranque. Es el botón de pánico del juego. **Medido** (Prima: "you are invulnerable when you are in the animation of using this gift").
-- **Tiene versión aérea**: se puede lanzar en el aire. **Medido** (wiki, guía Prima: "Poseidon's Rage (Air)").
-- **Pulsar ○ repetidamente sube el daño por impacto de forma progresiva.** Desde el nivel 2 ese modo se llama *Wrath of Poseidon* y **Kratos queda invencible durante 8 segundos**. **Medido** (wiki; el hilo de pruebas da los topes por impacto).
+- **Versión aérea:** Prima y la wiki la describen desde nivel 1; un resultado de IGN la sitúa en nivel 2. Falta contrastar la discrepancia con el juego.
+- **Pulsar ○ repetidamente:** las pruebas comunitarias informan que el daño por impacto sube progresivamente. La wiki atribuye ocho segundos de invencibilidad a *Wrath of Poseidon*; esto no está verificado mediante una medición propia ni determina la duración del daño.
 - Es control de multitudes, **no** un arma contra enemigos grandes: a los Cíclopes y Minotauros les hace daño pero no es la herramienta para bajarlos. **Medido** (Prima).
 - A nivel 3 un solo lanzamiento borra un grupo entero de enemigos comunes. **Medido** (GameFAQs: "if you have maxed out Poseidon's Rage by this point, it can be very easy, as a single cast will kill all enemies").
 
@@ -19,26 +38,25 @@ Cada número lleva su origen: **medido** (dato publicado por quien lo midió en 
 
 | Nivel | Coste de mejora | Coste de maná | Daño total sin machacar | Daño total machacando | Daño por impacto | Impactos por enemigo |
 | --- | --- | --- | --- | --- | --- | --- |
-| 1 | — | 32–33 PM | 32 | 112 | 2,5 | **13** |
-| 2 | 1.650 orbes | 42 PM | 83 | 105 | 3,33 (hasta 5,10) | **25** |
-| 3 | 4.500 orbes | 50 PM | 154,17 | 215–221,6 | 4,17 (hasta 6,45) | **37** |
+| 1 | — | 32–33 PM | 32 | 112 | 2,5 | ~13, sin confirmar |
+| 2 | 1.650 orbes | 42 PM | 83 | 105 | 3,33 (hasta 5,10) | ~25, sin confirmar |
+| 3 | 4.500 orbes | 50 PM | 154,17 | 215–221,6 | 4,17 (hasta 6,45) | ~37, sin confirmar |
 
 Cómo se obtiene cada columna:
 
 - **Coste de maná, daño base y daño machacando:** guía Prima (tabla de *Poseidon's Rage*). La comunidad mide 33/42/50 PM y el daño total 32 / 83 / 154,17 (más 215–221,6 machacando a nivel 3). **Medido.**
 - **Daño por impacto:** 2,5 / 3,3333435 / 4,1666565 según nivel, y sube de forma progresiva al machacar hasta 5,100061 (nivel 2) y 6,4479065 (nivel 3). **Medido** (hilo de pruebas).
-- **Impactos por enemigo:** deducidos dividiendo el daño total por el daño por impacto. Nivel 3 da **37 exactos** (154,1662903 / 4,1666565 = 37,0) y coincide con la guía de Neoseeker: "you should be able to get 37+ hits with each if you've got the ability maxed out". Nivel 2 da 24,9 ≈ 25 y nivel 1 da 12,8 ≈ 13. **Deducido**, con el nivel 3 confirmado por una segunda fuente.
-- El patrón es regular: **13, 25, 37 → +12 impactos por nivel.** **Deducido.**
-- Contra tres Minotauros a nivel 3 el contador de combo sube unos **50 impactos por lanzamiento**, porque cada tick golpea a los tres a la vez. **Medido** (GameFAQs). Sirve para entender que "impactos por lanzamiento" en el contador no es lo mismo que "impactos por enemigo".
+- **Impactos por enemigo:** el cociente entre daño total y daño por impacto sugiere ~13 / ~25 / ~37, pero la relación y las condiciones de cada cifra no se comprobaron. La cita de Neoseeker «37+ hits» no demuestra por sí sola que todos correspondan a un único enemigo. El patrón de +12 por nivel es una hipótesis, no una medición.
+- GameFAQs menciona unos **50 impactos por lanzamiento** contra tres minotauros a nivel 3. El contador puede sumar varios enemigos; no permite deducir que cada tick golpee a los tres.
 - El maná máximo va de 100 a 200 con las Plumas de Fénix (+25 cada 6), así que el lanzamiento cuesta entre un tercio y un cuarto de la barra. **Medido** (Prima).
 
 Referencia de potencia relativa: un golpe básico de Espada del Caos pega del orden de **2** de daño. O sea que un lanzamiento de nivel 1 (32) equivale a **~16 golpes de □**, y uno de nivel 3 (154) a **~77**. El propio hilo lo dice en daño por maná: la *Ira de Poseidón* es la magia con mejor relación daño/maná del juego (1:1 a nivel 1, más de 3:1 a nivel 3). **Deducido.**
 
 ## 3. Duración
 
-- **Con *Wrath of Poseidon* (nivel 2 o más, machacando ○): 8 segundos de invencibilidad.** **Medido** (wiki).
+- La wiki atribuye a *Wrath of Poseidon* **8 segundos de invencibilidad**; el dato no se midió en esta investigación ni establece por sí solo la duración del daño.
 - **Sin machacar: no documentado.** Ninguna fuente que encontré da la duración del lanzamiento normal.
-- Cota útil: si el lanzamiento machacado dura 8 s y aplica 37 impactos por enemigo, la cadencia es de **~4,6 impactos por segundo**; sin machacar caen los mismos 37 impactos en menos tiempo, así que la cadencia sería algo mayor. **Deducido, no medido.**
+- **Cadencia desconocida:** el cálculo anterior de ~4,6 impactos/s divide cifras que no se han demostrado correspondientes a la misma ventana y al mismo enemigo. No sirve como medición ni como cota.
 - La cadencia exacta (cada cuántos cuadros cae un impacto) no la encontré publicada. Se puede medir del video de referencia contando el contador de impactos, si hace falta el número exacto.
 
 ## 4. Qué le pasa a los enemigos
@@ -51,7 +69,7 @@ Referencia de potencia relativa: un golpe básico de Espada del Caos pega del or
 
 | | GoW 1 (nivel 1 → 3) | Nuestro juego |
 | --- | --- | --- |
-| Impactos por enemigo y lanzamiento | 13 → 25 → 37 | **1** |
+| Impactos por enemigo y lanzamiento | ~13 → ~25 → ~37, hipótesis sin confirmar | **1** |
 | Daño total por enemigo | 32 → 83 → 154 | **8** |
 | Daño total en golpes básicos | ~16 → ~41 → ~77 | **0,8** (un □ pega 10) |
 | Daño por maná | 1:1 a 3,6:1, la mejor magia del juego | **0,23** (8 de daño por 35 PM) |
@@ -61,7 +79,7 @@ Referencia de potencia relativa: un golpe básico de Espada del Caos pega del or
 | Invulnerabilidad | toda la animación | toda la magia ✓ |
 | Coste | 33 / 42 / 50 PM, barra 100 → 200 | 35 PM fijos, barra 100 → 120 |
 | Niveles | 3, con 1.650 y 4.500 orbes | no hay |
-| Duración | ~8 s machacando; menos sin machacar | 84 ticks = **1,4 s** |
+| Duración | No medida; la wiki menciona 8 s de invencibilidad en *Wrath* | 84 ticks = **1,4 s** |
 
 Lo que ya está bien: la invulnerabilidad durante todo el conjuro, la forma (rayo desde arriba + onda en el suelo) y el coste relativo (un tercio de la barra).
 
@@ -79,7 +97,7 @@ Se implementó el punto medio: **impactos repetidos cada 4 ticks con 4 de daño*
 
 | | GoW 1 nivel 1 | Tras BL-51 |
 | --- | --- | --- |
-| Impactos por enemigo | 13 | **14** en los pies, 11 a 20 px, 2 a 80 px |
+| Impactos por enemigo | ~13, sin confirmar | **14** en los pies, 11 a 20 px, 2 a 80 px |
 | Daño total por enemigo | 32 | **56 / 44 / 8** |
 | Daño por maná | 1:1 | **1,6:1** en los pies (56 por 35 PM) |
 | Aturdimiento | renovado en cada impacto | **renovado en cada impacto** ✓ |
@@ -99,13 +117,13 @@ Sin decidir (a), (b) o (c), cualquier número que ponga es una decisión de dise
 
 ## 6. Escala de vida, maná y dificultades (pendiente, no es parte de este cambio)
 
-El original usa **una sola escala** para todo: un golpe básico de □ pega del orden de 2, un soldado tiene decenas de vida, y la magia pega 32 / 83 / 154. Nuestro juego rompió esa escala: el □ pega 10 y el legionario tiene 60, así que muere en 6 golpes, mientras que en el original hacen falta del orden de 20 a 40. Por eso la magia parece débil: no está mal calibrada ella, está calibrado en otra unidad todo lo demás. Mientras eso no se unifique, la *Ira de Poseidón* solo se puede **traducir por proporción** (6 % de la vida de un soldado por impacto), no copiar.
+El juego actual asigna 10 de daño al primer □ y 60 de vida al legionario. La vida del soldado original y el número de golpes necesarios para vencerlo no quedaron verificados. Por tanto, no se puede sostener la proporción anterior del 6 % ni atribuir la diferencia de balance a una causa única. BL-50 queda pendiente de contrastar vida y daño por enemigo y dificultad.
 
 | | GoW 1 | Nuestro juego |
 | --- | --- | --- |
 | Golpe básico de □ | ~2 | 10 |
-| Vida de un legionario | ~40–80 (**sin cifra publicada**; se deduce del daño de la magia) | 60 |
-| Golpes de □ para matarlo | ~20–40 | 6 |
+| Vida de un legionario | No verificada | 60 |
+| Golpes de □ para matarlo | No verificado | 6 |
 | Vida de Kratos | 100 → **175** (18 Ojos de Gorgona, +25 cada 6) | 100 → 120 |
 | Maná | 100 → **200** (18 Plumas de Fénix, +25 cada 6, más la mejora de la puerta de las Musas) | 100 → 120 |
 | Daño de la magia Nv1 / Nv3 | 32 / 154 | 8 |

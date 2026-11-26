@@ -752,7 +752,7 @@ export class World {
         let striking = this.strike !== null;
 
         // Invocación y ejecución de magia 'Ira de Poseidón'
-        if (magicEdge && player.grounded && !inHitstun && !isOpeningChest && !striking) {
+        if (magicEdge && !inHitstun && !isOpeningChest && !striking) {
           const magicResult = stepMagic(player, true, this.targets);
           this.registerImpacts(magicResult.hitTargets.length);
         } else if (player.magicPhase !== 'none') {
@@ -1103,7 +1103,7 @@ export class World {
           canJumpEdge,
           this.platforms,
           nowRolling,
-          strikeGravity,
+          nowCastingMagic && !player.grounded ? 0 : strikeGravity,
           wantsDown,
         );
         // The strike started this tick stays on tick 0; later ticks step it.

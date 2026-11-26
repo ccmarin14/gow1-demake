@@ -44,6 +44,12 @@ export function startMagic(player: EntityState): boolean {
   player.magicTicks = 0;
   player.magicHitIds = [];
   player.magicNextHitTick = {};
+  if (!player.grounded) {
+    // Casting in the air consumes any remaining jump until the next landing.
+    player.jumpsUsed = CONFIG.player.vertical.maxJumps;
+    player.coyoteTicks = 0;
+    player.jumpBufferTicks = 0;
+  }
   player.vx = 0;
   player.vy = 0;
 
