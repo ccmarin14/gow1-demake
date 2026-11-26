@@ -724,6 +724,8 @@ export const CONFIG = {
       boltStartAbovePx: 80,
       glowRadiusPx: 42,
       waveHeightPx: 8,
+      /** The drawn ellipse grows taller with the wave; damage uses the same band. */
+      waveHeightGrowthPerPx: 0.08,
       waveTrails: 4,
       /** Visual-only lift: the simulation stays on the deck. */
       liftPx: 6,

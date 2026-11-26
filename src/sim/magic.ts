@@ -2,6 +2,23 @@ import { CONFIG } from '../config';
 import { damageEnemy } from './damage';
 import type { EntityState } from './types';
 
+/** Shared wave front: presentation and damage must advance at the same rate. */
+export function magicWaveRadiusAtTick(tick: number): number {
+  const spell = CONFIG.player.magic.poseidonsRage;
+  return ((tick + 1) * spell.radius) / spell.activeTicks;
+}
+
+/** Full height passed to Phaser's strokeEllipse, whose width/height are diameters. */
+export function magicWaveHeightPx(radius: number): number {
+  const cfg = CONFIG.vfx.magicWave;
+  return cfg.waveHeightPx + radius * cfg.waveHeightGrowthPerPx;
+}
+
+/** Half-height of the damage ellipse, matching the drawn ground wave exactly. */
+export function magicWaveHalfHeightPx(radius: number): number {
+  return magicWaveHeightPx(radius) / 2;
+}
+
 export interface MagicHitResult {
   hitTargets: string[];
   totalDamage: number;
@@ -93,8 +110,8 @@ export function stepMagic(
   // una sola vez, cuando la onda lo alcanza.
   if (player.magicPhase === 'active') {
     const alreadyHit = player.magicHitIds ?? (player.magicHitIds = []);
-    const waveRadius = ((player.magicTicks + 1) * cfg.radius) / cfg.activeTicks;
-    const waveRadiusSq = waveRadius * waveRadius;
+    const waveRadius = magicWaveRadiusAtTick(player.magicTicks);
+    const waveHalfHeight = magicWaveHalfHeightPx(waveRadius);
 
     for (let i = 0; i < targets.length; i += 1) {
       const target = targets[i];
@@ -109,10 +126,13 @@ export function stepMagic(
         ? Math.min(target.x, Math.max(target.x - 100, player.x))
         : target.x;
       const dx = targetEffectiveX - player.x;
-      const dy = (target.y - 18) - (player.y - 20);
-      const distSq = dx * dx + dy * dy;
+      // The wave is drawn at the feet (groundY = player.y), so the damage
+      // ellipse must be centred there too instead of at the sprite torso.
+      const dy = target.y - player.y;
+      const inWave =
+        (dx / waveRadius) ** 2 + (dy / waveHalfHeight) ** 2 <= 1;
 
-      if (distSq <= waveRadiusSq) {
+      if (inWave) {
         alreadyHit.push(target.id);
         result.hitTargets.push(target.id);
         result.totalDamage += cfg.damagePerHit;
@@ -121,6 +141,16 @@ export function stepMagic(
           if (onEnemyKilled) {
             onEnemyKilled(target);
           }
+        } else if (
+          target.kind !== 'hydra' &&
+          target.aiState !== 'knockdown' &&
+          target.aiState !== 'get_up' &&
+          target.aiState !== 'juggle'
+        ) {
+          // Like a blade hit, the shock interrupts the AI; hitstunTicks alone
+          // is only a countdown and would leave the enemy free to attack.
+          target.aiState = 'hitstun';
+          target.aiTicks = 0;
         }
       }
     }

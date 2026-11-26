@@ -5,6 +5,7 @@ import {
   BACKGROUND_KEY,
 } from '../assets/manifest';
 import { CONFIG } from '../config';
+import { magicWaveHeightPx, magicWaveRadiusAtTick } from '../sim/magic';
 import { magicBoltEndY } from './magicPose';
 import {
   attachScaleReferenceOverlay,
@@ -1195,7 +1196,7 @@ export class ShellScene extends Phaser.Scene {
       }
 
       // The 3D circle becomes a flattened wave running along the deck.
-      const waveRadius = ((tick + 1) * cfg.radius) / cfg.activeTicks;
+      const waveRadius = magicWaveRadiusAtTick(tick);
       for (let trail = 0; trail < waveCfg.waveTrails; trail += 1) {
         const r = waveRadius - trail * 6;
         if (r <= 1) continue;
@@ -1212,7 +1213,7 @@ export class ShellScene extends Phaser.Scene {
           cx,
           groundY,
           r * 2,
-          waveCfg.waveHeightPx + r * 0.08,
+          magicWaveHeightPx(r),
         );
       }
 
