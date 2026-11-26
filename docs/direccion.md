@@ -25,6 +25,33 @@
 
 Tras 2 a 4 □, △ lanza *Plume of Prometheus*; tras 5 □, *Spirit of Hercules* (§6). △ (`I`, o el botón △ táctil) tiene tres niveles por tiempo: tocar es el golpe pesado, mantener hasta el final de la carga lanza a los enemigos **verticalmente hacia arriba** sin que Kratos salte y seguir sosteniendo lo hace saltar tras ellos (*Ascension*). En el aire, `J` encadena tres golpes que mantienen suspendido al enemigo, `I` el golpe vertical y `K`/`L` (○) lanza *Orion's Harpoon* para enganchar al enemigo elevado y estamparlo contra el suelo; un salto corta un golpe aéreo con el doble salto. En el suelo, `K`/`L` (○) sujeta a un enemigo sano permitiendo elegir entre arrojarlo como proyectil (`J`/□), quebrarlo (`I`/△) o azotarlo (`K`/`L`/○), o inicia el remate QTE si está debilitado (`hp <= 20`).
 
+### Diseño acordado para implementar más adelante
+
+Este mapa es el **objetivo pendiente**, no describe los controles actuales de la tabla anterior. Toma como referencia *God of War 2*, adaptado a la vista lateral y a cada dispositivo; su comodidad, especialmente en celular, queda pendiente de probar con el usuario.
+
+| Acción | Celular | Teclado | Mando conectado a PC |
+| --- | --- | --- | --- |
+| Mover / bajar | `◀`, `▶`, `▼` | `A`, `D`, `S` | Stick izquierdo |
+| Ataque ligero / fuerte / agarre / salto | Rombo PlayStation: `□` izquierda, `△` arriba, `○` derecha, `✕` abajo | `J` / `I` / `L` / `K` | `□` / `△` / `○` / `✕` |
+| Bajar de plataformas | `▼ + ✕` | `S + K` | Abajo + `✕` |
+| Guardia | `L1` | `Q` | `L1` |
+| Magia | `L2` | `E` | `L2` |
+| Interactuar | `R1` | `U` | `R1` |
+| Rodar | Botones «atrás» y «adelante» | `Ñ` atrás / `Shift` adelante | Stick derecho en la dirección deseada |
+| Seleccionar magia | Por definir | Flechas reservadas para más adelante, no para movimiento | Cruceta reservada para más adelante |
+| `R2` | Por definir | `O`, función por definir | `R2`, función por definir |
+| Pausa | Por definir | `Esc` | Por definir |
+
+«Adelante» y «atrás» se refieren a la orientación de Kratos. El lanzamiento de la magia actual con una pulsación es una adaptación del proyecto, no una copia de todas las combinaciones de *God of War 2*. `R1` se propone para cofres y otras interacciones; los puntos de enganche son una posibilidad futura, no una mecánica comprometida por este mapa. En mandos que no sean PlayStation se mostrarán los equivalentes cuando sea posible.
+
+Antes de dar el diseño por definitivo, probar el alcance de `L1`, `L2` y `R1`, el multitoque y la visibilidad con dos rodadas en un celular real; probar también `Shift` y `Ñ` durante el combate. Permitir reasignar teclas es una mejora recomendada para teclados sin `Ñ`, pendiente de decisión. Referencia para `R1`, cofres y puntos de enganche: [guía de *God of War 2*](https://www.supercheats.com/playstation2/walkthroughs/godofwarii-walkthrough02.txt).
+
+**Distribución en celular, pendiente de implementar:**
+
+- **Horizontal:** pantalla de juego centrada; controles de movimiento a la izquierda y de combate a la derecha. Los botones de prueba «Reiniciar» y «Añadir enemigos» quedan debajo de la pantalla de juego.
+- **Vertical:** pantalla de juego arriba, con «Reiniciar» y «Añadir enemigos» inmediatamente debajo; los controles de juego se organizan más abajo para que se alcancen con los dedos.
+- Los botones de prueba y los controles de juego ocupan zonas separadas. El tamaño y la ubicación exactos se comprueban en un celular real, sin tapar la pantalla de juego.
+
 ## 3. Reglas visuales y de pixel art
 
 - **Resolución lógica:** 480×270 píxeles, escalada en navegador con `pixelArt: true` (nearest-neighbor, sin suavizado).
@@ -389,4 +416,3 @@ Qué se busca llevar al Egeo, sea cual sea la fuente: capas de profundidad con p
 **Música (BL-47).** Hoy no hay banda sonora. La referencia es el primer *God of War*: según Wikipedia (`en.wikipedia.org/wiki/God_of_War_(2005_video_game)`) lo compusieron Gerard Marino, Mike Reagan, Ron Fish, Winifred Phillips, Winnie Waldron, Cris Velasco y Marcello De Francisci, la crítica la describe como música orquestal clásica contemporánea y ganó el premio DICE a la mejor composición original; la página no dice quién es el compositor principal ni habla de coros o percusión (dato por confirmar en una fuente primaria). Dirección propuesta, por decidir con el usuario: una pista grave y sobria de **ambiente** para el Egeo y otra de **combate** que sube de tensión, que no compitan con los golpes; mientras no exista, la tormenta se queda suave. Si se usan piezas de licencia libre, su fuente y su licencia se anotan.
 
 **Lo que le gustó al usuario del sonido de *Ghost of Sparta*:** la contundencia de los golpes. Sirve de referencia al hablar con él, no como fuente de audio (nunca se usa audio extraído de un juego).
-

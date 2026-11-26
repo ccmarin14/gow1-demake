@@ -101,7 +101,7 @@ Historias de usuario abiertas, con su estado y qué las bloquea (reglas en `AGEN
 | **BL-10** | Como jugador quiero enemigos con más de un truco (ESE-04). | Un segundo comportamiento que dé sentido a la guardia o a la magia. | Decisión | S2 |
 | **BL-12** | Como jugador quiero los cuatro hechizos de GoW 1 (ESE-06). | *Furia de Zeus*, *Mirada de Medusa* y *Ejército de Hades* además de *Ira de Poseidón*. | Arte base y decisión | S2, S3 |
 | **BL-15** | Como desarrolladora quiero partir `strike.ts` (más de 2.000 líneas) en el motor y un archivo de datos por golpe. | Sin cambios de comportamiento: todos los fixtures y pruebas siguen iguales. | Lista, entre rondas de golpes (bloquea S1 mientras dura) | S1 |
-| **BL-17** | Como jugador quiero botones táctiles cómodos. | Tamaño, zona de pulgares y multitoque ajustados con lo que anote el usuario. | Lista del usuario | S3 |
+| **BL-17** | Como jugador quiero controles cómodos en celular, teclado y mando conectado a PC. | Implementar el mapa y la distribución horizontal y vertical acordados en `direccion.md` §2, inspirado en *God of War 2*, sin confundirlos con los controles actuales; probar tamaño, zona de pulgares, multitoque y rodadas con el usuario. La selección de magia, la función de R2 y las opciones indicadas como pendientes no se inventan. | Diseño acordado; implementación y prueba con el usuario pendientes | S3 |
 | **BL-18** | Como jugador quiero decidir cada mecánica heredada (guardia, magia, orbes, cofres, oleadas, IA, aplastamiento, chispas, cuchilla en reposo). | Una decisión por fila de la tabla "Mecánicas heredadas"; después se audita con pruebas. | Decisión | S2 |
 | **BL-19** | Como jugador quiero un nivel con enemigos y arena (hoy `level1` solo tiene a Kratos, D-33). | El Mar Egeo con el recorrido de `direccion.md` §8 (D-44), jugable de punta a punta: tres barcos, agua, redes, mástil, cuerdas, la Hidra y la llave del capitán. | BL-08, BL-18 y BL-21 a BL-26 | S2, S3 |
 | **BL-22** | Como jugador quiero pelear contra la Hidra del Egeo como en GoW 1 (D-45). | Hidra nueva desde cero: primer encuentro en la bodega (cuello y cabeza desde abajo por la derecha), segundo en cubierta y combate final con dos cabezas menores clavadas por la plataforma con pincho y la principal estampada con ○ contra el mástil hasta el remate (`direccion.md` §8). Cada fase con su prueba en el harness; arte por D-34 aprobado cuadro a cuadro. | BL-06, BL-07 y BL-23 | S1, S2, S3 |
@@ -170,6 +170,8 @@ Lista viva; el estado lo pone el usuario después de jugar. `—` = sin revisar;
 ## 4. Últimos pasos
 
 - **2026-11-26 · Estados de combate:** se registró BL-55 para investigar la interacción de magia y agarre, el temporizador de impactos durante la pausa y la posible víctima atrapada al interrumpir una presa. Solo se revisó el código; no se ejecutaron pruebas ni se cambió el juego.
+
+- **2026-11-26 · controles:** documentados el mapa acordado para celular, teclado y mando, inspirado en *God of War 2*, y las distribuciones horizontal y vertical en celular; quedan pendientes de implementación y prueba con el usuario (BL-17).
 
 - **2026-11-26 · control de arquero:** el botón para añadir arqueros queda deshabilitado hasta que su arte esté listo; reiniciar y añadir legionarios siguen disponibles.
 
